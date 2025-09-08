@@ -1,0 +1,157 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Force LF line endings for text files
+*.js text eol=lf
+*.jsx text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.xml text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.sass text eol=lf
+*.less text eol=lf
+*.py text eol=lf
+*.go text eol=lf
+*.sql text eol=lf
+*.sh text eol=lf
+*.bash text eol=lf
+*.zsh text eol=lf
+*.fish text eol=lf
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Force CRLF line endings for Windows batch files
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Force LF line endings for Unix shell scripts
+*.sh text eol=lf
+*.bash text eol=lf
+*.zsh text eol=lf
+*.fish text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.otf binary
+*.mp3 binary
+*.mp4 binary
+*.avi binary
+*.mov binary
+*.wmv binary
+*.flv binary
+*.webm binary
+*.pdf binary
+*.zip binary
+*.tar binary
+*.gz binary
+*.rar binary
+*.7z binary
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary
+*.a binary
+*.o binary
+*.obj binary
+*.lib binary
+*.dylib binary
+*.framework binary
+
+# Go specific
+*.go text eol=lf
+go.mod text eol=lf
+go.sum text eol=lf
+
+# Python specific
+*.py text eol=lf
+requirements.txt text eol=lf
+Pipfile text eol=lf
+Pipfile.lock text eol=lf
+pyproject.toml text eol=lf
+
+# Node.js specific
+package.json text eol=lf
+package-lock.json text eol=lf
+yarn.lock text eol=lf
+.nvmrc text eol=lf
+
+# Docker specific
+Dockerfile text eol=lf
+docker-compose.yml text eol=lf
+.dockerignore text eol=lf
+
+# Terraform specific
+*.tf text eol=lf
+*.tfvars text eol=lf
+*.tfstate text eol=lf
+*.tfstate.* text eol=lf
+
+# Git specific
+.gitignore text eol=lf
+.gitattributes text eol=lf
+.gitmodules text eol=lf
+
+# Documentation
+*.md text eol=lf
+*.rst text eol=lf
+*.txt text eol=lf
+LICENSE text eol=lf
+README.md text eol=lf
+CHANGELOG.md text eol=lf
+CONTRIBUTING.md text eol=lf
+
+# Configuration files
+*.ini text eol=lf
+*.cfg text eol=lf
+*.conf text eol=lf
+*.config text eol=lf
+*.toml text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.xml text eol=lf
+
+# Database files
+*.sql text eol=lf
+*.db text eol=lf
+*.sqlite text eol=lf
+*.sqlite3 text eol=lf
+
+# Log files
+*.log text eol=lf
+
+# Environment files
+.env* text eol=lf
+.env.example text eol=lf
+.env.local text eol=lf
+.env.development text eol=lf
+.env.test text eol=lf
+.env.production text eol=lf
+
+# IDE files
+.vscode/settings.json text eol=lf
+.vscode/launch.json text eol=lf
+.vscode/extensions.json text eol=lf
+.idea/workspace.xml text eol=lf
+.idea/project.xml text eol=lf
+
+# Supabase
+supabase/config.toml text eol=lf
+supabase/seed.sql text eol=lf

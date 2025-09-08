@@ -1,0 +1,30 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景の円 -->
+  <circle cx="512" cy="512" r="480" fill="#6366f1"/>
+  
+  <!-- ブリッジのアイコン -->
+  <g transform="translate(512, 512)">
+    <!-- 左側の柱 -->
+    <rect x="-280" y="-200" width="80" height="400" rx="40" fill="white"/>
+    
+    <!-- 右側の柱 -->
+    <rect x="200" y="-200" width="80" height="400" rx="40" fill="white"/>
+    
+    <!-- ブリッジの道路部分 -->
+    <rect x="-300" y="40" width="600" height="60" rx="30" fill="white"/>
+    
+    <!-- ケーブル（左側） -->
+    <path d="M -240 -160 Q -120 -40, 0 40" stroke="white" stroke-width="24" fill="none" stroke-linecap="round"/>
+    <path d="M -240 -80 Q -80 0, 0 40" stroke="white" stroke-width="24" fill="none" stroke-linecap="round"/>
+    <path d="M -240 0 Q -40 20, 0 40" stroke="white" stroke-width="24" fill="none" stroke-linecap="round"/>
+    
+    <!-- ケーブル（右側） -->
+    <path d="M 240 -160 Q 120 -40, 0 40" stroke="white" stroke-width="24" fill="none" stroke-linecap="round"/>
+    <path d="M 240 -80 Q 80 0, 0 40" stroke="white" stroke-width="24" fill="none" stroke-linecap="round"/>
+    <path d="M 240 0 Q 40 20, 0 40" stroke="white" stroke-width="24" fill="none" stroke-linecap="round"/>
+    
+    <!-- 中央の接続点（人とAIの出会い） -->
+    <circle cx="0" cy="40" r="60" fill="#8b5cf6"/>
+    <circle cx="0" cy="40" r="40" fill="white"/>
+  </g>
+</svg>

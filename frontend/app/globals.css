@@ -1,0 +1,293 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===========================================
+   カスタムプロパティ - 軽量テーマシステム
+   =========================================== */
+:root {
+  /* カラーパレット */
+  --primary: 142 76% 36%;
+  --secondary: 220 13% 18%;
+  --accent: 262 83% 58%;
+  --surface: 220 13% 9%;
+  
+  /* エフェクト */
+  --glass-opacity: 0.1;
+  --blur: 20px;
+  --glow: 0.3;
+}
+
+.dark {
+  --primary: 142 76% 45%;
+  --secondary: 220 13% 85%;
+  --surface: 220 13% 4%;
+  --glass-opacity: 0.05;
+  --blur: 24px;
+  --glow: 0.5;
+}
+
+/* ===========================================
+   ユーティリティクラス
+   =========================================== */
+@layer utilities {
+  /* グラスモーフィズム */
+  .glass-surface {
+    background: hsla(var(--surface), var(--glass-opacity));
+    backdrop-filter: blur(var(--blur)) saturate(180%);
+    border: 1px solid hsla(var(--surface), 0.2);
+    box-shadow: 0 8px 32px hsla(0 0 0 / 0.12);
+  }
+  
+  .glass-card {
+    @apply glass-surface rounded-xl;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .glass-card:hover {
+    background: hsla(var(--surface), calc(var(--glass-opacity) + 0.02));
+    transform: translateY(-2px);
+    box-shadow: 0 20px 40px hsla(0 0 0 / 0.15);
+  }
+
+  /* グロウエフェクト */
+  .neon-glow {
+    box-shadow: 
+      0 0 20px hsla(var(--primary), var(--glow)),
+      0 0 40px hsla(var(--primary), calc(var(--glow) * 0.5));
+  }
+  
+  .accent-glow {
+    box-shadow: 
+      0 0 20px hsla(var(--accent), var(--glow)),
+      0 0 40px hsla(var(--accent), calc(var(--glow) * 0.5));
+  }
+
+  /* フォーカスリング */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply focus:ring-[hsla(var(--primary),0.6)];
+    transition: box-shadow 0.3s ease;
+  }
+
+  /* インタラクティブカード */
+  .interactive-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .interactive-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px hsla(0 0 0 / 0.1);
+  }
+
+  /* ローディングスケルトン */
+  .loading-skeleton {
+    background: linear-gradient(
+      90deg,
+      hsla(var(--surface), 0.1),
+      hsla(var(--surface), 0.2),
+      hsla(var(--surface), 0.1)
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  /* レスポンシブタイポグラフィ */
+  .fluid-text {
+    font-size: clamp(0.875rem, 2.5vw, 1.125rem);
+    line-height: 1.6;
+  }
+
+  /* ランディングページ用エフェクト */
+  .text-glow {
+    text-shadow: 
+      0 0 20px hsla(var(--primary), 0.3),
+      0 0 40px hsla(var(--primary), 0.1);
+  }
+
+  .floating-element {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .particle-bg {
+    background: radial-gradient(circle, hsla(var(--primary), 0.1) 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+
+  .shimmer-effect {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      hsla(255 255 255 / 0.1),
+      transparent
+    );
+    animation: shimmer 2s infinite;
+  }
+
+  .morphing-bg {
+    background: linear-gradient(
+      45deg,
+      hsla(var(--primary), 0.2),
+      hsla(var(--accent), 0.2),
+      hsla(180 100% 50%, 0.2)
+    );
+    background-size: 400% 400%;
+    animation: morphing 4s ease-in-out infinite;
+  }
+  
+  .fluid-heading {
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    line-height: 1.2;
+    font-weight: 700;
+  }
+}
+
+/* ===========================================
+   アニメーション
+   =========================================== */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes morphing-gradient {
+  0%, 100% { 
+    background-position: 0% 50%;
+    filter: hue-rotate(0deg);
+  }
+  50% { 
+    background-position: 100% 50%;
+    filter: hue-rotate(180deg);
+  }
+}
+
+@keyframes particle-float {
+  0%, 100% { 
+    transform: translate(0, 0) scale(1);
+    opacity: 0.7;
+  }
+  50% { 
+    transform: translate(-10px, -20px) scale(1.1);
+    opacity: 1;
+  }
+}
+
+@keyframes morphing {
+  0%, 100% { 
+    background-position: 0% 50%;
+  }
+  50% { 
+    background-position: 100% 50%;
+  }
+}
+
+/* ===========================================
+   エフェクトクラス
+   =========================================== */
+.floating-element {
+  animation: float 6s ease-in-out infinite;
+}
+
+.morphing-bg {
+  background: linear-gradient(
+    45deg,
+    hsla(var(--primary), 0.8),
+    hsla(var(--accent), 0.6),
+    hsla(var(--primary), 0.7),
+    hsla(var(--secondary), 0.5)
+  );
+  background-size: 400% 400%;
+  animation: morphing-gradient 8s ease-in-out infinite;
+}
+
+.particle-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(circle at 20% 30%, hsla(var(--primary), 0.1) 2px, transparent 2px),
+    radial-gradient(circle at 80% 70%, hsla(var(--accent), 0.1) 1px, transparent 1px);
+  background-size: 100px 100px, 150px 150px;
+  animation: particle-float 20s linear infinite;
+  pointer-events: none;
+}
+
+/* ===========================================
+   スクロールバー
+   =========================================== */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* ===========================================
+   アクセシビリティ
+   =========================================== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===========================================
+   モバイル最適化
+   =========================================== */
+@media (max-width: 1023px) {
+  .mobile-bottom-nav-height {
+    height: calc(80px + env(safe-area-inset-bottom));
+  }
+  
+  /* モバイルではエフェクトを軽量化 */
+  .glass-surface {
+    backdrop-filter: blur(calc(var(--blur) * 0.5));
+  }
+  
+  .neon-glow,
+  .accent-glow {
+    box-shadow: 0 0 10px hsla(var(--primary), calc(var(--glow) * 0.5));
+  }
+}
+
+/* ===========================================
+   高解像度ディスプレイ対応
+   =========================================== */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .glass-surface {
+    backdrop-filter: blur(calc(var(--blur) * 1.2)) saturate(200%);
+  }
+}
