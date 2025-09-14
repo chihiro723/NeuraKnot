@@ -22,6 +22,9 @@ coverage.xml
 .pytest_cache
 .hypothesis
 
+# 開発ルール・プロジェクトルール
+.cursorrules
+
 # Environment variables
 .env
 .env.local
@@ -224,4 +227,3 @@ coverage/
 # Local development
 .local/
 local/
-
