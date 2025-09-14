@@ -14,8 +14,14 @@ COPY go.mod go.sum ./
 # 依存関係をダウンロード
 RUN go mod download
 
+# swagコマンドをインストール
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+
 # ソースコードをコピー
 COPY . .
+
+# Swaggerドキュメントを生成
+RUN export PATH=$PATH:$(go env GOPATH)/bin && swag init -g cmd/main.go -o docs
 
 # アプリケーションをビルド
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd
@@ -30,8 +36,12 @@ RUN addgroup -g 1001 -S appgroup && \
 # 作業ディレクトリを設定
 WORKDIR /app
 
-# ビルドしたバイナリをコピー
+# ビルドしたバイナリとSwaggerドキュメントをコピー
 COPY --from=builder /app/main .
+COPY --from=builder /app/docs ./docs
+
+# 権限を設定
+RUN chown -R appuser:appgroup /app
 
 # ユーザーを変更
 USER appuser

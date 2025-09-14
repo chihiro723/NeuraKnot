@@ -1,0 +1,212 @@
+basePath: /api/v1
+definitions:
+  handler.CreateTextRequest:
+    properties:
+      content:
+        example: これは保存したいテキストです
+        type: string
+      title:
+        example: テキストのタイトル
+        type: string
+    required:
+    - content
+    type: object
+  handler.ErrorResponse:
+    properties:
+      error:
+        example: エラーメッセージ
+        type: string
+      message:
+        example: 詳細なエラーメッセージ
+        type: string
+    type: object
+  handler.TextResponse:
+    properties:
+      content:
+        example: これは保存したいテキストです
+        type: string
+      created_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+      id:
+        example: 1
+        type: integer
+      title:
+        example: テキストのタイトル
+        type: string
+      updated_at:
+        example: "2024-01-01T00:00:00Z"
+        type: string
+    type: object
+  handler.UpdateTextRequest:
+    properties:
+      content:
+        example: 更新されたテキストです
+        type: string
+      title:
+        example: 更新されたタイトル
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: DDDアーキテクチャを使用したGoバックエンドAPI
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Go Backend API
+  version: "1.0"
+paths:
+  /api/v1/texts:
+    get:
+      description: 保存されているすべてのテキストを取得します（リアルタイム更新テスト）よーー
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: テキスト一覧
+          schema:
+            items:
+              $ref: '#/definitions/handler.TextResponse'
+            type: array
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: テキスト一覧を取得
+      tags:
+      - texts
+    post:
+      consumes:
+      - application/json
+      description: POSTでテキストを受け取ってデータベースに保存します
+      parameters:
+      - description: テキスト作成リクエスト
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateTextRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 作成されたテキスト
+          schema:
+            $ref: '#/definitions/handler.TextResponse'
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: テキストを作成
+      tags:
+      - texts
+  /api/v1/texts/{id}:
+    delete:
+      description: 指定されたIDのテキストを削除します
+      parameters:
+      - description: テキストID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: 削除成功
+        "400":
+          description: 無効なID
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: テキストが見つからない
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: テキストを削除
+      tags:
+      - texts
+    get:
+      description: 指定されたIDのテキストを取得します
+      parameters:
+      - description: テキストID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: テキスト
+          schema:
+            $ref: '#/definitions/handler.TextResponse'
+        "400":
+          description: 無効なID
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: テキストが見つからない
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: テキストを取得
+      tags:
+      - texts
+    put:
+      consumes:
+      - application/json
+      description: 指定されたIDのテキストを更新します
+      parameters:
+      - description: テキストID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: テキスト更新リクエスト
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateTextRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新されたテキスト
+          schema:
+            $ref: '#/definitions/handler.TextResponse'
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "404":
+          description: テキストが見つからない
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/handler.ErrorResponse'
+      summary: テキストを更新
+      tags:
+      - texts
+schemes:
+- http
+securityDefinitions:
+  BasicAuth:
+    type: basic
+swagger: "2.0"

@@ -1,0 +1,38 @@
+# 開発用Dockerfile - ホットリロード対応
+FROM golang:1.25-alpine
+
+# 作業ディレクトリを設定
+WORKDIR /app
+
+# 必要なパッケージをインストール
+RUN apk add --no-cache git wget
+
+# go.modとgo.sumをコピー（レイヤーキャッシュ最適化）
+COPY go.mod go.sum ./
+
+# 依存関係をダウンロード（レイヤーキャッシュ最適化）
+RUN go mod download
+
+# swagコマンドをインストール
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+
+# air（ホットリロードツール）をインストール
+RUN go install github.com/air-verse/air@latest
+
+# ソースコードをコピー（最後にコピーしてレイヤーキャッシュを活用）
+COPY . .
+
+# 権限を設定
+RUN chown -R 1001:1001 /app
+
+# Goビルドキャッシュディレクトリを作成して権限を設定
+RUN mkdir -p /.cache/go-build && chown -R 1001:1001 /.cache
+
+# ユーザーを変更
+USER 1001
+
+# ポートを公開
+EXPOSE 8080
+
+# ホットリロードでアプリケーションを実行
+CMD ["air", "-c", ".air.toml"]

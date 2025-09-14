@@ -1,0 +1,53 @@
+# 本番用Dockerfile - マルチステージビルドで最適化
+# ビルドステージ
+FROM golang:1.25-alpine AS builder
+
+# 作業ディレクトリを設定
+WORKDIR /app
+
+# 必要なパッケージをインストール
+RUN apk add --no-cache git ca-certificates tzdata
+
+# go.modとgo.sumをコピー（レイヤーキャッシュ最適化）
+COPY go.mod go.sum ./
+
+# 依存関係をダウンロード（レイヤーキャッシュ最適化）
+RUN go mod download
+
+# swagコマンドをインストール
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+
+# ソースコードをコピー
+COPY . .
+
+# Swaggerドキュメントを生成
+RUN export PATH=$PATH:$(go env GOPATH)/bin && swag init -g cmd/main.go -o docs
+
+# アプリケーションをビルド（最適化フラグ）
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -a -installsuffix cgo \
+    -ldflags='-w -s -extldflags "-static"' \
+    -o main ./cmd
+
+# 実行ステージ - distrolessイメージでセキュリティ強化
+FROM gcr.io/distroless/static-debian11:nonroot
+
+# 作業ディレクトリを設定
+WORKDIR /app
+
+# ビルドしたバイナリとSwaggerドキュメントをコピー
+COPY --from=builder /app/main .
+COPY --from=builder /app/docs ./docs
+
+# タイムゾーンデータをコピー
+COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
+
+# ポートを公開
+EXPOSE 8080
+
+# ヘルスチェック（distrolessではwgetが使えないため、curlを使用）
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD ["/main", "-health-check"] || exit 1
+
+# アプリケーションを実行
+ENTRYPOINT ["./main"]
