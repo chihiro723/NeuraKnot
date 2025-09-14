@@ -15,20 +15,20 @@ hotfix/789-critical-security-patch
 ## コミットメッセージ
 
 ```
-feat(chat): add message encryption
-fix(auth): resolve login redirect issue
-docs(readme): update setup instructions
+feat: add message encryption
+fix: resolve login redirect issue
+docs: update setup instructions
 ```
 
 ### 形式
 
 ```
-type(scope): description
+type: description
 
 例:
-feat(chat): add message encryption
-fix(auth): resolve login redirect issue
-docs(readme): update setup instructions
+feat: add message encryption
+fix: resolve login redirect issue
+docs: update setup instructions
 ```
 
 ### タイプ
