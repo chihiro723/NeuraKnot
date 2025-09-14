@@ -42,12 +42,15 @@ show_help() {
     echo "  logs     - ログを表示"
     echo "  clean    - 全コンテナとボリュームを削除"
     echo "  status   - サービス状態を表示"
+    echo "  migrate  - データベースマイグレーションを実行"
+    echo "  migrate-rollback - データベースマイグレーションをロールバック"
     echo "  help     - このヘルプを表示"
     echo ""
     echo "例:"
     echo "  ./dev.sh start    # 既存イメージで起動（高速）"
     echo "  ./dev.sh build    # レイヤーキャッシュ使用で再ビルド（推奨）"
     echo "  ./dev.sh rebuild  # 完全再ビルド（問題解決時）"
+    echo "  ./dev.sh migrate  # マイグレーションを実行"
     echo "  ./dev.sh logs     # ログを確認"
 }
 
@@ -175,6 +178,46 @@ show_status() {
     docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}\t{{.BlockIO}}"
 }
 
+# マイグレーションを実行
+run_migrations() {
+    log_info "データベースマイグレーションを実行中..."
+    
+    # データベース接続文字列を構築
+    DB_URL="postgres://postgres:${POSTGRES_PASSWORD:-password}@localhost:5432/go_backend?sslmode=disable"
+    
+    # migrateコマンドを実行
+    if command -v migrate &> /dev/null; then
+        migrate -path backend-go/migrations -database "$DB_URL" up
+        log_info "マイグレーション完了！"
+    else
+        log_error "migrateコマンドが見つかりません。"
+        log_info "インストール方法:"
+        log_info "  brew install golang-migrate"
+        log_info "  または"
+        log_info "  go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest"
+        exit 1
+    fi
+}
+
+# マイグレーションをロールバック
+rollback_migrations() {
+    log_warn "データベースマイグレーションをロールバックします。"
+    read -p "ロールバックするステップ数を入力してください (デフォルト: 1): " -r
+    steps=${REPLY:-1}
+    
+    # データベース接続文字列を構築
+    DB_URL="postgres://postgres:${POSTGRES_PASSWORD:-password}@localhost:5432/go_backend?sslmode=disable"
+    
+    # migrateコマンドを実行
+    if command -v migrate &> /dev/null; then
+        migrate -path backend-go/migrations -database "$DB_URL" down "$steps"
+        log_info "マイグレーションロールバック完了！"
+    else
+        log_error "migrateコマンドが見つかりません。"
+        exit 1
+    fi
+}
+
 # メイン処理
 case "${1:-help}" in
     start)
@@ -200,6 +243,12 @@ case "${1:-help}" in
         ;;
     status)
         show_status
+        ;;
+    migrate)
+        run_migrations
+        ;;
+    migrate-rollback)
+        rollback_migrations
         ;;
     help|--help|-h)
         show_help

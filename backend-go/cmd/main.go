@@ -55,6 +55,18 @@ func main() {
 	}
 	defer db.Close()
 
+	// マイグレーションを実行
+	if err := database.RunMigrations(db); err != nil {
+		log.Fatalf("Failed to run migrations: %v", err)
+	}
+
+	// マイグレーション実行後に接続を再確立
+	db.Close()
+	db, err = database.NewConnection()
+	if err != nil {
+		log.Fatalf("Failed to reconnect to database after migration: %v", err)
+	}
+
 	// リポジトリを初期化
 	userRepo := repository.NewUserRepository(db)
 	textRepo := repository.NewTextRepository(db)
