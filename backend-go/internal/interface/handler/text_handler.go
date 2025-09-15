@@ -59,7 +59,7 @@ type ErrorResponse struct {
 // @Success 201 {object} TextResponse "作成されたテキスト"
 // @Failure 400 {object} ErrorResponse "バリデーションエラー"
 // @Failure 500 {object} ErrorResponse "サーバーエラー"
-// @Router /api/v1/texts [post]
+// @Router /api/texts [post]
 func (h *TextHandler) CreateText(c *gin.Context) {
 	var req CreateTextRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -97,7 +97,7 @@ func (h *TextHandler) CreateText(c *gin.Context) {
 // @Produce json
 // @Success 200 {array} TextResponse "テキスト一覧"
 // @Failure 500 {object} ErrorResponse "サーバーエラー"
-// @Router /api/v1/texts [get]
+// @Router /api/texts [get]
 func (h *TextHandler) GetTexts(c *gin.Context) {
 	texts, err := h.textUsecase.GetTexts()
 	if err != nil {
@@ -132,7 +132,7 @@ func (h *TextHandler) GetTexts(c *gin.Context) {
 // @Failure 400 {object} ErrorResponse "無効なID"
 // @Failure 404 {object} ErrorResponse "テキストが見つからない"
 // @Failure 500 {object} ErrorResponse "サーバーエラー"
-// @Router /api/v1/texts/{id} [get]
+// @Router /api/texts/{id} [get]
 func (h *TextHandler) GetTextByID(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -180,7 +180,7 @@ func (h *TextHandler) GetTextByID(c *gin.Context) {
 // @Failure 400 {object} ErrorResponse "バリデーションエラー"
 // @Failure 404 {object} ErrorResponse "テキストが見つからない"
 // @Failure 500 {object} ErrorResponse "サーバーエラー"
-// @Router /api/v1/texts/{id} [put]
+// @Router /api/texts/{id} [put]
 func (h *TextHandler) UpdateText(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)
@@ -234,7 +234,7 @@ func (h *TextHandler) UpdateText(c *gin.Context) {
 // @Failure 400 {object} ErrorResponse "無効なID"
 // @Failure 404 {object} ErrorResponse "テキストが見つからない"
 // @Failure 500 {object} ErrorResponse "サーバーエラー"
-// @Router /api/v1/texts/{id} [delete]
+// @Router /api/texts/{id} [delete]
 func (h *TextHandler) DeleteText(c *gin.Context) {
 	idStr := c.Param("id")
 	id, err := strconv.Atoi(idStr)

@@ -11,7 +11,7 @@
 // @license.url https://opensource.org/licenses/MIT
 
 // @host localhost:8080
-// @BasePath /api/v1
+// @BasePath /api
 // @schemes http
 
 // @securityDefinitions.basic BasicAuth
@@ -38,7 +38,7 @@ import (
 func main() {
 	// Swaggerドキュメントを初期化
 	docs.SwaggerInfo.Host = "localhost:8080"
-	docs.SwaggerInfo.BasePath = "/api/v1"
+	docs.SwaggerInfo.BasePath = "/api"
 	docs.SwaggerInfo.Schemes = []string{"http"}
 
 	// 環境変数から設定を取得
@@ -104,11 +104,11 @@ func setupRoutes(userHandler *handler.UserHandler, textHandler *handler.TextHand
 		})
 	})
 
-	// API v1 グループ
-	v1 := router.Group("/api/v1")
+	// API グループ
+	api := router.Group("/api")
 	{
 		// ユーザー関連のエンドポイント
-		users := v1.Group("/users")
+		users := api.Group("/users")
 		{
 			users.GET("", userHandler.GetUsers)
 			users.GET("/:id", userHandler.GetUserByID)
@@ -118,7 +118,7 @@ func setupRoutes(userHandler *handler.UserHandler, textHandler *handler.TextHand
 		}
 
 		// テキスト関連のエンドポイント
-		texts := v1.Group("/texts")
+		texts := api.Group("/texts")
 		{
 			texts.GET("", textHandler.GetTexts)
 			texts.GET("/:id", textHandler.GetTextByID)

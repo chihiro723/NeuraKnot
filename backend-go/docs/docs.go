@@ -24,7 +24,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/v1/texts": {
+        "/api/texts": {
             "get": {
                 "description": "保存されているすべてのテキストを取得します（リアルタイム更新テスト）よーー",
                 "produces": [
@@ -97,7 +97,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/texts/{id}": {
+        "/api/texts/{id}": {
             "get": {
                 "description": "指定されたIDのテキストを取得します",
                 "produces": [
@@ -321,7 +321,7 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "localhost:8080",
-	BasePath:         "/api/v1",
+	BasePath:         "/api",
 	Schemes:          []string{"http"},
 	Title:            "Go Backend API",
 	Description:      "DDDアーキテクチャを使用したGoバックエンドAPI",

@@ -19,9 +19,9 @@
         "version": "1.0"
     },
     "host": "localhost:8080",
-    "basePath": "/api/v1",
+    "basePath": "/api",
     "paths": {
-        "/api/v1/texts": {
+        "/api/texts": {
             "get": {
                 "description": "保存されているすべてのテキストを取得します（リアルタイム更新テスト）よーー",
                 "produces": [
@@ -94,7 +94,7 @@
                 }
             }
         },
-        "/api/v1/texts/{id}": {
+        "/api/texts/{id}": {
             "get": {
                 "description": "指定されたIDのテキストを取得します",
                 "produces": [

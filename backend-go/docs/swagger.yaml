@@ -1,4 +1,4 @@
-basePath: /api/v1
+basePath: /api
 definitions:
   handler.CreateTextRequest:
     properties:
@@ -61,7 +61,7 @@ info:
   title: Go Backend API
   version: "1.0"
 paths:
-  /api/v1/texts:
+  /api/texts:
     get:
       description: 保存されているすべてのテキストを取得します（リアルタイム更新テスト）よーー
       produces:
@@ -109,7 +109,7 @@ paths:
       summary: テキストを作成
       tags:
       - texts
-  /api/v1/texts/{id}:
+  /api/texts/{id}:
     delete:
       description: 指定されたIDのテキストを削除します
       parameters:
