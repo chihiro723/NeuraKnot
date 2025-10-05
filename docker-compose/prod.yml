@@ -1,21 +1,24 @@
 services:
-  # # Frontend - Next.js App
-  # frontend:
-  #   build:
-  #     context: ../frontend
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "3000:3000"
-  #   environment:
-  #     - NODE_ENV=production
-  #     - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
-  #     - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-  #   depends_on:
-  #     - go-api
-  #     - ai-server
-  #   networks:
-  #     - app-network
-  #   restart: unless-stopped
+  # Frontend - Next.js App
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: docker/Dockerfile.prod
+    ports:
+      - "3000:3000"
+    env_file:
+      - ../frontend/.env.production.local  # 本番個人設定（優先）
+      - ../frontend/.env.local              # 個人設定
+      - ../frontend/.env                    # デフォルト設定
+    environment:
+      # 本番環境固有の設定
+      - NODE_ENV=production
+    depends_on:
+      - go-api
+      - ai-server
+    networks:
+      - app-network
+    restart: unless-stopped
 
   # Go API Server (本番用)
   go-api:
@@ -24,13 +27,16 @@ services:
       dockerfile: docker/Dockerfile.prod
     ports:
       - "8080:8080"
+    env_file:
+      - ../backend-go/.env.production.local  # 本番個人設定（優先）
+      - ../backend-go/.env.local              # 個人設定
+      - ../backend-go/.env                    # デフォルト設定
     environment:
+      # 本番環境固有の設定とDocker特有の設定を上書き
+      - GIN_MODE=release
       - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=${POSTGRES_PASSWORD:-password}
       - DB_NAME=go_backend
-      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=info
     depends_on:
       postgres:
         condition: service_healthy
@@ -41,32 +47,32 @@ services:
     restart: unless-stopped
 
   # Python AI Server
-  # ai-server:
-  #   build:
-  #     context: ../backend-python/ai_server
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "8000:8000"
-  #   environment:
-  #     - ENVIRONMENT=production
-  #     - API_HOST=0.0.0.0
-  #     - API_PORT=8000
-  #     - SUPABASE_URL=${SUPABASE_URL}
-  #     - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-  #     - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
-  #     - OPENAI_API_KEY=${OPENAI_API_KEY}
-  #     - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-  #     - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-  #     - REDIS_URL=redis://redis:6379
-  #     - LOG_LEVEL=INFO
-  #   depends_on:
-  #     redis:
-  #       condition: service_healthy
-  #   volumes:
-  #     - ../backend-python/ai_server/logs:/app/logs
-  #   networks:
-  #     - app-network
-  #   restart: unless-stopped
+  ai-server:
+    build:
+      context: ../backend-python/ai_server
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../backend-python/ai_server/.env.production.local  # 本番個人設定（優先）
+      - ../backend-python/ai_server/.env.local              # 個人設定
+      - ../backend-python/ai_server/.env                    # デフォルト設定
+    environment:
+      # 本番環境固有の設定とDocker特有の設定を上書き
+      - ENVIRONMENT=production
+      - POSTGRES_HOST=postgres
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ../backend-python/ai_server/logs:/app/logs
+    networks:
+      - app-network
+    restart: unless-stopped
 
   # PostgreSQL Database
   postgres:
@@ -79,11 +85,11 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ../backend-go/docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ../backend-go/migrations:/docker-entrypoint-initdb.d
     networks:
       - app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d go_backend"]
       interval: 10s
       timeout: 5s
       retries: 5

@@ -1,0 +1,28 @@
+# 開発環境用Dockerfile（ホットリロード対応）
+FROM node:18-alpine
+
+# 作業ディレクトリを設定
+WORKDIR /app
+
+# 必要なパッケージをインストール
+RUN apk add --no-cache libc6-compat
+
+# package.jsonとpackage-lock.jsonをコピー
+COPY package.json package-lock.json* ./
+
+# 依存関係をインストール
+RUN npm install --legacy-peer-deps
+
+# アプリケーションのソースコードをコピー
+# 注意: ボリュームマウントを使用するため、このコピーは初期化時のみ
+COPY . .
+
+# Next.jsの開発サーバーのポートを公開
+EXPOSE 3000
+
+# 環境変数を設定
+ENV NODE_ENV=development
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# 開発サーバーを起動（ホットリロード有効）
+CMD ["npm", "run", "dev"]

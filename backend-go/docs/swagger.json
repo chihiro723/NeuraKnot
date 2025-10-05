@@ -1,11 +1,8 @@
 {
-    "schemes": [
-        "http"
-    ],
     "swagger": "2.0",
     "info": {
-        "description": "DDDアーキテクチャを使用したGoバックエンドAPI",
-        "title": "Go Backend API",
+        "description": "BridgeSpeak AI分身チャットアプリケーションのAPI",
+        "title": "BridgeSpeak API",
         "termsOfService": "http://swagger.io/terms/",
         "contact": {
             "name": "API Support",
@@ -19,38 +16,11 @@
         "version": "1.0"
     },
     "host": "localhost:8080",
-    "basePath": "/api",
+    "basePath": "/api/v1",
     "paths": {
-        "/api/texts": {
-            "get": {
-                "description": "保存されているすべてのテキストを取得します（リアルタイム更新テスト）よーー",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "texts"
-                ],
-                "summary": "テキスト一覧を取得",
-                "responses": {
-                    "200": {
-                        "description": "テキスト一覧",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/handler.TextResponse"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "サーバーエラー",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
-                        }
-                    }
-                }
-            },
+        "/auth/confirm-forgot-password": {
             "post": {
-                "description": "POSTでテキストを受け取ってデータベースに保存します",
+                "description": "確認コードを使って新しいパスワードを設定します",
                 "consumes": [
                     "application/json"
                 ],
@@ -58,90 +28,42 @@
                     "application/json"
                 ],
                 "tags": [
-                    "texts"
+                    "Auth"
                 ],
-                "summary": "テキストを作成",
+                "summary": "パスワードリセット確認",
                 "parameters": [
                     {
-                        "description": "テキスト作成リクエスト",
+                        "description": "パスワードリセット情報",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.CreateTextRequest"
+                            "$ref": "#/definitions/go-backend_internal_handler_http_request.ConfirmForgotPasswordRequest"
                         }
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "作成されたテキスト",
+                    "200": {
+                        "description": "リセット成功",
                         "schema": {
-                            "$ref": "#/definitions/handler.TextResponse"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "400": {
                         "description": "バリデーションエラー",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "サーバーエラー",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
                         }
                     }
                 }
             }
         },
-        "/api/texts/{id}": {
-            "get": {
-                "description": "指定されたIDのテキストを取得します",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "texts"
-                ],
-                "summary": "テキストを取得",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "テキストID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "テキスト",
-                        "schema": {
-                            "$ref": "#/definitions/handler.TextResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "無効なID",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "テキストが見つからない",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "サーバーエラー",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "description": "指定されたIDのテキストを更新します",
+        "/auth/confirm-signup": {
+            "post": {
+                "description": "メールで送信された確認コードを使ってユーザー登録を確認します",
                 "consumes": [
                     "application/json"
                 ],
@@ -149,89 +71,487 @@
                     "application/json"
                 ],
                 "tags": [
-                    "texts"
+                    "Auth"
                 ],
-                "summary": "テキストを更新",
+                "summary": "ユーザー登録確認",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "テキストID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "テキスト更新リクエスト",
+                        "description": "確認コード",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handler.UpdateTextRequest"
+                            "$ref": "#/definitions/go-backend_internal_handler_http_request.ConfirmSignUpRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "更新されたテキスト",
+                        "description": "確認成功",
                         "schema": {
-                            "$ref": "#/definitions/handler.TextResponse"
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "バリデーションエラー",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/forgot-password": {
+            "post": {
+                "description": "パスワードリセット用の確認コードをメールで送信します",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "パスワードリセット要求",
+                "parameters": [
+                    {
+                        "description": "ユーザー名",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_request.ForgotPasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "メール送信成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
-                    "404": {
-                        "description": "テキストが見つからない",
+                    "400": {
+                        "description": "バリデーションエラー",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/refresh": {
+            "post": {
+                "description": "Cookieからリフレッシュトークンを取得して新しいアクセストークンを発行します",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "トークンリフレッシュ",
+                "responses": {
+                    "200": {
+                        "description": "トークンリフレッシュ成功（新しいトークンはCookieに保存）",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.MessageResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "サーバーエラー",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/signin": {
+            "post": {
+                "description": "ユーザー名とパスワードでログインします",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "ユーザーログイン",
+                "parameters": [
+                    {
+                        "description": "ログイン情報",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_request.SignInRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ログイン成功（トークンはCookieに保存）",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.AuthResultResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/signout": {
+            "post": {
+                "description": "ユーザーをログアウトします（グローバルサインアウト、Cookieをクリア）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "ログアウト",
+                "responses": {
+                    "200": {
+                        "description": "ログアウト成功",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/signup": {
+            "post": {
+                "description": "新規ユーザーを登録します。登録後に確認コードがメールで送信されます。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "ユーザー登録",
+                "parameters": [
+                    {
+                        "description": "ユーザー登録情報",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_request.SignUpRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "登録成功（トークンはCookieに保存）",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.AuthResultResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "ユーザーの一覧を取得します（ページネーション対応）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "ユーザー一覧取得",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "取得件数（デフォルト: 10）",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "オフセット（デフォルト: 0）",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ユーザー一覧取得成功",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.UsersResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/email": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "認証済みユーザーのメールアドレスを変更します",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "メールアドレス変更",
+                "parameters": [
+                    {
+                        "description": "新しいメールアドレス",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_request.ChangeEmailRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "変更成功",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/profile": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "認証済みユーザーの自分のプロフィールを取得します",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "プロフィール取得",
+                "responses": {
+                    "200": {
+                        "description": "プロフィール取得成功",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.UserResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
                         }
                     }
                 }
             },
-            "delete": {
-                "description": "指定されたIDのテキストを削除します",
-                "tags": [
-                    "texts"
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
                 ],
-                "summary": "テキストを削除",
+                "description": "認証済みユーザーの表示名を更新します",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "プロフィール更新",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "テキストID",
+                        "description": "更新情報",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_request.UpdateProfileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "指定されたIDのユーザー情報を取得します",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "ユーザーをIDで取得",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ユーザーID",
                         "name": "id",
                         "in": "path",
                         "required": true
                     }
                 ],
                 "responses": {
-                    "204": {
-                        "description": "削除成功"
+                    "200": {
+                        "description": "ユーザー取得成功",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.UserResponse"
+                        }
                     },
                     "400": {
-                        "description": "無効なID",
+                        "description": "バリデーションエラー",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "テキストが見つからない",
+                        "description": "ユーザーが見つかりません",
                         "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "サーバーエラー",
-                        "schema": {
-                            "$ref": "#/definitions/handler.ErrorResponse"
+                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
                         }
                     }
                 }
@@ -239,77 +559,193 @@
         }
     },
     "definitions": {
-        "handler.CreateTextRequest": {
+        "go-backend_internal_handler_http_request.ChangeEmailRequest": {
             "type": "object",
             "required": [
-                "content"
+                "email"
             ],
             "properties": {
-                "content": {
-                    "type": "string",
-                    "example": "これは保存したいテキストです"
-                },
-                "title": {
-                    "type": "string",
-                    "example": "テキストのタイトル"
+                "email": {
+                    "type": "string"
                 }
             }
         },
-        "handler.ErrorResponse": {
+        "go-backend_internal_handler_http_request.ConfirmForgotPasswordRequest": {
+            "type": "object",
+            "required": [
+                "confirmation_code",
+                "email",
+                "new_password"
+            ],
+            "properties": {
+                "confirmation_code": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "new_password": {
+                    "type": "string",
+                    "minLength": 8
+                }
+            }
+        },
+        "go-backend_internal_handler_http_request.ConfirmSignUpRequest": {
+            "type": "object",
+            "required": [
+                "confirmation_code",
+                "email"
+            ],
+            "properties": {
+                "confirmation_code": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "go-backend_internal_handler_http_request.ForgotPasswordRequest": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "go-backend_internal_handler_http_request.SignInRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "go-backend_internal_handler_http_request.SignUpRequest": {
+            "type": "object",
+            "required": [
+                "display_name",
+                "email",
+                "password"
+            ],
+            "properties": {
+                "display_name": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 1
+                },
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8
+                }
+            }
+        },
+        "go-backend_internal_handler_http_request.UpdateProfileRequest": {
+            "type": "object",
+            "required": [
+                "display_name"
+            ],
+            "properties": {
+                "display_name": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 1
+                }
+            }
+        },
+        "go-backend_internal_handler_http_response.AuthResultResponse": {
             "type": "object",
             "properties": {
+                "expires_in": {
+                    "type": "integer"
+                },
+                "user": {
+                    "$ref": "#/definitions/go-backend_internal_handler_http_response.UserResponse"
+                }
+            }
+        },
+        "go-backend_internal_handler_http_response.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
                 "error": {
-                    "type": "string",
-                    "example": "エラーメッセージ"
+                    "type": "string"
                 },
                 "message": {
-                    "type": "string",
-                    "example": "詳細なエラーメッセージ"
+                    "type": "string"
                 }
             }
         },
-        "handler.TextResponse": {
+        "go-backend_internal_handler_http_response.MessageResponse": {
             "type": "object",
             "properties": {
-                "content": {
-                    "type": "string",
-                    "example": "これは保存したいテキストです"
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "go-backend_internal_handler_http_response.UserResponse": {
+            "type": "object",
+            "properties": {
+                "cognito_user_id": {
+                    "type": "string"
                 },
                 "created_at": {
-                    "type": "string",
-                    "example": "2024-01-01T00:00:00Z"
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
                 },
                 "id": {
-                    "type": "integer",
-                    "example": 1
+                    "type": "string"
                 },
-                "title": {
-                    "type": "string",
-                    "example": "テキストのタイトル"
+                "status": {
+                    "type": "string"
                 },
                 "updated_at": {
-                    "type": "string",
-                    "example": "2024-01-01T00:00:00Z"
+                    "type": "string"
                 }
             }
         },
-        "handler.UpdateTextRequest": {
+        "go-backend_internal_handler_http_response.UsersResponse": {
             "type": "object",
             "properties": {
-                "content": {
-                    "type": "string",
-                    "example": "更新されたテキストです"
+                "total": {
+                    "type": "integer"
                 },
-                "title": {
-                    "type": "string",
-                    "example": "更新されたタイトル"
+                "users": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/go-backend_internal_handler_http_response.UserResponse"
+                    }
                 }
             }
         }
     },
     "securityDefinitions": {
-        "BasicAuth": {
-            "type": "basic"
+        "BearerAuth": {
+            "description": "Type \"Bearer\" followed by a space and JWT token.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }

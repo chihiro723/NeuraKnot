@@ -63,4 +63,3 @@ coverage/
 
 # Turbo
 .turbo
-.env.supabase

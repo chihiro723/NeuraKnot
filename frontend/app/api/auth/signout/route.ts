@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { signOutApiAction } from '@/lib/auth/actions'
+import { signOutApiAction } from '@/lib/auth/cognito-actions'
 
 export async function POST(request: NextRequest) {
   try {

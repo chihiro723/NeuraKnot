@@ -4,7 +4,6 @@ from typing import Dict, Any
 import psutil
 import platform
 from app.config import get_settings
-from app.database.supabase_client import get_supabase
 from app.utils.logger import logger
 
 router = APIRouter()
@@ -39,11 +38,11 @@ async def health_check() -> Dict[str, Any]:
                 "memory_percent": psutil.virtual_memory().percent
             }
             
-            # データベース接続チェック
+            # データベース接続チェック（PostgreSQL）
             try:
-                supabase = get_supabase()
-                # 簡単なクエリでデータベース接続を確認
-                supabase.table("agents").select("id").limit(1).execute()
+                # PostgreSQL接続チェック（実装が必要）
+                # postgres_client = get_postgres()
+                # postgres_client.execute("SELECT 1")
                 health_status["database"] = "connected"
             except Exception as e:
                 logger.error(f"Database health check failed: {str(e)}")

@@ -1,78 +1,294 @@
-# プロジェクト固有のCursor AI指示
+# BridgeSpeak Backend (Go) - クリーンアーキテクチャ
 
-## 一般的な指示
-- このプロジェクトはGo言語のバックエンドAPIです
-- Go 1.21以上を使用してください
-- 標準的なGoの命名規則とコーディングスタイルに従ってください
-- DDD（ドメイン駆動設計）のアプローチを採用してください
-- Dockerを使用したコンテナ化を前提としてください
-- TerraformでAWSにデプロイすることを想定してください
+## プロジェクト概要
+BridgeSpeakのGoバックエンドAPIサーバー。クリーンアーキテクチャとドメイン駆動設計（DDD）の原則に基づいて構築された、保守性と拡張性に優れたマイクロサービス。
 
-## コーディング規則
-- エラーハンドリングは必ず適切に行ってください
-- ログは structured logging を使用してください
-- テストコードも必ず記述してください
-- ドキュメントコメントを適切に記述してください
+## 技術スタック
+- **言語**: Go 1.25.1+
+- **フレームワーク**: Gin (HTTP)
+- **データベース**: PostgreSQL
+- **認証**: AWS Cognito
+- **マイグレーション**: golang-migrate
+- **ログ**: 標準ライブラリ + カスタムロガー
+- **Docker**: マルチステージビルド
 
-## 依存関係
-- Web フレームワークには Gin を使用してください
-- データベースには PostgreSQL を想定してください
-- ログライブラリには logrus または zap を使用してください
+## アーキテクチャ原則
+
+### クリーンアーキテクチャ
+- **4層構造**: Handler → Usecase → Domain ← Infrastructure
+- **依存関係の逆転**: 外側から内側への一方向依存
+- **層の責任分離**: 各層の責任を明確に定義
+- **インターフェース分離**: ドメイン層にインターフェース定義
+
+### ドメイン駆動設計（DDD）
+- **エンティティ**: ビジネスオブジェクトの識別子を持つ
+- **値オブジェクト**: 不変で等価性で比較される
+- **集約**: 一貫性の境界を定義
+- **ドメインサービス**: エンティティに属さないビジネスロジック
+- **リポジトリ**: データアクセスの抽象化
+
+## ディレクトリ構造
+
+```
+backend-go/
+├── cmd/api/main.go                    # エントリーポイント
+├── internal/
+│   ├── domain/user/                   # ドメイン層
+│   │   ├── user.go                    # エンティティ
+│   │   ├── user_id.go                 # 値オブジェクト
+│   │   ├── email.go                   # 値オブジェクト
+│   │   ├── password.go                # 値オブジェクト
+│   │   ├── user_status.go             # 値オブジェクト
+│   │   ├── repository.go              # リポジトリインターフェース
+│   │   └── auth_service.go            # 認証サービスインターフェース
+│   ├── usecase/user/service.go        # ユースケース層
+│   ├── infrastructure/                # インフラストラクチャ層
+│   │   ├── persistence/user/          # リポジトリ実装
+│   │   ├── external/cognito.go        # 外部サービス実装
+│   │   ├── database/                  # データベース接続
+│   │   └── config/                    # 設定管理
+│   └── handler/http/                  # ハンドラー層
+│       ├── router.go                  # ルーティング
+│       ├── middleware/                # ミドルウェア
+│       ├── request/                   # リクエストDTO
+│       ├── response/                  # レスポンスDTO
+│       └── user_handler.go            # ハンドラー
+├── migrations/                        # データベースマイグレーション
+├── pkg/logger/                        # 汎用パッケージ
+└── docker/                           # Docker設定
+```
+
+## コーディング規約
+
+### 命名規則
+- **パッケージ**: 小文字、簡潔（例: `user`, `http`）
+- **型**: PascalCase（例: `User`, `UserRepository`）
+- **関数・メソッド**: PascalCase（例: `NewUser`, `GetByID`）
+- **変数**: camelCase（例: `userID`, `emailAddress`）
+- **定数**: UPPER_SNAKE_CASE（例: `MAX_RETRY_COUNT`）
+- **プライベート**: 小文字開始（例: `userService`）
+
+### ファイル命名
+- **エンティティ**: `user.go`
+- **値オブジェクト**: `user_id.go`, `email.go`
+- **インターフェース**: `repository.go`, `auth_service.go`
+- **実装**: `repository.go`（パッケージ名で区別）
+- **ハンドラー**: `user_handler.go`
+- **ミドルウェア**: `auth.go`, `cors.go`
+
+### コメント規約
+```go
+// Package user ユーザードメイン
+package user
+
+// User ユーザーエンティティ（集約ルート）
+// ビジネスロジックの中核となるオブジェクト
+type User struct {
+    // ... フィールド
+}
+
+// NewUser ユーザーを作成
+// 引数: id - ユーザーID, cognitoUserID - CognitoユーザーID
+// 戻り値: *User - 作成されたユーザー, error - エラー
+func NewUser(id UserID, cognitoUserID string, email Email, username, displayName string) (*User, error) {
+    // ... 実装
+}
+```
+
+## 層別制約
+
+### Domain Layer（ドメイン層）
+- **外部依存禁止**: 外部ライブラリの直接使用禁止
+- **JSONタグ禁止**: シリアライゼーション用タグは使用しない
+- **ビジネスロジック**: エンティティと値オブジェクトに集約
+- **インターフェース定義**: リポジトリ、サービスのインターフェースを定義
+
+### Usecase Layer（ユースケース層）
+- **ドメイン層のみ依存**: 他の層への依存禁止
+- **ビジネスロジック**: アプリケーション固有のロジック
+- **トランザクション管理**: データの整合性を保証
+- **外部サービス連携**: ドメイン層のインターフェースを使用
+
+### Handler Layer（ハンドラー層）
+- **HTTP処理**: リクエスト/レスポンスの変換
+- **バリデーション**: 入力値の検証
+- **エラーハンドリング**: HTTPステータスコードの適切な設定
+- **DTO使用**: データ転送オブジェクトでデータ変換
+
+### Infrastructure Layer（インフラストラクチャ層）
+- **インターフェース実装**: ドメイン層のインターフェースを実装
+- **外部システム連携**: データベース、外部APIとの接続
+- **設定管理**: 環境変数、設定ファイルの管理
+- **技術的詳細**: フレームワーク固有の実装
+
+## エラーハンドリング
+
+### エラー定義
+```go
+// ドメインエラー
+var (
+    ErrUserNotFound = errors.New("user not found")
+    ErrInvalidEmail = errors.New("invalid email format")
+)
+
+// カスタムエラー
+type ValidationError struct {
+    Field   string
+    Message string
+}
+
+func (e *ValidationError) Error() string {
+    return fmt.Sprintf("validation error on %s: %s", e.Field, e.Message)
+}
+```
+
+### エラー処理パターン
+```go
+// ドメイン層
+func (u *User) ChangeEmail(newEmail Email) error {
+    if !newEmail.IsValid() {
+        return ErrInvalidEmail
+    }
+    // ... 実装
+}
+
+// ユースケース層
+func (s *Service) UpdateProfile(ctx context.Context, token string, displayName string) (*user.User, error) {
+    authResult, err := s.authService.ValidateToken(ctx, token)
+    if err != nil {
+        return nil, fmt.Errorf("token validation failed: %w", err)
+    }
+    // ... 実装
+}
+
+// ハンドラー層
+func (h *UserHandler) UpdateProfile(c *gin.Context) {
+    // ... 実装
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
+        return
+    }
+}
+```
+
+## テスト規約
+
+### テスト構造
+```go
+// テーブル駆動テスト
+func TestNewUser(t *testing.T) {
+    tests := []struct {
+        name        string
+        input       NewUserInput
+        expected    *User
+        expectedErr error
+    }{
+        {
+            name: "valid user",
+            input: NewUserInput{
+                ID:            "user-123",
+                CognitoUserID: "cognito-123",
+                Email:         "test@example.com",
+                Username:      "testuser",
+                DisplayName:   "Test User",
+            },
+            expected:    &User{...},
+            expectedErr: nil,
+        },
+        // ... 他のテストケース
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            result, err := NewUser(tt.input.ID, tt.input.CognitoUserID, ...)
+            assert.Equal(t, tt.expectedErr, err)
+            assert.Equal(t, tt.expected, result)
+        })
+    }
+}
+```
+
+### テストカバレッジ
+- **目標**: 80%以上
+- **重点**: ドメイン層、ユースケース層
+- **モック**: インフラストラクチャ層のモック使用
 
 ## セキュリティ
-- 入力値の検証を必ず行ってください
-- 認証・認可の実装を適切に行ってください
-- SQLインジェクション対策を徹底してください
 
-## DDD（ドメイン駆動設計）
-- レイヤードアーキテクチャを採用してください
-- ドメインロジックはドメイン層に集約してください
-- リポジトリパターンを使用してデータアクセスを抽象化してください
-- ドメインサービス、アプリケーションサービスを適切に分離してください
-- 集約（Aggregate）の境界を明確にしてください
-- 値オブジェクト（Value Object）を積極的に使用してください
-
-## プロジェクト構造（DDD準拠）
-```
-/cmd          - メインアプリケーション
-/internal
-  /domain     - ドメイン層（エンティティ、値オブジェクト、ドメインサービス）
-  /usecase    - アプリケーション層（ユースケース、アプリケーションサービス）
-  /interface  - インターフェース層（ハンドラー、プレゼンター）
-  /infra      - インフラ層（リポジトリ実装、外部サービス）
-/pkg          - 外部に公開可能なパッケージ
-/api          - API定義（OpenAPI/Swagger）
-/docker       - Docker関連ファイル
-/terraform    - Terraform設定ファイル
+### 入力値検証
+```go
+// バリデーション関数
+func ValidateEmail(email string) error {
+    if email == "" {
+        return errors.New("email is required")
+    }
+    if !strings.Contains(email, "@") {
+        return errors.New("invalid email format")
+    }
+    return nil
+}
 ```
 
-## Docker関連
-- マルチステージビルドを使用してください
-- セキュリティを考慮したDockerfileを作成してください
-- 本番用とローカル開発用のDocker設定を分けてください
-- Docker Composeでローカル開発環境を構築してください
-- 適切なヘルスチェックを実装してください
+### 認証・認可
+```go
+// ミドルウェアでの認証チェック
+func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        token := c.GetHeader("Authorization")
+        if token == "" {
+            c.JSON(http.StatusUnauthorized, response.NewUnauthorizedErrorResponse("Authorization header is required"))
+            c.Abort()
+            return
+        }
+        // ... トークン検証
+    }
+}
+```
 
-## Terraform/AWS関連
-- Terraformのベストプラクティスに従ってください
-- 環境ごと（dev/staging/prod）の設定を分離してください
-- AWS Well-Architected Frameworkの原則に従ってください
-- セキュリティグループ、IAMロールを適切に設定してください
-- Auto Scaling、Load Balancerを考慮した設計にしてください
-- RDS、ElastiCache等のマネージドサービスを活用してください
+## パフォーマンス
 
-## 学習支援指示
-- コードを提供する際は、必ず以下を含めてください：
-  1. **目的・意図**: なぜそのアプローチを選んだか
-  2. **技術的根拠**: 実装の理由や背景知識
-  3. **代替手段**: 他の選択肢とそれぞれのメリット・デメリット
-  4. **ベストプラクティス**: 業界標準や推奨事項
-  5. **注意点**: 陥りやすい落とし穴や考慮事項
-  6. **参考リソース**: 関連ドキュメントや学習リソース
+### データベース最適化
+- **インデックス**: 適切なインデックスの設定
+- **N+1問題**: 一括取得で回避
+- **接続プール**: 効率的な接続管理
 
-## その他
-- RESTful APIの設計原則に従ってください
-- 適切なHTTPステータスコードを返してください
-- JSONレスポンスの形式を統一してください
-- OpenAPI/SwaggerでAPI仕様を文書化してください
-- CI/CDパイプラインを考慮した設計にしてください
+### メモリ管理
+- **ガベージコレクション**: 適切なメモリ使用
+- **リソース解放**: defer文での確実な解放
+- **プロファイリング**: 定期的なパフォーマンス測定
+
+## 禁止事項
+
+### 全般
+- **ハードコーディング**: 設定値のハードコーディング禁止
+- **マジックナンバー**: 意味のない数値の直接記述禁止
+- **グローバル変数**: グローバル状態の乱用禁止
+- **深いネスト**: 3階層を超えるネスト禁止
+- **長い関数**: 50行を超える関数の作成禁止
+
+### アーキテクチャ
+- **層の混在**: 異なる層の責任の混在禁止
+- **循環依存**: モジュール間の循環依存禁止
+- **密結合**: コンポーネント間の密結合禁止
+- **単一責任違反**: 1つのクラス・関数の複数責任禁止
+
+### セキュリティ
+- **SQLインジェクション**: 文字列結合でのSQL構築禁止
+- **XSS**: ユーザー入力の無検証出力禁止
+- **CSRF**: CSRFトークンなしの状態変更禁止
+- **認証バイパス**: 認証チェックの省略禁止
+
+## 学習支援
+
+### コード解説
+- **目的・意図**: なぜそのアプローチを選んだか
+- **技術的根拠**: 実装の理由や背景知識
+- **代替手段**: 他の選択肢とそれぞれのメリット・デメリット
+- **ベストプラクティス**: 業界標準や推奨事項
+- **注意点**: 陥りやすい落とし穴や考慮事項
+
+### 参考リソース
+- [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
+- [Domain-Driven Design](https://martinfowler.com/bliki/DomainDrivenDesign.html)
+- [Go Best Practices](https://golang.org/doc/effective_go.html)
+- [Gin Framework](https://gin-gonic.com/docs/)

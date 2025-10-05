@@ -21,7 +21,7 @@ RUN go install github.com/swaggo/swag/cmd/swag@latest
 COPY . .
 
 # Swaggerドキュメントを生成
-RUN export PATH=$PATH:$(go env GOPATH)/bin && swag init -g cmd/main.go -o docs
+RUN export PATH=$PATH:$(go env GOPATH)/bin && swag init -g cmd/api/main.go -o docs
 
 # アプリケーションをビルド（最適化フラグ）
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \

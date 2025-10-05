@@ -1,42 +1,40 @@
-import { User, Mail, Calendar, Edit, Save, X, Camera } from 'lucide-react'
-import { useState } from 'react'
-import { useDashboard } from '@/components/dashboard/DashboardProvider'
+import { User, Mail, Calendar, Edit, Save, X, Camera } from "lucide-react";
+import { useState } from "react";
+import { useDashboard } from "@/components/dashboard/DashboardProvider";
 
 /**
  * プロフィール設定パネル
  */
 export function ProfileSettingsPanel() {
-  const { profile, user } = useDashboard()
-  const [isEditing, setIsEditing] = useState(false)
+  const { profile, user } = useDashboard();
+  const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     display_name: profile.display_name,
-    username: profile.username,
-    avatar_url: profile.avatar_url || ''
-  })
+    avatar_url: profile.avatar_url || "",
+  });
 
   const handleSave = () => {
     // TODO: プロフィール更新処理
-    console.log('プロフィール更新:', editData)
-    setIsEditing(false)
-  }
+    console.log("プロフィール更新:", editData);
+    setIsEditing(false);
+  };
 
   const handleCancel = () => {
     setEditData({
       display_name: profile.display_name,
-      username: profile.username,
-      avatar_url: profile.avatar_url || ''
-    })
-    setIsEditing(false)
-  }
+      avatar_url: profile.avatar_url || "",
+    });
+    setIsEditing(false);
+  };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('ja-JP', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    })
-  }
+    const date = new Date(dateString);
+    return date.toLocaleDateString("ja-JP", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
 
   return (
     <>
@@ -47,8 +45,12 @@ export function ProfileSettingsPanel() {
             <User className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h2 className="font-medium text-gray-900 dark:text-white">プロフィール設定</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">アカウント情報を管理</p>
+            <h2 className="font-medium text-gray-900 dark:text-white">
+              プロフィール設定
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              アカウント情報を管理
+            </p>
           </div>
         </div>
         <div className="flex items-center space-x-2">
@@ -106,9 +108,11 @@ export function ProfileSettingsPanel() {
                     <Camera className="w-4 h-4" />
                   </button>
                 )}
-                <div className={`absolute -bottom-1 -left-1 w-6 h-6 rounded-full border-2 border-white dark:border-gray-800 ${
-                  profile.status === 'online' ? 'bg-green-500' : 'bg-gray-400'
-                }`}></div>
+                <div
+                  className={`absolute -bottom-1 -left-1 w-6 h-6 rounded-full border-2 border-white dark:border-gray-800 ${
+                    profile.status === "online" ? "bg-green-500" : "bg-gray-400"
+                  }`}
+                ></div>
               </div>
               <div className="flex-1">
                 {isEditing ? (
@@ -116,35 +120,45 @@ export function ProfileSettingsPanel() {
                     <input
                       type="text"
                       value={editData.display_name}
-                      onChange={(e) => setEditData({ ...editData, display_name: e.target.value })}
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          display_name: e.target.value,
+                        })
+                      }
                       className="text-2xl font-bold bg-transparent border-b-2 border-blue-500 focus:outline-none text-gray-900 dark:text-white w-full"
                       placeholder="表示名"
                     />
-                    <input
-                      type="text"
-                      value={editData.username}
-                      onChange={(e) => setEditData({ ...editData, username: e.target.value })}
-                      className="text-lg bg-transparent border-b border-gray-300 dark:border-gray-600 focus:outline-none text-gray-600 dark:text-gray-400 w-full"
-                      placeholder="ユーザー名"
-                    />
+                    <p className="text-lg text-gray-600 dark:text-gray-400">
+                      {profile.email}
+                    </p>
                   </div>
                 ) : (
                   <>
-                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{profile.display_name}</h1>
-                    <p className="text-lg text-gray-600 dark:text-gray-400 mb-2">@{profile.username}</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                      {profile.display_name}
+                    </h1>
+                    <p className="text-lg text-gray-600 dark:text-gray-400 mb-2">
+                      {profile.email}
+                    </p>
                     <div className="flex items-center space-x-2">
-                      <div className={`w-2 h-2 rounded-full ${
-                        profile.status === 'online' ? 'bg-green-500' : 'bg-gray-400'
-                      }`}></div>
+                      <div
+                        className={`w-2 h-2 rounded-full ${
+                          profile.status === "online"
+                            ? "bg-green-500"
+                            : "bg-gray-400"
+                        }`}
+                      ></div>
                       <span className="text-sm text-gray-500 dark:text-gray-400">
-                        {profile.status === 'online' ? 'オンライン' : 'オフライン'}
+                        {profile.status === "online"
+                          ? "オンライン"
+                          : "オフライン"}
                       </span>
                     </div>
                   </>
                 )}
               </div>
             </div>
-
           </div>
 
           {/* アカウント情報 */}
@@ -157,56 +171,78 @@ export function ProfileSettingsPanel() {
               <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
                 <div className="flex items-center space-x-3">
                   <Mail className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">メールアドレス</span>
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    メールアドレス
+                  </span>
                 </div>
-                <span className="text-sm text-gray-900 dark:text-white">{user.email}</span>
+                <span className="text-sm text-gray-900 dark:text-white">
+                  {user.email}
+                </span>
               </div>
               <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-700">
                 <div className="flex items-center space-x-3">
                   <User className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">ユーザーID</span>
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    ユーザーID
+                  </span>
                 </div>
-                <span className="text-sm text-gray-900 dark:text-white font-mono">{user.id.substring(0, 8)}...</span>
+                <span className="text-sm text-gray-900 dark:text-white font-mono">
+                  {user.id.substring(0, 8)}...
+                </span>
               </div>
               <div className="flex items-center justify-between py-3">
                 <div className="flex items-center space-x-3">
                   <Calendar className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">登録日</span>
+                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    登録日
+                  </span>
                 </div>
-                <span className="text-sm text-gray-900 dark:text-white">{formatDate(profile.created_at)}</span>
+                <span className="text-sm text-gray-900 dark:text-white">
+                  {formatDate(profile.created_at)}
+                </span>
               </div>
             </div>
           </div>
 
           {/* プライバシー設定 */}
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm animate-fadeIn">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">プライバシー設定</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              プライバシー設定
+            </h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-medium text-gray-900 dark:text-white">オンライン状態を表示</h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">他のユーザーにオンライン状態を表示します</p>
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                    オンライン状態を表示
+                  </h4>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    他のユーザーにオンライン状態を表示します
+                  </p>
                 </div>
-                <button 
+                <button
                   className={`w-12 h-6 rounded-full relative transition-colors duration-200 ${
-                    profile.status === 'online'
-                      ? 'bg-green-500' 
-                      : 'bg-gray-300 dark:bg-gray-600'
+                    profile.status === "online"
+                      ? "bg-green-500"
+                      : "bg-gray-300 dark:bg-gray-600"
                   }`}
                 >
-                  <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform duration-200 ${
-                    profile.status === 'online' ? 'right-0.5' : 'left-0.5'
-                  }`}></div>
+                  <div
+                    className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform duration-200 ${
+                      profile.status === "online" ? "right-0.5" : "left-0.5"
+                    }`}
+                  ></div>
                 </button>
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <h4 className="text-sm font-medium text-gray-900 dark:text-white">プロフィール公開</h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">他のユーザーがプロフィールを閲覧できます</p>
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                    プロフィール公開
+                  </h4>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    他のユーザーがプロフィールを閲覧できます
+                  </p>
                 </div>
-                <button 
-                  className="w-12 h-6 rounded-full relative transition-colors duration-200 bg-green-500"
-                >
+                <button className="w-12 h-6 rounded-full relative transition-colors duration-200 bg-green-500">
                   <div className="w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform duration-200 right-0.5"></div>
                 </button>
               </div>
@@ -215,24 +251,34 @@ export function ProfileSettingsPanel() {
 
           {/* 統計情報 */}
           <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm animate-fadeIn">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">統計情報</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              統計情報
+            </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <div className="text-2xl font-bold text-blue-500 mb-1">7</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">友だち</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  友だち
+                </div>
               </div>
               <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <div className="text-2xl font-bold text-green-500 mb-1">5</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">AIエージェント</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  AIエージェント
+                </div>
               </div>
               <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                <div className="text-2xl font-bold text-purple-500 mb-1">42</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">メッセージ</div>
+                <div className="text-2xl font-bold text-purple-500 mb-1">
+                  42
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  メッセージ
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
     </>
-  )
+  );
 }

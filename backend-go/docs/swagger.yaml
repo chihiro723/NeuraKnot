@@ -1,51 +1,124 @@
-basePath: /api
+basePath: /api/v1
 definitions:
-  handler.CreateTextRequest:
+  go-backend_internal_handler_http_request.ChangeEmailRequest:
     properties:
-      content:
-        example: これは保存したいテキストです
-        type: string
-      title:
-        example: テキストのタイトル
+      email:
         type: string
     required:
-    - content
+    - email
     type: object
-  handler.ErrorResponse:
+  go-backend_internal_handler_http_request.ConfirmForgotPasswordRequest:
     properties:
+      confirmation_code:
+        type: string
+      email:
+        type: string
+      new_password:
+        minLength: 8
+        type: string
+    required:
+    - confirmation_code
+    - email
+    - new_password
+    type: object
+  go-backend_internal_handler_http_request.ConfirmSignUpRequest:
+    properties:
+      confirmation_code:
+        type: string
+      email:
+        type: string
+    required:
+    - confirmation_code
+    - email
+    type: object
+  go-backend_internal_handler_http_request.ForgotPasswordRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  go-backend_internal_handler_http_request.SignInRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  go-backend_internal_handler_http_request.SignUpRequest:
+    properties:
+      display_name:
+        maxLength: 50
+        minLength: 1
+        type: string
+      email:
+        type: string
+      password:
+        minLength: 8
+        type: string
+    required:
+    - display_name
+    - email
+    - password
+    type: object
+  go-backend_internal_handler_http_request.UpdateProfileRequest:
+    properties:
+      display_name:
+        maxLength: 50
+        minLength: 1
+        type: string
+    required:
+    - display_name
+    type: object
+  go-backend_internal_handler_http_response.AuthResultResponse:
+    properties:
+      expires_in:
+        type: integer
+      user:
+        $ref: '#/definitions/go-backend_internal_handler_http_response.UserResponse'
+    type: object
+  go-backend_internal_handler_http_response.ErrorResponse:
+    properties:
+      code:
+        type: integer
       error:
-        example: エラーメッセージ
         type: string
       message:
-        example: 詳細なエラーメッセージ
         type: string
     type: object
-  handler.TextResponse:
+  go-backend_internal_handler_http_response.MessageResponse:
     properties:
-      content:
-        example: これは保存したいテキストです
+      message:
+        type: string
+    type: object
+  go-backend_internal_handler_http_response.UserResponse:
+    properties:
+      cognito_user_id:
         type: string
       created_at:
-        example: "2024-01-01T00:00:00Z"
+        type: string
+      display_name:
+        type: string
+      email:
         type: string
       id:
-        example: 1
-        type: integer
-      title:
-        example: テキストのタイトル
+        type: string
+      status:
         type: string
       updated_at:
-        example: "2024-01-01T00:00:00Z"
         type: string
     type: object
-  handler.UpdateTextRequest:
+  go-backend_internal_handler_http_response.UsersResponse:
     properties:
-      content:
-        example: 更新されたテキストです
-        type: string
-      title:
-        example: 更新されたタイトル
-        type: string
+      total:
+        type: integer
+      users:
+        items:
+          $ref: '#/definitions/go-backend_internal_handler_http_response.UserResponse'
+        type: array
     type: object
 host: localhost:8080
 info:
@@ -53,160 +126,365 @@ info:
     email: support@swagger.io
     name: API Support
     url: http://www.swagger.io/support
-  description: DDDアーキテクチャを使用したGoバックエンドAPI
+  description: BridgeSpeak AI分身チャットアプリケーションのAPI
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
   termsOfService: http://swagger.io/terms/
-  title: Go Backend API
+  title: BridgeSpeak API
   version: "1.0"
 paths:
-  /api/texts:
-    get:
-      description: 保存されているすべてのテキストを取得します（リアルタイム更新テスト）よーー
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: テキスト一覧
-          schema:
-            items:
-              $ref: '#/definitions/handler.TextResponse'
-            type: array
-        "500":
-          description: サーバーエラー
-          schema:
-            $ref: '#/definitions/handler.ErrorResponse'
-      summary: テキスト一覧を取得
-      tags:
-      - texts
+  /auth/confirm-forgot-password:
     post:
       consumes:
       - application/json
-      description: POSTでテキストを受け取ってデータベースに保存します
+      description: 確認コードを使って新しいパスワードを設定します
       parameters:
-      - description: テキスト作成リクエスト
+      - description: パスワードリセット情報
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handler.CreateTextRequest'
+          $ref: '#/definitions/go-backend_internal_handler_http_request.ConfirmForgotPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: リセット成功
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/go-backend_internal_handler_http_response.ErrorResponse'
+      summary: パスワードリセット確認
+      tags:
+      - Auth
+  /auth/confirm-signup:
+    post:
+      consumes:
+      - application/json
+      description: メールで送信された確認コードを使ってユーザー登録を確認します
+      parameters:
+      - description: 確認コード
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/go-backend_internal_handler_http_request.ConfirmSignUpRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 確認成功
+          schema:
+            $ref: '#/definitions/go-backend_internal_handler_http_response.MessageResponse'
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/go-backend_internal_handler_http_response.ErrorResponse'
+      summary: ユーザー登録確認
+      tags:
+      - Auth
+  /auth/forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: パスワードリセット用の確認コードをメールで送信します
+      parameters:
+      - description: ユーザー名
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/go-backend_internal_handler_http_request.ForgotPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: メール送信成功
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/go-backend_internal_handler_http_response.ErrorResponse'
+      summary: パスワードリセット要求
+      tags:
+      - Auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Cookieからリフレッシュトークンを取得して新しいアクセストークンを発行します
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: トークンリフレッシュ成功（新しいトークンはCookieに保存）
+          schema:
+            $ref: '#/definitions/go-backend_internal_handler_http_response.MessageResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/go-backend_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/go-backend_internal_handler_http_response.ErrorResponse'
+      summary: トークンリフレッシュ
+      tags:
+      - Auth
+  /auth/signin:
+    post:
+      consumes:
+      - application/json
+      description: ユーザー名とパスワードでログインします
+      parameters:
+      - description: ログイン情報
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/go-backend_internal_handler_http_request.SignInRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ログイン成功（トークンはCookieに保存）
+          schema:
+            $ref: '#/definitions/go-backend_internal_handler_http_response.AuthResultResponse'
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/go-backend_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/go-backend_internal_handler_http_response.ErrorResponse'
+      summary: ユーザーログイン
+      tags:
+      - Auth
+  /auth/signout:
+    post:
+      consumes:
+      - application/json
+      description: ユーザーをログアウトします（グローバルサインアウト、Cookieをクリア）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ログアウト成功
+          schema:
+            $ref: '#/definitions/go-backend_internal_handler_http_response.MessageResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/go-backend_internal_handler_http_response.ErrorResponse'
+      summary: ログアウト
+      tags:
+      - Auth
+  /auth/signup:
+    post:
+      consumes:
+      - application/json
+      description: 新規ユーザーを登録します。登録後に確認コードがメールで送信されます。
+      parameters:
+      - description: ユーザー登録情報
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/go-backend_internal_handler_http_request.SignUpRequest'
       produces:
       - application/json
       responses:
         "201":
-          description: 作成されたテキスト
+          description: 登録成功（トークンはCookieに保存）
           schema:
-            $ref: '#/definitions/handler.TextResponse'
+            $ref: '#/definitions/go-backend_internal_handler_http_response.AuthResultResponse'
         "400":
           description: バリデーションエラー
           schema:
-            $ref: '#/definitions/handler.ErrorResponse'
+            $ref: '#/definitions/go-backend_internal_handler_http_response.ErrorResponse'
         "500":
           description: サーバーエラー
           schema:
-            $ref: '#/definitions/handler.ErrorResponse'
-      summary: テキストを作成
+            $ref: '#/definitions/go-backend_internal_handler_http_response.ErrorResponse'
+      summary: ユーザー登録
       tags:
-      - texts
-  /api/texts/{id}:
-    delete:
-      description: 指定されたIDのテキストを削除します
-      parameters:
-      - description: テキストID
-        in: path
-        name: id
-        required: true
-        type: integer
-      responses:
-        "204":
-          description: 削除成功
-        "400":
-          description: 無効なID
-          schema:
-            $ref: '#/definitions/handler.ErrorResponse'
-        "404":
-          description: テキストが見つからない
-          schema:
-            $ref: '#/definitions/handler.ErrorResponse'
-        "500":
-          description: サーバーエラー
-          schema:
-            $ref: '#/definitions/handler.ErrorResponse'
-      summary: テキストを削除
-      tags:
-      - texts
+      - Auth
+  /users:
     get:
-      description: 指定されたIDのテキストを取得します
+      consumes:
+      - application/json
+      description: ユーザーの一覧を取得します（ページネーション対応）
       parameters:
-      - description: テキストID
-        in: path
-        name: id
-        required: true
+      - default: 10
+        description: '取得件数（デフォルト: 10）'
+        in: query
+        name: limit
+        type: integer
+      - default: 0
+        description: 'オフセット（デフォルト: 0）'
+        in: query
+        name: offset
         type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: テキスト
+          description: ユーザー一覧取得成功
           schema:
-            $ref: '#/definitions/handler.TextResponse'
-        "400":
-          description: 無効なID
+            $ref: '#/definitions/go-backend_internal_handler_http_response.UsersResponse'
+        "401":
+          description: 認証エラー
           schema:
-            $ref: '#/definitions/handler.ErrorResponse'
-        "404":
-          description: テキストが見つからない
-          schema:
-            $ref: '#/definitions/handler.ErrorResponse'
+            $ref: '#/definitions/go-backend_internal_handler_http_response.ErrorResponse'
         "500":
           description: サーバーエラー
           schema:
-            $ref: '#/definitions/handler.ErrorResponse'
-      summary: テキストを取得
+            $ref: '#/definitions/go-backend_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: ユーザー一覧取得
       tags:
-      - texts
-    put:
+      - Users
+  /users/{id}:
+    get:
       consumes:
       - application/json
-      description: 指定されたIDのテキストを更新します
+      description: 指定されたIDのユーザー情報を取得します
       parameters:
-      - description: テキストID
+      - description: ユーザーID
         in: path
         name: id
         required: true
-        type: integer
-      - description: テキスト更新リクエスト
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ユーザー取得成功
+          schema:
+            $ref: '#/definitions/go-backend_internal_handler_http_response.UserResponse'
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/go-backend_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/go-backend_internal_handler_http_response.ErrorResponse'
+        "404":
+          description: ユーザーが見つかりません
+          schema:
+            $ref: '#/definitions/go-backend_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: ユーザーをIDで取得
+      tags:
+      - Users
+  /users/email:
+    put:
+      consumes:
+      - application/json
+      description: 認証済みユーザーのメールアドレスを変更します
+      parameters:
+      - description: 新しいメールアドレス
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handler.UpdateTextRequest'
+          $ref: '#/definitions/go-backend_internal_handler_http_request.ChangeEmailRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: 更新されたテキスト
+          description: 変更成功
           schema:
-            $ref: '#/definitions/handler.TextResponse'
+            $ref: '#/definitions/go-backend_internal_handler_http_response.UserResponse'
         "400":
           description: バリデーションエラー
           schema:
-            $ref: '#/definitions/handler.ErrorResponse'
-        "404":
-          description: テキストが見つからない
+            $ref: '#/definitions/go-backend_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
           schema:
-            $ref: '#/definitions/handler.ErrorResponse'
+            $ref: '#/definitions/go-backend_internal_handler_http_response.ErrorResponse'
         "500":
           description: サーバーエラー
           schema:
-            $ref: '#/definitions/handler.ErrorResponse'
-      summary: テキストを更新
+            $ref: '#/definitions/go-backend_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: メールアドレス変更
       tags:
-      - texts
-schemes:
-- http
+      - Users
+  /users/profile:
+    get:
+      consumes:
+      - application/json
+      description: 認証済みユーザーの自分のプロフィールを取得します
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: プロフィール取得成功
+          schema:
+            $ref: '#/definitions/go-backend_internal_handler_http_response.UserResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/go-backend_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: プロフィール取得
+      tags:
+      - Users
+    put:
+      consumes:
+      - application/json
+      description: 認証済みユーザーの表示名を更新します
+      parameters:
+      - description: 更新情報
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/go-backend_internal_handler_http_request.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/go-backend_internal_handler_http_response.UserResponse'
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/go-backend_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/go-backend_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/go-backend_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: プロフィール更新
+      tags:
+      - Users
 securityDefinitions:
-  BasicAuth:
-    type: basic
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

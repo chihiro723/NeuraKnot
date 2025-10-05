@@ -1,23 +1,23 @@
 # ハイブリッドメッセージング
 
-人間とAIエージェントとの新しいコミュニケーション体験を提供するNext.jsアプリケーション
+人間と AI エージェントとの新しいコミュニケーション体験を提供する Next.js アプリケーション
 
 ## 🚀 機能
 
-- **リアルタイムチャット**: 人間とAIエージェントとのシームレスな会話
-- **AIパーソナリティ**: 5つの異なる個性を持つAIエージェント（サポート、フレンドリー、ビジネス、カジュアル、ユーモア）
+- **リアルタイムチャット**: 人間と AI エージェントとのシームレスな会話
+- **AI パーソナリティ**: 5 つの異なる個性を持つ AI エージェント（サポート、フレンドリー、ビジネス、カジュアル、ユーモア）
 - **レスポンシブデザイン**: デスクトップ・タブレット・モバイル対応
 - **ダークモード**: システム設定に応じた自動切り替え
-- **認証システム**: Supabaseを使用したセキュアな認証
-- **友だち管理**: 人間とAIエージェントの統合管理
+- **認証システム**: AWS Cognito を使用したセキュアな認証
+- **友だち管理**: 人間と AI エージェントの統合管理
 
 ## 🛠 技術スタック
 
 - **フレームワーク**: Next.js 15 (App Router)
 - **言語**: TypeScript
 - **スタイリング**: Tailwind CSS
-- **データベース**: Supabase (PostgreSQL)
-- **認証**: Supabase Auth
+- **データベース**: PostgreSQL
+- **認証**: AWS Cognito
 - **アイコン**: Lucide React
 - **状態管理**: React Context API
 
@@ -51,19 +51,19 @@ bridgespeak/
 │   ├── DATABASE_DESIGN.md # データベース設計
 │   ├── GETTING_STARTED.md # 新規エンジニア向けガイド
 │   └── SETUP.md           # セットアップガイド
-└── supabase/              # データベース関連
-    └── migrations/        # データベーススキーマ変更履歴
 ```
 
 ## 🎨 デザインシステム
 
 ### カラーパレット
+
 - **プライマリ**: Green (500-600)
 - **セカンダリ**: Gray (500-600)
 - **アクセント**: Blue, Purple, Pink
 - **ステータス**: Green (オンライン), Gray (オフライン)
 
 ### コンポーネント
+
 - **Avatar**: プロフィール画像とステータス表示
 - **Button**: 統一されたボタンスタイル
 - **Input**: フォーム入力コンポーネント
@@ -75,25 +75,32 @@ bridgespeak/
 ### 基本セットアップ
 
 1. **リポジトリのクローン**
+
    ```bash
    git clone [repository-url]
    cd bridgespeak
    ```
 
 2. **依存関係のインストール**
+
    ```bash
    npm install
    ```
 
 3. **環境変数の設定**
+
    ```bash
    cp .env.example .env.local
    ```
-   
-   `.env.local`ファイルにSupabaseの接続情報を設定:
+
+   `.env.local`ファイルに AWS Cognito の接続情報を設定:
+
    ```
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   NEXT_PUBLIC_AWS_REGION=ap-northeast-1
+   NEXT_PUBLIC_COGNITO_USER_POOL_ID=your_cognito_user_pool_id
+   NEXT_PUBLIC_COGNITO_CLIENT_ID=your_cognito_client_id
+   NEXT_PUBLIC_COGNITO_DOMAIN=your_cognito_domain
+   NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api
    ```
 
 4. **開発サーバーの起動**
@@ -103,7 +110,7 @@ bridgespeak/
 
 ### 詳細セットアップ
 
-初回セットアップやSupabaseの設定については、以下のガイドを参照してください：
+初回セットアップや AWS Cognito の設定については、以下のガイドを参照してください：
 
 - 📖 **[新規エンジニア向けガイド](docs/GETTING_STARTED.md)** - プロジェクト全体の理解
 - 🛠️ **[セットアップガイド](docs/SETUP.md)** - 詳細なセットアップ手順
@@ -111,17 +118,19 @@ bridgespeak/
 
 ## 📱 レスポンシブデザイン
 
-### デスクトップ (1024px以上)
-- 左サイドバー + 右メインエリアの2カラムレイアウト
+### デスクトップ (1024px 以上)
+
+- 左サイドバー + 右メインエリアの 2 カラムレイアウト
 - タブナビゲーション
 - チャット・友だち詳細・設定の同時表示
 
-### モバイル (1023px以下)
+### モバイル (1023px 以下)
+
 - フルスクリーン表示
 - ボトムナビゲーション
-- 画面切り替え式のUI
+- 画面切り替え式の UI
 
-## 🤖 AIパーソナリティ
+## 🤖 AI パーソナリティ
 
 1. **サポート**: 技術的な質問や問題解決
 2. **フレンドリー**: 親しみやすい日常会話
@@ -134,17 +143,19 @@ bridgespeak/
 - **Row Level Security (RLS)**: 全テーブルで有効
 - **認証必須**: プライベートデータへのアクセス制御
 - **入力検証**: フロントエンド・バックエンド両方で実装
-- **CSRF保護**: Next.jsの標準機能を使用
+- **CSRF 保護**: Next.js の標準機能を使用
 
 ## 🚀 デプロイ
 
 ### Vercel (推奨)
+
 ```bash
 npm run build
 vercel --prod
 ```
 
 ### その他のプラットフォーム
+
 ```bash
 npm run build
 npm start
@@ -153,15 +164,18 @@ npm start
 ## 📚 ドキュメント
 
 ### プロジェクト理解
+
 - 📖 **[新規エンジニア向けガイド](docs/GETTING_STARTED.md)** - プロジェクト概要と開発の始め方
 - 🏗️ **[アーキテクチャガイド](docs/ARCHITECTURE.md)** - システム設計と技術的詳細
 
 ### セットアップ・運用
+
 - 🛠️ **[セットアップガイド](docs/SETUP.md)** - 環境構築の詳細手順
 
 ### 外部リソース
+
 - [Next.js ドキュメント](https://nextjs.org/docs)
-- [Supabase ドキュメント](https://supabase.com/docs)
+- [AWS Cognito ドキュメント](https://docs.aws.amazon.com/cognito/)
 - [Tailwind CSS ドキュメント](https://tailwindcss.com/docs)
 
 ## 🤝 コントリビューション
@@ -177,7 +191,7 @@ MIT License
 
 ## 🙏 謝辞
 
-- [Next.js](https://nextjs.org/) - Reactフレームワーク
-- [Supabase](https://supabase.com/) - バックエンドサービス
-- [Tailwind CSS](https://tailwindcss.com/) - CSSフレームワーク
+- [Next.js](https://nextjs.org/) - React フレームワーク
+- [AWS Cognito](https://aws.amazon.com/cognito/) - 認証サービス
+- [Tailwind CSS](https://tailwindcss.com/) - CSS フレームワーク
 - [Lucide](https://lucide.dev/) - アイコンライブラリ

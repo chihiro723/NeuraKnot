@@ -14,6 +14,9 @@
 
 set -e
 
+# 設定変数
+COMPOSE_FILE="docker-compose/dev.yml"
+
 # 色付きログ関数
 log_info() {
     echo -e "\033[32m[INFO]\033[0m $1"
@@ -31,7 +34,7 @@ log_error() {
 show_help() {
     echo "BridgeSpeak 開発環境管理スクリプト"
     echo ""
-    echo "使用方法: ./dev.sh [command]"
+    echo "使用方法: ./dev.sh [command] [service]"
     echo ""
     echo "コマンド:"
     echo "  start    - 開発環境を起動（既存イメージ使用）"
@@ -40,31 +43,58 @@ show_help() {
     echo "  stop     - 開発環境を停止"
     echo "  restart  - 開発環境を再起動"
     echo "  logs     - ログを表示"
-    echo "  clean    - 全コンテナとボリュームを削除"
     echo "  status   - サービス状態を表示"
+    echo "  clean    - 全コンテナとボリュームを削除"
     echo "  migrate  - データベースマイグレーションを実行"
     echo "  migrate-rollback - データベースマイグレーションをロールバック"
     echo "  help     - このヘルプを表示"
     echo ""
+    echo "利用可能なサービス:"
+    echo "  frontend     - Next.jsアプリケーション (ポート: 3000)"
+    echo "  go-api       - Go APIサーバー (ポート: 8080)"
+    echo "  ai-server    - Python AIサーバー (ポート: 8000)"
+    echo "  postgres     - PostgreSQLデータベース (ポート: 5432)"
+    echo "  redis        - Redisキャッシュ (ポート: 6379)"
+    echo "  nginx        - Nginxリバースプロキシ (ポート: 80, 443)"
+    echo ""
     echo "例:"
-    echo "  ./dev.sh start    # 既存イメージで起動（高速）"
-    echo "  ./dev.sh build    # レイヤーキャッシュ使用で再ビルド（推奨）"
-    echo "  ./dev.sh rebuild  # 完全再ビルド（問題解決時）"
-    echo "  ./dev.sh migrate  # マイグレーションを実行"
-    echo "  ./dev.sh logs     # ログを確認"
+    echo "  ./dev.sh start                    # 全サービスを起動"
+    echo "  ./dev.sh start frontend           # フロントエンドのみ起動"
+    echo "  ./dev.sh logs go-api              # Go APIのログを表示"
+    echo "  ./dev.sh restart ai-server        # AIサーバーのみ再起動"
+    echo "  ./dev.sh stop postgres            # PostgreSQLのみ停止"
+    echo "  ./dev.sh build                    # 全サービスを再ビルド"
+    echo "  ./dev.sh build frontend           # フロントエンドのみ再ビルド"
+    echo "  ./dev.sh env go-api               # Go APIの環境変数を表示"
+    echo "  ./dev.sh env frontend             # フロントエンドの環境変数を表示"
 }
 
-# 環境変数ファイルの確認
-check_env_file() {
-    if [ ! -f ".env" ]; then
-        log_warn ".envファイルが見つかりません。env.exampleからコピーします。"
-        if [ -f "env.example" ]; then
-            cp env.example .env
-            log_info ".envファイルを作成しました。必要に応じて設定を編集してください。"
-        else
-            log_error "env.exampleファイルも見つかりません。"
-            exit 1
-        fi
+# サービス名の検証
+validate_service() {
+    local service="$1"
+    local valid_services=("frontend" "go-api" "ai-server" "postgres" "redis" "nginx")
+    
+    if [ -n "$service" ]; then
+        for valid_service in "${valid_services[@]}"; do
+            if [ "$service" = "$valid_service" ]; then
+                return 0
+            fi
+        done
+        log_error "無効なサービス名: $service"
+        log_info "利用可能なサービス: ${valid_services[*]}"
+        exit 1
+    fi
+}
+
+# Docker Composeコマンドの実行（サービス指定対応）
+run_docker_compose() {
+    local command="$1"
+    local service="$2"
+    
+    if [ -n "$service" ]; then
+        docker compose -f "$COMPOSE_FILE" $command "$service"
+    else
+        docker compose -f "$COMPOSE_FILE" $command
     fi
 }
 
@@ -84,73 +114,145 @@ show_access_urls() {
 
 # 開発環境を起動（既存イメージ使用）
 start_services() {
-    log_info "開発環境を起動中（既存イメージ使用）..."
-    check_env_file
+    local service="$1"
+    validate_service "$service"
     
-    # 既存のコンテナを停止
-    docker-compose -f docker-compose/dev.yml down 2>/dev/null || true
+    if [ -n "$service" ]; then
+        log_info "$service サービスを起動中（既存イメージ使用）..."
+    else
+        log_info "開発環境を起動中（既存イメージ使用）..."
+    fi
     
-    # 開発用サービスを起動
-    docker-compose -f docker-compose/dev.yml up -d
+    # 既存のコンテナを停止（全サービス指定時のみ）
+    if [ -z "$service" ]; then
+        run_docker_compose "down" 2>/dev/null || true
+    fi
     
-    log_info "開発環境起動完了！"
-    show_access_urls
+    # サービスを起動
+    run_docker_compose "up -d" "$service"
+    
+    if [ -n "$service" ]; then
+        log_info "$service サービス起動完了！"
+    else
+        log_info "開発環境起動完了！"
+        show_access_urls
+    fi
 }
 
 # 開発環境を停止
 stop_services() {
-    log_info "開発環境を停止中..."
-    docker-compose -f docker-compose/dev.yml down
-    log_info "開発環境を停止しました。"
+    local service="$1"
+    validate_service "$service"
+    
+    if [ -n "$service" ]; then
+        log_info "$service サービスを停止中..."
+        run_docker_compose "stop" "$service"
+        log_info "$service サービスを停止しました。"
+    else
+        log_info "開発環境を停止中..."
+        run_docker_compose "down"
+        log_info "開発環境を停止しました。"
+    fi
 }
 
 # 開発環境を再起動
 restart_services() {
-    log_info "開発環境を再起動中..."
-    docker-compose -f docker-compose/dev.yml restart
-    log_info "開発環境を再起動しました。"
+    local service="$1"
+    validate_service "$service"
+    
+    if [ -n "$service" ]; then
+        log_info "$service サービスを再起動中..."
+        run_docker_compose "restart" "$service"
+        log_info "$service サービスを再起動しました。"
+    else
+        log_info "開発環境を再起動中..."
+        run_docker_compose "restart"
+        log_info "開発環境を再起動しました。"
+    fi
 }
 
 # 開発環境を再ビルドして起動（レイヤーキャッシュ使用）
 build_services() {
-    log_info "開発環境を再ビルドして起動中（レイヤーキャッシュ使用）..."
-    check_env_file
+    local service="$1"
+    validate_service "$service"
     
-    # 既存のコンテナを停止
-    docker-compose -f docker-compose/dev.yml down 2>/dev/null || true
+    if [ -n "$service" ]; then
+        log_info "$service サービスを再ビルドして起動中（レイヤーキャッシュ使用）..."
+    else
+        log_info "開発環境を再ビルドして起動中（レイヤーキャッシュ使用）..."
+    fi
+    
+    # 既存のコンテナを停止（全サービス指定時のみ）
+    if [ -z "$service" ]; then
+        run_docker_compose "down" 2>/dev/null || true
+    fi
     
     # イメージを再ビルド（レイヤーキャッシュ使用）
-    docker-compose -f docker-compose/dev.yml build
+    run_docker_compose "build" "$service"
     
     # サービスを起動
-    docker-compose -f docker-compose/dev.yml up -d
+    run_docker_compose "up -d" "$service"
     
-    log_info "再ビルド完了！"
-    show_access_urls
+    if [ -n "$service" ]; then
+        log_info "$service サービス再ビルド完了！"
+    else
+        log_info "再ビルド完了！"
+        show_access_urls
+    fi
 }
 
 # 開発環境を完全再ビルドして起動（キャッシュ無視）
 rebuild_services() {
-    log_info "開発環境を完全再ビルドして起動中（キャッシュ無視）..."
-    check_env_file
+    local service="$1"
+    validate_service "$service"
     
-    # 既存のコンテナを停止・削除
-    docker-compose -f docker-compose/dev.yml down --volumes --remove-orphans 2>/dev/null || true
+    if [ -n "$service" ]; then
+        log_info "$service サービスを完全再ビルドして起動中（キャッシュ無視）..."
+    else
+        log_info "開発環境を完全再ビルドして起動中（キャッシュ無視）..."
+    fi
+    
+    # 既存のコンテナを停止・削除（全サービス指定時のみ）
+    if [ -z "$service" ]; then
+        run_docker_compose "down --volumes --remove-orphans" 2>/dev/null || true
+    fi
     
     # イメージを完全再ビルド（キャッシュ無視）
-    docker-compose -f docker-compose/dev.yml build --no-cache
+    run_docker_compose "build --no-cache" "$service"
     
     # サービスを起動
-    docker-compose -f docker-compose/dev.yml up -d
+    run_docker_compose "up -d" "$service"
     
-    log_info "完全再ビルド完了！"
-    show_access_urls
+    if [ -n "$service" ]; then
+        log_info "$service サービス完全再ビルド完了！"
+    else
+        log_info "完全再ビルド完了！"
+        show_access_urls
+    fi
 }
 
 # ログを表示
 show_logs() {
-    log_info "サービスログを表示中..."
-    docker-compose -f docker-compose/dev.yml logs -f
+    local service="$1"
+    validate_service "$service"
+    
+    if [ -n "$service" ]; then
+        log_info "$service サービスのログを表示中..."
+        run_docker_compose "logs -f" "$service"
+    else
+        log_info "サービスログを表示中..."
+        run_docker_compose "logs -f"
+    fi
+}
+
+# サービス状態を表示
+show_status() {
+    log_info "サービス状態:"
+    run_docker_compose "ps"
+    
+    echo ""
+    log_info "リソース使用状況:"
+    docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}\t{{.BlockIO}}"
 }
 
 # 全コンテナとボリュームを削除
@@ -160,7 +262,7 @@ clean_all() {
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         log_info "クリーンアップ中..."
-        docker-compose -f docker-compose/dev.yml down --volumes --remove-orphans 2>/dev/null || true
+        run_docker_compose "down --volumes --remove-orphans" 2>/dev/null || true
         docker system prune -f
         log_info "クリーンアップ完了！"
     else
@@ -168,15 +270,6 @@ clean_all() {
     fi
 }
 
-# サービス状態を表示
-show_status() {
-    log_info "サービス状態:"
-    docker-compose -f docker-compose/dev.yml ps
-    
-    echo ""
-    log_info "リソース使用状況:"
-    docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}\t{{.BlockIO}}"
-}
 
 # マイグレーションを実行
 run_migrations() {
@@ -218,31 +311,89 @@ rollback_migrations() {
     fi
 }
 
+# 環境変数表示
+show_env_vars() {
+    local service="$1"
+    
+    if [ -z "$service" ]; then
+        log_error "サービス名を指定してください。"
+        echo ""
+        echo "利用可能なサービス:"
+        echo "  - go-api"
+        echo "  - ai-server"
+        echo "  - frontend"
+        echo "  - postgres"
+        echo "  - redis"
+        echo ""
+        echo "使用例: ./dev.sh env go-api"
+        exit 1
+    fi
+    
+    # サービス名を検証
+    validate_service "$service"
+    
+    # コンテナ名を構築
+    local container_name="docker-compose-${service}-1"
+    
+    # コンテナが存在するかチェック
+    if ! docker ps --format "table {{.Names}}" | grep -q "^${container_name}$"; then
+        log_error "サービス '$service' のコンテナが起動していません。"
+        echo ""
+        echo "まずサービスを起動してください:"
+        echo "  ./dev.sh start $service"
+        exit 1
+    fi
+    
+    log_info "$service サービスの環境変数を表示中..."
+    echo ""
+    echo "=== $service サービスの環境変数 ==="
+    echo ""
+    
+    # 環境変数を表示（機密情報はマスク）
+    docker exec "$container_name" env | sort | while IFS='=' read -r key value; do
+        # 機密情報をマスク
+        case "$key" in
+            *PASSWORD*|*SECRET*|*KEY*|*TOKEN*)
+                echo "$key=***MASKED***"
+                ;;
+            *)
+                echo "$key=$value"
+                ;;
+        esac
+    done
+    
+    echo ""
+    echo "=== 機密情報は ***MASKED*** で表示されています ==="
+}
+
 # メイン処理
 case "${1:-help}" in
     start)
-        start_services
+        start_services "$2"
         ;;
     build)
-        build_services
+        build_services "$2"
         ;;
     rebuild)
-        rebuild_services
+        rebuild_services "$2"
         ;;
     stop)
-        stop_services
+        stop_services "$2"
         ;;
     restart)
-        restart_services
+        restart_services "$2"
         ;;
     logs)
-        show_logs
+        show_logs "$2"
+        ;;
+    status)
+        show_status
         ;;
     clean)
         clean_all
         ;;
-    status)
-        show_status
+    env)
+        show_env_vars "$2"
         ;;
     migrate)
         run_migrations

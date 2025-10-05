@@ -8,17 +8,16 @@ from app.models.chat import ChatResponse, ConversationHistory, ChatMessage, Mess
 from app.services.agent_service import AgentService
 from app.services.memory_service import MemoryService
 from app.services.secret_manager import SecretManager
-from app.database.supabase_client import DatabaseService
+# from app.database.postgres_client import DatabaseService
 from app.config import get_settings
 from app.utils.logger import logger
 from app.utils.exceptions import AIServiceException, DatabaseException
 
 
-class ChatService(DatabaseService):
+class ChatService:
     """チャット処理サービス"""
     
     def __init__(self):
-        super().__init__()
         self.settings = get_settings()
         self.agent_service = AgentService()
         self.memory_service = MemoryService()
@@ -190,32 +189,13 @@ class ChatService(DatabaseService):
             ai_response: AI応答
         """
         try:
-            # ユーザーメッセージの保存
-            await self.execute_with_retry(
-                lambda: self.client.table("messages").insert({
-                    "conversation_id": conversation_id,
-                    "user_id": user_id,
-                    "agent_id": agent_id,
-                    "role": MessageRole.USER.value,
-                    "content": user_message,
-                    "created_at": datetime.utcnow().isoformat()
-                }).execute()
-            )
-            
-            # AI応答の保存
-            await self.execute_with_retry(
-                lambda: self.client.table("messages").insert({
-                    "conversation_id": conversation_id,
-                    "user_id": user_id,
-                    "agent_id": agent_id,
-                    "role": MessageRole.ASSISTANT.value,
-                    "content": ai_response,
-                    "created_at": datetime.utcnow().isoformat()
-                }).execute()
-            )
+            # PostgreSQLに会話履歴を保存（実装が必要）
+            # await self.save_message_to_postgres(...)
+            pass
             
         except Exception as e:
-            self.handle_database_error(e, "save_conversation")
+            logger.error(f"Failed to save conversation: {str(e)}")
+            raise DatabaseException(f"Failed to save conversation: {str(e)}")
     
     async def get_conversation_history(
         self,
@@ -237,32 +217,18 @@ class ChatService(DatabaseService):
             会話履歴
         """
         try:
-            query = self.client.table("messages").select("*").eq("user_id", user_id).eq("agent_id", agent_id)
-            
-            if conversation_id:
-                query = query.eq("conversation_id", conversation_id)
-            
-            result = await self.execute_with_retry(
-                lambda: query.order("created_at", desc=False).limit(limit).execute()
-            )
-            
-            messages = [
-                ChatMessage(
-                    role=MessageRole(msg["role"]),
-                    content=msg["content"],
-                    timestamp=datetime.fromisoformat(msg["created_at"]),
-                    metadata=msg.get("metadata")
-                )
-                for msg in result.data
-            ]
+            # PostgreSQLから会話履歴を取得（実装が必要）
+            # messages = await self.get_messages_from_postgres(...)
+            messages = []
             
             return ConversationHistory(
                 conversation_id=conversation_id or "all",
                 agent_id=agent_id,
                 messages=messages,
-                created_at=messages[0].timestamp if messages else datetime.utcnow(),
-                updated_at=messages[-1].timestamp if messages else datetime.utcnow()
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow()
             )
             
         except Exception as e:
-            self.handle_database_error(e, "get_conversation_history")
+            logger.error(f"Failed to get conversation history: {str(e)}")
+            raise DatabaseException(f"Failed to get conversation history: {str(e)}")

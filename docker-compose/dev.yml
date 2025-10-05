@@ -1,21 +1,27 @@
 services:
-  # # Frontend - Next.js App
-  # frontend:
-  #   build:
-  #     context: ../frontend
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "3000:3000"
-  #   environment:
-  #     - NODE_ENV=development
-  #     - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
-  #     - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-  #   depends_on:
-  #     - go-api
-  #     - ai-server
-  #   networks:
-  #     - app-network
-  #   restart: unless-stopped
+  # Frontend - Next.js App (開発用 - ホットリロード)
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: docker/Dockerfile.dev
+    ports:
+      - "3000:3000"
+    env_file:
+      - ../frontend/.env.local
+    environment:
+      - NODE_ENV=development
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - go-api
+      - ai-server
+    networks:
+      - app-network
+    restart: unless-stopped
 
   # Go API Server (開発用 - ホットリロード)
   go-api:
@@ -24,13 +30,12 @@ services:
       dockerfile: docker/Dockerfile.dev
     ports:
       - "8080:8080"
+    env_file:
+      - ../backend-go/.env.local
     environment:
+      # Docker特有の設定を上書き
       - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=${POSTGRES_PASSWORD:-password}
       - DB_NAME=go_backend
-      - REDIS_URL=redis://redis:6379
     volumes:
       - ../backend-go:/app
       - /app/tmp
@@ -44,32 +49,28 @@ services:
     restart: unless-stopped
 
   # Python AI Server
-  # ai-server:
-  #   build:
-  #     context: ../backend-python/ai_server
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "8000:8000"
-  #   environment:
-  #     - ENVIRONMENT=development
-  #     - API_HOST=0.0.0.0
-  #     - API_PORT=8000
-  #     - SUPABASE_URL=${SUPABASE_URL}
-  #     - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-  #     - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
-  #     - OPENAI_API_KEY=${OPENAI_API_KEY}
-  #     - ENCRYPTION_KEY=${ENCRYPTION_KEY}
-  #     - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-  #     - REDIS_URL=redis://redis:6379
-  #     - LOG_LEVEL=DEBUG
-  #   depends_on:
-  #     redis:
-  #       condition: service_healthy
-  #   volumes:
-  #     - ../backend-python/ai_server/logs:/app/logs
-  #   networks:
-  #     - app-network
-  #   restart: unless-stopped
+  ai-server:
+    build:
+      context: ../backend-python/ai_server
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../backend-python/ai_server/.env.local
+    environment:
+      # Docker特有の設定を上書き
+      - POSTGRES_HOST=postgres
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ../backend-python/ai_server/logs:/app/logs
+    networks:
+      - app-network
+    restart: unless-stopped
 
   # PostgreSQL Database
   postgres:
@@ -77,15 +78,17 @@ services:
     environment:
       - POSTGRES_DB=go_backend
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --locale=C
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ../backend-go/migrations:/docker-entrypoint-initdb.d
     networks:
       - app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d go_backend"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -109,23 +112,23 @@ services:
     restart: unless-stopped
 
   # Nginx Reverse Proxy (Optional - for development)
-  # nginx:
-  #   image: nginx:alpine
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   volumes:
-  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-  #     - ./nginx/ssl:/etc/nginx/ssl:ro
-  #   depends_on:
-  #     - frontend
-  #     - go-api
-  #     - ai-server
-  #   networks:
-  #     - app-network
-  #   restart: unless-stopped
-  #   profiles:
-  #     - development
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - go-api
+      - ai-server
+    networks:
+      - app-network
+    restart: unless-stopped
+    profiles:
+      - development
 
 volumes:
   postgres_data:

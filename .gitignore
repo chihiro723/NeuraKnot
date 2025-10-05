@@ -26,11 +26,9 @@ coverage.xml
 .cursorrules
 
 # Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# 各サービスの.envはGitコミット（サンプル用）
+# 個人設定と本番設定の.env.localは除外
+**/.env.local
 .env.*.local
 
 # IDE
@@ -193,9 +191,8 @@ models/
 *.pkl
 *.joblib
 
-# Supabase
-supabase/.branches
-supabase/.temp
+# AWS Cognito
+.aws/
 
 # Build outputs
 build/

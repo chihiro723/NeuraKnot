@@ -2,18 +2,18 @@ from typing import Optional, Dict, Any
 from datetime import datetime
 from app.models.agent import AgentSecret
 from app.security.encryption import encryption_service
-from app.database.supabase_client import DatabaseService
+# from app.database.postgres_client import DatabaseService
 from app.utils.logger import logger, get_security_logger
 from app.utils.exceptions import EncryptionException, DatabaseException, AuthorizationException
 
 security_logger = get_security_logger()
 
 
-class SecretManager(DatabaseService):
+class SecretManager:
     """機密情報管理サービス"""
     
     def __init__(self):
-        super().__init__()
+        pass
     
     async def save_agent_secrets(
         self,

@@ -2,16 +2,15 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 import uuid
 from app.models.agent import Agent, AgentCreate, AgentUpdate, AgentPreset, AgentPersonality, PersonalityTrait
-from app.database.supabase_client import DatabaseService
+# from app.database.postgres_client import DatabaseService
 from app.utils.logger import logger
 from app.utils.exceptions import DatabaseException, ValidationException, AuthorizationException
 
 
-class AgentService(DatabaseService):
+class AgentService:
     """エージェント管理サービス"""
     
     def __init__(self):
-        super().__init__()
         self._presets = self._load_presets()
     
     async def create_agent(

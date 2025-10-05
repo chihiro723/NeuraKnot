@@ -11,10 +11,12 @@ class Settings(BaseSettings):
     api_host: str = Field(default="0.0.0.0", env="API_HOST")
     api_port: int = Field(default=8000, env="API_PORT")
     
-    # Supabase設定
-    supabase_url: str = Field(..., env="SUPABASE_URL")
-    supabase_service_role_key: str = Field(..., env="SUPABASE_SERVICE_ROLE_KEY")
-    supabase_anon_key: str = Field(..., env="SUPABASE_ANON_KEY")
+    # PostgreSQL設定
+    postgres_host: str = Field(default="localhost", env="POSTGRES_HOST")
+    postgres_port: int = Field(default=5432, env="POSTGRES_PORT")
+    postgres_user: str = Field(default="postgres", env="POSTGRES_USER")
+    postgres_password: str = Field(..., env="POSTGRES_PASSWORD")
+    postgres_db: str = Field(default="go_backend", env="POSTGRES_DB")
     
     # AI設定
     openai_api_key: str = Field(..., env="OPENAI_API_KEY")

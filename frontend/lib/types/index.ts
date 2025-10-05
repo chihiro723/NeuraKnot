@@ -2,7 +2,8 @@
  * アプリケーション全体で使用される型定義
  */
 
-import type { User, SupabaseClient } from '@supabase/supabase-js'
+// Cognito認証用の型定義
+import type { AuthUser } from './auth'
 
 // ユーザープロフィールの型定義
 export interface Profile {
@@ -166,14 +167,15 @@ export interface SelectedGroup {
 
 // 認証結果の型定義
 export interface AuthResult {
-  user: User | null
-  supabase: SupabaseClient | null
+  user: AuthUser | null
+  session: any | null
 }
 
 // 認証設定の型定義
 export interface AuthConfig {
-  supabaseUrl: string
-  supabaseAnonKey: string
+  cognitoUserPoolId: string
+  cognitoClientId: string
+  cognitoDomain: string
   isConfigured: boolean
 }
 
@@ -185,7 +187,7 @@ export interface AuthActionResult {
 
 // ダッシュボードコンテキストの型定義
 export interface DashboardContextType {
-  user: User
+  user: AuthUser
   profile: Profile
   activeTab: TabType
   setActiveTab: (tab: TabType) => void

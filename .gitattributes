@@ -151,7 +151,3 @@ CONTRIBUTING.md text eol=lf
 .vscode/extensions.json text eol=lf
 .idea/workspace.xml text eol=lf
 .idea/project.xml text eol=lf
-
-# Supabase
-supabase/config.toml text eol=lf
-supabase/seed.sql text eol=lf

@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 
-const publicRoutes = ['/', '/auth/login', '/auth/signup', '/auth/callback', '/setup']
+const publicRoutes = ['/', '/auth/login', '/auth/signup', '/auth/verify', '/auth/callback', '/auth/forgot-password', '/auth/reset-password']
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -10,17 +10,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // 環境変数チェック
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-  if (!supabaseUrl || !supabaseAnonKey || 
-      supabaseUrl === 'your_supabase_project_url_here' || 
-      supabaseAnonKey === 'your_supabase_anon_key_here') {
-    return NextResponse.redirect(new URL('/setup', request.url))
-  }
-
-  // 認証チェックはページレベルで行うため、ミドルウェアでは環境チェックのみ
+  // 認証チェックはページレベルで行うため、ミドルウェアでは基本的なルーティングのみ
 
   return NextResponse.next()
 }

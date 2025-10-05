@@ -13,8 +13,8 @@ COPY go.mod go.sum ./
 # 依存関係をダウンロード（レイヤーキャッシュ最適化）
 RUN go mod download
 
-# swagコマンドをインストール
-RUN go install github.com/swaggo/swag/cmd/swag@latest
+# swagコマンドをインストール（プロジェクトと同じバージョン）
+RUN go install github.com/swaggo/swag/cmd/swag@v1.8.12
 
 # air（ホットリロードツール）をインストール
 RUN go install github.com/air-verse/air@latest
@@ -22,11 +22,14 @@ RUN go install github.com/air-verse/air@latest
 # ソースコードをコピー（最後にコピーしてレイヤーキャッシュを活用）
 COPY . .
 
-# 権限を設定
-RUN chown -R 1001:1001 /app
+# Goモジュールキャッシュディレクトリを作成して権限を設定
+RUN mkdir -p /go/pkg/mod && chown -R 1001:1001 /go/pkg/mod
 
 # Goビルドキャッシュディレクトリを作成して権限を設定
 RUN mkdir -p /.cache/go-build && chown -R 1001:1001 /.cache
+
+# 権限を設定
+RUN chown -R 1001:1001 /app
 
 # ユーザーを変更
 USER 1001

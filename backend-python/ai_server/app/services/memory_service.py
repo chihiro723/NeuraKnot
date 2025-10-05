@@ -1,16 +1,15 @@
 from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
 from langchain.schema import HumanMessage, AIMessage
-from app.database.supabase_client import DatabaseService
+# from app.database.postgres_client import DatabaseService
 from app.utils.logger import logger
 from app.models.chat import MessageRole
 
 
-class MemoryService(DatabaseService):
+class MemoryService:
     """記憶・学習管理サービス"""
     
     def __init__(self):
-        super().__init__()
         self.memory_window = 10  # デフォルトの記憶ウィンドウサイズ
     
     async def get_conversation_memory(

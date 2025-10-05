@@ -1,32 +1,34 @@
 # AI Hybrid Messaging API Server
 
-セキュアなAI応答生成と外部サービス統合を提供するハイブリッドメッセージングアプリ用のPython FastAPIバックエンドサーバーです。
+セキュアな AI 応答生成と外部サービス統合を提供するハイブリッドメッセージングアプリ用の Python FastAPI バックエンドサーバーです。
 
 ## 🚀 主要機能
 
-- **セキュアなAI応答生成**: 機密情報をフロントエンドに送信せず、サーバーサイドで安全に処理
+- **セキュアな AI 応答生成**: 機密情報をフロントエンドに送信せず、サーバーサイドで安全に処理
 - **多層セキュリティアーキテクチャ**: 公開情報と機密情報の厳格な分離
-- **AIエージェント管理**: カスタムパーソナリティと設定管理
+- **AI エージェント管理**: カスタムパーソナリティと設定管理
 - **MCP（Model Context Protocol）統合基盤**: 外部サービス連携の拡張可能な基盤
 - **機密情報暗号化管理**: API キーや認証情報の安全な保存・管理
 
 ## 🏗️ アーキテクチャ
 
 ### 技術スタック
+
 - **Framework**: FastAPI
 - **AI Framework**: LangChain
 - **LLM Provider**: OpenAI API (GPT-3.5/4)
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth (JWT)
+- **Database**: PostgreSQL
+- **Authentication**: AWS Cognito (JWT)
 - **Encryption**: cryptography (Fernet)
 - **Cache/Rate Limiting**: Redis
 - **Deployment**: Docker
 
 ### セキュリティ原則
+
 1. **機密情報の絶対分離**: API キー、パスワード、OAuth トークンは絶対にフロントエンドに送信しない
-2. **暗号化保存**: 全ての機密情報はFernet暗号化して保存
+2. **暗号化保存**: 全ての機密情報は Fernet 暗号化して保存
 3. **認証・認可**: 全てのエンドポイントで適切な権限チェック
-4. **レート制限**: DoS攻撃対策
+4. **レート制限**: DoS 攻撃対策
 5. **監査ログ**: セキュリティイベントの記録
 
 ## 📁 プロジェクト構造
@@ -54,7 +56,7 @@ ai_server/
 │   │   ├── mcp_client.py         # MCPクライアント基盤
 │   │   └── services/             # 個別MCPサービス
 │   ├── database/                 # データベース関連
-│   │   └── supabase_client.py    # Supabase接続
+│   │   └── postgres_client.py    # PostgreSQL接続
 │   ├── api/                      # APIルーター
 │   │   └── v1/
 │   │       ├── chat.py           # チャットエンドポイント
@@ -94,10 +96,18 @@ ENVIRONMENT=development
 API_HOST=0.0.0.0
 API_PORT=8000
 
-# Supabase設定
-SUPABASE_URL=your_supabase_url
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-SUPABASE_ANON_KEY=your_anon_key
+# PostgreSQL設定
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your_postgres_password
+POSTGRES_DB=go_backend
+
+# AWS Cognito設定
+AWS_REGION=ap-northeast-1
+COGNITO_USER_POOL_ID=your_cognito_user_pool_id
+COGNITO_CLIENT_ID=your_cognito_client_id
+COGNITO_CLIENT_SECRET=your_cognito_client_secret
 
 # AI設定
 OPENAI_API_KEY=your_openai_api_key
@@ -143,26 +153,31 @@ docker-compose logs -f ai-server
 ## 📡 API エンドポイント
 
 ### チャット関連
-- `POST /api/v1/chat/message` - AI応答生成
+
+- `POST /api/v1/chat/message` - AI 応答生成
 - `GET /api/v1/chat/history/{agent_id}` - 会話履歴取得
 
 ### エージェント管理
+
 - `POST /api/v1/agents` - 新規エージェント作成
 - `GET /api/v1/agents/{agent_id}` - エージェント情報取得
 - `PUT /api/v1/agents/{agent_id}` - エージェント更新
 - `GET /api/v1/agents/presets` - プリセット一覧
 
 ### 機密設定管理
+
 - `POST /api/v1/agents/{agent_id}/secrets` - 機密設定保存
 - `PUT /api/v1/agents/{agent_id}/secrets` - 機密設定更新
 - `DELETE /api/v1/agents/{agent_id}/secrets` - 機密設定削除
 
-### MCP統合
-- `POST /api/v1/mcp/{agent_id}/configure` - MCP設定
-- `GET /api/v1/mcp/services` - 利用可能MCPサービス一覧
-- `POST /api/v1/mcp/{agent_id}/test` - MCP接続テスト
+### MCP 統合
+
+- `POST /api/v1/mcp/{agent_id}/configure` - MCP 設定
+- `GET /api/v1/mcp/services` - 利用可能 MCP サービス一覧
+- `POST /api/v1/mcp/{agent_id}/test` - MCP 接続テスト
 
 ### システム
+
 - `GET /api/v1/health` - ヘルスチェック
 
 ## 🔒 セキュリティ設定
@@ -174,7 +189,7 @@ from cryptography.fernet import Fernet
 print(Fernet.generate_key().decode())
 ```
 
-### JWT秘密鍵の生成
+### JWT 秘密鍵の生成
 
 ```bash
 openssl rand -hex 32
@@ -193,13 +208,15 @@ pytest --cov=app
 ## 📊 監視とログ
 
 ### ログファイル
+
 - `logs/app.log` - アプリケーションログ
 - `logs/error.log` - エラーログ
 - `logs/security.log` - セキュリティイベントログ
-- `logs/metrics.log` - API利用量ログ
+- `logs/metrics.log` - API 利用量ログ
 
 ### メトリクス
-- API応答時間
+
+- API 応答時間
 - エラー率
 - レート制限違反
 - セキュリティイベント
@@ -218,20 +235,22 @@ docker-compose up -d --scale ai-server=3
 
 ### 環境別設定
 
-- **Development**: デバッグ情報とAPI文書が有効
-- **Production**: セキュリティ強化、API文書無効
+- **Development**: デバッグ情報と API 文書が有効
+- **Production**: セキュリティ強化、API 文書無効
 - **Testing**: テスト用データベースとモック
 
 ## 🔧 トラブルシューティング
 
 ### よくある問題
 
-1. **Supabase接続エラー**
+1. **PostgreSQL 接続エラー**
+
    - 環境変数の設定を確認
    - ネットワーク接続を確認
 
 2. **OpenAI API エラー**
-   - APIキーの有効性を確認
+
+   - API キーの有効性を確認
    - レート制限の確認
 
 3. **暗号化エラー**
@@ -261,7 +280,7 @@ docker-compose logs -f ai-server
 
 ## 📄 ライセンス
 
-このプロジェクトはMITライセンスの下で公開されています。詳細は[LICENSE](LICENSE)ファイルをご覧ください。
+このプロジェクトは MIT ライセンスの下で公開されています。詳細は[LICENSE](LICENSE)ファイルをご覧ください。
 
 ## 📞 サポート
 

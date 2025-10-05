@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 import httpx
 from app.config import get_settings
 from app.services.secret_manager import SecretManager
-from app.database.supabase_client import DatabaseService
+# from app.database.postgres_client import DatabaseService
 from app.utils.logger import logger
 from app.utils.exceptions import MCPException, ExternalServiceException
 

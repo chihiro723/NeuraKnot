@@ -6,7 +6,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.config import get_settings
 from app.utils.logger import logger, get_security_logger
 from app.utils.exceptions import AuthenticationException, AuthorizationException
-from app.database.supabase_client import get_supabase
+# from app.database.postgres_client import get_postgres
 
 security = HTTPBearer()
 security_logger = get_security_logger()
@@ -17,7 +17,7 @@ class AuthService:
     
     def __init__(self):
         self.settings = get_settings()
-        self.supabase = get_supabase()
+        # self.postgres = get_postgres()
     
     def create_access_token(self, data: dict, expires_delta: Optional[timedelta] = None) -> str:
         """
@@ -84,9 +84,10 @@ class AuthService:
         token = credentials.credentials
         
         try:
-            # Supabaseでトークンを検証
-            user = self.supabase.auth.get_user(token)
-            if not user:
+            # JWTトークンを検証
+            payload = self.verify_token(token)
+            user_id = payload.get("sub")
+            if not user_id:
                 raise AuthenticationException("Invalid authentication token")
             
             # セキュリティログ
@@ -94,15 +95,15 @@ class AuthService:
                 "User authenticated",
                 extra={
                     "event_type": "authentication_success",
-                    "user_id": user.user.id,
+                    "user_id": user_id,
                     "ip_address": None  # リクエストコンテキストから取得
                 }
             )
             
             return {
-                "id": user.user.id,
-                "email": user.user.email,
-                "metadata": user.user.user_metadata
+                "id": user_id,
+                "email": payload.get("email"),
+                "metadata": payload.get("metadata", {})
             }
             
         except Exception as e:

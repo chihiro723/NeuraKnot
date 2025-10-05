@@ -1,45 +1,52 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/auth/server";
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useCognitoAuth } from "@/lib/hooks/useCognitoAuth";
 import { DashboardProvider } from "@/components/dashboard/DashboardProvider";
 import { ResponsiveLayout } from "@/components/layout/ResponsiveLayout";
+import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 
 /**
  * ダッシュボードレイアウト（認証必須）
  */
-export default async function DashboardLayout({
+export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  console.log("DashboardLayout");
-  await cookies();
-  const supabase = await createClient();
+  const { user, loading, isAuthenticated } = useCognitoAuth();
+  const router = useRouter();
 
-  console.log("supabase", supabase);
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.push("/auth/login");
+    }
+  }, [loading, isAuthenticated, router]);
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/auth/login");
-  }
-
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
-
-  if (profileError || !profile) {
-    redirect(
-      "/dashboard/error?message=" +
-        encodeURIComponent(
-          "プロフィールが見つかりません。アカウントが正しく設定されていない可能性があります。"
-        )
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" />
+      </div>
     );
   }
+
+  if (!isAuthenticated || !user) {
+    return null;
+  }
+
+  // Cognitoのユーザー情報をプロフィール形式に変換
+  const profile = {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    username: user.preferred_username,
+    display_name: user.display_name,
+    status: "online",
+    created_at: user.created_at,
+    updated_at: user.updated_at,
+  };
 
   return (
     <DashboardProvider user={user} profile={profile}>

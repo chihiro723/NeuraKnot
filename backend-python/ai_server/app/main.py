@@ -13,7 +13,6 @@ from app.utils.logger import logger, get_metrics_logger
 from app.utils.exceptions import BaseAPIException
 from app.api.v1 import chat, agents, mcp, health
 from app.security.rate_limit import limiter
-from app.database.supabase_client import init_supabase
 
 
 # メトリクスロガー
@@ -32,8 +31,8 @@ async def lifespan(app: FastAPI):
         "port": settings.api_port
     })
     
-    # Supabaseクライアントの初期化
-    init_supabase()
+    # PostgreSQLクライアントの初期化（必要に応じて）
+    # init_postgres()
     
     # Redisクライアントの初期化
     app.state.redis = await redis.from_url(

@@ -32,7 +32,7 @@ async def env_check():
         "ENVIRONMENT": os.getenv("ENVIRONMENT"),
         "API_HOST": os.getenv("API_HOST"),
         "API_PORT": os.getenv("API_PORT"),
-        "SUPABASE_URL_SET": bool(os.getenv("SUPABASE_URL")) and os.getenv("SUPABASE_URL") != "your_supabase_url",
+        "POSTGRES_HOST_SET": bool(os.getenv("POSTGRES_HOST")) and os.getenv("POSTGRES_HOST") != "localhost",
         "OPENAI_API_KEY_SET": bool(os.getenv("OPENAI_API_KEY")) and os.getenv("OPENAI_API_KEY") != "your_openai_api_key",
         "ENCRYPTION_KEY_SET": bool(os.getenv("ENCRYPTION_KEY")) and os.getenv("ENCRYPTION_KEY") != "your_fernet_encryption_key",
         "JWT_SECRET_KEY_SET": bool(os.getenv("JWT_SECRET_KEY")) and os.getenv("JWT_SECRET_KEY") != "your_jwt_secret",
