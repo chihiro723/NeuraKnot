@@ -935,7 +935,8 @@ Go API
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
-const API_BASE_URL = process.env.API_BASE_URL || "http://go-api:8080/api/v1";
+const API_BASE_URL =
+  process.env.API_BASE_URL || "http://go-backend:8080/api/v1";
 
 export async function GET() {
   try {
@@ -1038,7 +1039,8 @@ export function UserProfile({ user }: { user: User }) {
 
 import { cookies } from "next/headers";
 
-const API_BASE_URL = process.env.API_BASE_URL || "http://go-api:8080/api/v1";
+const API_BASE_URL =
+  process.env.API_BASE_URL || "http://go-backend:8080/api/v1";
 
 export async function getUser() {
   const cookieStore = await cookies();
@@ -1268,7 +1270,7 @@ FRONTEND_URL=http://localhost:3000
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v1
 
 # 内部API設定（Server Actionsで使用）
-API_BASE_URL=http://go-api:8080/api/v1
+API_BASE_URL=http://go-backend:8080/api/v1
 ```
 
 ---
@@ -1287,13 +1289,13 @@ services:
       - "3000:3000"
     environment:
       - NEXT_PUBLIC_API_BASE_URL=http://localhost:8080/api/v1
-      - API_BASE_URL=http://go-api:8080/api/v1
+      - API_BASE_URL=http://go-backend:8080/api/v1
     volumes:
       - ../frontend:/app
     networks:
       - app-network
 
-  go-api:
+  go-backend:
     build:
       context: ../backend-go
       dockerfile: docker/Dockerfile.dev
@@ -1315,7 +1317,7 @@ networks:
 
 - フロントエンドと Go API は同じ Docker ネットワーク内にある
 - `NEXT_PUBLIC_API_BASE_URL`: ブラウザから直接アクセスする URL（`localhost:8080`）
-- `API_BASE_URL`: Next.js サーバーからアクセスする URL（`go-api:8080`）
+- `API_BASE_URL`: Next.js サーバーからアクセスする URL（`go-backend:8080`）
 
 ---
 

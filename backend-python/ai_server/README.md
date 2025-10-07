@@ -147,7 +147,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 docker-compose up -d
 
 # ログの確認
-docker-compose logs -f ai-server
+docker-compose logs -f python-backend
 ```
 
 ## 📡 API エンドポイント
@@ -230,7 +230,7 @@ pytest --cov=app
 docker-compose --profile production up -d
 
 # スケーリング
-docker-compose up -d --scale ai-server=3
+docker-compose up -d --scale python-backend=3
 ```
 
 ### 環境別設定
@@ -267,7 +267,7 @@ tail -f logs/app.log
 tail -f logs/error.log
 
 # Dockerログ
-docker-compose logs -f ai-server
+docker-compose logs -f python-backend
 ```
 
 ## 🤝 コントリビューション
@@ -284,6 +284,6 @@ docker-compose logs -f ai-server
 
 ## 📞 サポート
 
-- 🐛 バグ報告: [Issues](https://github.com/your-org/ai-server/issues)
-- 💬 質問: [Discussions](https://github.com/your-org/ai-server/discussions)
+- 🐛 バグ報告: [Issues](https://github.com/your-org/python-backend/issues)
+- 💬 質問: [Discussions](https://github.com/your-org/python-backend/discussions)
 - 📧 メール: support@yourcompany.com

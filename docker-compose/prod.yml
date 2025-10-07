@@ -14,14 +14,14 @@ services:
       # 本番環境固有の設定
       - NODE_ENV=production
     depends_on:
-      - go-api
-      - ai-server
+      - go-backend
+      - python-backend
     networks:
       - app-network
     restart: unless-stopped
 
   # Go API Server (本番用)
-  go-api:
+  go-backend:
     build:
       context: ../backend-go
       dockerfile: docker/Dockerfile.prod
@@ -47,7 +47,7 @@ services:
     restart: unless-stopped
 
   # Python AI Server
-  ai-server:
+  python-backend:
     build:
       context: ../backend-python/ai_server
       dockerfile: Dockerfile
@@ -123,8 +123,8 @@ services:
       - ./nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
       - frontend
-      - go-api
-      - ai-server
+      - go-backend
+      - python-backend
     networks:
       - app-network
     restart: unless-stopped

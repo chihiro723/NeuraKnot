@@ -106,7 +106,7 @@ docker-compose -f docker-compose/dev.yml logs -f
 docker-compose -f docker-compose/dev.yml up -d
 
 # 特定サービスのみ起動
-docker-compose -f docker-compose/dev.yml up -d frontend go-api
+docker-compose -f docker-compose/dev.yml up -d frontend go-backend
 
 # ログ確認
 docker-compose -f docker-compose/dev.yml logs -f [service-name]
@@ -251,14 +251,14 @@ docker-compose -f docker-compose/dev.yml restart postgres
 
 ```bash
 # Go APIのログ確認
-docker-compose -f docker-compose/dev.yml logs go-api
+docker-compose -f docker-compose/dev.yml logs go-backend
 
 # Swaggerドキュメント再生成
 cd backend-go
 go run github.com/swaggo/swag/cmd/swag@v1.8.12 init -g cmd/api/main.go -o docs
 
 # コンテナ再起動
-docker-compose -f docker-compose/dev.yml restart go-api
+docker-compose -f docker-compose/dev.yml restart go-backend
 ```
 
 ## 📊 開発状況

@@ -31,7 +31,7 @@ cd ai_server
 docker-compose up -d
 
 # ログ表示
-docker-compose logs -f ai-server
+docker-compose logs -f python-backend
 
 # 本番デプロイ
 docker-compose --profile production up -d
