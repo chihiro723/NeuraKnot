@@ -1,0 +1,41 @@
+# 開発環境用Dockerfile（ホットリロード対応）
+FROM python:3.11-slim
+
+# 作業ディレクトリの設定
+WORKDIR /app
+
+# システムの依存関係をインストール
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Pythonの依存関係をコピーしてインストール
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 開発用の追加パッケージをインストール
+RUN pip install --no-cache-dir \
+    watchfiles \
+    pytest \
+    pytest-asyncio \
+    black \
+    isort \
+    flake8
+
+# ログディレクトリを作成
+RUN mkdir -p logs
+
+# ポートを公開
+EXPOSE 8001
+
+# 環境変数を設定
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# アプリケーションを起動（ホットリロード有効）
+# 注意: ボリュームマウントでソースコードを提供
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
+
+

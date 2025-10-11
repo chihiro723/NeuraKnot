@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     """アプリケーション設定"""
     
     # API設定
-    API_V1_PREFIX: str = "/api"
+    API_V1_PREFIX: str = "/api/v1"
     PROJECT_NAME: str = "BridgeSpeak AI Server"
     VERSION: str = "1.0.0"
     HOST: str = "0.0.0.0"
