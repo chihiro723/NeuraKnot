@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MessageCircle, Bot, Users, User, Handshake } from "lucide-react";
+import { Bot, Users, User, Handshake } from "lucide-react";
 import { useDashboard } from "@/components/dashboard/DashboardProvider";
 import { SearchInput } from "@/components/ui/SearchInput";
-import { Avatar } from "@/components/ui/Avatar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { FullScreenLoading } from "@/components/ui/LoadingSpinner";
 import { getPersonalityLabel } from "@/lib/constants/personalities";
@@ -94,10 +93,6 @@ export function FriendsListClient() {
       friend.type === activeFilter;
     return matchesSearch && matchesFilter;
   });
-
-  const humanFriends = filteredFriends.filter((f) => f.type === "human");
-  const aiFriends = filteredFriends.filter((f) => f.type === "ai");
-  const groupFriends = filteredFriends.filter((f) => f.type === "group");
 
   const filters = [
     { id: "all" as const, label: "すべて", icon: Users, count: friends.length },
@@ -194,91 +189,18 @@ export function FriendsListClient() {
             }
           />
         ) : (
-          <div className="p-4 pb-8 space-y-4 lg:pb-4">
-            {activeFilter === "all" ? (
-              <>
-                {aiFriends.length > 0 && (
-                  <FriendSection
-                    title="AIエージェント"
-                    icon={Bot}
-                    friends={aiFriends}
-                    getPersonalityLabel={getPersonalityLabel}
-                    onSelectFriend={handleSelectFriend}
-                    isAI
-                  />
-                )}
-                {humanFriends.length > 0 && (
-                  <FriendSection
-                    title="ユーザー"
-                    icon={User}
-                    friends={humanFriends}
-                    getPersonalityLabel={getPersonalityLabel}
-                    onSelectFriend={handleSelectFriend}
-                  />
-                )}
-                {groupFriends.length > 0 && (
-                  <FriendSection
-                    title="グループ"
-                    icon={Handshake}
-                    friends={groupFriends}
-                    getPersonalityLabel={getPersonalityLabel}
-                    onSelectFriend={handleSelectFriend}
-                  />
-                )}
-              </>
-            ) : (
-              <div className="pb-4 space-y-2 lg:pb-0">
-                {filteredFriends.map((friend) => (
-                  <FriendItem
-                    key={friend.id}
-                    friend={friend}
-                    getPersonalityLabel={getPersonalityLabel}
-                    onSelectFriend={handleSelectFriend}
-                    isAI={friend.type === "ai"}
-                  />
-                ))}
-              </div>
-            )}
+          <div className="pb-4 space-y-2 lg:pb-0">
+            {filteredFriends.map((friend) => (
+              <FriendItem
+                key={friend.id}
+                friend={friend}
+                getPersonalityLabel={getPersonalityLabel}
+                onSelectFriend={handleSelectFriend}
+                isAI={friend.type === "ai"}
+              />
+            ))}
           </div>
         )}
-      </div>
-    </div>
-  );
-}
-
-interface FriendSectionProps {
-  title: string;
-  icon: React.ComponentType<{ className?: string }>;
-  friends: FriendData[];
-  getPersonalityLabel: (preset: string) => string;
-  onSelectFriend: (friend: FriendData) => void;
-  isAI?: boolean;
-}
-
-function FriendSection({
-  title,
-  icon: Icon,
-  friends,
-  getPersonalityLabel,
-  onSelectFriend,
-  isAI = false,
-}: FriendSectionProps) {
-  return (
-    <div className="animate-fadeIn">
-      <h2 className="flex items-center mb-3 text-sm font-medium text-gray-500 dark:text-gray-400 lg:text-xs">
-        <Icon className="mr-2 w-4 h-4" />
-        {title} ({friends.length})
-      </h2>
-      <div className="space-y-2">
-        {friends.map((friend) => (
-          <FriendItem
-            key={friend.id}
-            friend={friend}
-            getPersonalityLabel={getPersonalityLabel}
-            onSelectFriend={onSelectFriend}
-            isAI={isAI}
-          />
-        ))}
       </div>
     </div>
   );
@@ -300,39 +222,50 @@ function FriendItem({
   const { selectedFriend } = useDashboard();
   const isSelected = selectedFriend?.id === friend.id;
 
-  const containerClass = isAI
-    ? cn(
-        "flex items-center justify-between p-3 lg:p-2 rounded-lg border transition-all duration-200 hover:shadow-md transform hover:scale-[1.02] cursor-pointer",
-        isSelected
-          ? "bg-green-100 dark:bg-green-900/40 border-green-300 dark:border-green-600 shadow-md"
-          : "bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border-green-100 dark:border-green-800 hover:border-green-200 dark:hover:border-green-700"
-      )
-    : cn(
-        "flex items-center justify-between p-3 lg:p-2 rounded-lg border transition-all duration-200 hover:shadow-md transform hover:scale-[1.02] cursor-pointer",
-        isSelected
-          ? "bg-blue-50 dark:bg-blue-900/40 border-blue-300 dark:border-blue-600 shadow-md"
-          : "bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600"
-      );
-
   return (
-    <div className={containerClass} onClick={() => onSelectFriend(friend)}>
+    <button
+      onClick={() => onSelectFriend(friend)}
+      className={cn(
+        "p-4 w-full text-left transition-all duration-200 lg:border-b lg:border-gray-100 dark:lg:border-gray-800 last:border-b-0",
+        isSelected
+          ? "bg-green-50 border-r-2 border-green-500 dark:bg-green-900/20 dark:border-green-400"
+          : "hover:bg-gray-50 dark:hover:bg-gray-800"
+      )}
+    >
       <div className="flex items-center space-x-3">
-        <Avatar
-          src={friend.avatar_url}
-          alt={friend.name}
-          name={friend.name}
-          type={friend.type}
-          status={friend.status}
-          showStatus
-          size="md"
-          className="lg:w-8 lg:h-8"
-        />
+        <div className="relative">
+          <div className="flex overflow-hidden justify-center items-center w-12 h-12 bg-gray-300 rounded-full lg:w-10 lg:h-10 dark:bg-gray-600">
+            {friend.avatar_url ? (
+              <img
+                src={friend.avatar_url}
+                alt={friend.name}
+                className="object-cover w-full h-full"
+              />
+            ) : (
+              <span className="font-medium text-white">
+                {friend.name.charAt(0)}
+              </span>
+            )}
+          </div>
 
-        <div>
-          <h3 className="font-medium text-gray-900 dark:text-white lg:text-sm">
+          {/* AI Agent indicator */}
+          {isAI && (
+            <div className="flex absolute -right-1 -bottom-1 justify-center items-center w-4 h-4 bg-green-500 rounded-full">
+              <span className="text-xs lg:text-[10px]">🤖</span>
+            </div>
+          )}
+
+          {/* Human online status */}
+          {!isAI && friend.status === "online" && (
+            <div className="absolute -right-1 -bottom-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></div>
+          )}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <h3 className="font-medium text-gray-900 truncate dark:text-white lg:text-sm">
             {friend.name}
           </h3>
-          <p className="text-xs text-gray-500 dark:text-gray-400 lg:text-[11px]">
+          <p className="text-sm text-gray-600 truncate dark:text-gray-400 lg:text-xs">
             {isAI && friend.personality_preset
               ? `${getPersonalityLabel(friend.personality_preset)} • オンライン`
               : friend.status === "online"
@@ -341,6 +274,6 @@ function FriendItem({
           </p>
         </div>
       </div>
-    </div>
+    </button>
   );
 }
