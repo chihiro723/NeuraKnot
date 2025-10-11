@@ -55,7 +55,6 @@ show_help() {
     echo "  backend-python    - Python APIサーバー            (ポート: 8001)"
     echo "  postgres          - PostgreSQLデータベース        (ポート: 5432)"
     echo "  redis             - Redisキャッシュ               (ポート: 6379)"
-    echo "  nginx             - Nginxリバースプロキシ         (ポート: 80, 443)"
     echo ""
     echo "例:"
     echo "  ./dev.sh start                    # 全サービスを起動"
@@ -72,7 +71,7 @@ show_help() {
 # サービス名の検証
 validate_service() {
     local service="$1"
-    local valid_services=("frontend" "backend-go" "backend-python" "postgres" "redis" "nginx")
+    local valid_services=("frontend" "backend-go" "backend-python" "postgres" "redis")
     
     if [ -n "$service" ]; then
         for valid_service in "${valid_services[@]}"; do

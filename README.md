@@ -26,7 +26,6 @@ bridgespeak/
 ├── docker-compose/
 │   ├── dev.yml           # 開発環境
 │   └── prod.yml          # 本番環境
-├── config/nginx/         # Nginx設定
 └── docs/                 # ドキュメント
 ```
 
