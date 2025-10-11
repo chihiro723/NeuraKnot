@@ -140,6 +140,32 @@
     line-height: 1.2;
     font-weight: 700;
   }
+
+  /* ストリーミングUI用クラス */
+  .streaming-cursor {
+    animation: blink 1s infinite;
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background-color: currentColor;
+    margin-left: 2px;
+  }
+
+  .tool-indicator-enter {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .tool-pulse {
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  .tool-success {
+    @apply text-green-600 dark:text-green-400;
+  }
+
+  .tool-error {
+    @apply text-red-600 dark:text-red-400;
+  }
 }
 
 /* ===========================================
@@ -178,11 +204,32 @@
 }
 
 @keyframes morphing {
-  0%, 100% { 
+  0%, 100% {
     background-position: 0% 50%;
   }
-  50% { 
+  50% {
     background-position: 100% 50%;
+  }
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 

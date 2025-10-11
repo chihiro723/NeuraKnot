@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCognitoAuth } from "@/lib/hooks/useCognitoAuth";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Eye, EyeOff } from "lucide-react";
 
 // バリデーション関数
 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -16,6 +17,8 @@ export function CognitoSignUpForm() {
     confirmPassword: "",
     displayName: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -140,17 +143,31 @@ export function CognitoSignUpForm() {
         >
           パスワード
         </label>
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-          minLength={8}
-          className="mt-1"
-          placeholder="8文字以上のパスワード"
-        />
+        <div className="relative mt-1">
+          <Input
+            id="password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            value={formData.password}
+            onChange={handleChange}
+            required
+            minLength={8}
+            placeholder="8文字以上のパスワード"
+            className="pr-10"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80 transition-colors"
+            aria-label={showPassword ? "パスワードを隠す" : "パスワードを表示"}
+          >
+            {showPassword ? (
+              <EyeOff className="w-5 h-5" />
+            ) : (
+              <Eye className="w-5 h-5" />
+            )}
+          </button>
+        </div>
       </div>
 
       <div>
@@ -160,17 +177,33 @@ export function CognitoSignUpForm() {
         >
           パスワード確認
         </label>
-        <Input
-          id="confirmPassword"
-          name="confirmPassword"
-          type="password"
-          value={formData.confirmPassword}
-          onChange={handleChange}
-          required
-          minLength={8}
-          className="mt-1"
-          placeholder="パスワードを再入力"
-        />
+        <div className="relative mt-1">
+          <Input
+            id="confirmPassword"
+            name="confirmPassword"
+            type={showConfirmPassword ? "text" : "password"}
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            required
+            minLength={8}
+            placeholder="パスワードを再入力"
+            className="pr-10"
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80 transition-colors"
+            aria-label={
+              showConfirmPassword ? "パスワードを隠す" : "パスワードを表示"
+            }
+          >
+            {showConfirmPassword ? (
+              <EyeOff className="w-5 h-5" />
+            ) : (
+              <Eye className="w-5 h-5" />
+            )}
+          </button>
+        </div>
       </div>
 
       {error && <div className="text-sm text-red-600">{error}</div>}
