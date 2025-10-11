@@ -58,6 +58,7 @@ export interface ConversationData {
   created_at: string
   updated_at: string
   otherParticipant?: {
+    id?: string // AI Agent IDやユーザーID
     name: string
     avatar_url?: string
     type: 'human' | 'ai'

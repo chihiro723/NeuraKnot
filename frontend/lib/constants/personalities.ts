@@ -1,45 +1,32 @@
 /**
  * AIパーソナリティの定数定義
+ * MVP: 3種類のペルソナ (assistant, creative, analytical)
  */
 
-import { Zap, Heart, Briefcase, Coffee, Smile } from 'lucide-react'
+import { Brain, Sparkles, LineChart } from 'lucide-react'
 import type { AIPersonality } from '@/lib/types'
 
 export const AI_PERSONALITIES: Record<string, AIPersonality> = {
-  support: {
-    id: 'support',
-    name: 'サポート',
-    icon: Zap,
+  assistant: {
+    id: 'assistant',
+    name: 'アシスタント',
+    icon: Brain,
     color: 'from-blue-400 to-blue-600',
-    description: '技術的な質問や問題解決をサポート'
+    description: '親切で丁寧なアシスタント'
   },
-  friendly: {
-    id: 'friendly',
-    name: 'フレンドリー',
-    icon: Heart,
-    color: 'from-pink-400 to-pink-600',
-    description: '親しみやすく楽しい会話を提供'
+  creative: {
+    id: 'creative',
+    name: 'クリエイティブ',
+    icon: Sparkles,
+    color: 'from-purple-400 to-pink-600',
+    description: '創造的で発想豊かな対話'
   },
-  business: {
-    id: 'business',
-    name: 'ビジネス',
-    icon: Briefcase,
-    color: 'from-gray-400 to-gray-600',
-    description: '仕事や業務効率化をサポート'
-  },
-  casual: {
-    id: 'casual',
-    name: 'カジュアル',
-    icon: Coffee,
-    color: 'from-green-400 to-green-600',
-    description: 'のんびりとリラックスした会話'
-  },
-  humor: {
-    id: 'humor',
-    name: 'ユーモア',
-    icon: Smile,
-    color: 'from-yellow-400 to-yellow-600',
-    description: '笑いと楽しさを提供する会話'
+  analytical: {
+    id: 'analytical',
+    name: 'アナリティカル',
+    icon: LineChart,
+    color: 'from-green-400 to-teal-600',
+    description: '論理的で分析的な対話'
   }
 }
 
