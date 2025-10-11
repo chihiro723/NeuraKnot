@@ -1,0 +1,76 @@
+"""
+FastAPIメインアプリケーション
+BridgeSpeak AI Server
+"""
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.core.config import settings
+from app.api.v1 import chat, tools, health
+from app.middleware.error_handler import add_exception_handlers
+import logging
+
+# ロギング設定
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    version=settings.VERSION
+)
+
+# CORSミドルウェア
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"]
+)
+
+# エラーハンドラ
+add_exception_handlers(app)
+
+# ルーター登録
+app.include_router(
+    chat.router,
+    prefix=f"{settings.API_V1_PREFIX}/ai",
+    tags=["AI Chat"]
+)
+app.include_router(
+    tools.router,
+    prefix=f"{settings.API_V1_PREFIX}/tools",
+    tags=["Tools"]
+)
+app.include_router(
+    health.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Health"]
+)
+
+
+@app.get("/")
+async def root():
+    """
+    ルートエンドポイント
+    
+    Returns:
+        サービス情報
+    """
+    return {
+        "service": settings.PROJECT_NAME,
+        "version": settings.VERSION,
+        "status": "running"
+    }
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "app.main:app",
+        host=settings.HOST,
+        port=settings.PORT,
+        reload=True
+    )
+

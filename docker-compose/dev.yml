@@ -51,12 +51,12 @@ services:
   # Python AI Server
   python-backend:
     build:
-      context: ../backend-python/ai_server
+      context: ../backend-python
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "8001:8001"
     env_file:
-      - ../backend-python/ai_server/.env.local
+      - ../backend-python/.env.local
     environment:
       # Docker特有の設定を上書き
       - POSTGRES_HOST=postgres
@@ -67,7 +67,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
-      - ../backend-python/ai_server/logs:/app/logs
+      - ../backend-python/logs:/app/logs
     networks:
       - app-network
     restart: unless-stopped
