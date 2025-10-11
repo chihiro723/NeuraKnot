@@ -1,9 +1,9 @@
 package database
 
 import (
+	"backend-go/internal/infrastructure/config"
 	"database/sql"
 	"fmt"
-	"go-backend/internal/infrastructure/config"
 
 	_ "github.com/lib/pq"
 )
@@ -45,11 +45,3 @@ func (c *Connection) Close() error {
 	}
 	return nil
 }
-
-
-
-
-
-
-
-

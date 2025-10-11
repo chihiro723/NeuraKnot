@@ -17,14 +17,14 @@ services:
       - /app/node_modules
       - /app/.next
     depends_on:
-      - go-backend
-      - python-backend
+      - backend-go
+      - backend-python
     networks:
       - app-network
     restart: unless-stopped
 
   # Go API Server (開発用 - ホットリロード)
-  go-backend:
+  backend-go:
     build:
       context: ../backend-go
       dockerfile: docker/Dockerfile.dev
@@ -49,7 +49,7 @@ services:
     restart: unless-stopped
 
   # Python AI Server
-  python-backend:
+  backend-python:
     build:
       context: ../backend-python
       dockerfile: Dockerfile
@@ -122,8 +122,8 @@ services:
       - ./nginx/ssl:/etc/nginx/ssl:ro
     depends_on:
       - frontend
-      - go-backend
-      - python-backend
+      - backend-go
+      - backend-python
     networks:
       - app-network
     restart: unless-stopped

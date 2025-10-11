@@ -123,9 +123,9 @@ CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/main cmd/main.go
 aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin $(aws sts get-caller-identity --query Account --output text).dkr.ecr.ap-northeast-1.amazonaws.com
 
 # イメージをビルド・プッシュ
-docker build -t go-backend .
-docker tag go-backend:latest $(aws sts get-caller-identity --query Account --output text).dkr.ecr.ap-northeast-1.amazonaws.com/bridgespeak-dev-go-backend:latest
-docker push $(aws sts get-caller-identity --query Account --output text).dkr.ecr.ap-northeast-1.amazonaws.com/bridgespeak-dev-go-backend:latest
+docker build -t backend-go .
+docker tag backend-go:latest $(aws sts get-caller-identity --query Account --output text).dkr.ecr.ap-northeast-1.amazonaws.com/bridgespeak-dev-backend-go:latest
+docker push $(aws sts get-caller-identity --query Account --output text).dkr.ecr.ap-northeast-1.amazonaws.com/bridgespeak-dev-backend-go:latest
 ```
 
 5. **Next.js フロントエンドをビルド**
@@ -254,7 +254,7 @@ CREATE TABLE users (
 aws logs describe-log-groups --log-group-name-prefix "/ecs/bridgespeak"
 
 # 特定のログストリームを確認
-aws logs get-log-events --log-group-name "/ecs/bridgespeak-dev-go-backend" --log-stream-name "ecs/go-backend/..."
+aws logs get-log-events --log-group-name "/ecs/bridgespeak-dev-backend-go" --log-stream-name "ecs/backend-go/..."
 ```
 
 ## 今後の拡張

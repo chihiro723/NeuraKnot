@@ -382,10 +382,10 @@ curl http://localhost:8080/swagger/doc.json | jq '.paths."/api/v1/texts".get'
 
 ```bash
 # コンテナのログを確認
-docker-compose -f docker-compose/dev.yml logs go-backend
+docker-compose -f docker-compose/dev.yml logs backend-go
 
 # リアルタイムでログを確認
-docker-compose -f docker-compose/dev.yml logs -f go-backend
+docker-compose -f docker-compose/dev.yml logs -f backend-go
 ```
 
 #### 3. 生成されたファイルの確認

@@ -21,12 +21,12 @@
 package main
 
 import (
-	"go-backend/internal/handler/http"
-	"go-backend/internal/infrastructure/config"
-	"go-backend/internal/infrastructure/database"
+	"backend-go/internal/handler/http"
+	"backend-go/internal/infrastructure/config"
+	"backend-go/internal/infrastructure/database"
 	"log"
 
-	_ "go-backend/docs" // Swagger docs
+	_ "backend-go/docs" // Swagger docs
 )
 
 func main() {

@@ -1,10 +1,10 @@
 package user
 
 import (
+	"backend-go/internal/domain/user"
 	"context"
 	"database/sql"
 	"fmt"
-	"go-backend/internal/domain/user"
 	"time"
 )
 

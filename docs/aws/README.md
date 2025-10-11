@@ -126,7 +126,7 @@ terraform apply -var="environment=dev"
 
 ```bash
 # ECS タスクのログ
-aws logs get-log-events --log-group-name "/ecs/bridgespeak-dev-go-backend"
+aws logs get-log-events --log-group-name "/ecs/bridgespeak-dev-backend-go"
 
 # RDS のログ
 aws rds describe-db-log-files --db-instance-identifier bridgespeak-dev-db

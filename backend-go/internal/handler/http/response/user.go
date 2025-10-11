@@ -1,6 +1,6 @@
 package response
 
-import "go-backend/internal/domain/user"
+import "backend-go/internal/domain/user"
 
 // UserResponse ユーザーレスポンス
 type UserResponse struct {

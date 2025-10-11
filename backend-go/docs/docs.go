@@ -45,7 +45,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_request.ConfirmForgotPasswordRequest"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_request.ConfirmForgotPasswordRequest"
                         }
                     }
                 ],
@@ -62,7 +62,7 @@ const docTemplate = `{
                     "400": {
                         "description": "バリデーションエラー",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
                         }
                     }
                 }
@@ -88,7 +88,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_request.ConfirmSignUpRequest"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_request.ConfirmSignUpRequest"
                         }
                     }
                 ],
@@ -96,13 +96,13 @@ const docTemplate = `{
                     "200": {
                         "description": "確認成功",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.MessageResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.MessageResponse"
                         }
                     },
                     "400": {
                         "description": "バリデーションエラー",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
                         }
                     }
                 }
@@ -128,7 +128,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_request.ForgotPasswordRequest"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_request.ForgotPasswordRequest"
                         }
                     }
                 ],
@@ -145,7 +145,7 @@ const docTemplate = `{
                     "400": {
                         "description": "バリデーションエラー",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
                         }
                     }
                 }
@@ -168,19 +168,19 @@ const docTemplate = `{
                     "200": {
                         "description": "トークンリフレッシュ成功（新しいトークンはCookieに保存）",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.MessageResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.MessageResponse"
                         }
                     },
                     "401": {
                         "description": "認証エラー",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "サーバーエラー",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
                         }
                     }
                 }
@@ -206,7 +206,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_request.SignInRequest"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_request.SignInRequest"
                         }
                     }
                 ],
@@ -214,19 +214,19 @@ const docTemplate = `{
                     "200": {
                         "description": "ログイン成功（トークンはCookieに保存）",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.AuthResultResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.AuthResultResponse"
                         }
                     },
                     "400": {
                         "description": "バリデーションエラー",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "認証エラー",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
                         }
                     }
                 }
@@ -249,13 +249,13 @@ const docTemplate = `{
                     "200": {
                         "description": "ログアウト成功",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.MessageResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.MessageResponse"
                         }
                     },
                     "500": {
                         "description": "サーバーエラー",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
                         }
                     }
                 }
@@ -281,7 +281,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_request.SignUpRequest"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_request.SignUpRequest"
                         }
                     }
                 ],
@@ -289,19 +289,19 @@ const docTemplate = `{
                     "201": {
                         "description": "登録成功（トークンはCookieに保存）",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.AuthResultResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.AuthResultResponse"
                         }
                     },
                     "400": {
                         "description": "バリデーションエラー",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "サーバーエラー",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
                         }
                     }
                 }
@@ -345,19 +345,19 @@ const docTemplate = `{
                     "200": {
                         "description": "ユーザー一覧取得成功",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.UsersResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.UsersResponse"
                         }
                     },
                     "401": {
                         "description": "認証エラー",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "サーバーエラー",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
                         }
                     }
                 }
@@ -388,7 +388,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_request.ChangeEmailRequest"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_request.ChangeEmailRequest"
                         }
                     }
                 ],
@@ -396,25 +396,25 @@ const docTemplate = `{
                     "200": {
                         "description": "変更成功",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.UserResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.UserResponse"
                         }
                     },
                     "400": {
                         "description": "バリデーションエラー",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "認証エラー",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "サーバーエラー",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
                         }
                     }
                 }
@@ -442,13 +442,13 @@ const docTemplate = `{
                     "200": {
                         "description": "プロフィール取得成功",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.UserResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.UserResponse"
                         }
                     },
                     "401": {
                         "description": "認証エラー",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
                         }
                     }
                 }
@@ -477,7 +477,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_request.UpdateProfileRequest"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_request.UpdateProfileRequest"
                         }
                     }
                 ],
@@ -485,25 +485,25 @@ const docTemplate = `{
                     "200": {
                         "description": "更新成功",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.UserResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.UserResponse"
                         }
                     },
                     "400": {
                         "description": "バリデーションエラー",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "認証エラー",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "サーバーエラー",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
                         }
                     }
                 }
@@ -540,25 +540,25 @@ const docTemplate = `{
                     "200": {
                         "description": "ユーザー取得成功",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.UserResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.UserResponse"
                         }
                     },
                     "400": {
                         "description": "バリデーションエラー",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "認証エラー",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "ユーザーが見つかりません",
                         "schema": {
-                            "$ref": "#/definitions/go-backend_internal_handler_http_response.ErrorResponse"
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
                         }
                     }
                 }
@@ -566,7 +566,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "go-backend_internal_handler_http_request.ChangeEmailRequest": {
+        "backend-go_internal_handler_http_request.ChangeEmailRequest": {
             "type": "object",
             "required": [
                 "email"
@@ -577,7 +577,7 @@ const docTemplate = `{
                 }
             }
         },
-        "go-backend_internal_handler_http_request.ConfirmForgotPasswordRequest": {
+        "backend-go_internal_handler_http_request.ConfirmForgotPasswordRequest": {
             "type": "object",
             "required": [
                 "confirmation_code",
@@ -597,7 +597,7 @@ const docTemplate = `{
                 }
             }
         },
-        "go-backend_internal_handler_http_request.ConfirmSignUpRequest": {
+        "backend-go_internal_handler_http_request.ConfirmSignUpRequest": {
             "type": "object",
             "required": [
                 "confirmation_code",
@@ -612,7 +612,7 @@ const docTemplate = `{
                 }
             }
         },
-        "go-backend_internal_handler_http_request.ForgotPasswordRequest": {
+        "backend-go_internal_handler_http_request.ForgotPasswordRequest": {
             "type": "object",
             "required": [
                 "email"
@@ -623,7 +623,7 @@ const docTemplate = `{
                 }
             }
         },
-        "go-backend_internal_handler_http_request.SignInRequest": {
+        "backend-go_internal_handler_http_request.SignInRequest": {
             "type": "object",
             "required": [
                 "email",
@@ -638,7 +638,7 @@ const docTemplate = `{
                 }
             }
         },
-        "go-backend_internal_handler_http_request.SignUpRequest": {
+        "backend-go_internal_handler_http_request.SignUpRequest": {
             "type": "object",
             "required": [
                 "display_name",
@@ -660,7 +660,7 @@ const docTemplate = `{
                 }
             }
         },
-        "go-backend_internal_handler_http_request.UpdateProfileRequest": {
+        "backend-go_internal_handler_http_request.UpdateProfileRequest": {
             "type": "object",
             "required": [
                 "display_name"
@@ -673,18 +673,18 @@ const docTemplate = `{
                 }
             }
         },
-        "go-backend_internal_handler_http_response.AuthResultResponse": {
+        "backend-go_internal_handler_http_response.AuthResultResponse": {
             "type": "object",
             "properties": {
                 "expires_in": {
                     "type": "integer"
                 },
                 "user": {
-                    "$ref": "#/definitions/go-backend_internal_handler_http_response.UserResponse"
+                    "$ref": "#/definitions/backend-go_internal_handler_http_response.UserResponse"
                 }
             }
         },
-        "go-backend_internal_handler_http_response.ErrorResponse": {
+        "backend-go_internal_handler_http_response.ErrorResponse": {
             "type": "object",
             "properties": {
                 "code": {
@@ -698,7 +698,7 @@ const docTemplate = `{
                 }
             }
         },
-        "go-backend_internal_handler_http_response.MessageResponse": {
+        "backend-go_internal_handler_http_response.MessageResponse": {
             "type": "object",
             "properties": {
                 "message": {
@@ -706,7 +706,7 @@ const docTemplate = `{
                 }
             }
         },
-        "go-backend_internal_handler_http_response.UserResponse": {
+        "backend-go_internal_handler_http_response.UserResponse": {
             "type": "object",
             "properties": {
                 "cognito_user_id": {
@@ -732,7 +732,7 @@ const docTemplate = `{
                 }
             }
         },
-        "go-backend_internal_handler_http_response.UsersResponse": {
+        "backend-go_internal_handler_http_response.UsersResponse": {
             "type": "object",
             "properties": {
                 "total": {
@@ -741,7 +741,7 @@ const docTemplate = `{
                 "users": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/go-backend_internal_handler_http_response.UserResponse"
+                        "$ref": "#/definitions/backend-go_internal_handler_http_response.UserResponse"
                     }
                 }
             }

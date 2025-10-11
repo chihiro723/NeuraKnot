@@ -1,8 +1,8 @@
 package middleware
 
 import (
-	"go-backend/internal/domain/user"
-	"go-backend/internal/handler/http/response"
+	"backend-go/internal/domain/user"
+	"backend-go/internal/handler/http/response"
 	"net/http"
 
 	"github.com/gin-gonic/gin"

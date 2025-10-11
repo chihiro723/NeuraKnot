@@ -1,9 +1,9 @@
 package user
 
 import (
+	"backend-go/internal/domain/user"
 	"context"
 	"fmt"
-	"go-backend/internal/domain/user"
 )
 
 // Service ユーザーサービス（ユースケース）

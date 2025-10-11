@@ -1,13 +1,13 @@
 package http
 
 import (
-	"go-backend/internal/domain/user"
-	"go-backend/internal/handler/http/middleware"
-	"go-backend/internal/infrastructure/config"
-	"go-backend/internal/infrastructure/database"
-	"go-backend/internal/infrastructure/external"
-	userrepo "go-backend/internal/infrastructure/persistence/user"
-	userusecase "go-backend/internal/usecase/user"
+	"backend-go/internal/domain/user"
+	"backend-go/internal/handler/http/middleware"
+	"backend-go/internal/infrastructure/config"
+	"backend-go/internal/infrastructure/database"
+	"backend-go/internal/infrastructure/external"
+	userrepo "backend-go/internal/infrastructure/persistence/user"
+	userusecase "backend-go/internal/usecase/user"
 	"net/http"
 
 	"github.com/gin-gonic/gin"

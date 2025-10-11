@@ -1,13 +1,13 @@
 package external
 
 import (
+	"backend-go/internal/domain/user"
+	"backend-go/internal/infrastructure/config"
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"go-backend/internal/domain/user"
-	"go-backend/internal/infrastructure/config"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"

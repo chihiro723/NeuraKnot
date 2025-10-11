@@ -138,7 +138,7 @@ Internet
 
 #### リポジトリ
 
-- `bridgespeak-{environment}-go-backend`
+- `bridgespeak-{environment}-backend-go`
 - `bridgespeak-{environment}-python-ai`
 - `bridgespeak-{environment}-nextjs-frontend`
 
@@ -158,7 +158,7 @@ Internet
 
 ### ターゲットグループ
 
-- **Go Backend**: `bridgespeak-{environment}-go-backend-tg`
+- **Go Backend**: `bridgespeak-{environment}-backend-go-tg`
 - **ヘルスチェック**: `/health`エンドポイント
 - **プロトコル**: HTTP
 - **ポート**: 8080
@@ -231,7 +231,7 @@ Internet
 
 #### ロググループ
 
-- `/ecs/bridgespeak-{environment}-go-backend`
+- `/ecs/bridgespeak-{environment}-backend-go`
 - `/ecs/bridgespeak-{environment}-python-ai`
 - `/ecs/bridgespeak-{environment}-nextjs-frontend`
 
@@ -342,7 +342,7 @@ export ENVIRONMENT="dev"
 
 ```bash
 # ECS タスクのログ
-aws logs get-log-events --log-group-name "/ecs/bridgespeak-dev-go-backend" --log-stream-name "ecs/go-backend/..."
+aws logs get-log-events --log-group-name "/ecs/bridgespeak-dev-backend-go" --log-stream-name "ecs/backend-go/..."
 
 # RDS のログ
 aws rds describe-db-log-files --db-instance-identifier bridgespeak-dev-db

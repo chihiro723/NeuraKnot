@@ -51,8 +51,8 @@ show_help() {
     echo ""
     echo "利用可能なサービス:"
     echo "  frontend          - Next.jsアプリケーション       (ポート: 3000)"
-    echo "  go-backend        - Go APIサーバー                (ポート: 8080)"
-    echo "  python-backend    - Python APIサーバー            (ポート: 8000)"
+    echo "  backend-go        - Go APIサーバー                (ポート: 8080)"
+    echo "  backend-python    - Python APIサーバー            (ポート: 8001)"
     echo "  postgres          - PostgreSQLデータベース        (ポート: 5432)"
     echo "  redis             - Redisキャッシュ               (ポート: 6379)"
     echo "  nginx             - Nginxリバースプロキシ         (ポート: 80, 443)"
@@ -60,19 +60,19 @@ show_help() {
     echo "例:"
     echo "  ./dev.sh start                    # 全サービスを起動"
     echo "  ./dev.sh start frontend           # フロントエンドのみ起動"
-    echo "  ./dev.sh logs go-backend          # Go APIのログを表示"
-    echo "  ./dev.sh restart python-backend   # Python APIのみ再起動"
+    echo "  ./dev.sh logs backend-go          # Go APIのログを表示"
+    echo "  ./dev.sh restart backend-python   # Python APIのみ再起動"
     echo "  ./dev.sh stop postgres            # PostgreSQLのみ停止"
     echo "  ./dev.sh build                    # 全サービスを再ビルド"
     echo "  ./dev.sh build frontend           # フロントエンドのみ再ビルド"
-    echo "  ./dev.sh env go-backend           # Go APIの環境変数を表示"
+    echo "  ./dev.sh env backend-go           # Go APIの環境変数を表示"
     echo "  ./dev.sh env frontend             # フロントエンドの環境変数を表示"
 }
 
 # サービス名の検証
 validate_service() {
     local service="$1"
-    local valid_services=("frontend" "go-backend" "python-backend" "postgres" "redis" "nginx")
+    local valid_services=("frontend" "backend-go" "backend-python" "postgres" "redis" "nginx")
     
     if [ -n "$service" ]; then
         for valid_service in "${valid_services[@]}"; do
@@ -102,9 +102,10 @@ run_docker_compose() {
 show_access_urls() {
     log_info "アクセスURL:"
     log_info "  - Frontend: http://localhost:3000"
-    log_info "  - Python API: http://localhost:8000"
+    log_info "  - Python API: http://localhost:8001"
+    log_info "  - Python API Swagger: http://localhost:8001/docs"
     log_info "  - Go API: http://localhost:8080"
-    log_info "  - Swagger UI: http://localhost:8080/swagger/index.html"
+    log_info "  - Go API Swagger: http://localhost:8080/swagger/index.html"
     log_info "  - PostgreSQL: localhost:5432"
     log_info "  - Redis: localhost:6379"
     log_info ""
@@ -319,13 +320,13 @@ show_env_vars() {
         log_error "サービス名を指定してください。"
         echo ""
         echo "利用可能なサービス:"
-        echo "  - go-backend"
-        echo "  - python-backend"
+        echo "  - backend-go"
+        echo "  - backend-python"
         echo "  - frontend"
         echo "  - postgres"
         echo "  - redis"
         echo ""
-        echo "使用例: ./dev.sh env go-backend"
+        echo "使用例: ./dev.sh env backend-go"
         exit 1
     fi
     

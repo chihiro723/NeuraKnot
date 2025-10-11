@@ -1,11 +1,11 @@
 package http
 
 import (
-	"go-backend/internal/domain/user"
-	"go-backend/internal/handler/http/middleware"
-	"go-backend/internal/handler/http/request"
-	"go-backend/internal/handler/http/response"
-	userusecase "go-backend/internal/usecase/user"
+	"backend-go/internal/domain/user"
+	"backend-go/internal/handler/http/middleware"
+	"backend-go/internal/handler/http/request"
+	"backend-go/internal/handler/http/response"
+	userusecase "backend-go/internal/usecase/user"
 	"net/http"
 	"strconv"
 

@@ -103,10 +103,10 @@ vim .env.local
 ```bash
 # プロジェクトルートから
 cd ..
-docker-compose -f docker-compose/dev.yml up -d go-backend
+docker-compose -f docker-compose/dev.yml up -d backend-go
 
 # ログ確認
-docker-compose -f docker-compose/dev.yml logs -f go-backend
+docker-compose -f docker-compose/dev.yml logs -f backend-go
 ```
 
 ### ローカルで起動
@@ -259,7 +259,7 @@ migrate -path migrations -database "postgres://postgres:password@localhost:5432/
 
 ```bash
 # コンテナ内で実行
-docker-compose -f docker-compose/dev.yml exec go-backend migrate -path migrations -database "postgres://postgres:password@postgres:5432/go_backend?sslmode=disable" up
+docker-compose -f docker-compose/dev.yml exec backend-go migrate -path migrations -database "postgres://postgres:password@postgres:5432/go_backend?sslmode=disable" up
 ```
 
 ## 🧪 テスト
@@ -295,13 +295,13 @@ CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/api cmd/api/main.
 
 ```bash
 # 開発用イメージ
-docker build -f docker/Dockerfile.dev -t bridgespeak-go-backend:dev .
+docker build -f docker/Dockerfile.dev -t bridgespeak-backend-go:dev .
 
 # 本番用イメージ
-docker build -f docker/Dockerfile.prod -t bridgespeak-go-backend:prod .
+docker build -f docker/Dockerfile.prod -t bridgespeak-backend-go:prod .
 
 # 実行
-docker run -p 8080:8080 --env-file .env.local bridgespeak-go-backend:dev
+docker run -p 8080:8080 --env-file .env.local bridgespeak-backend-go:dev
 ```
 
 ## 🎯 アーキテクチャのルール
@@ -348,10 +348,10 @@ docker run -p 8080:8080 --env-file .env.local bridgespeak-go-backend:dev
 
 ```bash
 # ログ確認
-docker-compose -f docker-compose/dev.yml logs go-backend
+docker-compose -f docker-compose/dev.yml logs backend-go
 
 # 環境変数確認
-docker-compose -f docker-compose/dev.yml exec go-backend env | grep DB
+docker-compose -f docker-compose/dev.yml exec backend-go env | grep DB
 
 # ポート確認
 lsof -i :8080
@@ -364,7 +364,7 @@ lsof -i :8080
 go run github.com/swaggo/swag/cmd/swag@v1.8.12 init -g cmd/api/main.go -o docs
 
 # コンテナ再起動
-docker-compose -f docker-compose/dev.yml restart go-backend
+docker-compose -f docker-compose/dev.yml restart backend-go
 ```
 
 ### データベース接続エラー
