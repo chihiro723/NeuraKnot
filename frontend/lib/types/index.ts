@@ -10,7 +10,7 @@ export interface Profile {
   id: string
   username: string
   display_name: string
-  avatar_url?: string | null
+  avatar_url?: string
   status: 'online' | 'offline' | 'away'
   created_at: string
   updated_at?: string
@@ -34,7 +34,7 @@ export interface SelectedFriend {
   id: string
   name: string
   avatar_url?: string
-  type: 'human' | 'ai'
+  type: 'human' | 'ai' | 'group'
   status: 'online' | 'offline'
   personality_preset?: string
   created_at?: string
@@ -44,7 +44,7 @@ export interface SelectedFriend {
 // 友だちデータの型定義
 export interface FriendData {
   id: string
-  type: 'human' | 'ai'
+  type: 'human' | 'ai' | 'group'
   name: string
   avatar_url?: string
   status: 'online' | 'offline'
@@ -79,6 +79,19 @@ export interface ConversationData {
   } | null
 }
 
+// ツール使用履歴の型定義（DBから取得したデータ）
+export interface ToolUsage {
+  id: string
+  tool_name: string
+  tool_category: string
+  input_data: string
+  output_data?: string
+  status: 'completed' | 'failed'
+  error_message?: string
+  execution_time_ms?: number
+  executed_at: string
+}
+
 // メッセージの型定義
 export interface Message {
   id: string
@@ -86,6 +99,7 @@ export interface Message {
   sender_type: 'human' | 'ai'
   sender_id: string
   created_at: string
+  tool_usages?: ToolUsage[]
 }
 
 // AIパーソナリティの型定義
@@ -209,4 +223,31 @@ export interface ThemeContextType {
   theme: Theme
   setTheme: (theme: Theme) => void
   resolvedTheme: 'light' | 'dark'
+}
+
+// ストリーミングイベントの型定義
+export interface StreamEvent {
+  type: 'token' | 'tool_start' | 'tool_end' | 'done' | 'error'
+  content?: string
+  tool_id?: string
+  tool_name?: string
+  input?: string
+  output?: string
+  status?: 'completed' | 'failed'
+  error?: string
+  execution_time_ms?: number
+  code?: string
+  message?: string
+}
+
+// ツール使用情報の型定義
+export interface ToolUsageData {
+  tool_id: string
+  tool_name: string
+  status: 'running' | 'completed' | 'failed'
+  input: any
+  output?: string
+  error?: string
+  execution_time_ms?: number
+  expanded: boolean
 }
