@@ -51,7 +51,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
     return (
       <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors duration-200">
         {/* チャットヘッダー */}
-        <div className="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 shadow-sm flex-shrink-0">
+        <div className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 shadow-sm flex-shrink-0">
           <div className="flex items-center space-x-3">
             <button
               onClick={() => {
@@ -123,7 +123,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
   if (showFriendDetail) {
     return (
       <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors duration-200">
-        <div className="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 shadow-sm flex-shrink-0">
+        <div className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 shadow-sm flex-shrink-0">
           <div className="flex items-center space-x-3">
             <button
               onClick={() => setSelectedFriend(null)}
@@ -174,7 +174,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
   if (showProfileDetail) {
     return (
       <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors duration-200">
-        <div className="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 shadow-sm flex-shrink-0">
+        <div className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 shadow-sm flex-shrink-0">
           <div className="flex items-center space-x-3">
             <button
               onClick={() => setShowProfileSettings(false)}
@@ -216,7 +216,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
   return (
     <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors duration-200">
       {/* ヘッダー */}
-      <div className="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 shadow-sm flex-shrink-0">
+      <div className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 shadow-sm flex-shrink-0">
         <div className="flex items-center space-x-3">
           <div className="w-9 h-9 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center ring-2 ring-green-500/30 dark:ring-green-400/30">
             {profile.avatar_url ? (

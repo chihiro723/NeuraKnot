@@ -40,7 +40,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       {/* 左サイドバー */}
-      <div className="flex flex-col w-96 bg-white border-r border-gray-200 dark:bg-gray-900 dark:border-gray-700">
+      <div className="flex flex-col w-96 flex-shrink-0 bg-white border-r border-gray-200 dark:bg-gray-900 dark:border-gray-700">
         {/* ヘッダー */}
         <div className="flex justify-between items-center px-4 h-16 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
           <div className="flex items-center space-x-3">
@@ -58,8 +58,11 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           <Search className="w-5 h-5 text-gray-600 transition-colors cursor-pointer dark:text-gray-400 hover:text-green-500 dark:hover:text-green-400" />
         </div>
 
-        {/* タブナビゲーション */}
-        <div className="border-b border-gray-200 dark:border-gray-700">
+        {/* コンテンツエリア */}
+        <div className="overflow-hidden flex-1">{children}</div>
+
+        {/* タブナビゲーション - 下部に移動 */}
+        <div className="border-t border-gray-200 dark:border-gray-700">
           <div className="flex">
             {NAVIGATION_TABS.map((tab) => {
               const Icon = tab.icon;
@@ -70,26 +73,23 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    "flex flex-col flex-1 items-center px-2 py-3 transition-colors",
+                    "flex flex-1 items-center justify-center px-2 py-4 transition-colors",
                     isActive
-                      ? "text-green-500 bg-green-50 border-b-2 border-green-500 dark:bg-green-500/10"
+                      ? "text-green-500 bg-green-50 border-t-2 border-green-500 dark:bg-green-500/10"
                       : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
                   )}
+                  title={tab.label}
                 >
-                  <Icon className="mb-1 w-5 h-5" />
-                  <span className="text-xs font-medium">{tab.label}</span>
+                  <Icon className="w-6 h-6" />
                 </button>
               );
             })}
           </div>
         </div>
-
-        {/* コンテンツエリア */}
-        <div className="overflow-hidden flex-1">{children}</div>
       </div>
 
       {/* 右メインエリア */}
-      <div className="flex flex-col flex-1">
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         {activeTab === "add-friends" ? (
           <AddFriendsRightPanel selectedType={selectedAddFriendType} />
         ) : activeTab === "friends" && selectedFriend ? (
@@ -152,11 +152,13 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
               </div>
             </div>
 
-            {selectedChat.type === "group" && selectedGroup ? (
-              <GroupChatWindow selectedGroup={selectedGroup} />
-            ) : (
-              <ChatWindow selectedChat={selectedChat} />
-            )}
+            <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+              {selectedChat.type === "group" && selectedGroup ? (
+                <GroupChatWindow selectedGroup={selectedGroup} />
+              ) : (
+                <ChatWindow selectedChat={selectedChat} />
+              )}
+            </div>
           </>
         ) : (
           <>
@@ -244,7 +246,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                       友だちを見る
                     </button>
                     <button
-                      onClick={() => setActiveTab("add")}
+                      onClick={() => setActiveTab("add-friends")}
                       className="px-6 py-3 font-semibold text-gray-900 bg-white rounded-xl border border-gray-300 transition-colors dark:bg-gray-900 dark:text-white dark:border-gray-700 hover:border-green-400 dark:hover:border-green-400"
                     >
                       友だちを追加
