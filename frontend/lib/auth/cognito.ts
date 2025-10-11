@@ -1,17 +1,20 @@
 import { AuthResponse, AuthUser } from '@/lib/types/auth'
-
-// APIベースURL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api/v1'
+import { signUp as serverSignUp, confirmSignUp as serverConfirmSignUp, signOut as serverSignOut } from '@/lib/actions/auth-actions'
 
 /**
- * Cognito認証クライアント（Cookieベース）
+ * Cognito認証クライアント
+ * 
+ * アーキテクチャ:
+ * - Cookie設定が必要な操作（signIn, refreshToken, getUser）: API Routes
+ * - Cookie設定が不要な操作（signUp, confirmSignUp, signOut）: Server Actions
  */
 export class CognitoAuthClient {
   /**
    * ログイン
+   * API Route使用 - ブラウザにCookieを設定する必要があるため
    */
   async signIn(email: string, password: string): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/auth/signin`, {
+    const response = await fetch('/api/auth/signin', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -30,63 +33,37 @@ export class CognitoAuthClient {
 
   /**
    * サインアップ
+   * Server Action使用 - Cookie設定が不要なため
    */
   async signUp(email: string, password: string, displayName: string): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/auth/signup`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({
-        email,
-        password,
-        display_name: displayName,
-      }),
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'アカウント作成に失敗しました')
+    const result = await serverSignUp(email, password, displayName)
+    
+    if (!result.success) {
+      throw new Error(result.error || 'アカウント作成に失敗しました')
     }
 
-    return response.json()
+    return result.data as AuthResponse
   }
 
   /**
    * メール確認
+   * Server Action使用 - Cookie設定が不要なため
    */
   async confirmSignUp(email: string, confirmationCode: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/auth/confirm-signup`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({
-        email,
-        confirmation_code: confirmationCode,
-      }),
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'メール確認に失敗しました')
+    const result = await serverConfirmSignUp(email, confirmationCode)
+    
+    if (!result.success) {
+      throw new Error(result.error || 'メール確認に失敗しました')
     }
   }
 
   /**
    * ログアウト
+   * Server Action使用 - Cookie削除のため
    */
   async signOut(): Promise<void> {
     try {
-      await fetch(`${API_BASE_URL}/auth/signout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-      })
+      await serverSignOut()
     } catch (error) {
       console.error('ログアウトエラー:', error)
     }
@@ -94,9 +71,10 @@ export class CognitoAuthClient {
 
   /**
    * トークンリフレッシュ
+   * API Route使用 - ブラウザにCookieを設定する必要があるため
    */
   async refreshToken(): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+    const response = await fetch('/api/auth/refresh', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -105,21 +83,23 @@ export class CognitoAuthClient {
     })
 
     if (!response.ok) {
-      const error = await response.json()
+      const error = await response.json().catch(() => ({ error: 'トークンリフレッシュに失敗しました' }))
       throw new Error(error.error || 'トークンリフレッシュに失敗しました')
     }
   }
 
   /**
    * ユーザー情報取得
+   * API Route使用 - CookieからトークンをバックエンドGoに転送する必要があるため
    */
   async getUser(): Promise<AuthUser> {
-    const response = await fetch(`${API_BASE_URL}/users/profile`, {
+    const response = await fetch('/api/auth/user', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
       credentials: 'include',
+      cache: 'no-store',
     })
 
     if (!response.ok) {
@@ -130,69 +110,30 @@ export class CognitoAuthClient {
     return response.json()
   }
 
+  // TODO: 以下の機能は現在未実装（MVP後に実装予定）
+  
   /**
-   * ユーザー情報更新
+   * ユーザー情報更新（未実装）
+   * 将来的にAPI Routeまたはbackend-goのエンドポイント経由で実装
    */
   async updateUser(displayName: string): Promise<AuthUser> {
-    const response = await fetch(`${API_BASE_URL}/users/profile`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({
-        display_name: displayName,
-      }),
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'ユーザー情報の更新に失敗しました')
-    }
-
-    return response.json()
+    throw new Error('ユーザー情報更新は現在実装されていません')
   }
 
   /**
-   * パスワードリセット
+   * パスワードリセット（未実装）
+   * 将来的にbackend-goのエンドポイント経由で実装
    */
   async forgotPassword(email: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({ email }),
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'パスワードリセットメールの送信に失敗しました')
-    }
+    throw new Error('パスワードリセットは現在実装されていません')
   }
 
   /**
-   * パスワードリセット確認
+   * パスワードリセット確認（未実装）
+   * 将来的にbackend-goのエンドポイント経由で実装
    */
   async confirmForgotPassword(email: string, confirmationCode: string, newPassword: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/auth/confirm-forgot-password`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({
-        email,
-        confirmation_code: confirmationCode,
-        new_password: newPassword,
-      }),
-    })
-
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'パスワードリセットの確認に失敗しました')
-    }
+    throw new Error('パスワードリセット確認は現在実装されていません')
   }
 }
 

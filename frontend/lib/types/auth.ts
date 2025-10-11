@@ -2,10 +2,10 @@
 
 export interface AuthUser {
   id: string
+  cognito_user_id?: string
   email: string
-  name: string
   display_name: string
-  email_verified: boolean
+  status?: string
   created_at: string
   updated_at: string
 }
