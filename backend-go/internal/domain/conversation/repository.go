@@ -29,6 +29,9 @@ type MessageRepository interface {
 	// Save はメッセージを保存
 	Save(ctx context.Context, message *Message) error
 
+	// Update はメッセージを更新
+	Update(ctx context.Context, message *Message) error
+
 	// FindByID はIDでメッセージを取得
 	FindByID(ctx context.Context, id uuid.UUID) (*Message, error)
 
