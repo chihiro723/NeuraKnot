@@ -1,0 +1,162 @@
+"use client";
+
+import { useState } from "react";
+import {
+  ChevronDown,
+  ChevronRight,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  Wrench,
+} from "lucide-react";
+import type { ToolUsageData } from "@/lib/types";
+
+interface ToolUsageIndicatorProps {
+  tools: ToolUsageData[];
+  onToggle?: (toolId: string) => void;
+}
+
+export function ToolUsageIndicator({
+  tools,
+  onToggle,
+}: ToolUsageIndicatorProps) {
+  const [expandedTools, setExpandedTools] = useState<Set<string>>(new Set());
+
+  const toggleTool = (toolId: string) => {
+    const newExpanded = new Set(expandedTools);
+    if (newExpanded.has(toolId)) {
+      newExpanded.delete(toolId);
+    } else {
+      newExpanded.add(toolId);
+    }
+    setExpandedTools(newExpanded);
+    onToggle?.(toolId);
+  };
+
+  if (tools.length === 0) return null;
+
+  return (
+    <div className="space-y-2 my-3">
+      {tools.map((tool) => {
+        const isExpanded = expandedTools.has(tool.tool_id);
+        const isRunning = tool.status === "running";
+        const isCompleted = tool.status === "completed";
+        const isFailed = tool.status === "failed";
+
+        // ステータスに応じた色
+        const statusColor = isRunning
+          ? "border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30"
+          : isCompleted
+          ? "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/30"
+          : "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30";
+
+        return (
+          <div
+            key={tool.tool_id}
+            className={`border rounded-lg overflow-hidden transition-all duration-200 ${statusColor}`}
+          >
+            {/* ヘッダー */}
+            <div
+              className="flex items-center justify-between p-2.5 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+              onClick={() => toggleTool(tool.tool_id)}
+            >
+              <div className="flex items-center space-x-2.5 flex-1 min-w-0">
+                {/* ステータスアイコン */}
+                <div className="flex-shrink-0">
+                  {isRunning && (
+                    <Loader2 className="w-4 h-4 text-blue-600 dark:text-blue-400 animate-spin" />
+                  )}
+                  {isCompleted && (
+                    <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  )}
+                  {isFailed && (
+                    <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
+                  )}
+                </div>
+
+                {/* ツール情報 */}
+                <div className="flex items-center space-x-2 flex-1 min-w-0">
+                  <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
+                    {tool.tool_name}
+                  </span>
+
+                  {isCompleted && tool.execution_time_ms !== undefined && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      ({tool.execution_time_ms}ms)
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* 展開ボタン */}
+              <div className="flex-shrink-0 ml-2">
+                <div
+                  className={`transition-transform duration-200 ${
+                    isExpanded ? "rotate-180" : ""
+                  }`}
+                >
+                  <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                </div>
+              </div>
+            </div>
+
+            {/* 詳細（展開時） - アニメーション付き */}
+            <div
+              className={`transition-all duration-200 ease-in-out overflow-hidden ${
+                isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+              }`}
+            >
+              {isExpanded && (
+                <div className="px-3 pb-2.5 pt-2.5 space-y-2 border-t border-current/10 bg-white/30 dark:bg-gray-900/30">
+                  {/* 入力 */}
+                  {tool.input && (
+                    <div className="space-y-1">
+                      <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                        入力
+                      </span>
+                      <div className="text-xs text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-700">
+                        <pre className="whitespace-pre-wrap break-words font-mono leading-relaxed">
+                          {typeof tool.input === "string"
+                            ? tool.input
+                            : JSON.stringify(tool.input, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 出力 */}
+                  {tool.output && (
+                    <div className="space-y-1">
+                      <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                        結果
+                      </span>
+                      <div className="text-xs text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-700">
+                        <pre className="whitespace-pre-wrap break-words font-mono leading-relaxed">
+                          {tool.output}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* エラー */}
+                  {tool.error && (
+                    <div className="space-y-1">
+                      <span className="text-xs font-medium text-red-700 dark:text-red-300">
+                        エラー
+                      </span>
+                      <div className="text-xs text-red-800 dark:text-red-200 bg-red-50 dark:bg-red-900/30 p-2 rounded border border-red-300 dark:border-red-700">
+                        <pre className="whitespace-pre-wrap break-words font-mono leading-relaxed">
+                          {tool.error}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
