@@ -31,12 +31,42 @@ definitions:
     - confirmation_code
     - email
     type: object
+  backend-go_internal_handler_http_request.CreateAgentRequest:
+    properties:
+      description:
+        type: string
+      model:
+        type: string
+      name:
+        type: string
+      persona_type:
+        type: string
+      provider:
+        type: string
+    required:
+    - name
+    - persona_type
+    type: object
   backend-go_internal_handler_http_request.ForgotPasswordRequest:
     properties:
       email:
         type: string
     required:
     - email
+    type: object
+  backend-go_internal_handler_http_request.GetOrCreateConversationRequest:
+    properties:
+      ai_agent_id:
+        type: string
+    required:
+    - ai_agent_id
+    type: object
+  backend-go_internal_handler_http_request.SendMessageRequest:
+    properties:
+      content:
+        type: string
+    required:
+    - content
     type: object
   backend-go_internal_handler_http_request.SignInRequest:
     properties:
@@ -73,12 +103,103 @@ definitions:
     required:
     - display_name
     type: object
+  backend-go_internal_handler_http_response.AgentResponse:
+    properties:
+      avatar_url:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      last_chat_at:
+        type: string
+      max_tokens:
+        type: integer
+      message_count:
+        type: integer
+      model:
+        type: string
+      name:
+        type: string
+      persona_type:
+        type: string
+      provider:
+        type: string
+      system_prompt:
+        type: string
+      temperature:
+        type: number
+      tools_enabled:
+        type: boolean
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  backend-go_internal_handler_http_response.AgentsResponse:
+    properties:
+      agents:
+        items:
+          $ref: '#/definitions/backend-go_internal_handler_http_response.AgentResponse'
+        type: array
+      total:
+        type: integer
+    type: object
   backend-go_internal_handler_http_response.AuthResultResponse:
     properties:
       expires_in:
         type: integer
       user:
         $ref: '#/definitions/backend-go_internal_handler_http_response.UserResponse'
+    type: object
+  backend-go_internal_handler_http_response.ConversationResponse:
+    properties:
+      ai_agent_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      last_message_at:
+        type: string
+      message_count:
+        type: integer
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  backend-go_internal_handler_http_response.ConversationWithDetailsResponse:
+    properties:
+      ai_agent_avatar:
+        type: string
+      ai_agent_id:
+        type: string
+      ai_agent_name:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      last_message:
+        $ref: '#/definitions/backend-go_internal_handler_http_response.MessageResponse'
+      message_count:
+        type: integer
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  backend-go_internal_handler_http_response.ConversationsListResponse:
+    properties:
+      conversations:
+        items:
+          $ref: '#/definitions/backend-go_internal_handler_http_response.ConversationWithDetailsResponse'
+        type: array
+      total:
+        type: integer
     type: object
   backend-go_internal_handler_http_response.ErrorResponse:
     properties:
@@ -91,8 +212,37 @@ definitions:
     type: object
   backend-go_internal_handler_http_response.MessageResponse:
     properties:
-      message:
+      ai_session_id:
         type: string
+      content:
+        type: string
+      conversation_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      sender_id:
+        type: string
+      sender_type:
+        type: string
+    type: object
+  backend-go_internal_handler_http_response.MessagesResponse:
+    properties:
+      messages:
+        items:
+          $ref: '#/definitions/backend-go_internal_handler_http_response.MessageResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  backend-go_internal_handler_http_response.SendMessageResponse:
+    properties:
+      ai_message:
+        $ref: '#/definitions/backend-go_internal_handler_http_response.MessageResponse'
+      metadata: {}
+      user_message:
+        $ref: '#/definitions/backend-go_internal_handler_http_response.MessageResponse'
     type: object
   backend-go_internal_handler_http_response.UserResponse:
     properties:
@@ -134,6 +284,241 @@ info:
   title: BridgeSpeak API
   version: "1.0"
 paths:
+  /api/v1/ai-agents:
+    get:
+      consumes:
+      - application/json
+      description: ユーザーのAI Agentリストを取得します
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 取得成功
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.AgentsResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: AI Agentリスト取得
+      tags:
+      - AI Agent
+    post:
+      consumes:
+      - application/json
+      description: 新しいAI Agentを作成します
+      parameters:
+      - description: AI Agent作成情報
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/backend-go_internal_handler_http_request.CreateAgentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 作成成功
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.AgentResponse'
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: AI Agent作成
+      tags:
+      - AI Agent
+  /api/v1/ai-agents/{id}:
+    get:
+      consumes:
+      - application/json
+      description: IDでAI Agentを取得します
+      parameters:
+      - description: AI Agent ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 取得成功
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.AgentResponse'
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "404":
+          description: AI Agentが見つかりません
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: AI Agent取得
+      tags:
+      - AI Agent
+  /api/v1/conversations:
+    get:
+      consumes:
+      - application/json
+      description: ユーザーの会話一覧を取得します
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 取得成功
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ConversationsListResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 会話一覧取得
+      tags:
+      - Chat
+    post:
+      consumes:
+      - application/json
+      description: AI Agentとの会話を取得または作成します
+      parameters:
+      - description: AI Agent ID
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/backend-go_internal_handler_http_request.GetOrCreateConversationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 取得/作成成功
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ConversationResponse'
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 会話取得/作成
+      tags:
+      - Chat
+  /api/v1/conversations/{id}/messages:
+    get:
+      consumes:
+      - application/json
+      description: 会話のメッセージ履歴を取得します
+      parameters:
+      - description: 会話ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: 50
+        description: '取得件数（デフォルト: 50）'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 取得成功
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.MessagesResponse'
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: メッセージ履歴取得
+      tags:
+      - Chat
+    post:
+      consumes:
+      - application/json
+      description: 会話にメッセージを送信してAI応答を取得します
+      parameters:
+      - description: 会話ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: メッセージ内容
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/backend-go_internal_handler_http_request.SendMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 送信成功
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.SendMessageResponse'
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: メッセージ送信
+      tags:
+      - Chat
   /auth/confirm-forgot-password:
     post:
       consumes:
