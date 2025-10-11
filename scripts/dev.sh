@@ -9,8 +9,9 @@
 #   stop     - 開発環境を停止
 #   restart  - 開発環境を再起動
 #   logs     - ログを表示
-#   clean    - 全コンテナとボリュームを削除
 #   status   - サービス状態を表示
+#   urls     - アクセスURL一覧を表示
+#   clean    - 全コンテナとボリュームを削除
 
 set -e
 
@@ -44,6 +45,7 @@ show_help() {
     echo "  restart           - 開発環境を再起動"
     echo "  logs              - ログを表示"
     echo "  status            - サービス状態を表示"
+    echo "  urls              - アクセスURL一覧を表示"
     echo "  clean             - 全コンテナとボリュームを削除"
     echo "  migrate           - データベースマイグレーションを実行"
     echo "  migrate-rollback  - データベースマイグレーションをロールバック"
@@ -168,6 +170,7 @@ restart_services() {
         log_info "開発環境を再起動中..."
         run_docker_compose "restart"
         log_info "開発環境を再起動しました。"
+        show_access_urls
     fi
 }
 
@@ -388,6 +391,9 @@ case "${1:-help}" in
         ;;
     status)
         show_status
+        ;;
+    urls)
+        show_access_urls
         ;;
     clean)
         clean_all

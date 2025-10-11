@@ -36,6 +36,7 @@ services:
       # Docker特有の設定を上書き
       - DB_HOST=postgres
       - DB_NAME=go_backend
+      - AI_SERVICE_URL=http://backend-python:8001
     volumes:
       - ../backend-go:/app
       - /app/tmp
@@ -48,11 +49,11 @@ services:
       - app-network
     restart: unless-stopped
 
-  # Python AI Server
+  # Python AI Server (開発用 - ホットリロード)
   backend-python:
     build:
       context: ../backend-python
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile.dev
     ports:
       - "8001:8001"
     env_file:
@@ -67,6 +68,7 @@ services:
       redis:
         condition: service_healthy
     volumes:
+      - ../backend-python/app:/app/app
       - ../backend-python/logs:/app/logs
     networks:
       - app-network

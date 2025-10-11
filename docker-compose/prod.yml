@@ -36,6 +36,7 @@ services:
       - GIN_MODE=release
       - DB_HOST=postgres
       - DB_NAME=go_backend
+      - AI_SERVICE_URL=http://backend-python:8001
       - LOG_LEVEL=info
     depends_on:
       postgres:
@@ -46,11 +47,11 @@ services:
       - app-network
     restart: unless-stopped
 
-  # Python AI Server
+  # Python AI Server (本番用)
   backend-python:
     build:
       context: ../backend-python
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile.prod
     ports:
       - "8001:8001"
     env_file:
