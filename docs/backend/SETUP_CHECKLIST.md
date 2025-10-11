@@ -247,7 +247,7 @@ Docker（コンテナ技術）は以下の利点があります：
 docker-compose up -d
 
 # ログ確認
-docker-compose logs -f python-backend
+docker-compose logs -f backend-python
 ```
 
 #### 方法 B: 直接起動
@@ -340,7 +340,7 @@ Swagger UI または curl を使用して API エンドポイントをテスト
 - **症状**: Docker container startup failed
 - **解決**:
   - Docker Desktop が起動しているか確認
-  - `docker-compose logs python-backend` でエラー詳細を確認
+  - `docker-compose logs backend-python` でエラー詳細を確認
   - `.env`ファイルの設定を再確認
 
 ### ログファイルの確認

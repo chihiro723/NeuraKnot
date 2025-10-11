@@ -15,7 +15,7 @@ services:
       - NODE_ENV=production
     depends_on:
       - backend-go
-      - python-backend
+      - backend-python
     networks:
       - app-network
     restart: unless-stopped
@@ -47,7 +47,7 @@ services:
     restart: unless-stopped
 
   # Python AI Server
-  python-backend:
+  backend-python:
     build:
       context: ../backend-python/ai_server
       dockerfile: Dockerfile
@@ -124,7 +124,7 @@ services:
     depends_on:
       - frontend
       - backend-go
-      - python-backend
+      - backend-python
     networks:
       - app-network
     restart: unless-stopped
