@@ -80,6 +80,32 @@ func NewMessage(
 	}, nil
 }
 
+// NewMessageForStreaming はストリーミング用の新しいメッセージを作成（初期コンテンツは空）
+func NewMessageForStreaming(
+	conversationID uuid.UUID,
+	senderType SenderType,
+	senderID uuid.UUID,
+) (*Message, error) {
+	if conversationID == uuid.Nil {
+		return nil, errors.New("conversation ID is required")
+	}
+	if !senderType.IsValid() {
+		return nil, errors.New("invalid sender type")
+	}
+	if senderID == uuid.Nil {
+		return nil, errors.New("sender ID is required")
+	}
+
+	return &Message{
+		ID:             uuid.New(),
+		ConversationID: conversationID,
+		SenderType:     senderType,
+		SenderID:       senderID,
+		Content:        "", // ストリーミング開始時は空
+		CreatedAt:      time.Now(),
+	}, nil
+}
+
 // SetAISessionID はAIセッションIDを設定
 func (m *Message) SetAISessionID(sessionID uuid.UUID) {
 	m.AISessionID = &sessionID

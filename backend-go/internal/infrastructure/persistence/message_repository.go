@@ -37,6 +37,18 @@ func (r *MessageRepositoryImpl) Save(ctx context.Context, message *conversation.
 	return err
 }
 
+// Update はメッセージを更新
+func (r *MessageRepositoryImpl) Update(ctx context.Context, message *conversation.Message) error {
+	query := `
+		UPDATE messages
+		SET content = $1
+		WHERE id = $2
+	`
+
+	_, err := r.db.ExecContext(ctx, query, message.Content, message.ID)
+	return err
+}
+
 // FindByID はIDでメッセージを取得
 func (r *MessageRepositoryImpl) FindByID(ctx context.Context, id uuid.UUID) (*conversation.Message, error) {
 	query := `
