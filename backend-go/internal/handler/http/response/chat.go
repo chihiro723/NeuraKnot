@@ -36,15 +36,29 @@ func ToConversationResponse(conv *conversation.Conversation) *ConversationRespon
 	return resp
 }
 
+// ToolUsageResponse はツール使用履歴レスポンス
+type ToolUsageResponse struct {
+	ID              string  `json:"id"`
+	ToolName        string  `json:"tool_name"`
+	ToolCategory    string  `json:"tool_category"`
+	InputData       string  `json:"input_data"`
+	OutputData      *string `json:"output_data,omitempty"`
+	Status          string  `json:"status"`
+	ErrorMessage    *string `json:"error_message,omitempty"`
+	ExecutionTimeMs *int    `json:"execution_time_ms,omitempty"`
+	ExecutedAt      string  `json:"executed_at"`
+}
+
 // MessageResponse はメッセージレスポンス
 type MessageResponse struct {
-	ID             string  `json:"id"`
-	ConversationID string  `json:"conversation_id"`
-	SenderType     string  `json:"sender_type"`
-	SenderID       string  `json:"sender_id"`
-	Content        string  `json:"content"`
-	AISessionID    *string `json:"ai_session_id,omitempty"`
-	CreatedAt      string  `json:"created_at"`
+	ID             string               `json:"id"`
+	ConversationID string               `json:"conversation_id"`
+	SenderType     string               `json:"sender_type"`
+	SenderID       string               `json:"sender_id"`
+	Content        string               `json:"content"`
+	AISessionID    *string              `json:"ai_session_id,omitempty"`
+	ToolUsages     []*ToolUsageResponse `json:"tool_usages,omitempty"`
+	CreatedAt      string               `json:"created_at"`
 }
 
 // ToMessageResponse はメッセージエンティティをMessageResponseに変換
@@ -61,6 +75,30 @@ func ToMessageResponse(msg *conversation.Message) *MessageResponse {
 	if msg.AISessionID != nil {
 		sessionID := msg.AISessionID.String()
 		resp.AISessionID = &sessionID
+	}
+
+	return resp
+}
+
+// ToMessageResponseWithTools はメッセージエンティティをツール使用履歴付きのMessageResponseに変換
+func ToMessageResponseWithTools(msg *conversation.Message, toolUsages []*conversation.ToolUsage) *MessageResponse {
+	resp := ToMessageResponse(msg)
+
+	if len(toolUsages) > 0 {
+		resp.ToolUsages = make([]*ToolUsageResponse, len(toolUsages))
+		for i, tu := range toolUsages {
+			resp.ToolUsages[i] = &ToolUsageResponse{
+				ID:              tu.ID.String(),
+				ToolName:        tu.ToolName,
+				ToolCategory:    string(tu.ToolCategory),
+				InputData:       string(tu.InputData),
+				OutputData:      tu.OutputData,
+				Status:          string(tu.Status),
+				ErrorMessage:    tu.ErrorMessage,
+				ExecutionTimeMs: tu.ExecutionTimeMs,
+				ExecutedAt:      tu.ExecutedAt.Format(time.RFC3339),
+			}
+		}
 	}
 
 	return resp
