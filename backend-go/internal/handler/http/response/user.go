@@ -59,14 +59,14 @@ func ToUsersResponse(users []*user.User) *UsersResponse {
 	}
 }
 
-// MessageResponse メッセージレスポンス
-type MessageResponse struct {
+// SimpleMessageResponse シンプルメッセージレスポンス
+type SimpleMessageResponse struct {
 	Message string `json:"message"`
 }
 
-// NewMessageResponse メッセージレスポンスを作成
-func NewMessageResponse(message string) *MessageResponse {
-	return &MessageResponse{
+// NewSimpleMessageResponse シンプルメッセージレスポンスを作成
+func NewSimpleMessageResponse(message string) *SimpleMessageResponse {
+	return &SimpleMessageResponse{
 		Message: message,
 	}
 }

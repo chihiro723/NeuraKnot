@@ -16,6 +16,9 @@ type Config struct {
 	// AWS Cognito設定
 	Cognito CognitoConfig
 
+	// AI Service設定
+	AIService AIServiceConfig
+
 	// ログ設定
 	Log LogConfig
 }
@@ -46,6 +49,12 @@ type CognitoConfig struct {
 	TokenExpiration int
 }
 
+// AIServiceConfig AI Service設定
+type AIServiceConfig struct {
+	URL     string
+	Timeout int
+}
+
 // LogConfig ログ設定
 type LogConfig struct {
 	Level  string
@@ -74,6 +83,10 @@ func Load() *Config {
 			ClientSecret:    getEnv("COGNITO_CLIENT_SECRET", ""),
 			RedirectURL:     getEnv("COGNITO_REDIRECT_URL", "http://localhost:3000/auth/callback"),
 			TokenExpiration: getEnvAsInt("COGNITO_TOKEN_EXPIRATION", 3600),
+		},
+		AIService: AIServiceConfig{
+			URL:     getEnv("AI_SERVICE_URL", "http://localhost:8001"),
+			Timeout: getEnvAsInt("AI_SERVICE_TIMEOUT", 120),
 		},
 		Log: LogConfig{
 			Level:  getEnv("LOG_LEVEL", "info"),

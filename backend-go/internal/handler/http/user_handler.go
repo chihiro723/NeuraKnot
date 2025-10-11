@@ -107,7 +107,7 @@ func (h *UserHandler) ConfirmSignUp(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, response.NewMessageResponse("User confirmed successfully"))
+	c.JSON(http.StatusOK, response.NewSimpleMessageResponse("User confirmed successfully"))
 }
 
 // ForgotPassword パスワードリセット要求
@@ -354,7 +354,7 @@ func (h *UserHandler) RefreshToken(c *gin.Context) {
 	}
 
 	SetAuthCookies(c, authResult.AccessToken, authResult.RefreshToken)
-	c.JSON(http.StatusOK, response.NewMessageResponse("Token refreshed successfully"))
+	c.JSON(http.StatusOK, response.NewSimpleMessageResponse("Token refreshed successfully"))
 }
 
 // SignOut ログアウト
@@ -380,5 +380,5 @@ func (h *UserHandler) SignOut(c *gin.Context) {
 
 	// エラーの有無に関わらず、Cookieをクリア
 	ClearAuthCookies(c)
-	c.JSON(http.StatusOK, response.NewMessageResponse("Successfully signed out"))
+	c.JSON(http.StatusOK, response.NewSimpleMessageResponse("Successfully signed out"))
 }

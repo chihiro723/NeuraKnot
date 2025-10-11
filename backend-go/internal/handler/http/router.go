@@ -6,9 +6,13 @@ import (
 	"backend-go/internal/infrastructure/config"
 	"backend-go/internal/infrastructure/database"
 	"backend-go/internal/infrastructure/external"
+	"backend-go/internal/infrastructure/persistence"
 	userrepo "backend-go/internal/infrastructure/persistence/user"
+	aiusecase "backend-go/internal/usecase/ai"
+	chatusecase "backend-go/internal/usecase/chat"
 	userusecase "backend-go/internal/usecase/user"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -41,8 +45,21 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 	userService := userusecase.NewService(userRepo, authService)
 	userHandler := NewUserHandler(userService)
 
+	// AI関連の依存関係
+	aiAgentRepo := persistence.NewAIAgentRepository(db.DB)
+	conversationRepo := persistence.NewConversationRepository(db.DB)
+	messageRepo := persistence.NewMessageRepository(db.DB)
+	aiClient := external.NewAIClient(cfg.AIService.URL, time.Duration(cfg.AIService.Timeout)*time.Second)
+
+	// AI関連のユースケースとハンドラー
+	agentUsecase := aiusecase.NewAgentUsecase(aiAgentRepo)
+	chatUsecase := chatusecase.NewChatUsecase(aiAgentRepo, conversationRepo, messageRepo, aiClient)
+
+	aiAgentHandler := NewAIAgentHandler(agentUsecase)
+	chatHandler := NewChatHandler(chatUsecase)
+
 	// ルートを設定
-	setupRoutes(engine, userHandler, authService)
+	setupRoutes(engine, userHandler, aiAgentHandler, chatHandler, authService)
 
 	return &Router{
 		engine: engine,
@@ -50,7 +67,7 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 }
 
 // setupRoutes ルートを設定
-func setupRoutes(engine *gin.Engine, userHandler *UserHandler, authService user.AuthService) {
+func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *AIAgentHandler, chatHandler *ChatHandler, authService user.AuthService) {
 	// ヘルスチェック
 	engine.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -86,6 +103,25 @@ func setupRoutes(engine *gin.Engine, userHandler *UserHandler, authService user.
 			users.PUT("/email", userHandler.ChangeEmail)
 			users.GET("/:id", userHandler.GetUserByID)
 			users.GET("", userHandler.ListUsers)
+		}
+
+		// AI Agent関連（認証必要）
+		aiAgents := v1.Group("/ai-agents")
+		aiAgents.Use(authMiddleware.RequireAuth())
+		{
+			aiAgents.POST("", aiAgentHandler.CreateAgent)
+			aiAgents.GET("", aiAgentHandler.ListAgents)
+			aiAgents.GET("/:id", aiAgentHandler.GetAgent)
+		}
+
+		// チャット関連（認証必要）
+		conversations := v1.Group("/conversations")
+		conversations.Use(authMiddleware.RequireAuth())
+		{
+			conversations.GET("", chatHandler.ListConversations)
+			conversations.POST("", chatHandler.GetOrCreateConversation)
+			conversations.POST("/:id/messages", chatHandler.SendMessage)
+			conversations.GET("/:id/messages", chatHandler.GetMessages)
 		}
 	}
 }
