@@ -49,11 +49,12 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 	aiAgentRepo := persistence.NewAIAgentRepository(db.DB)
 	conversationRepo := persistence.NewConversationRepository(db.DB)
 	messageRepo := persistence.NewMessageRepository(db.DB)
+	toolUsageRepo := persistence.NewToolUsageRepository(db.DB)
 	aiClient := external.NewAIClient(cfg.AIService.URL, time.Duration(cfg.AIService.Timeout)*time.Second)
 
 	// AI関連のユースケースとハンドラー
 	agentUsecase := aiusecase.NewAgentUsecase(aiAgentRepo)
-	chatUsecase := chatusecase.NewChatUsecase(aiAgentRepo, conversationRepo, messageRepo, aiClient)
+	chatUsecase := chatusecase.NewChatUsecase(aiAgentRepo, conversationRepo, messageRepo, toolUsageRepo, aiClient)
 
 	aiAgentHandler := NewAIAgentHandler(agentUsecase)
 	chatHandler := NewChatHandler(chatUsecase)
@@ -121,6 +122,7 @@ func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *A
 			conversations.GET("", chatHandler.ListConversations)
 			conversations.POST("", chatHandler.GetOrCreateConversation)
 			conversations.POST("/:id/messages", chatHandler.SendMessage)
+			conversations.POST("/:id/messages/stream", chatHandler.SendMessageStream)
 			conversations.GET("/:id/messages", chatHandler.GetMessages)
 		}
 	}

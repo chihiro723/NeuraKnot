@@ -30,6 +30,7 @@ func (uc *AgentUsecase) CreateAgent(
 	provider string,
 	model string,
 	description *string,
+	streamingEnabled bool,
 ) (*ai.Agent, error) {
 	// PersonaTypeをパース
 	persona, err := ai.ParsePersonaType(personaType)
@@ -64,6 +65,9 @@ func (uc *AgentUsecase) CreateAgent(
 	if description != nil && *description != "" {
 		agent.SetDescription(*description)
 	}
+
+	// StreamingEnabledを設定
+	agent.StreamingEnabled = streamingEnabled
 
 	// バリデーション
 	if err := agent.Validate(); err != nil {

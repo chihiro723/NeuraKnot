@@ -59,6 +59,12 @@ func (h *AIAgentHandler) CreateAgent(c *gin.Context) {
 		return
 	}
 
+	// StreamingEnabledのデフォルト値を設定（nilの場合はtrue）
+	streamingEnabled := true
+	if req.StreamingEnabled != nil {
+		streamingEnabled = *req.StreamingEnabled
+	}
+
 	// AI Agentを作成
 	agent, err := h.agentUsecase.CreateAgent(
 		c.Request.Context(),
@@ -68,6 +74,7 @@ func (h *AIAgentHandler) CreateAgent(c *gin.Context) {
 		req.Provider,
 		req.Model,
 		req.Description,
+		streamingEnabled,
 	)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewErrorResponse(err, http.StatusBadRequest))

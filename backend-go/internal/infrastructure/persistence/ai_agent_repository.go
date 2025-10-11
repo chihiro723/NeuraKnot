@@ -26,13 +26,13 @@ func (r *AIAgentRepository) Save(ctx context.Context, agent *ai.Agent) error {
 		INSERT INTO ai_agents (
 			id, user_id, name, description, avatar_url,
 			persona_type, provider, model, temperature, max_tokens,
-			system_prompt, tools_enabled, is_active,
+			system_prompt, tools_enabled, streaming_enabled, is_active,
 			message_count, last_chat_at, created_at, updated_at
 		) VALUES (
 			$1, $2, $3, $4, $5,
 			$6, $7, $8, $9, $10,
-			$11, $12, $13,
-			$14, $15, $16, $17
+			$11, $12, $13, $14,
+			$15, $16, $17, $18
 		)
 	`
 
@@ -40,7 +40,7 @@ func (r *AIAgentRepository) Save(ctx context.Context, agent *ai.Agent) error {
 		ctx, query,
 		agent.ID, agent.UserID, agent.Name, agent.Description, agent.AvatarURL,
 		agent.PersonaType.String(), agent.Provider.String(), agent.Model, agent.Temperature, agent.MaxTokens,
-		agent.SystemPrompt, agent.ToolsEnabled, agent.IsActive,
+		agent.SystemPrompt, agent.ToolsEnabled, agent.StreamingEnabled, agent.IsActive,
 		agent.MessageCount, agent.LastChatAt, agent.CreatedAt, agent.UpdatedAt,
 	)
 	return err
@@ -49,10 +49,10 @@ func (r *AIAgentRepository) Save(ctx context.Context, agent *ai.Agent) error {
 // FindByID はIDでAI Agentを取得
 func (r *AIAgentRepository) FindByID(ctx context.Context, id uuid.UUID) (*ai.Agent, error) {
 	query := `
-		SELECT 
+		SELECT
 			id, user_id, name, description, avatar_url,
 			persona_type, provider, model, temperature, max_tokens,
-			system_prompt, tools_enabled, is_active,
+			system_prompt, tools_enabled, streaming_enabled, is_active,
 			message_count, last_chat_at, created_at, updated_at
 		FROM ai_agents
 		WHERE id = $1 AND is_active = true
@@ -64,7 +64,7 @@ func (r *AIAgentRepository) FindByID(ctx context.Context, id uuid.UUID) (*ai.Age
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&agent.ID, &agent.UserID, &agent.Name, &agent.Description, &agent.AvatarURL,
 		&personaTypeStr, &providerStr, &agent.Model, &agent.Temperature, &agent.MaxTokens,
-		&agent.SystemPrompt, &agent.ToolsEnabled, &agent.IsActive,
+		&agent.SystemPrompt, &agent.ToolsEnabled, &agent.StreamingEnabled, &agent.IsActive,
 		&agent.MessageCount, &agent.LastChatAt, &agent.CreatedAt, &agent.UpdatedAt,
 	)
 
@@ -94,10 +94,10 @@ func (r *AIAgentRepository) FindByID(ctx context.Context, id uuid.UUID) (*ai.Age
 // FindByUserID はユーザーIDでAI Agentリストを取得
 func (r *AIAgentRepository) FindByUserID(ctx context.Context, userID uuid.UUID) ([]*ai.Agent, error) {
 	query := `
-		SELECT 
+		SELECT
 			id, user_id, name, description, avatar_url,
 			persona_type, provider, model, temperature, max_tokens,
-			system_prompt, tools_enabled, is_active,
+			system_prompt, tools_enabled, streaming_enabled, is_active,
 			message_count, last_chat_at, created_at, updated_at
 		FROM ai_agents
 		WHERE user_id = $1 AND is_active = true
@@ -118,7 +118,7 @@ func (r *AIAgentRepository) FindByUserID(ctx context.Context, userID uuid.UUID) 
 		err := rows.Scan(
 			&agent.ID, &agent.UserID, &agent.Name, &agent.Description, &agent.AvatarURL,
 			&personaTypeStr, &providerStr, &agent.Model, &agent.Temperature, &agent.MaxTokens,
-			&agent.SystemPrompt, &agent.ToolsEnabled, &agent.IsActive,
+			&agent.SystemPrompt, &agent.ToolsEnabled, &agent.StreamingEnabled, &agent.IsActive,
 			&agent.MessageCount, &agent.LastChatAt, &agent.CreatedAt, &agent.UpdatedAt,
 		)
 		if err != nil {
@@ -158,10 +158,11 @@ func (r *AIAgentRepository) Update(ctx context.Context, agent *ai.Agent) error {
 			max_tokens = $9,
 			system_prompt = $10,
 			tools_enabled = $11,
-			is_active = $12,
-			message_count = $13,
-			last_chat_at = $14,
-			updated_at = $15
+			streaming_enabled = $12,
+			is_active = $13,
+			message_count = $14,
+			last_chat_at = $15,
+			updated_at = $16
 		WHERE id = $1
 	`
 
@@ -171,7 +172,7 @@ func (r *AIAgentRepository) Update(ctx context.Context, agent *ai.Agent) error {
 		agent.Name, agent.Description, agent.AvatarURL,
 		agent.PersonaType.String(), agent.Provider.String(), agent.Model,
 		agent.Temperature, agent.MaxTokens,
-		agent.SystemPrompt, agent.ToolsEnabled, agent.IsActive,
+		agent.SystemPrompt, agent.ToolsEnabled, agent.StreamingEnabled, agent.IsActive,
 		agent.MessageCount, agent.LastChatAt, agent.UpdatedAt,
 	)
 	return err

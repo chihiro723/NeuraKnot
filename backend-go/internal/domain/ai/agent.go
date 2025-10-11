@@ -9,23 +9,24 @@ import (
 
 // Agent はAI Agentエンティティ
 type Agent struct {
-	ID           uuid.UUID
-	UserID       uuid.UUID
-	Name         string
-	Description  *string
-	AvatarURL    *string
-	PersonaType  PersonaType
-	Provider     Provider
-	Model        string
-	Temperature  float64
-	MaxTokens    int
-	SystemPrompt *string
-	ToolsEnabled bool
-	IsActive     bool
-	MessageCount int
-	LastChatAt   *time.Time
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	ID               uuid.UUID
+	UserID           uuid.UUID
+	Name             string
+	Description      *string
+	AvatarURL        *string
+	PersonaType      PersonaType
+	Provider         Provider
+	Model            string
+	Temperature      float64
+	MaxTokens        int
+	SystemPrompt     *string
+	ToolsEnabled     bool
+	StreamingEnabled bool
+	IsActive         bool
+	MessageCount     int
+	LastChatAt       *time.Time
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
 }
 
 // NewAgent は新しいAI Agentを作成
@@ -54,19 +55,20 @@ func NewAgent(
 
 	now := time.Now()
 	return &Agent{
-		ID:           uuid.New(),
-		UserID:       userID,
-		Name:         name,
-		PersonaType:  personaType,
-		Provider:     provider,
-		Model:        model,
-		Temperature:  0.7,
-		MaxTokens:    2000,
-		ToolsEnabled: true,
-		IsActive:     true,
-		MessageCount: 0,
-		CreatedAt:    now,
-		UpdatedAt:    now,
+		ID:               uuid.New(),
+		UserID:           userID,
+		Name:             name,
+		PersonaType:      personaType,
+		Provider:         provider,
+		Model:            model,
+		Temperature:      0.7,
+		MaxTokens:        2000,
+		ToolsEnabled:     true,
+		StreamingEnabled: false,
+		IsActive:         true,
+		MessageCount:     0,
+		CreatedAt:        now,
+		UpdatedAt:        now,
 	}, nil
 }
 

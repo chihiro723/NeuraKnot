@@ -1,12 +1,14 @@
 package external
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -95,6 +97,21 @@ type ChatResponse struct {
 	Metadata       AIMetadata `json:"metadata"`        // メタデータ
 }
 
+// StreamEvent はSSEストリーミングイベント
+type StreamEvent struct {
+	Type            string  `json:"type"`                       // "token", "tool_start", "tool_end", "done", "error"
+	Content         string  `json:"content,omitempty"`          // トークン内容（typeがtokenの場合）
+	ToolID          string  `json:"tool_id,omitempty"`          // ツールID
+	ToolName        string  `json:"tool_name,omitempty"`        // ツール名
+	Input           string  `json:"input,omitempty"`            // ツール入力
+	Output          string  `json:"output,omitempty"`           // ツール出力
+	Status          string  `json:"status,omitempty"`           // ステータス（completed/failed）
+	Error           *string `json:"error,omitempty"`            // エラーメッセージ
+	ExecutionTimeMs int     `json:"execution_time_ms,omitempty"` // 実行時間（ミリ秒）
+	Code            string  `json:"code,omitempty"`             // エラーコード
+	Message         string  `json:"message,omitempty"`          // エラーメッセージ
+}
+
 // Chat はチャットリクエストを送信
 func (c *AIClient) Chat(ctx context.Context, req ChatRequest) (*ChatResponse, error) {
 	// リクエストボディを作成
@@ -141,6 +158,98 @@ func (c *AIClient) Chat(ctx context.Context, req ChatRequest) (*ChatResponse, er
 	}
 
 	return &chatResp, nil
+}
+
+// ChatStream はストリーミングチャットリクエストを送信
+func (c *AIClient) ChatStream(ctx context.Context, req ChatRequest) (<-chan StreamEvent, <-chan error) {
+	eventChan := make(chan StreamEvent, 100)
+	errChan := make(chan error, 1)
+
+	go func() {
+		defer close(eventChan)
+		defer close(errChan)
+
+		// リクエストボディを作成
+		body, err := json.Marshal(req)
+		if err != nil {
+			errChan <- fmt.Errorf("failed to marshal request: %w", err)
+			return
+		}
+
+		// HTTPリクエストを作成
+		httpReq, err := http.NewRequestWithContext(
+			ctx,
+			http.MethodPost,
+			fmt.Sprintf("%s/api/v1/ai/chat/stream", c.baseURL),
+			bytes.NewBuffer(body),
+		)
+		if err != nil {
+			errChan <- fmt.Errorf("failed to create request: %w", err)
+			return
+		}
+
+		httpReq.Header.Set("Content-Type", "application/json")
+		httpReq.Header.Set("Accept", "text/event-stream")
+
+		// リクエストを送信
+		resp, err := c.httpClient.Do(httpReq)
+		if err != nil {
+			errChan <- fmt.Errorf("failed to send request: %w", err)
+			return
+		}
+		defer resp.Body.Close()
+
+		// ステータスコードをチェック
+		if resp.StatusCode != http.StatusOK {
+			errChan <- fmt.Errorf("AI service returned error: %d", resp.StatusCode)
+			return
+		}
+
+		// SSEストリームを読み込み
+		scanner := bufio.NewScanner(resp.Body)
+		lineCount := 0
+		for scanner.Scan() {
+			line := scanner.Text()
+			lineCount++
+
+			// "data: " プレフィックスをチェック
+			if !strings.HasPrefix(line, "data: ") {
+				continue
+			}
+
+			// JSONデータを抽出
+			data := strings.TrimPrefix(line, "data: ")
+			if data == "" {
+				continue
+			}
+
+			// イベントをパース
+			var event StreamEvent
+			if err := json.Unmarshal([]byte(data), &event); err != nil {
+				fmt.Printf("ERROR: Failed to parse SSE event: %v, data: %s\n", err, data)
+				continue
+			}
+
+
+			// イベントを送信
+			select {
+			case eventChan <- event:
+			case <-ctx.Done():
+				return
+			}
+
+			// doneまたはerrorイベントで終了
+			if event.Type == "done" || event.Type == "error" {
+					return
+			}
+		}
+
+		if err := scanner.Err(); err != nil {
+			errChan <- fmt.Errorf("stream read error: %w", err)
+		}
+	}()
+
+	return eventChan, errChan
 }
 
 // HealthCheck はBackend-pythonのヘルスチェック
