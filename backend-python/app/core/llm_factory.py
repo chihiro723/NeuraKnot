@@ -45,6 +45,7 @@ class LLMFactory:
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
         streaming: bool = False,
+        callbacks: Optional[list] = None,
         **kwargs
     ):
         """
@@ -94,6 +95,7 @@ class LLMFactory:
                 temperature=temperature,
                 max_tokens=max_tokens,
                 streaming=streaming,
+                callbacks=callbacks,
                 api_key=settings.OPENAI_API_KEY,
                 **kwargs
             )

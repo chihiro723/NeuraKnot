@@ -23,10 +23,11 @@ class SSEStreamingCallback(AsyncCallbackHandler):
     async def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """
         新しいトークンが生成された時
-        
+
         Args:
             token: 生成されたトークン
         """
+        logger.info(f"Token received: {repr(token)}")
         await self.queue.put({
             "type": "token",
             "content": token
@@ -48,14 +49,17 @@ class SSEStreamingCallback(AsyncCallbackHandler):
         tool_name = serialized.get("name", "Unknown")
         self.tool_start_times[tool_name] = time.time()
         
-        await self.queue.put({
+        logger.info(f"🔧 on_tool_start called! Tool: {tool_name}, Input: {input_str}")
+        
+        event = {
             "type": "tool_start",
             "tool_id": tool_name,
             "tool_name": tool_name,
             "input": input_str
-        })
+        }
         
-        logger.info(f"Tool started: {tool_name}")
+        await self.queue.put(event)
+        logger.info(f"✅ Tool start event queued: {event}")
     
     async def on_tool_end(self, output: str, **kwargs: Any) -> None:
         """
@@ -66,22 +70,28 @@ class SSEStreamingCallback(AsyncCallbackHandler):
         """
         tool_name = kwargs.get("name", "Unknown")
         
+        # outputを文字列に変換
+        output_str = str(output) if output else ""
+        
+        logger.info(f"✅ on_tool_end called! Tool: {tool_name}, Output type: {type(output)}, Output: {output_str[:200]}")
+        
         # 実行時間を計算
         execution_time_ms = 0
         if tool_name in self.tool_start_times:
             execution_time_ms = int((time.time() - self.tool_start_times[tool_name]) * 1000)
             del self.tool_start_times[tool_name]
         
-        await self.queue.put({
+        event = {
             "type": "tool_end",
             "tool_id": tool_name,
             "status": "completed",
-            "output": output[:200],  # 最初の200文字のみ
+            "output": output_str[:500],  # 最初の500文字
             "error": None,
             "execution_time_ms": execution_time_ms
-        })
+        }
         
-        logger.info(f"Tool completed: {tool_name} ({execution_time_ms}ms)")
+        await self.queue.put(event)
+        logger.info(f"✅ Tool end event queued with output length: {len(output_str)}")
     
     async def on_tool_error(self, error: Exception, **kwargs: Any) -> None:
         """

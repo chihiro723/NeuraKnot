@@ -77,23 +77,35 @@ async def chat_stream(request: ChatRequest):
             # ツールを取得
             tools = []
             
+            # コールバック作成（ツール読み込み前に作成）
+            callback = SSEStreamingCallback()
+            
             if request.include_basic_tools:
-                tools.extend(get_basic_tools())
+                basic_tools = get_basic_tools()
+                # 各ツールにコールバックを設定
+                for tool in basic_tools:
+                    tool.callbacks = [callback]
+                tools.extend(basic_tools)
+                logger.info(f"✅ Loaded {len(basic_tools)} basic tools with callbacks")
+                for tool in basic_tools:
+                    logger.info(f"  📦 Tool: {tool.name}")
             
             mcp_tools = await MCPService.load_all_tools(request.mcp_servers)
+            # MCPツールにもコールバックを設定
+            for tool in mcp_tools:
+                tool.callbacks = [callback]
             tools.extend(mcp_tools)
-            
-            # LLM作成（ストリーミング有効）
+            logger.info(f"✅ Total tools available: {len(tools)} (all with callbacks)")
+
+            # LLM作成（ストリーミング有効、コールバック設定）
             llm = LLMFactory.create_llm(
                 provider=request.agent_config.provider,
                 model=request.agent_config.model,
                 temperature=request.agent_config.temperature,
                 max_tokens=request.agent_config.max_tokens,
-                streaming=True
+                streaming=True,
+                callbacks=[callback]
             )
-            
-            # コールバック作成
-            callback = SSEStreamingCallback()
             
             # システムプロンプト構築
             system_prompt = AgentService._build_system_prompt(
@@ -118,21 +130,41 @@ async def chat_stream(request: ChatRequest):
                 return_intermediate_steps=True,
                 handle_parsing_errors=True,
                 callbacks=[callback],
-                verbose=False
+                verbose=True  # デバッグのためverboseを有効化
             )
+            
+            logger.info(f"🤖 Agent executor created with {len(tools)} tools and callback registered")
             
             # 会話履歴変換
             chat_history = AgentService._convert_history_to_messages(request.conversation_history)
-            
-            # 非同期実行開始
-            asyncio.create_task(agent_executor.ainvoke({
-                "input": request.message,
-                "chat_history": chat_history
-            }))
-            
+
+            # エージェント実行とイベントストリームを並行処理
+            async def run_agent():
+                """エージェントを実行"""
+                try:
+                    await agent_executor.ainvoke({
+                        "input": request.message,
+                        "chat_history": chat_history
+                    })
+                except Exception as e:
+                    logger.error(f"Agent execution error: {e}", exc_info=True)
+                    await callback.queue.put({
+                        "type": "error",
+                        "code": "AGENT_ERROR",
+                        "message": str(e)
+                    })
+
+            # エージェント実行をバックグラウンドで開始
+            agent_task = asyncio.create_task(run_agent())
+
             # イベントをストリーム
-            async for event in callback.get_events():
-                yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+            try:
+                async for event in callback.get_events():
+                    yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+            finally:
+                # エージェント実行が完了するまで待機
+                if not agent_task.done():
+                    await agent_task
         
         except Exception as e:
             logger.error(f"Streaming error: {e}", exc_info=True)
