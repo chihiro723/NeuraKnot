@@ -43,6 +43,9 @@ definitions:
         type: string
       provider:
         type: string
+      streaming_enabled:
+        description: nilの場合はtrueがデフォルト
+        type: boolean
     required:
     - name
     - persona_type
@@ -226,6 +229,10 @@ definitions:
         type: string
       sender_type:
         type: string
+      tool_usages:
+        items:
+          $ref: '#/definitions/backend-go_internal_handler_http_response.ToolUsageResponse'
+        type: array
     type: object
   backend-go_internal_handler_http_response.MessagesResponse:
     properties:
@@ -243,6 +250,27 @@ definitions:
       metadata: {}
       user_message:
         $ref: '#/definitions/backend-go_internal_handler_http_response.MessageResponse'
+    type: object
+  backend-go_internal_handler_http_response.ToolUsageResponse:
+    properties:
+      error_message:
+        type: string
+      executed_at:
+        type: string
+      execution_time_ms:
+        type: integer
+      id:
+        type: string
+      input_data:
+        type: string
+      output_data:
+        type: string
+      status:
+        type: string
+      tool_category:
+        type: string
+      tool_name:
+        type: string
     type: object
   backend-go_internal_handler_http_response.UserResponse:
     properties:
@@ -517,6 +545,47 @@ paths:
       security:
       - BearerAuth: []
       summary: メッセージ送信
+      tags:
+      - Chat
+  /api/v1/conversations/{id}/messages/stream:
+    post:
+      consumes:
+      - application/json
+      description: 会話にメッセージを送信してAI応答をストリーミングで取得します
+      parameters:
+      - description: 会話ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: メッセージ内容
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/backend-go_internal_handler_http_request.SendMessageRequest'
+      produces:
+      - text/event-stream
+      responses:
+        "200":
+          description: SSEストリーム
+          schema:
+            type: string
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: メッセージ送信（ストリーミング）
       tags:
       - Chat
   /auth/confirm-forgot-password:

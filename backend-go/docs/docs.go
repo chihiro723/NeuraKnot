@@ -394,6 +394,70 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/conversations/{id}/messages/stream": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "会話にメッセージを送信してAI応答をストリーミングで取得します",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "メッセージ送信（ストリーミング）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "会話ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "メッセージ内容",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_request.SendMessageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "SSEストリーム",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/confirm-forgot-password": {
             "post": {
                 "description": "確認コードを使って新しいパスワードを設定します",
@@ -1002,6 +1066,10 @@ const docTemplate = `{
                 },
                 "provider": {
                     "type": "string"
+                },
+                "streaming_enabled": {
+                    "description": "nilの場合はtrueがデフォルト",
+                    "type": "boolean"
                 }
             }
         },
@@ -1275,6 +1343,12 @@ const docTemplate = `{
                 },
                 "sender_type": {
                     "type": "string"
+                },
+                "tool_usages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/backend-go_internal_handler_http_response.ToolUsageResponse"
+                    }
                 }
             }
         },
@@ -1301,6 +1375,38 @@ const docTemplate = `{
                 "metadata": {},
                 "user_message": {
                     "$ref": "#/definitions/backend-go_internal_handler_http_response.MessageResponse"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_response.ToolUsageResponse": {
+            "type": "object",
+            "properties": {
+                "error_message": {
+                    "type": "string"
+                },
+                "executed_at": {
+                    "type": "string"
+                },
+                "execution_time_ms": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "input_data": {
+                    "type": "string"
+                },
+                "output_data": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tool_category": {
+                    "type": "string"
+                },
+                "tool_name": {
+                    "type": "string"
                 }
             }
         },

@@ -31,6 +31,10 @@ log_error() {
     echo -e "\033[31m[ERROR]\033[0m $1"
 }
 
+log_success() {
+    echo -e "\033[32m[SUCCESS]\033[0m $1"
+}
+
 # ヘルプ表示
 show_help() {
     echo "BridgeSpeak 開発環境管理スクリプト"
@@ -47,8 +51,7 @@ show_help() {
     echo "  status            - サービス状態を表示"
     echo "  urls              - アクセスURL一覧を表示"
     echo "  clean             - 全コンテナとボリュームを削除"
-    echo "  migrate           - データベースマイグレーションを実行"
-    echo "  migrate-rollback  - データベースマイグレーションをロールバック"
+    echo "  schema            - 統合スキーマでデータベースを構築"
     echo "  help              - このヘルプを表示"
     echo ""
     echo "利用可能なサービス:"
@@ -66,6 +69,7 @@ show_help() {
     echo "  ./dev.sh stop postgres            # PostgreSQLのみ停止"
     echo "  ./dev.sh build                    # 全サービスを再ビルド"
     echo "  ./dev.sh build frontend           # フロントエンドのみ再ビルド"
+    echo "  ./dev.sh schema                   # 統合スキーマでデータベースを構築"
     echo "  ./dev.sh env backend-go           # Go APIの環境変数を表示"
     echo "  ./dev.sh env frontend             # フロントエンドの環境変数を表示"
 }
@@ -132,6 +136,12 @@ start_services() {
     
     # サービスを起動
     run_docker_compose "up -d" "$service"
+    
+    # 全サービス起動時はデータベースを完全再構築
+    if [ -z "$service" ]; then
+        log_info "データベースを完全再構築中..."
+        build_schema
+    fi
     
     if [ -n "$service" ]; then
         log_info "$service サービス起動完了！"
@@ -226,6 +236,12 @@ rebuild_services() {
     # サービスを起動
     run_docker_compose "up -d" "$service"
     
+    # 全サービス起動時はデータベースを完全再構築
+    if [ -z "$service" ]; then
+        log_info "データベースを完全再構築中..."
+        build_schema
+    fi
+    
     if [ -n "$service" ]; then
         log_info "$service サービス完全再ビルド完了！"
     else
@@ -274,45 +290,22 @@ clean_all() {
 }
 
 
-# マイグレーションを実行
-run_migrations() {
-    log_info "データベースマイグレーションを実行中..."
+# 統合スキーマでデータベースを構築（常に完全再構築）
+build_schema() {
+    log_info "統合スキーマでデータベースを完全再構築中..."
     
-    # データベース接続文字列を構築
-    DB_URL="postgres://postgres:${POSTGRES_PASSWORD:-password}@localhost:5432/go_backend?sslmode=disable"
-    
-    # migrateコマンドを実行
-    if command -v migrate &> /dev/null; then
-        migrate -path backend-go/migrations -database "$DB_URL" up
-        log_info "マイグレーション完了！"
+    # スキーマ構築スクリプトを実行（強制再作成）
+    if [[ -f "backend-go/schema/build_schema.sh" ]]; then
+        cd backend-go/schema
+        ./build_schema.sh --force --with-mock-data --yes
+        cd ../..
+        log_success "統合スキーマ完全再構築完了！"
     else
-        log_error "migrateコマンドが見つかりません。"
-        log_info "インストール方法:"
-        log_info "  brew install golang-migrate"
-        log_info "  または"
-        log_info "  go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest"
+        log_error "スキーマ構築スクリプトが見つかりません: backend-go/schema/build_schema.sh"
         exit 1
     fi
 }
 
-# マイグレーションをロールバック
-rollback_migrations() {
-    log_warn "データベースマイグレーションをロールバックします。"
-    read -p "ロールバックするステップ数を入力してください (デフォルト: 1): " -r
-    steps=${REPLY:-1}
-    
-    # データベース接続文字列を構築
-    DB_URL="postgres://postgres:${POSTGRES_PASSWORD:-password}@localhost:5432/go_backend?sslmode=disable"
-    
-    # migrateコマンドを実行
-    if command -v migrate &> /dev/null; then
-        migrate -path backend-go/migrations -database "$DB_URL" down "$steps"
-        log_info "マイグレーションロールバック完了！"
-    else
-        log_error "migrateコマンドが見つかりません。"
-        exit 1
-    fi
-}
 
 # 環境変数表示
 show_env_vars() {
@@ -401,11 +394,8 @@ case "${1:-help}" in
     env)
         show_env_vars "$2"
         ;;
-    migrate)
-        run_migrations
-        ;;
-    migrate-rollback)
-        rollback_migrations
+    schema)
+        build_schema
         ;;
     help|--help|-h)
         show_help
