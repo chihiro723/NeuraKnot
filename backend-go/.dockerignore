@@ -1,0 +1,38 @@
+# Git関連
+.git
+.gitignore
+.github
+
+# ドキュメント
+*.md
+README.md
+docs/
+
+# テスト・開発ファイル
+*_test.go
+*_mock.go
+scripts/
+tmp/
+
+# ビルド成果物
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# IDE・エディタ
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ログ
+*.log
+
+# その他
+.DS_Store
+.env.local
+.env.*.local
+

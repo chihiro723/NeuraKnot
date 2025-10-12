@@ -177,7 +177,6 @@ terraform.tfvars
 terraform.tfvars.json
 
 # Docker
-.dockerignore
 docker-compose.override.yml
 
 # Database

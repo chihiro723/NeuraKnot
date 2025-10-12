@@ -1,0 +1,46 @@
+# Git関連
+.git
+.gitignore
+.github
+
+# ドキュメント
+*.md
+README.md
+docs/
+
+# Node.js関連
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Next.js関連
+.next/
+out/
+.turbo/
+
+# テスト
+coverage/
+.nyc_output/
+
+# IDE・エディタ
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ビルド成果物（本番ビルド時は除外）
+.next/
+build/
+
+# 開発専用ファイル
+scripts/
+utils/
+
+# その他
+.DS_Store
+.env.local
+.env.*.local
+*.tsbuildinfo
+
