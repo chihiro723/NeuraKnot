@@ -1,6 +1,7 @@
 package http
 
 import (
+	"backend-go/internal/crypto"
 	"backend-go/internal/domain/user"
 	"backend-go/internal/handler/http/middleware"
 	"backend-go/internal/infrastructure/config"
@@ -10,7 +11,9 @@ import (
 	userrepo "backend-go/internal/infrastructure/persistence/user"
 	aiusecase "backend-go/internal/usecase/ai"
 	chatusecase "backend-go/internal/usecase/chat"
+	mcpusecase "backend-go/internal/usecase/mcp"
 	userusecase "backend-go/internal/usecase/user"
+	"log"
 	"net/http"
 	"time"
 
@@ -60,8 +63,33 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 	aiAgentHandler := NewAIAgentHandler(agentUsecase)
 	chatHandler := NewChatHandler(chatUsecase)
 
+	// 暗号化サービスの初期化
+	var encryptionService *crypto.EncryptionService
+	if cfg.Security.EncryptionMasterKey != "" {
+		var err error
+		encryptionService, err = crypto.NewEncryptionService(cfg.Security.EncryptionMasterKey)
+		if err != nil {
+			log.Printf("Warning: Failed to initialize encryption service: %v", err)
+			// 暗号化サービスなしで継続（MCP機能は制限される）
+		}
+	} else {
+		log.Println("Warning: ENCRYPTION_MASTER_KEY not set, MCP server registration will be disabled")
+	}
+
+	// MCP関連の依存関係とハンドラー
+	var mcpHandler *MCPHandler
+	if encryptionService != nil {
+		mcpServerRepo := persistence.NewMCPServerRepository(db.DB)
+		mcpToolRepo := persistence.NewMCPToolRepository(db.DB)
+
+		serverUsecase := mcpusecase.NewMCPServerUsecase(mcpServerRepo, mcpToolRepo, encryptionService, aiClient)
+		toolUsecase := mcpusecase.NewMCPToolUsecase(mcpToolRepo, mcpServerRepo)
+
+		mcpHandler = NewMCPHandler(serverUsecase, toolUsecase)
+	}
+
 	// ルートを設定
-	setupRoutes(engine, userHandler, aiAgentHandler, chatHandler, authService)
+	setupRoutes(engine, userHandler, aiAgentHandler, chatHandler, mcpHandler, authService)
 
 	return &Router{
 		engine: engine,
@@ -69,7 +97,7 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 }
 
 // setupRoutes ルートを設定
-func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *AIAgentHandler, chatHandler *ChatHandler, authService user.AuthService) {
+func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *AIAgentHandler, chatHandler *ChatHandler, mcpHandler *MCPHandler, authService user.AuthService) {
 	// ヘルスチェック
 	engine.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -126,6 +154,21 @@ func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *A
 			conversations.POST("/:id/messages/stream", chatHandler.SendMessageStream)
 			conversations.GET("/:id/messages", chatHandler.GetMessages)
 			conversations.PATCH("/:conversation_id/messages/:message_id/tools/positions", chatHandler.UpdateToolPositions)
+		}
+
+		// MCPサーバー関連（認証必要）
+		if mcpHandler != nil {
+			mcpServers := v1.Group("/mcp-servers")
+			mcpServers.Use(authMiddleware.RequireAuth())
+			{
+				mcpServers.POST("", mcpHandler.RegisterServer)
+				mcpServers.GET("", mcpHandler.ListServers)
+				mcpServers.GET("/:id", mcpHandler.GetServer)
+				mcpServers.PUT("/:id", mcpHandler.UpdateServer)
+				mcpServers.DELETE("/:id", mcpHandler.DeleteServer)
+				mcpServers.POST("/:id/sync", mcpHandler.SyncToolCatalog)
+				mcpServers.GET("/:id/tools", mcpHandler.ListTools)
+			}
 		}
 	}
 }
