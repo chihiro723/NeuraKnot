@@ -196,7 +196,7 @@ if [[ "$INCLUDE_MOCK_DATA" == true ]]; then
     echo "=== 構築結果 ==="
     echo "テーブル数: $TABLE_COUNT"
     echo "ユーザー数: $USER_COUNT"
-    echo "AIエージェント数: $AGENT_COUNT"
+    echo "エージェント数: $AGENT_COUNT"
     echo "メッセージ数: $MESSAGE_COUNT"
 else
     log_success "構築完了！"

@@ -1,5 +1,144 @@
 basePath: /api/v1
 definitions:
+  backend-go_internal_domain_mcp.AuthType:
+    enum:
+    - bearer
+    - api_key
+    - custom
+    type: string
+    x-enum-comments:
+      AuthTypeAPIKey: API Key
+      AuthTypeBearer: Bearer Token
+      AuthTypeCustom: カスタムヘッダー
+    x-enum-varnames:
+    - AuthTypeBearer
+    - AuthTypeAPIKey
+    - AuthTypeCustom
+  backend-go_internal_domain_mcp.MCPServer:
+    properties:
+      auth_type:
+        $ref: '#/definitions/backend-go_internal_domain_mcp.AuthType'
+      base_url:
+        type: string
+      created_at:
+        type: string
+      custom_headers:
+        additionalProperties:
+          type: string
+        type: object
+      description:
+        type: string
+      enabled:
+        type: boolean
+      id:
+        type: string
+      last_synced_at:
+        type: string
+      last_used_at:
+        type: string
+      name:
+        type: string
+      requires_auth:
+        type: boolean
+      server_type:
+        $ref: '#/definitions/backend-go_internal_domain_mcp.ServerType'
+      tools_count:
+        type: integer
+      updated_at:
+        type: string
+      user_id:
+        description: NULL = システム共通
+        type: string
+    type: object
+  backend-go_internal_domain_mcp.MCPTool:
+    properties:
+      category:
+        type: string
+      created_at:
+        type: string
+      enabled:
+        type: boolean
+      id:
+        type: string
+      input_schema:
+        additionalProperties: true
+        type: object
+      mcp_server_id:
+        type: string
+      synced_at:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      tool_description:
+        type: string
+      tool_name:
+        type: string
+      usage_count:
+        type: integer
+    type: object
+  backend-go_internal_domain_mcp.RegisterMCPServerInput:
+    properties:
+      api_key:
+        description: 平文で受け取る
+        maxLength: 500
+        type: string
+      auth_type:
+        $ref: '#/definitions/backend-go_internal_domain_mcp.AuthType'
+      base_url:
+        type: string
+      custom_headers:
+        additionalProperties:
+          type: string
+        type: object
+      description:
+        maxLength: 1000
+        type: string
+      name:
+        maxLength: 255
+        type: string
+      requires_auth:
+        type: boolean
+    required:
+    - base_url
+    - name
+    type: object
+  backend-go_internal_domain_mcp.ServerType:
+    enum:
+    - built_in
+    - external
+    type: string
+    x-enum-comments:
+      ServerTypeBuiltIn: システム組み込み
+      ServerTypeExternal: ユーザー登録
+    x-enum-varnames:
+    - ServerTypeBuiltIn
+    - ServerTypeExternal
+  backend-go_internal_domain_mcp.UpdateMCPServerInput:
+    properties:
+      api_key:
+        maxLength: 500
+        type: string
+      auth_type:
+        $ref: '#/definitions/backend-go_internal_domain_mcp.AuthType'
+      base_url:
+        type: string
+      custom_headers:
+        additionalProperties:
+          type: string
+        type: object
+      description:
+        maxLength: 1000
+        type: string
+      enabled:
+        type: boolean
+      name:
+        maxLength: 255
+        type: string
+      requires_auth:
+        type: boolean
+    type: object
   backend-go_internal_handler_http_request.ChangeEmailRequest:
     properties:
       email:
@@ -309,6 +448,11 @@ definitions:
         items:
           $ref: '#/definitions/backend-go_internal_handler_http_response.UserResponse'
         type: array
+    type: object
+  internal_handler_http.ErrorResponse:
+    properties:
+      error:
+        type: string
     type: object
 host: localhost:8080
 info:
@@ -652,6 +796,304 @@ paths:
       summary: メッセージ送信（ストリーミング）
       tags:
       - Chat
+  /api/v1/mcp-servers:
+    get:
+      description: ユーザーがアクセス可能なMCPサーバー一覧を取得します（システム共通 + ユーザー登録）
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/backend-go_internal_domain_mcp.MCPServer'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: MCPサーバー一覧を取得
+      tags:
+      - MCP
+    post:
+      consumes:
+      - application/json
+      description: ユーザーが外部MCPサーバーを登録します。APIキーは暗号化されてDBに保存されます。
+      parameters:
+      - description: 登録情報
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/backend-go_internal_domain_mcp.RegisterMCPServerInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/backend-go_internal_domain_mcp.MCPServer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: MCPサーバーを登録
+      tags:
+      - MCP
+  /api/v1/mcp-servers/{id}:
+    delete:
+      description: MCPサーバーを削除します
+      parameters:
+      - description: Server ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: MCPサーバーを削除
+      tags:
+      - MCP
+    get:
+      description: 指定されたIDのMCPサーバーを取得します
+      parameters:
+      - description: Server ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/backend-go_internal_domain_mcp.MCPServer'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: MCPサーバーを取得
+      tags:
+      - MCP
+    put:
+      consumes:
+      - application/json
+      description: MCPサーバーの情報を更新します
+      parameters:
+      - description: Server ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 更新情報
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/backend-go_internal_domain_mcp.UpdateMCPServerInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/backend-go_internal_domain_mcp.MCPServer'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: MCPサーバーを更新
+      tags:
+      - MCP
+  /api/v1/mcp-servers/{id}/sync:
+    post:
+      description: MCPサーバーからツールカタログを取得して同期します
+      parameters:
+      - description: Server ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: ツールカタログを同期
+      tags:
+      - MCP
+  /api/v1/mcp-servers/{id}/tools:
+    get:
+      description: 指定されたMCPサーバーのツール一覧を取得します
+      parameters:
+      - description: Server ID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/backend-go_internal_domain_mcp.MCPTool'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: サーバーのツール一覧を取得
+      tags:
+      - MCP
+  /api/v1/mcp-tools/search:
+    get:
+      description: カテゴリ、タグ、キーワードでツールを検索します
+      parameters:
+      - description: Category
+        in: query
+        name: category
+        type: string
+      - collectionFormat: csv
+        description: Tags (comma-separated)
+        in: query
+        items:
+          type: string
+        name: tags
+        type: array
+      - description: Search query
+        in: query
+        name: q
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/backend-go_internal_domain_mcp.MCPTool'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_handler_http.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: ツールを検索
+      tags:
+      - MCP
   /auth/confirm-forgot-password:
     post:
       consumes:
