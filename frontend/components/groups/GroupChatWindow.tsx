@@ -325,7 +325,7 @@ export function GroupChatWindow({ selectedGroup }: GroupChatWindowProps) {
                 <div className="flex flex-col flex-1 space-y-1 min-w-0">
                   {/* 名前 */}
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    AIエージェント
+                    エージェント
                   </span>
 
                   {/* 入力中バブル */}
@@ -427,9 +427,7 @@ export function GroupChatWindow({ selectedGroup }: GroupChatWindowProps) {
                     )}
                   </div>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {member.member_type === "ai"
-                      ? "AIエージェント"
-                      : "ユーザー"}
+                    {member.member_type === "ai" ? "エージェント" : "ユーザー"}
                   </p>
                 </div>
               </div>
