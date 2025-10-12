@@ -341,7 +341,7 @@ CREATE TABLE friendships (
     -- 友達（ポリモーフィック）
     friend_type VARCHAR(20) NOT NULL,
     -- human: 人間ユーザー
-    -- ai: AIエージェント
+    -- ai: エージェント
     friend_id UUID NOT NULL,
 
     -- ステータス
@@ -869,7 +869,7 @@ CREATE TABLE group_members (
     -- メンバー（ポリモーフィック）
     member_type VARCHAR(20) NOT NULL,
     -- human: 人間ユーザー
-    -- ai: AIエージェント
+    -- ai: エージェント
     member_id UUID NOT NULL,
 
     -- ロール

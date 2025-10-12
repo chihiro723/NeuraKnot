@@ -142,7 +142,7 @@ SELECT table_name FROM information_schema.tables
 WHERE table_schema = 'public'
 ORDER BY table_name;
 
--- 2. AIエージェントの確認
+-- 2. エージェントの確認
 SELECT name, personality_preset FROM ai_agents WHERE is_active = true;
 
 -- 3. ユーザーテーブルの確認
