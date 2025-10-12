@@ -148,4 +148,87 @@ class MCPService:
         
         logger.info(f"合計 {len(all_tools)} 個のツールを取得しました")
         return all_tools
+    
+    @staticmethod
+    async def fetch_tool_catalog_from_url(
+        server_url: str,
+        api_key: str = None,
+        custom_headers: dict = None
+    ) -> dict:
+        """
+        指定されたURLからツールカタログを取得（Go APIから呼ばれる）
+        
+        Args:
+            server_url: MCPサーバーのベースURL
+            api_key: APIキー（オプション）
+            custom_headers: カスタムヘッダー（オプション）
+            
+        Returns:
+            ツールカタログ（MCP標準形式）
+            
+        Raises:
+            MCPConnectionError: 接続エラー
+            MCPTimeoutError: タイムアウト
+        """
+        logger.info(f"ツールカタログを取得中: {server_url}")
+        
+        # ヘッダーの準備
+        headers = custom_headers or {}
+        if api_key:
+            # APIキーの形式に応じてヘッダーを設定
+            if not any(key.lower() == 'authorization' for key in headers.keys()):
+                headers["Authorization"] = f"Bearer {api_key}"
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            try:
+                # MCP標準のカタログエンドポイントを呼び出す
+                response = await client.get(
+                    f"{server_url.rstrip('/')}/catalog",
+                    headers=headers
+                )
+                response.raise_for_status()
+                catalog = response.json()
+                
+                logger.info(f"カタログ取得成功: {len(catalog.get('tools', []))} 個のツール")
+                
+                # カタログの構造を検証
+                if "tools" not in catalog:
+                    logger.warning("カタログに 'tools' フィールドがありません。空の配列を返します")
+                    catalog["tools"] = []
+                
+                # サーバー情報が無い場合はデフォルトを追加
+                if "server" not in catalog:
+                    catalog["server"] = {
+                        "name": "MCP Server",
+                        "version": "unknown",
+                        "description": ""
+                    }
+                
+                return catalog
+                
+            except httpx.TimeoutException:
+                logger.error(f"タイムアウト: {server_url}")
+                raise MCPTimeoutError(server_url, 30.0)
+                
+            except httpx.HTTPStatusError as e:
+                logger.error(
+                    f"HTTPエラー: {server_url} が "
+                    f"{e.response.status_code} を返しました\n"
+                    f"レスポンス: {e.response.text[:200]}"
+                )
+                raise MCPConnectionError(
+                    server_url,
+                    {"status_code": e.response.status_code, "response": e.response.text[:200]}
+                )
+                
+            except httpx.RequestError as e:
+                logger.error(f"接続エラー: {server_url} に接続できません - {str(e)}")
+                raise MCPConnectionError(server_url, {"error": str(e)})
+                
+            except Exception as e:
+                logger.error(
+                    f"予期しないエラー: {server_url} からのカタログ取得に失敗 - {str(e)}",
+                    exc_info=True
+                )
+                raise MCPConnectionError(server_url, {"error": str(e)})
 
