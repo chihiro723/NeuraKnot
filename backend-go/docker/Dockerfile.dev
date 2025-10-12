@@ -22,17 +22,8 @@ RUN go install github.com/air-verse/air@latest
 # ソースコードをコピー（最後にコピーしてレイヤーキャッシュを活用）
 COPY . .
 
-# Goモジュールキャッシュディレクトリを作成して権限を設定
-RUN mkdir -p /go/pkg/mod && chown -R 1001:1001 /go/pkg/mod
-
-# Goビルドキャッシュディレクトリを作成して権限を設定
-RUN mkdir -p /.cache/go-build && chown -R 1001:1001 /.cache
-
-# 権限を設定
-RUN chown -R 1001:1001 /app
-
-# ユーザーを変更
-USER 1001
+# tmpディレクトリを作成（開発環境ではrootユーザーで実行）
+RUN mkdir -p /app/tmp
 
 # ポートを公開
 EXPOSE 8080
