@@ -21,6 +21,9 @@ type Config struct {
 
 	// ログ設定
 	Log LogConfig
+
+	// セキュリティ設定
+	Security SecurityConfig
 }
 
 // ServerConfig サーバー設定
@@ -61,6 +64,15 @@ type LogConfig struct {
 	Format string
 }
 
+// SecurityConfig セキュリティ設定
+type SecurityConfig struct {
+	// AES-256-GCM暗号化用マスターキー（Base64エンコード済み）
+	EncryptionMasterKey string
+	// AWS Secrets Manager設定
+	UseSecretsManager bool
+	SecretsManagerARN string
+}
+
 // Load 設定を環境変数から読み込み
 func Load() *Config {
 	return &Config{
@@ -91,6 +103,11 @@ func Load() *Config {
 		Log: LogConfig{
 			Level:  getEnv("LOG_LEVEL", "info"),
 			Format: getEnv("LOG_FORMAT", "json"),
+		},
+		Security: SecurityConfig{
+			EncryptionMasterKey: getEnv("ENCRYPTION_MASTER_KEY", ""),
+			UseSecretsManager:   getEnv("USE_SECRETS_MANAGER", "false") == "true",
+			SecretsManagerARN:   getEnv("SECRETS_MANAGER_ARN", ""),
 		},
 	}
 }
