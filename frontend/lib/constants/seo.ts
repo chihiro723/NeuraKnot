@@ -7,7 +7,7 @@ export const SEO_CONFIG = {
     template: '%s | BridgeSpeak'
   },
   description: {
-    default: 'LINEライクなUIで人間とAIエージェントとチャットできる革新的なメッセージングアプリ。あなたのデジタル分身が誕生する。',
+    default: 'LINEライクなUIで人間とエージェントとチャットできる革新的なメッセージングアプリ。あなたのデジタル分身が誕生する。',
     short: '人間とAIの新しいコミュニケーションプラットフォーム'
   },
   keywords: [
