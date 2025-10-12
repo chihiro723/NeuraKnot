@@ -49,43 +49,43 @@ export function MobileLayout({ children }: MobileLayoutProps) {
 
   if (showChatWindow) {
     return (
-      <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors duration-200">
+      <div className="flex flex-col h-screen bg-gray-50 transition-colors duration-200 dark:bg-gray-900">
         {/* チャットヘッダー */}
-        <div className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 shadow-sm flex-shrink-0">
+        <div className="flex flex-shrink-0 justify-between items-center px-4 h-16 bg-white border-b border-gray-200 shadow-sm dark:bg-gray-900 dark:border-gray-700">
           <div className="flex items-center space-x-3">
             <button
               onClick={() => {
                 setSelectedChat(null);
                 if (selectedGroup) setSelectedGroup(null);
               }}
-              className="p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+              className="p-2 text-gray-700 rounded-lg transition-colors duration-200 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div className="relative">
-              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
+              <div className="flex overflow-hidden justify-center items-center w-8 h-8 bg-gray-300 rounded-full">
                 {selectedChat.avatar_url ? (
                   <img
                     src={selectedChat.avatar_url}
                     alt={selectedChat.name}
-                    className="w-full h-full object-cover"
+                    className="object-cover w-full h-full"
                   />
                 ) : (
-                  <span className="text-white font-medium text-xs">
+                  <span className="text-xs font-medium text-white">
                     {selectedChat.name.charAt(0)}
                   </span>
                 )}
               </div>
               {selectedChat.type === "ai" && (
-                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                <div className="absolute -right-1 -bottom-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
               )}
               {selectedChat.type === "human" &&
                 selectedChat.status === "online" && (
-                  <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                  <div className="absolute -right-1 -bottom-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
                 )}
               {selectedChat.type === "group" && selectedChat.member_count && (
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center border-2 border-white">
-                  <span className="text-xs text-white font-medium">
+                <div className="flex absolute -right-1 -bottom-1 justify-center items-center w-4 h-4 bg-green-500 rounded-full border-2 border-white">
+                  <span className="text-xs font-medium text-white">
                     {selectedChat.member_count}
                   </span>
                 </div>
@@ -122,35 +122,35 @@ export function MobileLayout({ children }: MobileLayoutProps) {
 
   if (showFriendDetail) {
     return (
-      <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors duration-200">
-        <div className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 shadow-sm flex-shrink-0">
+      <div className="flex flex-col h-screen bg-gray-50 transition-colors duration-200 dark:bg-gray-900">
+        <div className="flex flex-shrink-0 justify-between items-center px-4 h-16 bg-white border-b border-gray-200 shadow-sm dark:bg-gray-900 dark:border-gray-700">
           <div className="flex items-center space-x-3">
             <button
               onClick={() => setSelectedFriend(null)}
-              className="p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+              className="p-2 text-gray-700 rounded-lg transition-colors duration-200 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div className="relative">
-              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
+              <div className="flex overflow-hidden justify-center items-center w-8 h-8 bg-gray-300 rounded-full">
                 {selectedFriend.avatar_url ? (
                   <img
                     src={selectedFriend.avatar_url}
                     alt={selectedFriend.name}
-                    className="w-full h-full object-cover"
+                    className="object-cover w-full h-full"
                   />
                 ) : (
-                  <span className="text-white font-medium text-xs">
+                  <span className="text-xs font-medium text-white">
                     {selectedFriend.name.charAt(0)}
                   </span>
                 )}
               </div>
               {selectedFriend.type === "ai" && (
-                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                <div className="absolute -right-1 -bottom-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
               )}
               {selectedFriend.type === "human" &&
                 selectedFriend.status === "online" && (
-                  <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                  <div className="absolute -right-1 -bottom-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
                 )}
             </div>
             <div>
@@ -173,24 +173,24 @@ export function MobileLayout({ children }: MobileLayoutProps) {
 
   if (showProfileDetail) {
     return (
-      <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors duration-200">
-        <div className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 shadow-sm flex-shrink-0">
+      <div className="flex flex-col h-screen bg-gray-50 transition-colors duration-200 dark:bg-gray-900">
+        <div className="flex flex-shrink-0 justify-between items-center px-4 h-16 bg-white border-b border-gray-200 shadow-sm dark:bg-gray-900 dark:border-gray-700">
           <div className="flex items-center space-x-3">
             <button
               onClick={() => setShowProfileSettings(false)}
-              className="p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors duration-200"
+              className="p-2 text-gray-700 rounded-lg transition-colors duration-200 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+            <div className="flex justify-center items-center w-8 h-8 bg-white rounded-full">
               {profile.avatar_url ? (
                 <img
                   src={profile.avatar_url}
                   alt={profile.display_name}
-                  className="w-full h-full object-cover rounded-full"
+                  className="object-cover w-full h-full rounded-full"
                 />
               ) : (
-                <span className="text-green-500 font-medium text-sm">
+                <span className="text-sm font-medium text-green-500">
                   {profile.display_name.charAt(0)}
                 </span>
               )}
@@ -214,24 +214,24 @@ export function MobileLayout({ children }: MobileLayoutProps) {
   }
 
   return (
-    <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col transition-colors duration-200">
+    <div className="flex flex-col h-screen bg-gray-50 transition-colors duration-200 dark:bg-gray-900">
       {/* ヘッダー */}
-      <div className="h-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4 shadow-sm flex-shrink-0">
+      <div className="flex flex-shrink-0 justify-between items-center px-4 h-16 bg-white border-b border-gray-200 shadow-sm dark:bg-gray-900 dark:border-gray-700">
         <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center ring-2 ring-green-500/30 dark:ring-green-400/30">
+          <div className="flex justify-center items-center w-9 h-9 bg-gradient-to-br from-green-400 to-blue-500 rounded-full ring-2 ring-green-500/30 dark:ring-green-400/30">
             {profile.avatar_url ? (
               <img
                 src={profile.avatar_url}
                 alt={profile.display_name}
-                className="w-full h-full object-cover rounded-full"
+                className="object-cover w-full h-full rounded-full"
               />
             ) : (
-              <span className="text-white font-semibold text-sm">
+              <span className="text-sm font-semibold text-white">
                 {profile.display_name.charAt(0)}
               </span>
             )}
           </div>
-          <span className="text-gray-900 dark:text-white font-semibold">
+          <span className="font-semibold text-gray-900 dark:text-white">
             {profile.display_name}
           </span>
         </div>
@@ -239,7 +239,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
 
       {/* メインコンテンツエリア - ヘッダーとボトムナビの間の空間を使用 */}
       <div
-        className="flex-1 min-h-0 mb-20"
+        className="flex-1 mb-20 min-h-0"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         {children}
@@ -247,10 +247,10 @@ export function MobileLayout({ children }: MobileLayoutProps) {
 
       {/* ボトムナビゲーション - 固定位置 */}
       <div
-        className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 shadow-lg z-50"
+        className="fixed right-0 bottom-0 left-0 z-50 bg-white border-t border-gray-200 shadow-lg dark:bg-gray-900 dark:border-gray-700"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
-        <div className="flex justify-around w-full px-4 py-3">
+        <div className="flex justify-around px-4 py-3 w-full">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -260,13 +260,13 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "flex flex-col items-center py-2 px-3 rounded-lg transition-all duration-200 transform",
+                  "flex flex-col items-center px-3 py-2 rounded-lg transition-all duration-200 transform",
                   isActive
-                    ? "text-green-500 dark:text-green-400 bg-green-50 dark:bg-green-500/10 scale-105"
+                    ? "text-green-500 bg-green-50 scale-105 dark:text-green-400 dark:bg-green-500/10"
                     : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:scale-105"
                 )}
               >
-                <Icon className="w-6 h-6 mb-1" />
+                <Icon className="mb-1 w-6 h-6" />
                 <span className="text-xs font-medium">{tab.label}</span>
               </button>
             );

@@ -124,9 +124,14 @@ const SERVICES = [
 interface LandingPageProps {
   user: AuthUser | null;
   profile: UserProfile | null;
+  isLoading?: boolean;
 }
 
-export function LandingPage({ user, profile }: LandingPageProps) {
+export function LandingPage({
+  user,
+  profile,
+  isLoading = false,
+}: LandingPageProps) {
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isAutoScrolling, setIsAutoScrolling] = useState(false);
@@ -374,7 +379,7 @@ export function LandingPage({ user, profile }: LandingPageProps) {
               className="hidden items-center space-x-4 md:flex"
               data-mobile-menu
             >
-              {user ? (
+              {!isLoading && user ? (
                 <>
                   <div className="flex items-center px-4 py-2 space-x-3 rounded-lg border bg-emerald-500/10 border-emerald-500/30">
                     <User className="w-4 h-4 text-emerald-400" />
@@ -401,7 +406,7 @@ export function LandingPage({ user, profile }: LandingPageProps) {
                     />
                   </button>
                 </>
-              ) : (
+              ) : !isLoading ? (
                 <>
                   <Link
                     href="/auth/login"
@@ -416,7 +421,7 @@ export function LandingPage({ user, profile }: LandingPageProps) {
                     無料で始める
                   </Link>
                 </>
-              )}
+              ) : null}
             </div>
 
             {/* モバイルハンバーガーメニュー */}
@@ -501,7 +506,7 @@ export function LandingPage({ user, profile }: LandingPageProps) {
 
             <div className="flex flex-col flex-1 px-6 pt-6">
               {/* ユーザー情報セクション */}
-              {user && (
+              {!isLoading && user && (
                 <div
                   className={`mb-8 p-5 bg-gradient-to-br from-emerald-500/15 via-emerald-500/10 to-cyan-500/15 border border-emerald-500/20 rounded-2xl backdrop-blur-sm transition-all duration-700 delay-300 ${
                     isMobileMenuOpen
@@ -564,7 +569,7 @@ export function LandingPage({ user, profile }: LandingPageProps) {
               </div>
 
               {/* 認証アクション */}
-              {!user && (
+              {!isLoading && !user && (
                 <div className="mb-8 space-y-4">
                   <Link
                     href="/auth/login"
@@ -594,7 +599,7 @@ export function LandingPage({ user, profile }: LandingPageProps) {
               )}
 
               {/* ログアウトボタン */}
-              {user && (
+              {!isLoading && user && (
                 <div
                   className={`mb-6 transition-all duration-700 delay-700 ${
                     isMobileMenuOpen
@@ -731,7 +736,7 @@ export function LandingPage({ user, profile }: LandingPageProps) {
 
           {/* CTAボタン */}
           <div className="flex flex-col gap-6 justify-center items-center mb-20 sm:flex-row">
-            {user ? (
+            {!isLoading && user ? (
               <div className="text-center">
                 <Link
                   href="/dashboard"
@@ -740,13 +745,17 @@ export function LandingPage({ user, profile }: LandingPageProps) {
                   ダッシュボードへ移動
                 </Link>
               </div>
-            ) : (
+            ) : !isLoading ? (
               <Link
                 href="/auth/signup"
                 className="px-10 py-5 text-lg font-bold text-white bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-500 rounded-2xl shadow-2xl transition-all duration-300 transform hover:from-emerald-600 hover:via-emerald-500 hover:to-cyan-600 hover:scale-105 hover:shadow-emerald-500/30"
               >
                 デジタル分身を今すぐ作成
               </Link>
+            ) : (
+              <div className="px-10 py-5 text-lg font-bold text-transparent bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-500 rounded-2xl animate-pulse">
+                読込中...
+              </div>
             )}
 
             <button
@@ -1083,20 +1092,24 @@ export function LandingPage({ user, profile }: LandingPageProps) {
           </p>
 
           <div className="flex flex-col gap-6 justify-center items-center mb-16 sm:flex-row">
-            {user ? (
+            {!isLoading && user ? (
               <Link
                 href="/dashboard"
                 className="px-12 py-6 text-xl font-bold text-white bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-500 rounded-2xl shadow-2xl transition-all duration-300 transform hover:from-emerald-600 hover:via-emerald-500 hover:to-cyan-600 hover:scale-105 hover:shadow-emerald-500/30"
               >
                 ダッシュボードで開始
               </Link>
-            ) : (
+            ) : !isLoading ? (
               <Link
                 href="/auth/signup"
                 className="px-12 py-6 text-xl font-bold text-white bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-500 rounded-2xl shadow-2xl transition-all duration-300 transform hover:from-emerald-600 hover:via-emerald-500 hover:to-cyan-600 hover:scale-105 hover:shadow-emerald-500/30"
               >
                 デジタル分身を今すぐ作成
               </Link>
+            ) : (
+              <div className="px-12 py-6 text-xl font-bold text-transparent bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-500 rounded-2xl animate-pulse">
+                読込中...
+              </div>
             )}
 
             <button

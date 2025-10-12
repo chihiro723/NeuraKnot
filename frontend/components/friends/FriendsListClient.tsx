@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bot, Users, User, Handshake } from "lucide-react";
+import { Users } from "lucide-react";
 import { useDashboard } from "@/components/dashboard/DashboardProvider";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -95,23 +95,20 @@ export function FriendsListClient() {
   });
 
   const filters = [
-    { id: "all" as const, label: "すべて", icon: Users, count: friends.length },
+    { id: "all" as const, label: "all", count: friends.length },
     {
       id: "human" as const,
-      label: "ユーザー",
-      icon: User,
+      label: "user",
       count: friends.filter((f) => f.type === "human").length,
     },
     {
       id: "ai" as const,
-      label: "AI",
-      icon: Bot,
+      label: "agent",
       count: friends.filter((f) => f.type === "ai").length,
     },
     {
       id: "group" as const,
-      label: "グループ",
-      icon: Handshake,
+      label: "group",
       count: friends.filter((f) => f.type === "group").length,
     },
   ];
@@ -135,7 +132,6 @@ export function FriendsListClient() {
       <div className="bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
         <div className="flex">
           {filters.map((filter) => {
-            const Icon = filter.icon;
             const isActive = activeFilter === filter.id;
 
             return (
@@ -143,23 +139,14 @@ export function FriendsListClient() {
                 key={filter.id}
                 onClick={() => setActiveFilter(filter.id)}
                 className={cn(
-                  "flex relative flex-col flex-1 justify-center items-center px-2 py-3 transition-all duration-200",
+                  "flex flex-1 justify-center items-center px-3 py-3 transition-all duration-200",
                   isActive
                     ? "text-green-500 bg-green-50 border-b-2 border-green-500 dark:text-green-400 dark:bg-green-900/20 dark:border-green-400"
                     : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
                 )}
-                title={filter.label}
               >
-                <Icon className="mb-1 w-5 h-5" />
-                <span
-                  className={cn(
-                    "text-xs px-1.5 py-0.5 rounded-full min-w-[20px] text-center",
-                    isActive
-                      ? "bg-green-100 dark:bg-green-800 text-green-600 dark:text-green-300"
-                      : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400"
-                  )}
-                >
-                  {filter.count}
+                <span className="text-sm font-medium">
+                  {filter.label} ({filter.count})
                 </span>
               </button>
             );
