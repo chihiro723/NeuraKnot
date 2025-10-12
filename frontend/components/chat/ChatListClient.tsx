@@ -225,15 +225,29 @@ export function ChatListClient() {
 
       <div className="overflow-y-auto flex-1">
         {filteredConversations.length === 0 ? (
-          <EmptyState
-            icon={MessageCircle}
-            title={searchQuery ? "検索結果がありません" : "トークがありません"}
-            description={
-              searchQuery
-                ? "検索条件を変更してください"
-                : "友だちを追加してトークを始めましょう"
-            }
-          />
+          activeFilter === "users" || activeFilter === "groups" ? (
+            <EmptyState
+              icon={MessageCircle}
+              title="近日追加予定"
+              description={
+                activeFilter === "users"
+                  ? "ユーザーとのチャット機能は現在開発中です"
+                  : "グループチャット機能は現在開発中です"
+              }
+            />
+          ) : (
+            <EmptyState
+              icon={MessageCircle}
+              title={
+                searchQuery ? "検索結果がありません" : "トークがありません"
+              }
+              description={
+                searchQuery
+                  ? "検索条件を変更してください"
+                  : "友だちを追加してトークを始めましょう"
+              }
+            />
+          )
         ) : (
           <div className="pb-4 divide-y divide-gray-100 dark:divide-gray-800 lg:pb-0">
             {filteredConversations.map((conversation) => (

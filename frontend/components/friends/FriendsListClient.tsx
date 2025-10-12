@@ -78,7 +78,7 @@ export function FriendsListClient() {
         friend.type === "ai"
           ? `${getPersonalityLabel(
               friend.personality_preset || ""
-            )}タイプのAIエージェントです。`
+            )}タイプのエージェントです。`
           : "ユーザーの友だちです。",
     });
   };
@@ -156,25 +156,33 @@ export function FriendsListClient() {
 
       <div className="overflow-y-auto flex-1">
         {filteredFriends.length === 0 ? (
-          <EmptyState
-            icon={Users}
-            title={
-              searchQuery
-                ? "検索結果がありません"
-                : activeFilter === "ai"
-                ? "AIエージェントがいません"
-                : activeFilter === "human"
-                ? "ユーザーの友だちがいません"
-                : activeFilter === "group"
-                ? "グループがありません"
-                : "友だちがいません"
-            }
-            description={
-              searchQuery
-                ? "検索条件を変更してください"
-                : "友だちを追加してトークを始めましょう"
-            }
-          />
+          activeFilter === "human" || activeFilter === "group" ? (
+            <EmptyState
+              icon={Users}
+              title="近日追加予定"
+              description={
+                activeFilter === "human"
+                  ? "ユーザーとの友達機能は現在開発中です"
+                  : "グループ機能は現在開発中です"
+              }
+            />
+          ) : (
+            <EmptyState
+              icon={Users}
+              title={
+                searchQuery
+                  ? "検索結果がありません"
+                  : activeFilter === "ai"
+                  ? "エージェントがいません"
+                  : "友だちがいません"
+              }
+              description={
+                searchQuery
+                  ? "検索条件を変更してください"
+                  : "友だちを追加してトークを始めましょう"
+              }
+            />
+          )
         ) : (
           <div className="pb-4 space-y-2 lg:pb-0">
             {filteredFriends.map((friend) => (
@@ -213,15 +221,15 @@ function FriendItem({
     <button
       onClick={() => onSelectFriend(friend)}
       className={cn(
-        "p-4 w-full text-left transition-all duration-200 lg:border-b lg:border-gray-100 dark:lg:border-gray-800 last:border-b-0",
+        "p-3 w-full text-left transition-all lg:border-b lg:border-gray-100 dark:lg:border-gray-800 last:border-b-0",
         isSelected
-          ? "bg-green-50 border-r-2 border-green-500 dark:bg-green-900/20 dark:border-green-400"
-          : "hover:bg-gray-50 dark:hover:bg-gray-800"
+          ? "bg-green-50 border-l-2 border-green-500 dark:bg-green-900/20 dark:border-green-400"
+          : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
       )}
     >
       <div className="flex items-center space-x-3">
-        <div className="relative">
-          <div className="flex overflow-hidden justify-center items-center w-12 h-12 bg-gray-300 rounded-full lg:w-10 lg:h-10 dark:bg-gray-600">
+        <div className="relative flex-shrink-0">
+          <div className="flex overflow-hidden justify-center items-center w-11 h-11 bg-gradient-to-br from-gray-200 to-gray-300 rounded-xl lg:w-10 lg:h-10 dark:from-gray-700 dark:to-gray-600">
             {friend.avatar_url ? (
               <img
                 src={friend.avatar_url}
@@ -229,7 +237,7 @@ function FriendItem({
                 className="object-cover w-full h-full"
               />
             ) : (
-              <span className="font-medium text-white">
+              <span className="text-sm font-semibold text-gray-600 dark:text-gray-300">
                 {friend.name.charAt(0)}
               </span>
             )}
@@ -237,22 +245,22 @@ function FriendItem({
 
           {/* AI Agent indicator */}
           {isAI && (
-            <div className="flex absolute -right-1 -bottom-1 justify-center items-center w-4 h-4 bg-green-500 rounded-full">
-              <span className="text-xs lg:text-[10px]">🤖</span>
+            <div className="flex absolute -right-0.5 -bottom-0.5 justify-center items-center w-3.5 h-3.5 bg-green-500 rounded-md border border-white dark:border-gray-900">
+              <span className="text-[10px]">🤖</span>
             </div>
           )}
 
           {/* Human online status */}
           {!isAI && friend.status === "online" && (
-            <div className="absolute -right-1 -bottom-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></div>
+            <div className="absolute -right-0.5 -bottom-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></div>
           )}
         </div>
 
         <div className="flex-1 min-w-0">
-          <h3 className="font-medium text-gray-900 truncate dark:text-white lg:text-sm">
+          <h3 className="text-sm font-semibold text-gray-900 truncate dark:text-white">
             {friend.name}
           </h3>
-          <p className="text-sm text-gray-600 truncate dark:text-gray-400 lg:text-xs">
+          <p className="text-xs text-gray-500 truncate dark:text-gray-400">
             {isAI && friend.personality_preset
               ? `${getPersonalityLabel(friend.personality_preset)} • オンライン`
               : friend.status === "online"
