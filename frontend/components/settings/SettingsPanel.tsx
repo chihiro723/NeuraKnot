@@ -3,7 +3,7 @@
 import { useDashboard } from "@/components/dashboard/DashboardProvider";
 import { SignOutButton } from "./SignOutButton";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { User, Palette, Bell, Shield, Info, Home } from "lucide-react";
+import { User, Palette, Shield, Home } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 /**
@@ -96,46 +96,6 @@ export function SettingsPanel() {
           </div>
         </div>
 
-        {/* 通知設定 */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm animate-fadeIn">
-          <h3 className="font-medium text-gray-900 dark:text-white mb-4 lg:text-sm flex items-center">
-            <Bell className="w-5 h-5 mr-2" />
-            通知設定
-          </h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                新しいメッセージ
-              </span>
-              <button className="w-12 h-6 bg-green-500 rounded-full relative transition-colors duration-200">
-                <div className="w-5 h-5 bg-white rounded-full absolute right-0.5 top-0.5 transition-transform duration-200"></div>
-              </button>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                友だちリクエスト
-              </span>
-              <button className="w-12 h-6 bg-gray-300 dark:bg-gray-600 rounded-full relative transition-colors duration-200">
-                <div className="w-5 h-5 bg-white rounded-full absolute left-0.5 top-0.5 transition-transform duration-200"></div>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* アクション */}
-        <div className="space-y-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm animate-fadeIn">
-            <h3 className="font-medium text-gray-900 dark:text-white mb-2 lg:text-sm flex items-center">
-              <Shield className="w-5 h-5 mr-2" />
-              アカウント
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 lg:text-xs">
-              アカウント設定を管理します
-            </p>
-            <SignOutButton />
-          </div>
-        </div>
-
         {/* ランディングページへ戻る */}
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm animate-fadeIn">
           <h3 className="font-medium text-gray-900 dark:text-white mb-2 lg:text-sm flex items-center">
@@ -153,16 +113,17 @@ export function SettingsPanel() {
           </a>
         </div>
 
-        {/* アプリ情報 */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm animate-fadeIn">
-          <h3 className="font-medium text-gray-900 dark:text-white mb-2 lg:text-sm flex items-center">
-            <Info className="w-5 h-5 mr-2" />
-            アプリ情報
-          </h3>
-          <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400 lg:text-xs">
-            <p>ハイブリッドメッセージング</p>
-            <p>バージョン: 1.0.0</p>
-            <p>人間とAIエージェントとのコミュニケーションプラットフォーム</p>
+        {/* アクション */}
+        <div className="space-y-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm animate-fadeIn">
+            <h3 className="font-medium text-gray-900 dark:text-white mb-2 lg:text-sm flex items-center">
+              <Shield className="w-5 h-5 mr-2" />
+              アカウント
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 lg:text-xs">
+              アカウント設定を管理します
+            </p>
+            <SignOutButton />
           </div>
         </div>
       </div>
