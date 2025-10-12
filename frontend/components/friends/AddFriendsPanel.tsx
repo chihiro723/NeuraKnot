@@ -5,15 +5,13 @@ import {
   Bot,
   User,
   ArrowRight,
-  Brain,
-  Sparkles,
-  LineChart,
   Plus,
   UserPlus,
   Search,
   QrCode,
   Users,
   Handshake,
+  Server,
 } from "lucide-react";
 import { useDashboard } from "@/components/dashboard/DashboardProvider";
 import { getAllSampleFriends } from "@/lib/data/sampleData";
@@ -22,6 +20,9 @@ import { cn } from "@/lib/utils/cn";
 import type { FriendData } from "@/lib/types";
 import { createAgent } from "@/lib/actions/ai-agent-actions";
 import { useServerActionWithAuth } from "@/lib/hooks/useServerActionWithAuth";
+import { ToolSelector } from "@/components/mcp/ToolSelector";
+import { listMCPServers } from "@/lib/actions/mcp-actions";
+import type { MCPServer, ToolSelectionMode } from "@/lib/types/mcp";
 
 type AddType = "user" | "ai" | "group" | null;
 
@@ -59,27 +60,27 @@ export function AddFriendsPanel() {
       icon: User,
       title: "ユーザー",
       description: "実際の人とつながって会話しよう",
-      color: "from-blue-400 to-purple-500",
-      bgColor: "from-blue-500/10 to-purple-500/10",
-      borderColor: "border-blue-400/30",
+      iconColor: "text-gray-600 dark:text-gray-400",
+      bgColor: "bg-gray-100 dark:bg-gray-800",
+      comingSoon: true,
     },
     {
       type: "ai" as const,
       icon: Bot,
-      title: "AIエージェント",
+      title: "エージェント",
       description: "様々な個性を持つAIと会話しよう",
-      color: "from-emerald-400 to-cyan-500",
-      bgColor: "from-emerald-500/10 to-cyan-500/10",
-      borderColor: "border-emerald-400/30",
+      iconColor: "text-gray-600 dark:text-gray-400",
+      bgColor: "bg-gray-100 dark:bg-gray-800",
+      comingSoon: false,
     },
     {
       type: "group" as const,
       icon: Handshake,
       title: "グループ",
       description: "複数の友だちやAIとグループチャット",
-      color: "from-purple-400 to-pink-500",
-      bgColor: "from-purple-500/10 to-pink-500/10",
-      borderColor: "border-purple-400/30",
+      iconColor: "text-gray-600 dark:text-gray-400",
+      bgColor: "bg-gray-100 dark:bg-gray-800",
+      comingSoon: true,
     },
   ];
 
@@ -106,38 +107,49 @@ export function AddFriendsPanel() {
 
             {/* 選択カード */}
             <div className="flex overflow-y-auto flex-1 justify-center items-start p-6 pb-8">
-              <div className="space-y-4 w-full">
+              <div className="space-y-3 w-full">
                 {addTypes.map((type) => {
                   const Icon = type.icon;
                   return (
                     <button
                       key={type.type}
-                      onClick={() => setCurrentSelectedType(type.type)}
+                      onClick={() =>
+                        !type.comingSoon && setCurrentSelectedType(type.type)
+                      }
+                      disabled={type.comingSoon}
                       className={cn(
-                        "p-6 w-full bg-white rounded-2xl border border-gray-200 dark:bg-gray-800 dark:border-gray-700",
+                        "p-5 w-full bg-white rounded-xl border border-gray-200 dark:bg-gray-800 dark:border-gray-700",
                         "transition-all duration-200 group animate-fadeIn",
-                        "hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md"
+                        type.comingSoon
+                          ? "opacity-60 cursor-not-allowed"
+                          : "hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm active:scale-[0.98]"
                       )}
                     >
                       <div className="flex items-center space-x-4">
                         <div
                           className={cn(
-                            "w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg",
-                            "group-hover:shadow-xl transition-shadow",
-                            `bg-gradient-to-br ${type.color}`
+                            "w-12 h-12 rounded-xl flex items-center justify-center transition-colors",
+                            type.bgColor
                           )}
                         >
-                          <Icon className="w-8 h-8 text-white" />
+                          <Icon className={cn("w-6 h-6", type.iconColor)} />
                         </div>
                         <div className="flex-1 text-left">
-                          <h3 className="mb-1 text-xl font-bold text-gray-900 dark:text-white">
-                            {type.title}
-                          </h3>
-                          <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                              {type.title}
+                            </h3>
+                            {type.comingSoon && (
+                              <span className="px-2 py-0.5 text-[10px] font-medium text-gray-600 bg-gray-100 rounded dark:text-gray-400 dark:bg-gray-800">
+                                近日追加予定
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-400">
                             {type.description}
                           </p>
                         </div>
-                        <ArrowRight className="w-6 h-6 text-gray-400 transition-colors group-hover:text-green-500" />
+                        <ArrowRight className="w-5 h-5 text-gray-400 transition-transform group-hover:translate-x-0.5" />
                       </div>
                     </button>
                   );
@@ -151,41 +163,60 @@ export function AddFriendsPanel() {
       {/* デスクトップ用レイアウト */}
       <div className="hidden flex-col h-full lg:flex">
         {/* 選択カード */}
-        <div className="flex flex-1 justify-center items-start p-6">
-          <div className="space-y-4 w-full">
+        <div className="flex flex-1 justify-center items-start p-4">
+          <div className="space-y-2 w-full">
             {addTypes.map((type) => {
               const Icon = type.icon;
               const isSelected = currentSelectedType === type.type;
               return (
                 <button
                   key={type.type}
-                  onClick={() => setCurrentSelectedType(type.type)}
+                  onClick={() =>
+                    !type.comingSoon && setCurrentSelectedType(type.type)
+                  }
+                  disabled={type.comingSoon}
                   className={cn(
-                    "p-4 text-left bg-white rounded-xl border transition-all duration-200 dark:bg-gray-800 animate-fadeIn",
-                    isSelected
-                      ? `bg-green-50 border-green-400 shadow-md dark:bg-green-500/10`
-                      : `border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md`
+                    "p-3 w-full text-left bg-white rounded-lg border transition-all duration-200 dark:bg-gray-800 animate-fadeIn",
+                    type.comingSoon
+                      ? "opacity-60 cursor-not-allowed"
+                      : isSelected
+                      ? `bg-green-50 border-green-500 dark:bg-green-500/10 dark:border-green-500`
+                      : `border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-750`
                   )}
                 >
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-3">
                     <div
                       className={cn(
-                        "w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg",
-                        "transition-shadow",
-                        `bg-gradient-to-br ${type.color}`
+                        "w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
+                        isSelected
+                          ? "bg-green-100 dark:bg-green-500/20"
+                          : type.bgColor
                       )}
                     >
-                      <Icon className="w-8 h-8 text-white" />
+                      <Icon
+                        className={cn(
+                          "w-5 h-5",
+                          isSelected
+                            ? "text-green-600 dark:text-green-400"
+                            : type.iconColor
+                        )}
+                      />
                     </div>
                     <div className="flex-1 text-left">
-                      <h3 className="mb-1 text-xl font-bold text-gray-900 dark:text-white">
-                        {type.title}
-                      </h3>
-                      <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+                      <div className="flex gap-2 items-center">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          {type.title}
+                        </h3>
+                        {type.comingSoon && (
+                          <span className="px-2 py-0.5 text-[10px] font-medium text-gray-600 bg-gray-100 rounded dark:text-gray-400 dark:bg-gray-800">
+                            近日追加予定
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-400">
                         {type.description}
                       </p>
                     </div>
-                    <ArrowRight className="w-6 h-6 text-gray-400 transition-colors hover:text-green-500" />
                   </div>
                 </button>
               );
@@ -224,14 +255,14 @@ export function AddFriendsRightPanel({
       {/* ヘッダー */}
       <div className="flex justify-between items-center px-6 h-16 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
         <div className="flex items-center space-x-3">
-          <div className="flex justify-center items-center w-10 h-10 bg-green-500 rounded-full">
-            <UserPlus className="w-5 h-5 text-white" />
+          <div className="flex justify-center items-center w-10 h-10 bg-gray-100 rounded-lg dark:bg-gray-800">
+            <UserPlus className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </div>
           <div>
-            <h2 className="font-medium text-gray-900 dark:text-white">
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
               友だち追加
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               左側から追加したい種類を選択してください
             </p>
           </div>
@@ -240,29 +271,33 @@ export function AddFriendsRightPanel({
 
       {/* メインコンテンツエリア */}
       <div className="flex flex-1 justify-center items-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <div className="flex justify-center items-center mx-auto mb-4 w-24 h-24 bg-gray-100 rounded-full dark:bg-gray-900">
-            <UserPlus className="w-12 h-12 text-green-500" />
+        <div className="p-8 text-center">
+          <div className="flex justify-center items-center mx-auto mb-4 w-16 h-16 bg-gray-100 rounded-2xl dark:bg-gray-800">
+            <UserPlus className="w-8 h-8 text-gray-600 dark:text-gray-400" />
           </div>
-          <h3 className="mb-2 text-xl font-medium text-gray-900 dark:text-white">
+          <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
             友だちを追加
           </h3>
-          <p className="mb-6 max-w-md text-gray-600 dark:text-gray-400">
-            左側からユーザーまたはAIエージェントを選択して、
-            <br />
-            新しい友だちを追加しましょう。
+          <p className="mb-6 max-w-md text-sm text-gray-500 dark:text-gray-400">
+            左側から種類を選択して、新しい友だちを追加しましょう
           </p>
-          <div className="flex justify-center space-x-4">
-            <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-              <User className="w-4 h-4" />
+          <div className="flex gap-6 justify-center">
+            <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
+              <div className="flex justify-center items-center w-8 h-8 bg-gray-100 rounded-lg dark:bg-gray-800">
+                <User className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              </div>
               <span>ユーザー</span>
             </div>
-            <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-              <Bot className="w-4 h-4" />
-              <span>AIエージェント</span>
+            <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
+              <div className="flex justify-center items-center w-8 h-8 bg-gray-100 rounded-lg dark:bg-gray-800">
+                <Bot className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              </div>
+              <span>AI</span>
             </div>
-            <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-              <Handshake className="w-4 h-4" />
+            <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
+              <div className="flex justify-center items-center w-8 h-8 bg-gray-100 rounded-lg dark:bg-gray-800">
+                <Handshake className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              </div>
               <span>グループ</span>
             </div>
           </div>
@@ -304,6 +339,40 @@ function AIAgentCreationPanel({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
+  // MCP設定
+  const [mcpServers, setMcpServers] = useState<MCPServer[]>([]);
+  const [mcpConfig, setMcpConfig] = useState<
+    Record<
+      string,
+      {
+        enabled: boolean;
+        mode: ToolSelectionMode;
+        selectedToolIds: string[];
+      }
+    >
+  >({});
+
+  // MCPサーバー一覧を取得
+  useEffect(() => {
+    const fetchMCPServers = async () => {
+      const result = await listMCPServers();
+      if (result.success && result.servers) {
+        setMcpServers(result.servers);
+        // 初期状態を設定（Built-inサーバーはデフォルトで有効）
+        const initialConfig: typeof mcpConfig = {};
+        result.servers.forEach((server) => {
+          initialConfig[server.id] = {
+            enabled: server.server_type === "built_in",
+            mode: "all",
+            selectedToolIds: [],
+          };
+        });
+        setMcpConfig(initialConfig);
+      }
+    };
+    fetchMCPServers();
+  }, []);
+
   // 401エラー時に自動リフレッシュ
   const createAgentWithAuth = useServerActionWithAuth(createAgent);
 
@@ -311,26 +380,17 @@ function AIAgentCreationPanel({
     {
       id: "assistant",
       name: "アシスタント",
-      icon: Brain,
-      color: "from-blue-400 to-blue-600",
       description: "親切で丁寧なアシスタント",
-      emoji: "🤝",
     },
     {
       id: "creative",
       name: "クリエイティブ",
-      icon: Sparkles,
-      color: "from-purple-400 to-pink-600",
       description: "創造的で発想豊かな対話",
-      emoji: "✨",
     },
     {
       id: "analytical",
       name: "アナリティカル",
-      icon: LineChart,
-      color: "from-green-400 to-teal-600",
       description: "論理的で分析的な対話",
-      emoji: "📊",
     },
   ];
 
@@ -377,6 +437,16 @@ function AIAgentCreationPanel({
       try {
         console.log("[SUBMIT] Creating agent with data:", formData);
 
+        // MCP設定を構築
+        const mcpServerConfigs = Object.entries(mcpConfig)
+          .filter(([_, config]) => config.enabled)
+          .map(([serverId, config]) => ({
+            mcp_server_id: serverId,
+            tool_selection_mode: config.mode,
+            selected_tool_ids:
+              config.mode === "selected" ? config.selectedToolIds : undefined,
+          }));
+
         // Server Actionを呼び出す（401エラー時に自動リフレッシュ）
         const result = await createAgentWithAuth({
           name: formData.name,
@@ -390,6 +460,8 @@ function AIAgentCreationPanel({
           max_tokens: formData.max_tokens,
           tools_enabled: formData.tools_enabled,
           streaming_enabled: formData.streaming_enabled,
+          mcp_servers:
+            mcpServerConfigs.length > 0 ? mcpServerConfigs : undefined,
         });
 
         console.log("[SUBMIT] Result from createAgent:", result);
@@ -403,9 +475,6 @@ function AIAgentCreationPanel({
         }
 
         console.log("AI Agent created:", result.data);
-
-        // 成功メッセージ表示
-        alert("AI Agentを作成しました！");
 
         // フォームをリセット
         setFormData({
@@ -437,50 +506,50 @@ function AIAgentCreationPanel({
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-col h-full bg-white dark:bg-gray-900">
       {/* ヘッダー */}
-      <div className="p-6 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
-        <div className="flex items-center space-x-4">
+      <div className="flex items-center px-6 h-16 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
+        <div className="flex items-center space-x-3">
           {!isDesktop && (
             <button
               onClick={onBack}
-              className="p-2 text-gray-400 rounded-lg transition-all duration-300 dark:text-gray-500 hover:text-green-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="p-2 -ml-2 text-gray-400 rounded-lg transition-all dark:text-gray-500 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
             >
               <ArrowRight className="w-5 h-5 rotate-180" />
             </button>
           )}
-          <div className="flex items-center space-x-3">
-            <div className="flex justify-center items-center w-10 h-10 bg-green-500 rounded-xl">
-              <Bot className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                AIエージェント作成
-              </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                あなた専用のAIエージェントを作成しましょう
-              </p>
-            </div>
+          <div className="flex justify-center items-center w-10 h-10 bg-gray-100 rounded-lg dark:bg-gray-800">
+            <Bot className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          </div>
+          <div>
+            <h1 className="text-sm font-semibold text-gray-900 dark:text-white">
+              エージェント作成
+            </h1>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              あなた専用のエージェントを作成
+            </p>
           </div>
         </div>
       </div>
 
       {/* フォーム */}
-      <div className="overflow-y-auto flex-1 p-6">
-        <form onSubmit={handleSubmit} className="mx-auto space-y-8 max-w-3xl">
+      <div className="overflow-y-auto flex-1">
+        <form
+          onSubmit={handleSubmit}
+          className="p-8 mx-auto space-y-10 max-w-2xl"
+        >
           {/* セクション1: 基本情報 */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-1 h-6 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full" />
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          <div className="space-y-6">
+            <div className="pb-3 border-b border-gray-200 dark:border-gray-800">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 基本情報
               </h2>
             </div>
 
             {/* 名前入力 */}
-            <div className="p-6 bg-white rounded-2xl border border-gray-200 shadow-sm transition-all hover:shadow-md dark:bg-gray-800 dark:border-gray-700">
-              <label className="block mb-3 text-sm font-semibold text-gray-900 dark:text-white">
-                エージェント名 <span className="text-green-500">必須</span>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-white">
+                エージェント名 <span className="text-green-600">*</span>
               </label>
               <input
                 type="text"
@@ -490,52 +559,50 @@ function AIAgentCreationPanel({
                 }
                 placeholder="例: マイアシスタント"
                 className={cn(
-                  "px-4 py-3 w-full bg-gray-50 rounded-xl border border-gray-200 dark:bg-gray-700 dark:border-gray-600",
+                  "px-4 py-3 w-full bg-white rounded-lg border border-gray-300 dark:bg-gray-900 dark:border-gray-700",
                   "focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500",
-                  "placeholder-gray-400 text-gray-900 transition-all duration-200 dark:text-white dark:placeholder-gray-500"
+                  "placeholder-gray-400 text-gray-900 dark:text-white dark:placeholder-gray-500"
                 )}
                 required
               />
             </div>
 
             {/* 説明入力 */}
-            <div className="p-6 bg-white rounded-2xl border border-gray-200 shadow-sm transition-all hover:shadow-md dark:bg-gray-800 dark:border-gray-700">
-              <label className="block mb-3 text-sm font-semibold text-gray-900 dark:text-white">
-                説明 <span className="text-gray-400">任意</span>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-white">
+                説明 <span className="text-xs text-gray-400">任意</span>
               </label>
               <textarea
                 value={formData.description}
                 onChange={(e) =>
                   setFormData({ ...formData, description: e.target.value })
                 }
-                placeholder="このAIエージェントの特徴や役割を説明してください"
+                placeholder="このエージェントの特徴や役割を説明してください"
                 rows={3}
                 className={cn(
-                  "px-4 py-3 w-full bg-gray-50 rounded-xl border border-gray-200 dark:bg-gray-700 dark:border-gray-600",
+                  "px-4 py-3 w-full bg-white rounded-lg border border-gray-300 dark:bg-gray-900 dark:border-gray-700",
                   "focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500",
-                  "placeholder-gray-400 text-gray-900 transition-all duration-200 resize-none dark:text-white dark:placeholder-gray-500"
+                  "placeholder-gray-400 text-gray-900 resize-none dark:text-white dark:placeholder-gray-500"
                 )}
               />
             </div>
           </div>
 
           {/* セクション2: パーソナリティ設定 */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-1 h-6 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full" />
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          <div className="space-y-6">
+            <div className="pb-3 border-b border-gray-200 dark:border-gray-800">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 パーソナリティ
               </h2>
             </div>
 
             {/* パーソナリティ選択 */}
-            <div className="p-6 bg-white rounded-2xl border border-gray-200 shadow-sm transition-all hover:shadow-md dark:bg-gray-800 dark:border-gray-700">
-              <label className="block mb-4 text-sm font-semibold text-gray-900 dark:text-white">
-                対話スタイル <span className="text-green-500">必須</span>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-white">
+                対話スタイル <span className="text-green-600">*</span>
               </label>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="grid grid-cols-3 gap-3">
                 {personalities.map((personality) => {
-                  const Icon = personality.icon;
                   const isSelected = formData.persona_type === personality.id;
                   return (
                     <button
@@ -548,38 +615,20 @@ function AIAgentCreationPanel({
                         })
                       }
                       className={cn(
-                        "relative p-5 text-left bg-gradient-to-br rounded-2xl border-2 transition-all duration-300 group",
+                        "relative p-4 text-center rounded-lg border-2 transition-all",
                         isSelected
-                          ? "from-green-50 to-emerald-50 border-green-500 shadow-lg scale-105 dark:from-green-900/20 dark:to-emerald-900/20"
-                          : "from-gray-50 to-gray-50 border-gray-200 dark:from-gray-700 dark:to-gray-700 dark:border-gray-600 hover:border-green-400 hover:shadow-md hover:scale-102"
+                          ? "bg-green-50 border-green-500 dark:bg-green-900/20 dark:border-green-500"
+                          : "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600"
                       )}
                     >
-                      <div className="flex flex-col items-center space-y-3 text-center">
-                        <div className="text-4xl">{personality.emoji}</div>
-                        <div>
-                          <h4 className="font-bold text-gray-900 dark:text-white mb-1">
-                            {personality.name}
-                          </h4>
-                          <p className="text-xs text-gray-600 dark:text-gray-400">
-                            {personality.description}
-                          </p>
-                        </div>
+                      <div className="flex flex-col items-center space-y-1">
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-white">
+                          {personality.name}
+                        </h4>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {personality.description}
+                        </p>
                       </div>
-                      {isSelected && (
-                        <div className="absolute top-2 right-2 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                          <svg
-                            className="w-4 h-4 text-white"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </div>
-                      )}
                     </button>
                   );
                 })}
@@ -587,12 +636,12 @@ function AIAgentCreationPanel({
             </div>
 
             {/* システムプロンプト */}
-            <div className="p-6 bg-white rounded-2xl border border-gray-200 shadow-sm transition-all hover:shadow-md dark:bg-gray-800 dark:border-gray-700">
-              <label className="block mb-3 text-sm font-semibold text-gray-900 dark:text-white">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-white">
                 カスタムシステムプロンプト{" "}
-                <span className="text-gray-400">上級者向け</span>
+                <span className="text-xs text-gray-400">上級者向け</span>
               </label>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+              <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
                 空欄の場合、選択したパーソナリティに基づいて自動生成されます
               </p>
               <textarea
@@ -603,29 +652,28 @@ function AIAgentCreationPanel({
                 placeholder="カスタムの指示を入力（例: あなたは親切で丁寧なアシスタントです...）"
                 rows={4}
                 className={cn(
-                  "px-4 py-3 w-full bg-gray-50 rounded-xl border border-gray-200 dark:bg-gray-700 dark:border-gray-600",
-                  "focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500",
-                  "placeholder-gray-400 text-gray-900 transition-all duration-200 resize-none text-sm dark:text-white dark:placeholder-gray-500"
+                  "px-4 py-3 w-full bg-white rounded-lg border border-gray-300 dark:bg-gray-900 dark:border-gray-700",
+                  "focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500",
+                  "text-sm placeholder-gray-400 text-gray-900 resize-none dark:text-white dark:placeholder-gray-500"
                 )}
               />
             </div>
           </div>
 
           {/* セクション3: AI モデル設定 */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-cyan-500 rounded-full" />
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          <div className="space-y-6">
+            <div className="pb-3 border-b border-gray-200 dark:border-gray-800">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 AI モデル設定
               </h2>
             </div>
 
             {/* プロバイダーとモデル選択 */}
-            <div className="p-6 bg-white rounded-2xl border border-gray-200 shadow-sm transition-all hover:shadow-md dark:bg-gray-800 dark:border-gray-700">
-              <label className="block mb-4 text-sm font-semibold text-gray-900 dark:text-white">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-white">
                 AI プロバイダー
               </label>
-              <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="grid grid-cols-3 gap-3">
                 {providers.map((provider) => (
                   <button
                     key={provider.id}
@@ -638,18 +686,20 @@ function AIAgentCreationPanel({
                       })
                     }
                     className={cn(
-                      "p-3 rounded-xl border-2 transition-all duration-200 font-medium",
+                      "p-3 rounded-lg border-2 transition-all font-medium text-sm",
                       formData.provider === provider.id
-                        ? "bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
-                        : "bg-gray-50 border-gray-200 text-gray-700 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300 hover:border-blue-400"
+                        ? "bg-green-50 border-green-500 text-green-700 dark:bg-green-900/20 dark:text-green-400 dark:border-green-500"
+                        : "bg-white border-gray-300 text-gray-700 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-600"
                     )}
                   >
                     {provider.name}
                   </button>
                 ))}
               </div>
+            </div>
 
-              <label className="block mb-3 text-sm font-semibold text-gray-900 dark:text-white">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-white">
                 モデル
               </label>
               <div className="space-y-2">
@@ -661,36 +711,21 @@ function AIAgentCreationPanel({
                       setFormData({ ...formData, model: model.id })
                     }
                     className={cn(
-                      "w-full p-4 rounded-xl border-2 transition-all duration-200 text-left",
+                      "w-full p-4 rounded-lg border-2 transition-all text-left",
                       formData.model === model.id
-                        ? "bg-blue-50 border-blue-500 dark:bg-blue-900/20"
-                        : "bg-gray-50 border-gray-200 dark:bg-gray-700 dark:border-gray-600 hover:border-blue-400"
+                        ? "bg-green-50 border-green-500 dark:bg-green-900/20 dark:border-green-500"
+                        : "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600"
                     )}
                   >
                     <div className="flex justify-between items-center">
                       <div>
-                        <h4 className="font-medium text-gray-900 dark:text-white">
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-white">
                           {model.name}
                         </h4>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
                           {model.description}
                         </p>
                       </div>
-                      {formData.model === model.id && (
-                        <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                          <svg
-                            className="w-3 h-3 text-white"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </div>
-                      )}
                     </div>
                   </button>
                 ))}
@@ -698,12 +733,12 @@ function AIAgentCreationPanel({
             </div>
 
             {/* Temperature設定 */}
-            <div className="p-6 bg-white rounded-2xl border border-gray-200 shadow-sm transition-all hover:shadow-md dark:bg-gray-800 dark:border-gray-700">
-              <div className="flex justify-between items-center mb-3">
-                <label className="text-sm font-semibold text-gray-900 dark:text-white">
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label className="text-sm font-medium text-gray-900 dark:text-white">
                   創造性レベル (Temperature)
                 </label>
-                <span className="text-sm font-mono font-bold text-blue-600 dark:text-blue-400">
+                <span className="font-mono text-sm font-semibold text-green-600 dark:text-green-400">
                   {formData.temperature.toFixed(1)}
                 </span>
               </div>
@@ -719,9 +754,9 @@ function AIAgentCreationPanel({
                     temperature: parseFloat(e.target.value),
                   })
                 }
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-blue-500 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-green-500 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
               />
-              <div className="flex justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
+              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
                 <span>正確 (0.0)</span>
                 <span>バランス (1.0)</span>
                 <span>創造的 (2.0)</span>
@@ -729,12 +764,12 @@ function AIAgentCreationPanel({
             </div>
 
             {/* Max Tokens設定 */}
-            <div className="p-6 bg-white rounded-2xl border border-gray-200 shadow-sm transition-all hover:shadow-md dark:bg-gray-800 dark:border-gray-700">
-              <div className="flex justify-between items-center mb-3">
-                <label className="text-sm font-semibold text-gray-900 dark:text-white">
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label className="text-sm font-medium text-gray-900 dark:text-white">
                   最大トークン数
                 </label>
-                <span className="text-sm font-mono font-bold text-blue-600 dark:text-blue-400">
+                <span className="font-mono text-sm font-semibold text-green-600 dark:text-green-400">
                   {formData.max_tokens}
                 </span>
               </div>
@@ -750,31 +785,30 @@ function AIAgentCreationPanel({
                     max_tokens: parseInt(e.target.value),
                   })
                 }
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-blue-500 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-green-500 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
               />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 より長い応答には高い値を設定します
               </p>
             </div>
           </div>
 
           {/* セクション4: 機能設定 */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2 mb-4">
-              <div className="w-1 h-6 bg-gradient-to-b from-orange-500 to-red-500 rounded-full" />
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          <div className="space-y-6">
+            <div className="pb-3 border-b border-gray-200 dark:border-gray-800">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 機能設定
               </h2>
             </div>
 
-            <div className="p-6 bg-white rounded-2xl border border-gray-200 shadow-sm transition-all hover:shadow-md dark:bg-gray-800 dark:border-gray-700 space-y-4">
+            <div className="space-y-4">
               {/* ツール有効化 */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl dark:bg-gray-700">
+              <div className="flex justify-between items-center py-3">
                 <div className="flex-1">
                   <h4 className="font-medium text-gray-900 dark:text-white">
                     ツール使用を許可
                   </h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                     日時取得、計算などの基本ツールを使用できるようにします
                   </p>
                 </div>
@@ -803,12 +837,12 @@ function AIAgentCreationPanel({
               </div>
 
               {/* ストリーミング有効化 */}
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl dark:bg-gray-700">
+              <div className="flex justify-between items-center py-3">
                 <div className="flex-1">
                   <h4 className="font-medium text-gray-900 dark:text-white">
                     ストリーミングチャット
                   </h4>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                     応答をリアルタイムで表示します（対応モデルのみ）
                   </p>
                 </div>
@@ -840,77 +874,150 @@ function AIAgentCreationPanel({
             </div>
           </div>
 
-          {/* エラー表示 */}
-          {error && (
-            <div className="p-5 bg-gradient-to-r from-red-50 to-pink-50 rounded-2xl border-2 border-red-200 dark:from-red-900/20 dark:to-pink-900/20 dark:border-red-800">
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0">
-                  <svg
-                    className="w-5 h-5 text-red-600 dark:text-red-400"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-red-900 dark:text-red-300 mb-1">
-                    作成エラー
-                  </h4>
-                  <p className="text-sm text-red-700 dark:text-red-400">
-                    {error}
-                  </p>
+          {/* セクション5: MCPサーバー＆ツール設定 */}
+          {mcpServers.length > 0 && (
+            <div className="space-y-6">
+              <div className="pb-3 border-b border-gray-200 dark:border-gray-800">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  MCPサーバー＆ツール設定
+                </h2>
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                  このAI Agentが使用するMCPサーバーとツールを設定します
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  {mcpServers.map((server) => (
+                    <div key={server.id} className="space-y-2">
+                      {/* サーバー有効化チェックボックス */}
+                      <div className="flex items-center p-3 space-x-3 rounded-lg border border-gray-300 dark:border-gray-700">
+                        <input
+                          type="checkbox"
+                          id={`server-${server.id}`}
+                          checked={mcpConfig[server.id]?.enabled || false}
+                          onChange={(e) =>
+                            setMcpConfig({
+                              ...mcpConfig,
+                              [server.id]: {
+                                ...mcpConfig[server.id],
+                                enabled: e.target.checked,
+                              },
+                            })
+                          }
+                          className="w-4 h-4 rounded border-gray-300"
+                        />
+                        <label
+                          htmlFor={`server-${server.id}`}
+                          className="flex-1 cursor-pointer"
+                        >
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <span className="font-medium text-gray-900 dark:text-white">
+                                {server.name}
+                              </span>
+                              {server.server_type === "built_in" && (
+                                <span className="ml-2 px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded">
+                                  Built-in
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              {server.tools_count}個のツール
+                            </span>
+                          </div>
+                          {server.description && (
+                            <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                              {server.description}
+                            </p>
+                          )}
+                        </label>
+                      </div>
+
+                      {/* ツールセレクター */}
+                      {mcpConfig[server.id]?.enabled && (
+                        <ToolSelector
+                          serverId={server.id}
+                          serverName={server.name}
+                          mode={mcpConfig[server.id]?.mode || "all"}
+                          selectedToolIds={
+                            mcpConfig[server.id]?.selectedToolIds || []
+                          }
+                          onModeChange={(mode: ToolSelectionMode) =>
+                            setMcpConfig({
+                              ...mcpConfig,
+                              [server.id]: {
+                                ...mcpConfig[server.id],
+                                enabled: true,
+                                mode,
+                                selectedToolIds:
+                                  mcpConfig[server.id]?.selectedToolIds || [],
+                              },
+                            })
+                          }
+                          onToolsChange={(toolIds: string[]) =>
+                            setMcpConfig({
+                              ...mcpConfig,
+                              [server.id]: {
+                                ...mcpConfig[server.id],
+                                enabled: true,
+                                mode: mcpConfig[server.id]?.mode || "all",
+                                selectedToolIds: toolIds,
+                              },
+                            })
+                          }
+                        />
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
           )}
 
-          {/* 作成ボタン */}
-          <div className="sticky bottom-0 pb-6 pt-4 bg-gradient-to-t from-gray-50 via-gray-50 to-transparent dark:from-gray-900 dark:via-gray-900">
-            <div className="flex flex-col gap-3 sm:flex-row">
-              {!isDesktop && (
-                <button
-                  type="button"
-                  onClick={onBack}
-                  className="flex-1 px-6 py-4 font-semibold text-gray-700 bg-white rounded-xl border-2 border-gray-200 transition-all duration-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 hover:border-gray-300 hover:shadow-md"
-                >
-                  キャンセル
-                </button>
-              )}
-              <button
-                type="submit"
-                disabled={
-                  !formData.name ||
-                  !formData.persona_type ||
-                  !formData.model ||
-                  isPending
-                }
-                className={cn(
-                  "flex-1 px-6 py-4 rounded-xl font-semibold transition-all duration-300",
-                  "flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl",
-                  "transform hover:scale-[1.02] active:scale-[0.98] disabled:transform-none",
-                  "bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600",
-                  "disabled:from-gray-400 disabled:to-gray-500 dark:disabled:from-gray-600 dark:disabled:to-gray-700 text-white",
-                  "disabled:cursor-not-allowed disabled:opacity-60"
-                )}
-              >
-                {isPending ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>作成中...</span>
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-5 h-5" />
-                    <span>AI エージェントを作成</span>
-                  </>
-                )}
-              </button>
+          {/* エラー表示 */}
+          {error && (
+            <div className="p-4 bg-red-50 rounded-lg border border-red-200 dark:bg-red-900/20 dark:border-red-800">
+              <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
             </div>
+          )}
+
+          {/* 作成ボタン */}
+          <div className="flex gap-3 pt-6 border-t border-gray-200 dark:border-gray-800">
+            {!isDesktop && (
+              <button
+                type="button"
+                onClick={onBack}
+                className="px-6 py-3 font-medium text-gray-700 bg-white rounded-lg border border-gray-300 transition-all dark:bg-gray-900 dark:text-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+              >
+                キャンセル
+              </button>
+            )}
+            <button
+              type="submit"
+              disabled={
+                !formData.name ||
+                !formData.persona_type ||
+                !formData.model ||
+                isPending
+              }
+              className={cn(
+                "flex-1 px-6 py-3 font-medium rounded-lg transition-all",
+                "flex justify-center items-center space-x-2",
+                "text-white bg-green-600 hover:bg-green-700",
+                "disabled:bg-gray-400 dark:disabled:bg-gray-600",
+                "disabled:cursor-not-allowed"
+              )}
+            >
+              {isPending ? (
+                <>
+                  <div className="w-4 h-4 rounded-full border-2 border-white animate-spin border-t-transparent" />
+                  <span>作成中...</span>
+                </>
+              ) : (
+                <span>AI エージェントを作成</span>
+              )}
+            </button>
           </div>
         </form>
       </div>
@@ -931,95 +1038,81 @@ function UserFriendAddPanel({
 
   const addMethods = [
     {
-      icon: Search,
-      title: "ユーザー名で検索",
-      description: "ユーザー名やIDで友だちを検索して追加",
-      color: "from-blue-400 to-blue-600",
-      bgColor: "from-blue-500/10 to-blue-600/10",
-      borderColor: "border-blue-400/30",
-    },
-    {
       icon: QrCode,
       title: "QRコードスキャン",
       description: "QRコードをスキャンして友だち追加",
-      color: "from-emerald-400 to-emerald-600",
-      bgColor: "from-emerald-500/10 to-emerald-600/10",
-      borderColor: "border-emerald-400/30",
+      iconColor: "text-gray-600 dark:text-gray-400",
+      bgColor: "bg-gray-100 dark:bg-gray-800",
     },
     {
       icon: Users,
       title: "連絡先から招待",
       description: "連絡先の友だちをアプリに招待",
-      color: "from-purple-400 to-purple-600",
-      bgColor: "from-purple-500/10 to-purple-600/10",
-      borderColor: "border-purple-400/30",
+      iconColor: "text-gray-600 dark:text-gray-400",
+      bgColor: "bg-gray-100 dark:bg-gray-800",
     },
   ];
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-col h-full bg-white dark:bg-gray-900">
       {/* ヘッダー */}
-      <div className="p-6 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
-        <div className="flex items-center space-x-4">
+      <div className="flex items-center px-6 h-16 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
+        <div className="flex items-center space-x-3">
           {!isDesktop && (
             <button
               onClick={onBack}
-              className="p-2 text-gray-400 rounded-lg transition-all duration-300 dark:text-gray-500 hover:text-green-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="p-2 -ml-2 text-gray-400 rounded-lg transition-all dark:text-gray-500 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
             >
               <ArrowRight className="w-5 h-5 rotate-180" />
             </button>
           )}
-          <div className="flex items-center space-x-3">
-            <div className="flex justify-center items-center w-10 h-10 bg-green-500 rounded-xl">
-              <User className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                ユーザー追加
-              </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                新しいユーザーを追加しましょう
-              </p>
-            </div>
+          <div className="flex justify-center items-center w-10 h-10 bg-gray-100 rounded-lg dark:bg-gray-800">
+            <User className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          </div>
+          <div>
+            <h1 className="text-sm font-semibold text-gray-900 dark:text-white">
+              ユーザー追加
+            </h1>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              新しいユーザーを追加
+            </p>
           </div>
         </div>
       </div>
 
       {/* コンテンツ */}
-      <div className="overflow-y-auto flex-1 p-6">
-        <div className="mx-auto space-y-6 max-w-2xl">
-          {/* 検索バー */}
-          <div className="p-6 bg-white rounded-lg border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
-            <div className="flex items-center mb-4 space-x-3">
-              <Search className="w-5 h-5 text-green-500" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+      <div className="overflow-y-auto flex-1">
+        <div className="p-8 mx-auto space-y-10 max-w-2xl">
+          {/* 検索セクション */}
+          <div className="space-y-4">
+            <div className="pb-3 border-b border-gray-200 dark:border-gray-800">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 ユーザー名で検索
-              </h3>
+              </h2>
             </div>
-            <div className="flex space-x-3">
+            <div className="flex space-x-2">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="ユーザー名を入力..."
                 className={cn(
-                  "flex-1 px-4 py-3 bg-gray-50 rounded-lg border border-gray-200 dark:bg-gray-700 dark:border-gray-600",
+                  "flex-1 px-4 py-3 bg-white rounded-lg border border-gray-300 dark:bg-gray-900 dark:border-gray-700",
                   "focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500",
-                  "placeholder-gray-500 text-gray-900 transition-all duration-300 dark:text-white dark:placeholder-gray-400"
+                  "placeholder-gray-400 text-gray-900 dark:text-white dark:placeholder-gray-500"
                 )}
               />
               <button
                 className={cn(
-                  "px-6 py-3 rounded-lg font-medium transition-all duration-300",
-                  "bg-green-500 hover:bg-green-600",
-                  "text-white shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+                  "px-6 py-3 font-medium rounded-lg transition-all",
+                  "text-white bg-green-600 hover:bg-green-700"
                 )}
               >
                 検索
               </button>
             </div>
             {searchQuery && (
-              <div className="p-4 mt-4 bg-gray-50 rounded-lg border border-gray-200 dark:bg-gray-700 dark:border-gray-600">
+              <div className="p-3 bg-gray-50 rounded-lg dark:bg-gray-800">
                 <p className="text-sm text-center text-gray-500 dark:text-gray-400">
                   「{searchQuery}」の検索結果はありません
                 </p>
@@ -1028,11 +1121,13 @@ function UserFriendAddPanel({
           </div>
 
           {/* 追加方法 */}
-          <div className="p-6 bg-white rounded-lg border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
-            <h3 className="mb-4 text-lg font-medium text-gray-900 dark:text-white">
-              その他の追加方法
-            </h3>
-            <div className="space-y-4">
+          <div className="space-y-4">
+            <div className="pb-3 border-b border-gray-200 dark:border-gray-800">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                その他の追加方法
+              </h2>
+            </div>
+            <div className="space-y-3">
               {addMethods.map((method, index) => {
                 const Icon = method.icon;
                 return (
@@ -1040,28 +1135,28 @@ function UserFriendAddPanel({
                     key={index}
                     onClick={() => console.log(`${method.title}を実行`)}
                     className={cn(
-                      "w-full flex items-center space-x-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl border",
-                      "transition-all duration-300 text-left transform hover:scale-[1.01]",
-                      "border-gray-200 dark:border-gray-600 hover:border-green-400 hover:shadow-md"
+                      "flex items-center p-4 space-x-3 w-full bg-white rounded-lg border border-gray-300",
+                      "text-left transition-all dark:bg-gray-900 dark:border-gray-700",
+                      "hover:border-gray-400 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
                     )}
                   >
                     <div
                       className={cn(
-                        "w-12 h-12 rounded-xl flex items-center justify-center shadow-lg",
-                        `bg-gradient-to-br ${method.color}`
+                        "w-10 h-10 rounded-lg flex items-center justify-center",
+                        method.bgColor
                       )}
                     >
-                      <Icon className="w-6 h-6 text-white" />
+                      <Icon className={cn("w-5 h-5", method.iconColor)} />
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-medium text-gray-900 dark:text-white">
+                      <h4 className="text-sm font-medium text-gray-900 dark:text-white">
                         {method.title}
                       </h4>
-                      <p className="mt-1 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
+                      <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                         {method.description}
                       </p>
                     </div>
-                    <ArrowRight className="w-5 h-5 text-gray-400" />
+                    <ArrowRight className="w-4 h-4 text-gray-400" />
                   </button>
                 );
               })}
@@ -1069,27 +1164,19 @@ function UserFriendAddPanel({
           </div>
 
           {/* 招待セクション */}
-          <div
-            className={cn(
-              "p-6 bg-white rounded-lg border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700"
-            )}
-          >
-            <div className="flex items-center mb-3 space-x-3">
-              <Sparkles className="w-5 h-5 text-green-500" />
-              <h3 className="font-medium text-gray-900 dark:text-white">
+          <div className="space-y-4">
+            <div className="pb-3 border-b border-gray-200 dark:border-gray-800">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 ユーザーを招待
-              </h3>
+              </h2>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                招待リンクを送ってユーザーをアプリに招待しましょう
+              </p>
             </div>
-            <p className="mb-4 text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-              招待リンクを送ってユーザーをアプリに招待しましょう。
-              <br />
-              招待されたユーザーは簡単にアプリに参加できます。
-            </p>
             <button
               className={cn(
-                "w-full px-4 py-3 rounded-lg font-medium transition-all duration-300",
-                "bg-green-500 hover:bg-green-600",
-                "text-white shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+                "px-6 py-3 w-full font-medium rounded-lg transition-all",
+                "text-white bg-green-600 hover:bg-green-700"
               )}
             >
               招待リンクを作成
@@ -1164,103 +1251,111 @@ function GroupCreationPanel({
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-col h-full bg-white dark:bg-gray-900">
       {/* ヘッダー */}
-      <div className="p-6 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
-        <div className="flex items-center space-x-4">
+      <div className="flex items-center px-6 h-16 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
+        <div className="flex items-center space-x-3">
           {!isDesktop && (
             <button
               onClick={onBack}
-              className="p-2 text-gray-400 rounded-lg transition-all duration-300 dark:text-gray-500 hover:text-green-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="p-2 -ml-2 text-gray-400 rounded-lg transition-all dark:text-gray-500 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
             >
               <ArrowRight className="w-5 h-5 rotate-180" />
             </button>
           )}
-          <div className="flex items-center space-x-3">
-            <div className="flex justify-center items-center w-10 h-10 bg-green-500 rounded-xl">
-              <Handshake className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                グループ作成
-              </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                新しいグループを作成しましょう
-              </p>
-            </div>
+          <div className="flex justify-center items-center w-10 h-10 bg-gray-100 rounded-lg dark:bg-gray-800">
+            <Handshake className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          </div>
+          <div>
+            <h1 className="text-sm font-semibold text-gray-900 dark:text-white">
+              グループ作成
+            </h1>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              新しいグループを作成
+            </p>
           </div>
         </div>
       </div>
 
       {/* フォーム */}
-      <div className="overflow-y-auto flex-1 p-6">
-        <form onSubmit={handleSubmit} className="mx-auto space-y-6 max-w-2xl">
+      <div className="overflow-y-auto flex-1">
+        <form
+          onSubmit={handleSubmit}
+          className="p-8 mx-auto space-y-10 max-w-2xl"
+        >
           {/* グループ名入力 */}
-          <div className="p-6 bg-white rounded-lg border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
-            <label className="block mb-3 text-sm font-medium text-gray-900 dark:text-white">
-              グループ名 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              placeholder="例: プロジェクトチーム"
-              className={cn(
-                "px-4 py-3 w-full bg-gray-50 rounded-lg border border-gray-200 dark:bg-gray-700 dark:border-gray-600",
-                "focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500",
-                "placeholder-gray-500 text-gray-900 transition-all duration-300 dark:text-white dark:placeholder-gray-400"
-              )}
-              required
-            />
-          </div>
+          <div className="space-y-6">
+            <div className="pb-3 border-b border-gray-200 dark:border-gray-800">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                基本情報
+              </h2>
+            </div>
 
-          {/* 説明入力 */}
-          <div className="p-6 bg-white rounded-lg border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
-            <label className="block mb-3 text-sm font-medium text-gray-900 dark:text-white">
-              説明（オプション）
-            </label>
-            <textarea
-              value={formData.description}
-              onChange={(e) =>
-                setFormData({ ...formData, description: e.target.value })
-              }
-              placeholder="このグループの目的や説明を入力してください..."
-              rows={4}
-              className={cn(
-                "px-4 py-3 w-full bg-gray-50 rounded-lg border border-gray-200 dark:bg-gray-700 dark:border-gray-600",
-                "focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500",
-                "placeholder-gray-500 text-gray-900 transition-all duration-300 resize-none dark:text-white dark:placeholder-gray-400"
-              )}
-            />
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-white">
+                グループ名 <span className="text-green-600">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                placeholder="例: プロジェクトチーム"
+                className={cn(
+                  "px-4 py-3 w-full bg-white rounded-lg border border-gray-300 dark:bg-gray-900 dark:border-gray-700",
+                  "focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500",
+                  "placeholder-gray-400 text-gray-900 dark:text-white dark:placeholder-gray-500"
+                )}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-white">
+                説明 <span className="text-xs text-gray-400">任意</span>
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+                placeholder="このグループの目的や説明を入力してください..."
+                rows={4}
+                className={cn(
+                  "px-4 py-3 w-full bg-white rounded-lg border border-gray-300 dark:bg-gray-900 dark:border-gray-700",
+                  "focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500",
+                  "placeholder-gray-400 text-gray-900 resize-none dark:text-white dark:placeholder-gray-500"
+                )}
+              />
+            </div>
           </div>
 
           {/* メンバー選択 */}
-          <div className="p-6 bg-white rounded-lg border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
-            <div className="flex justify-between items-center mb-4">
-              <label className="block text-sm font-medium text-gray-900 dark:text-white">
-                メンバーを選択
-              </label>
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                あなた + {selectedMembers.size}人 = {selectedMembers.size + 1}
-                人のグループ
-              </span>
+          <div className="space-y-6">
+            <div className="pb-3 border-b border-gray-200 dark:border-gray-800">
+              <div className="flex justify-between items-center">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  メンバーを選択
+                </h2>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  あなた + {selectedMembers.size}人 = {selectedMembers.size + 1}
+                  人
+                </span>
+              </div>
             </div>
 
             {isLoadingFriends ? (
               <div className="flex justify-center items-center py-8">
-                <div className="w-6 h-6 rounded-full border-b-2 border-purple-400 animate-spin"></div>
+                <div className="w-6 h-6 rounded-full border-b-2 border-green-500 animate-spin"></div>
               </div>
             ) : friends.length === 0 ? (
               <div className="py-8 text-center">
-                <div className="flex justify-center items-center mx-auto mb-3 w-12 h-12 bg-gray-100 rounded-full dark:bg-gray-700">
-                  <Users className="w-6 h-6 text-green-500" />
+                <div className="flex justify-center items-center mx-auto mb-3 w-12 h-12 bg-gray-100 rounded-full dark:bg-gray-800">
+                  <Users className="w-6 h-6 text-gray-400" />
                 </div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  友だちがいません。
-                  <br />
-                  先に友だちを追加してからグループを作成してください。
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  友だちがいません。先に友だちを追加してください。
                 </p>
               </div>
             ) : (
@@ -1273,11 +1368,11 @@ function GroupCreationPanel({
                       type="button"
                       onClick={() => handleMemberToggle(friend.id)}
                       className={cn(
-                        "flex items-center p-3 space-x-3 w-full bg-gray-50 rounded-lg border-2 dark:bg-gray-700",
-                        "text-left transition-all duration-300",
+                        "flex items-center p-3 space-x-3 w-full bg-white rounded-lg border-2 dark:bg-gray-900",
+                        "text-left transition-all",
                         isSelected
-                          ? "bg-green-50 border-green-500 shadow-md dark:bg-green-500/10"
-                          : "border-gray-200 dark:border-gray-600 hover:border-green-400 hover:shadow-sm"
+                          ? "bg-green-50 border-green-500 dark:bg-green-500/10 dark:border-green-500"
+                          : "border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600"
                       )}
                     >
                       {/* チェックボックス */}
@@ -1357,12 +1452,12 @@ function GroupCreationPanel({
           </div>
 
           {/* 作成ボタン */}
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex gap-3 pt-6 border-t border-gray-200 dark:border-gray-800">
             {!isDesktop && (
               <button
                 type="button"
                 onClick={onBack}
-                className="flex-1 px-6 py-3 font-medium text-gray-700 bg-gray-200 rounded-lg transition-all duration-300 dark:bg-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                className="px-6 py-3 font-medium text-gray-700 bg-white rounded-lg border border-gray-300 transition-all dark:bg-gray-900 dark:text-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
               >
                 キャンセル
               </button>
@@ -1371,15 +1466,13 @@ function GroupCreationPanel({
               type="submit"
               disabled={!formData.name || selectedMembers.size === 0}
               className={cn(
-                "flex-1 px-6 py-3 rounded-lg font-medium transition-all duration-300",
-                "flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl",
-                "transform hover:scale-[1.02] disabled:transform-none",
-                "bg-green-500 hover:bg-green-600",
-                "disabled:bg-gray-400 dark:disabled:bg-gray-600 text-white",
+                "flex-1 px-6 py-3 font-medium rounded-lg transition-all",
+                "flex justify-center items-center space-x-2",
+                "text-white bg-green-600 hover:bg-green-700",
+                "disabled:bg-gray-400 dark:disabled:bg-gray-600",
                 "disabled:cursor-not-allowed"
               )}
             >
-              <Plus className="w-5 h-5" />
               <span>
                 グループを作成{" "}
                 {selectedMembers.size > 0 && `(${selectedMembers.size + 1}人)`}

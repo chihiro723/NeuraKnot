@@ -120,7 +120,7 @@ export type FriendFilter = 'all' | 'ai' | 'human' | 'group'
 export type ChatFilter = 'all' | 'users' | 'ai' | 'groups'
 
 // タブタイプ（groupsを削除）
-export type TabType = 'chats' | 'friends' | 'add-friends' | 'settings'
+export type TabType = 'chats' | 'friends' | 'add-friends' | 'mcp-servers' | 'settings'
 
 // テーマタイプ
 export type Theme = 'light' | 'dark' | 'system'
