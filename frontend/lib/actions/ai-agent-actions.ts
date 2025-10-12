@@ -27,6 +27,13 @@ export async function createAgent(data: {
   // 機能設定
   tools_enabled: boolean
   streaming_enabled: boolean
+  
+  // MCP設定
+  mcp_servers?: Array<{
+    mcp_server_id: string
+    tool_selection_mode: 'all' | 'selected'
+    selected_tool_ids?: string[]
+  }>
 }) {
   try {
     const cookieStore = await cookies()
