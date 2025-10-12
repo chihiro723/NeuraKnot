@@ -106,6 +106,16 @@ definitions:
     required:
     - display_name
     type: object
+  backend-go_internal_handler_http_request.UpdateToolPositionsRequest:
+    properties:
+      positions:
+        additionalProperties:
+          type: integer
+        description: ToolUsageID -> InsertPosition
+        type: object
+    required:
+    - positions
+    type: object
   backend-go_internal_handler_http_response.AgentResponse:
     properties:
       avatar_url:
@@ -263,6 +273,8 @@ definitions:
         type: string
       input_data:
         type: string
+      insert_position:
+        type: integer
       output_data:
         type: string
       status:
@@ -465,6 +477,58 @@ paths:
       security:
       - BearerAuth: []
       summary: 会話取得/作成
+      tags:
+      - Chat
+  /api/v1/conversations/{conversation_id}/messages/{message_id}/tools/positions:
+    patch:
+      consumes:
+      - application/json
+      description: ツール使用履歴の挿入位置を一括更新します
+      parameters:
+      - description: 会話ID
+        in: path
+        name: conversation_id
+        required: true
+        type: string
+      - description: メッセージID
+        in: path
+        name: message_id
+        required: true
+        type: string
+      - description: ツール位置情報
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/backend-go_internal_handler_http_request.UpdateToolPositionsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            additionalProperties:
+              type: boolean
+            type: object
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "404":
+          description: 会話またはメッセージが見つからない
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: ツール位置情報更新
       tags:
       - Chat
   /api/v1/conversations/{id}/messages:

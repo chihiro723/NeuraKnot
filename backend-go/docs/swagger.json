@@ -263,6 +263,86 @@
                 }
             }
         },
+        "/api/v1/conversations/{conversation_id}/messages/{message_id}/tools/positions": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "ツール使用履歴の挿入位置を一括更新します",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "ツール位置情報更新",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "会話ID",
+                        "name": "conversation_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "メッセージID",
+                        "name": "message_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "ツール位置情報",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_request.UpdateToolPositionsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "boolean"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "会話またはメッセージが見つからない",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/conversations/{id}/messages": {
             "get": {
                 "security": [
@@ -1149,6 +1229,21 @@
                 }
             }
         },
+        "backend-go_internal_handler_http_request.UpdateToolPositionsRequest": {
+            "type": "object",
+            "required": [
+                "positions"
+            ],
+            "properties": {
+                "positions": {
+                    "description": "ToolUsageID -\u003e InsertPosition",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
         "backend-go_internal_handler_http_response.AgentResponse": {
             "type": "object",
             "properties": {
@@ -1388,6 +1483,9 @@
                 },
                 "input_data": {
                     "type": "string"
+                },
+                "insert_position": {
+                    "type": "integer"
                 },
                 "output_data": {
                     "type": "string"
