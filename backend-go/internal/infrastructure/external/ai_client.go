@@ -62,13 +62,14 @@ type ChatRequest struct {
 
 // ToolCall はツール呼び出し情報
 type ToolCall struct {
-	ToolID          string                 `json:"tool_id"`           // ツールID
-	ToolName        string                 `json:"tool_name"`         // ツール名
-	Status          string                 `json:"status"`            // ステータス（completed/failed）
-	Input           map[string]interface{} `json:"input"`             // 入力パラメータ
-	Output          string                 `json:"output"`            // 出力結果
-	Error           *string                `json:"error,omitempty"`   // エラーメッセージ（オプション）
-	ExecutionTimeMs int                    `json:"execution_time_ms"` // 実行時間（ミリ秒）
+	ToolID          string                 `json:"tool_id"`                   // ツールID
+	ToolName        string                 `json:"tool_name"`                 // ツール名
+	Status          string                 `json:"status"`                    // ステータス（completed/failed）
+	Input           map[string]interface{} `json:"input"`                     // 入力パラメータ
+	Output          string                 `json:"output"`                    // 出力結果
+	Error           *string                `json:"error,omitempty"`           // エラーメッセージ（オプション）
+	ExecutionTimeMs int                    `json:"execution_time_ms"`         // 実行時間（ミリ秒）
+	InsertPosition  *int                   `json:"insert_position,omitempty"` // メッセージ内での挿入位置
 }
 
 // TokenUsage はトークン使用量
@@ -99,17 +100,22 @@ type ChatResponse struct {
 
 // StreamEvent はSSEストリーミングイベント
 type StreamEvent struct {
-	Type            string  `json:"type"`                       // "token", "tool_start", "tool_end", "done", "error"
-	Content         string  `json:"content,omitempty"`          // トークン内容（typeがtokenの場合）
-	ToolID          string  `json:"tool_id,omitempty"`          // ツールID
-	ToolName        string  `json:"tool_name,omitempty"`        // ツール名
-	Input           string  `json:"input,omitempty"`            // ツール入力
-	Output          string  `json:"output,omitempty"`           // ツール出力
-	Status          string  `json:"status,omitempty"`           // ステータス（completed/failed）
-	Error           *string `json:"error,omitempty"`            // エラーメッセージ
+	Type            string  `json:"type"`                        // "token", "tool_start", "tool_end", "done", "error"
+	Content         string  `json:"content,omitempty"`           // トークン内容（typeがtokenの場合）
+	ToolID          string  `json:"tool_id,omitempty"`           // ツールID
+	ToolName        string  `json:"tool_name,omitempty"`         // ツール名
+	Input           string  `json:"input,omitempty"`             // ツール入力
+	Output          string  `json:"output,omitempty"`            // ツール出力
+	Status          string  `json:"status,omitempty"`            // ステータス（completed/failed）
+	Error           *string `json:"error,omitempty"`             // エラーメッセージ
 	ExecutionTimeMs int     `json:"execution_time_ms,omitempty"` // 実行時間（ミリ秒）
-	Code            string  `json:"code,omitempty"`             // エラーコード
-	Message         string  `json:"message,omitempty"`          // エラーメッセージ
+	InsertPosition  *int    `json:"insert_position,omitempty"`   // メッセージ内での挿入位置
+	Code            string  `json:"code,omitempty"`              // エラーコード
+	Message         string  `json:"message,omitempty"`           // エラーメッセージ
+	// doneイベント用フィールド
+	ConversationID string      `json:"conversation_id,omitempty"` // 会話ID
+	ToolCalls      []ToolCall  `json:"tool_calls,omitempty"`      // ツール呼び出し履歴
+	Metadata       *AIMetadata `json:"metadata,omitempty"`        // メタデータ
 }
 
 // Chat はチャットリクエストを送信
@@ -230,7 +236,6 @@ func (c *AIClient) ChatStream(ctx context.Context, req ChatRequest) (<-chan Stre
 				continue
 			}
 
-
 			// イベントを送信
 			select {
 			case eventChan <- event:
@@ -240,7 +245,7 @@ func (c *AIClient) ChatStream(ctx context.Context, req ChatRequest) (<-chan Stre
 
 			// doneまたはerrorイベントで終了
 			if event.Type == "done" || event.Type == "error" {
-					return
+				return
 			}
 		}
 

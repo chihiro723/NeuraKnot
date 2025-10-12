@@ -2,6 +2,7 @@ package chat
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -15,11 +16,12 @@ import (
 
 // ChatUsecase はチャットのユースケース
 type ChatUsecase struct {
-	aiRepo        ai.Repository
-	convRepo      conversation.ConversationRepository
-	msgRepo       conversation.MessageRepository
-	toolUsageRepo conversation.ToolUsageRepository
-	aiClient      *external.AIClient
+	aiRepo          ai.Repository
+	convRepo        conversation.ConversationRepository
+	msgRepo         conversation.MessageRepository
+	toolUsageRepo   conversation.ToolUsageRepository
+	chatSessionRepo conversation.ChatSessionRepository
+	aiClient        *external.AIClient
 }
 
 // NewChatUsecase はチャットユースケースを作成
@@ -28,14 +30,16 @@ func NewChatUsecase(
 	convRepo conversation.ConversationRepository,
 	msgRepo conversation.MessageRepository,
 	toolUsageRepo conversation.ToolUsageRepository,
+	chatSessionRepo conversation.ChatSessionRepository,
 	aiClient *external.AIClient,
 ) *ChatUsecase {
 	return &ChatUsecase{
-		aiRepo:        aiRepo,
-		convRepo:      convRepo,
-		msgRepo:       msgRepo,
-		toolUsageRepo: toolUsageRepo,
-		aiClient:      aiClient,
+		aiRepo:          aiRepo,
+		convRepo:        convRepo,
+		msgRepo:         msgRepo,
+		toolUsageRepo:   toolUsageRepo,
+		chatSessionRepo: chatSessionRepo,
+		aiClient:        aiClient,
 	}
 }
 
@@ -208,6 +212,67 @@ func (uc *ChatUsecase) SendMessage(
 	agent.IncrementMessageCount()
 	if err := uc.aiRepo.Update(ctx, agent); err != nil {
 		return nil, fmt.Errorf("failed to update agent: %w", err)
+	}
+
+	// 8. ChatSessionを保存（トークン使用量を記録）
+	chatSession := conversation.NewChatSession(
+		userID,
+		conversationID,
+		conv.AIAgentID,
+		&aiMessage.ID,
+		agent.Provider.String(),
+		agent.Model,
+		agent.PersonaType.String(),
+		agent.Temperature,
+		aiResp.Metadata.TokensUsed.Prompt,
+		aiResp.Metadata.TokensUsed.Completion,
+		aiResp.Metadata.TokensUsed.Total,
+		aiResp.Metadata.ProcessingTimeMs,
+		len(aiResp.ToolCalls),
+	)
+
+	if err := uc.chatSessionRepo.Save(ctx, chatSession); err != nil {
+		// ChatSession保存失敗してもユーザーへのレスポンスは正常に返す（ログに記録）
+		log.Printf("ERROR: Failed to save chat session: %v", err)
+	}
+
+	// 9. ツール使用履歴を保存
+	for _, toolCall := range aiResp.ToolCalls {
+		inputJSON, err := json.Marshal(toolCall.Input)
+		if err != nil {
+			log.Printf("ERROR: Failed to marshal tool input: %v", err)
+			continue
+		}
+
+		toolUsage, err := conversation.NewToolUsage(
+			aiMessage.ID,
+			toolCall.ToolName,
+			"basic",
+			inputJSON,
+		)
+		if err != nil {
+			log.Printf("ERROR: Failed to create tool usage: %v", err)
+			continue
+		}
+
+		// 出力、実行時間、挿入位置を設定
+		if toolCall.Output != "" {
+			toolUsage.SetOutput(toolCall.Output)
+		}
+		if toolCall.ExecutionTimeMs > 0 {
+			toolUsage.SetExecutionTime(toolCall.ExecutionTimeMs)
+		}
+		if toolCall.InsertPosition != nil {
+			toolUsage.SetInsertPosition(*toolCall.InsertPosition)
+		}
+		if toolCall.Error != nil {
+			toolUsage.SetError(*toolCall.Error)
+		}
+
+		// DBに保存
+		if err := uc.toolUsageRepo.Save(toolUsage); err != nil {
+			log.Printf("ERROR: Failed to save tool usage: %v", err)
+		}
 	}
 
 	return &ChatResult{
@@ -391,7 +456,7 @@ func (uc *ChatUsecase) SendMessageStream(
 
 	// 6. イベントを中継しながらDB保存処理を行う
 	relayEventChan := make(chan external.StreamEvent, 100)
-	go uc.relayAndHandleStream(ctx, eventChan, relayEventChan, conversationID, conv.AIAgentID, userMessage.ID, agent)
+	go uc.relayAndHandleStream(ctx, eventChan, relayEventChan, userID, conversationID, conv.AIAgentID, userMessage.ID, agent)
 
 	return relayEventChan, errChan, nil
 }
@@ -401,7 +466,7 @@ func (uc *ChatUsecase) relayAndHandleStream(
 	ctx context.Context,
 	eventChan <-chan external.StreamEvent,
 	relayEventChan chan<- external.StreamEvent,
-	conversationID, agentID, userMessageID uuid.UUID,
+	userID, conversationID, agentID, userMessageID uuid.UUID,
 	agent *ai.Agent,
 ) {
 	defer close(relayEventChan)
@@ -452,6 +517,11 @@ func (uc *ChatUsecase) relayAndHandleStream(
 				inputJSON,
 			)
 			if err == nil {
+				// 挿入位置を設定
+				if event.InsertPosition != nil {
+					toolUsage.SetInsertPosition(*event.InsertPosition)
+					log.Printf("DEBUG: tool_start - Set InsertPosition %d for tool %s", *event.InsertPosition, event.ToolID)
+				}
 				toolUsages[event.ToolID] = toolUsage
 				log.Printf("DEBUG: tool_start - Created ToolUsage object for %s linked to AI message %s", event.ToolID, aiMessage.ID)
 			}
@@ -506,8 +576,79 @@ func (uc *ChatUsecase) relayAndHandleStream(
 
 				agent.IncrementMessageCount()
 				_ = uc.aiRepo.Update(ctx, agent)
+
+				// ChatSessionを保存（doneイベントにメタデータが含まれる場合）
+				if event.Metadata != nil {
+					log.Printf("DEBUG: Saving ChatSession with metadata: %+v", event.Metadata)
+					chatSession := conversation.NewChatSession(
+						userID,
+						conversationID,
+						agentID,
+						&aiMessage.ID,
+						agent.Provider.String(),
+						agent.Model,
+						agent.PersonaType.String(),
+						agent.Temperature,
+						event.Metadata.TokensUsed.Prompt,
+						event.Metadata.TokensUsed.Completion,
+						event.Metadata.TokensUsed.Total,
+						event.Metadata.ProcessingTimeMs,
+						len(event.ToolCalls),
+					)
+
+					if err := uc.chatSessionRepo.Save(ctx, chatSession); err != nil {
+						log.Printf("ERROR: Failed to save chat session: %v", err)
+					} else {
+						log.Printf("DEBUG: Successfully saved ChatSession %s", chatSession.ID)
+					}
+				} else {
+					log.Printf("WARN: Done event received without metadata")
+				}
 			}
 			return
 		}
 	}
+}
+
+// UpdateToolPositions はツール使用履歴の挿入位置を一括更新
+func (uc *ChatUsecase) UpdateToolPositions(
+	ctx context.Context,
+	userID, conversationID, messageID uuid.UUID,
+	positions map[string]int,
+) error {
+	// 1. 会話の所有者確認
+	conv, err := uc.convRepo.FindByID(ctx, conversationID)
+	if err != nil {
+		return fmt.Errorf("failed to find conversation: %w", err)
+	}
+
+	if conv.UserID != userID {
+		return fmt.Errorf("unauthorized: user does not own this conversation")
+	}
+
+	// 2. メッセージの存在確認
+	message, err := uc.msgRepo.FindByID(ctx, messageID)
+	if err != nil {
+		return fmt.Errorf("failed to find message: %w", err)
+	}
+
+	if message.ConversationID != conversationID {
+		return fmt.Errorf("message does not belong to this conversation")
+	}
+
+	// 3. ツール使用履歴の挿入位置を更新
+	for toolUsageIDStr, position := range positions {
+		toolUsageID, err := uuid.Parse(toolUsageIDStr)
+		if err != nil {
+			log.Printf("WARN: Invalid tool usage ID: %s", toolUsageIDStr)
+			continue
+		}
+
+		if err := uc.toolUsageRepo.UpdateInsertPosition(toolUsageID, position); err != nil {
+			log.Printf("ERROR: Failed to update insert position for tool %s: %v", toolUsageID, err)
+			// エラーがあっても続行（ベストエフォート）
+		}
+	}
+
+	return nil
 }

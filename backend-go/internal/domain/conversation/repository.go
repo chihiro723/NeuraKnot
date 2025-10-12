@@ -38,3 +38,15 @@ type MessageRepository interface {
 	// FindByConversationID は会話IDでメッセージリストを取得
 	FindByConversationID(ctx context.Context, conversationID uuid.UUID, limit int) ([]*Message, error)
 }
+
+// ChatSessionRepository はChatSessionのリポジトリインターフェース
+type ChatSessionRepository interface {
+	// Save はChatSessionを保存
+	Save(ctx context.Context, session *ChatSession) error
+
+	// FindByID はIDでChatSessionを取得
+	FindByID(ctx context.Context, id uuid.UUID) (*ChatSession, error)
+
+	// FindByMessageID はMessageIDでChatSessionを取得
+	FindByMessageID(ctx context.Context, messageID uuid.UUID) (*ChatSession, error)
+}

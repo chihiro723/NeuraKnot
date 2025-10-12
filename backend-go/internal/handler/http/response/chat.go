@@ -46,6 +46,7 @@ type ToolUsageResponse struct {
 	Status          string  `json:"status"`
 	ErrorMessage    *string `json:"error_message,omitempty"`
 	ExecutionTimeMs *int    `json:"execution_time_ms,omitempty"`
+	InsertPosition  *int    `json:"insert_position,omitempty"`
 	ExecutedAt      string  `json:"executed_at"`
 }
 
@@ -96,6 +97,7 @@ func ToMessageResponseWithTools(msg *conversation.Message, toolUsages []*convers
 				Status:          string(tu.Status),
 				ErrorMessage:    tu.ErrorMessage,
 				ExecutionTimeMs: tu.ExecutionTimeMs,
+				InsertPosition:  tu.InsertPosition,
 				ExecutedAt:      tu.ExecutedAt.Format(time.RFC3339),
 			}
 		}

@@ -17,6 +17,11 @@ type GetMessagesParams struct {
 	Limit int `form:"limit"`
 }
 
+// UpdateToolPositionsRequest はツール位置情報更新リクエスト
+type UpdateToolPositionsRequest struct {
+	Positions map[string]int `json:"positions" binding:"required"` // ToolUsageID -> InsertPosition
+}
+
 // ParseAIAgentID はAI Agent IDをパース
 func (r *GetOrCreateConversationRequest) ParseAIAgentID() (uuid.UUID, error) {
 	return uuid.Parse(r.AIAgentID)

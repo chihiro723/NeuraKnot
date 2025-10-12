@@ -291,6 +291,15 @@ func (h *ChatHandler) GetMessages(c *gin.Context) {
 	for i, mwt := range messagesWithTools {
 		messageResponses[i] = response.ToMessageResponseWithTools(mwt.Message, mwt.ToolUsages)
 		log.Printf("DEBUG: Message %s has %d tool usages", mwt.Message.ID, len(mwt.ToolUsages))
+
+		// デバッグ: 各ツールのinsert_positionを確認
+		for _, tu := range mwt.ToolUsages {
+			if tu.InsertPosition != nil {
+				log.Printf("  🔍 Tool %s: insert_position=%d", tu.ToolName, *tu.InsertPosition)
+			} else {
+				log.Printf("  ⚠️ Tool %s: insert_position=NULL", tu.ToolName)
+			}
+		}
 	}
 
 	c.JSON(http.StatusOK, &response.MessagesResponse{
@@ -375,4 +384,71 @@ func (h *ChatHandler) SendMessageStream(c *gin.Context) {
 			return false
 		}
 	})
+}
+
+// UpdateToolPositions はツール使用履歴の挿入位置を一括更新
+// @Summary ツール位置情報更新
+// @Description ツール使用履歴の挿入位置を一括更新します
+// @Tags Chat
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param conversation_id path string true "会話ID"
+// @Param message_id path string true "メッセージID"
+// @Param request body request.UpdateToolPositionsRequest true "ツール位置情報"
+// @Success 200 {object} map[string]bool "更新成功"
+// @Failure 400 {object} response.ErrorResponse "バリデーションエラー"
+// @Failure 401 {object} response.ErrorResponse "認証エラー"
+// @Failure 404 {object} response.ErrorResponse "会話またはメッセージが見つからない"
+// @Failure 500 {object} response.ErrorResponse "サーバーエラー"
+// @Router /api/v1/conversations/{conversation_id}/messages/{message_id}/tools/positions [patch]
+func (h *ChatHandler) UpdateToolPositions(c *gin.Context) {
+	// 認証ミドルウェアからユーザーを取得
+	user, exists := middleware.GetUserFromContext(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, response.NewUnauthorizedErrorResponse("User not found in context"))
+		return
+	}
+
+	// パスパラメータから会話IDとメッセージIDを取得
+	conversationIDStr := c.Param("conversation_id")
+	messageIDStr := c.Param("message_id")
+
+	conversationID, err := uuid.Parse(conversationIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid conversation ID"))
+		return
+	}
+
+	messageID, err := uuid.Parse(messageIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid message ID"))
+		return
+	}
+
+	// リクエストボディをパース
+	var req request.UpdateToolPositionsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		log.Printf("ERROR: Failed to bind request body: %v", err)
+		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid request body"))
+		return
+	}
+
+	log.Printf("🔍 DEBUG: UpdateToolPositions request - ConversationID: %s, MessageID: %s, Positions: %+v", conversationID, messageID, req.Positions)
+
+	// ユースケース呼び出し（UserIDをuuid.UUIDに変換）
+	userUUID, err := uuid.Parse(string(user.ID))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.NewInternalServerErrorResponse("Invalid user ID"))
+		return
+	}
+
+	if err := h.chatUsecase.UpdateToolPositions(c.Request.Context(), userUUID, conversationID, messageID, req.Positions); err != nil {
+		log.Printf("ERROR: Failed to update tool positions: %v", err)
+		c.JSON(http.StatusInternalServerError, response.NewInternalServerErrorResponse("Failed to update tool positions"))
+		return
+	}
+
+	log.Printf("✅ Tool positions updated successfully for message %s", messageID)
+	c.JSON(http.StatusOK, gin.H{"success": true})
 }
