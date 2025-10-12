@@ -7,6 +7,7 @@ import {
   Video,
   MoreHorizontal,
   Users,
+  Server,
 } from "lucide-react";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useDashboard } from "@/components/dashboard/DashboardProvider";
@@ -15,6 +16,7 @@ import { GroupChatWindow } from "@/components/groups/GroupChatWindow";
 import { AddFriendsRightPanel } from "@/components/friends/AddFriendsPanel";
 import { FriendDetailPanel } from "@/components/friends/FriendDetailPanel";
 import { ProfileSettingsPanel } from "@/components/settings/ProfileSettingsPanel";
+import { MCPServerManager } from "@/components/mcp/MCPServerManager";
 import { Avatar } from "@/components/ui/Avatar";
 import { AppNavigation } from "./AppNavigation";
 import { cn } from "@/lib/utils/cn";
@@ -120,9 +122,11 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                 {activeTab === "chats"
                   ? "トーク"
                   : activeTab === "friends"
-                  ? "友だち"
+                  ? "一覧管理"
                   : activeTab === "add-friends"
-                  ? "友だちを追加"
+                  ? "新規追加"
+                  : activeTab === "mcp-servers"
+                  ? "外部サービス"
                   : activeTab === "settings"
                   ? "設定"
                   : "BridgeSpeak"}
@@ -155,13 +159,34 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
 
       {/* 右メインエリア */}
       <div className="flex overflow-hidden flex-col flex-1 min-w-0">
-        {activeTab === "add-friends" ? (
+        {activeTab === "mcp-servers" ? (
+          <div className="flex flex-col h-full bg-white dark:bg-gray-900">
+            <div className="flex items-center px-6 h-16 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
+              <div className="flex items-center space-x-3">
+                <div className="flex justify-center items-center w-10 h-10 bg-gray-100 rounded-lg dark:bg-gray-800">
+                  <Server className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
+                    外部サービス連携
+                  </h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    外部ツールを連携してAIを強化
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="overflow-y-auto flex-1 p-6">
+              <MCPServerManager />
+            </div>
+          </div>
+        ) : activeTab === "add-friends" ? (
           <AddFriendsRightPanel selectedType={selectedAddFriendType} />
         ) : activeTab === "friends" && selectedFriend ? (
           <FriendDetailPanel friend={selectedFriend} />
         ) : activeTab === "settings" && showProfileSettings ? (
           <ProfileSettingsPanel />
-        ) : selectedChat ? (
+        ) : activeTab === "chats" && selectedChat ? (
           <>
             {/* チャットヘッダー */}
             <div className="flex justify-between items-center px-6 h-16 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
@@ -183,7 +208,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-300">
                     {selectedChat.type === "ai"
-                      ? "AIエージェント • オンライン"
+                      ? "エージェント • オンライン"
                       : selectedChat.type === "group"
                       ? `${selectedChat.member_count}人のメンバー${
                           selectedChat.description
@@ -240,14 +265,14 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                 <div>
                   <h2 className="font-medium text-gray-900 dark:text-white">
                     {activeTab === "friends"
-                      ? "友だちを選択してください"
+                      ? "選択してください"
                       : activeTab === "settings"
                       ? "設定項目を選択してください"
                       : "チャットを選択してください"}
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {activeTab === "friends"
-                      ? "左側から友だちを選んで詳細を表示"
+                      ? "左側から選んで詳細を表示"
                       : activeTab === "settings"
                       ? "左側から設定項目を選択"
                       : "左側から会話を選んでトークを開始"}
@@ -277,7 +302,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                 })()}
                 <h3 className="mb-2 text-xl font-medium text-gray-900 dark:text-white">
                   {activeTab === "friends"
-                    ? "友だち管理"
+                    ? "一覧管理"
                     : activeTab === "settings"
                     ? "設定"
                     : "ハイブリッドメッセージング"}
@@ -285,9 +310,9 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                 <p className="mb-6 max-w-md text-gray-600 dark:text-gray-400">
                   {activeTab === "friends" ? (
                     <>
-                      友だちやAIエージェントの詳細情報を確認できます。
+                      友だちやエージェントの詳細情報を確認できます。
                       <br />
-                      左側から友だちを選択してください。
+                      左側から選択してください
                     </>
                   ) : activeTab === "settings" ? (
                     <>
@@ -297,9 +322,9 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                     </>
                   ) : (
                     <>
-                      人間とAIエージェント、グループとの新しいコミュニケーション体験。
+                      人間とエージェント、グループとの新しいコミュニケーション体験。
                       <br />
-                      左側から友だちやAIエージェント、グループを選んでトークを始めましょう。
+                      左側から友だちやエージェント、グループを選んでトークを始めましょう。
                     </>
                   )}
                 </p>
