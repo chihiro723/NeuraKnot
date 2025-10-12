@@ -5,7 +5,7 @@
 import type { FriendData, ConversationData } from '@/lib/types'
 
 /**
- * サンプルAIエージェントデータを生成
+ * サンプルエージェントデータを生成
  */
 export const generateSampleAIAgents = (): FriendData[] => [
   {
