@@ -264,7 +264,7 @@ export function ProfileSettingsPanel() {
               <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <div className="text-2xl font-bold text-green-500 mb-1">5</div>
                 <div className="text-sm text-gray-600 dark:text-gray-400">
-                  AIエージェント
+                  エージェント
                 </div>
               </div>
               <div className="text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
