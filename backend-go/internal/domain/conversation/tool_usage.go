@@ -19,6 +19,7 @@ type ToolUsage struct {
 	Status          string
 	ErrorMessage    *string
 	ExecutionTimeMs *int
+	InsertPosition  *int // メッセージ内での挿入位置（文字数）
 	ExecutedAt      time.Time
 }
 
@@ -56,6 +57,11 @@ func (t *ToolUsage) SetExecutionTime(ms int) {
 	t.ExecutionTimeMs = &ms
 }
 
+// SetInsertPosition は挿入位置を設定
+func (t *ToolUsage) SetInsertPosition(position int) {
+	t.InsertPosition = &position
+}
+
 // ToolUsageRepository はツール使用履歴のリポジトリインターフェース
 type ToolUsageRepository interface {
 	// Save はツール使用履歴を保存
@@ -66,4 +72,7 @@ type ToolUsageRepository interface {
 
 	// FindBySessionID はセッションIDでツール使用履歴を取得
 	FindBySessionID(sessionID uuid.UUID) ([]*ToolUsage, error)
+
+	// UpdateInsertPosition はツール使用履歴の挿入位置を更新
+	UpdateInsertPosition(toolUsageID uuid.UUID, insertPosition int) error
 }

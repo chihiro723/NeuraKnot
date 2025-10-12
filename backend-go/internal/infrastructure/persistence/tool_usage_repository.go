@@ -8,12 +8,12 @@ import (
 	"github.com/google/uuid"
 )
 
-// ToolUsageRepository はツール使用履歴リポジトリの実装
+// ToolUsageRepository はツール使用履歴のリポジトリ実装
 type ToolUsageRepository struct {
 	db *sql.DB
 }
 
-// NewToolUsageRepository はツール使用履歴リポジトリを作成
+// NewToolUsageRepository はツール使用履歴のリポジトリを作成
 func NewToolUsageRepository(db *sql.DB) *ToolUsageRepository {
 	return &ToolUsageRepository{db: db}
 }
@@ -23,10 +23,9 @@ func (r *ToolUsageRepository) Save(toolUsage *conversation.ToolUsage) error {
 	query := `
 		INSERT INTO ai_tool_usage (
 			id, session_id, message_id, tool_name, tool_category,
-			input_data, output_data, status, error_message, execution_time_ms, executed_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+			input_data, output_data, status, error_message, execution_time_ms, insert_position, executed_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	`
-
 	_, err := r.db.ExecContext(
 		context.Background(),
 		query,
@@ -40,20 +39,21 @@ func (r *ToolUsageRepository) Save(toolUsage *conversation.ToolUsage) error {
 		toolUsage.Status,
 		toolUsage.ErrorMessage,
 		toolUsage.ExecutionTimeMs,
+		toolUsage.InsertPosition,
 		toolUsage.ExecutedAt,
 	)
-
 	return err
 }
 
 // FindByMessageID はメッセージIDでツール使用履歴を取得
 func (r *ToolUsageRepository) FindByMessageID(messageID uuid.UUID) ([]*conversation.ToolUsage, error) {
 	query := `
-		SELECT id, session_id, message_id, tool_name, tool_category,
-			   input_data, output_data, status, error_message, execution_time_ms, executed_at
+		SELECT 
+			id, session_id, message_id, tool_name, tool_category,
+			input_data, output_data, status, error_message, execution_time_ms, insert_position, executed_at
 		FROM ai_tool_usage
 		WHERE message_id = $1
-		ORDER BY executed_at ASC
+		ORDER BY insert_position ASC NULLS LAST, executed_at ASC
 	`
 
 	rows, err := r.db.QueryContext(context.Background(), query, messageID)
@@ -76,6 +76,7 @@ func (r *ToolUsageRepository) FindByMessageID(messageID uuid.UUID) ([]*conversat
 			&tu.Status,
 			&tu.ErrorMessage,
 			&tu.ExecutionTimeMs,
+			&tu.InsertPosition,
 			&tu.ExecutedAt,
 		)
 		if err != nil {
@@ -90,11 +91,12 @@ func (r *ToolUsageRepository) FindByMessageID(messageID uuid.UUID) ([]*conversat
 // FindBySessionID はセッションIDでツール使用履歴を取得
 func (r *ToolUsageRepository) FindBySessionID(sessionID uuid.UUID) ([]*conversation.ToolUsage, error) {
 	query := `
-		SELECT id, session_id, message_id, tool_name, tool_category,
-			   input_data, output_data, status, error_message, execution_time_ms, executed_at
+		SELECT 
+			id, session_id, message_id, tool_name, tool_category,
+			input_data, output_data, status, error_message, execution_time_ms, insert_position, executed_at
 		FROM ai_tool_usage
 		WHERE session_id = $1
-		ORDER BY executed_at ASC
+		ORDER BY insert_position ASC NULLS LAST, executed_at ASC
 	`
 
 	rows, err := r.db.QueryContext(context.Background(), query, sessionID)
@@ -117,6 +119,7 @@ func (r *ToolUsageRepository) FindBySessionID(sessionID uuid.UUID) ([]*conversat
 			&tu.Status,
 			&tu.ErrorMessage,
 			&tu.ExecutionTimeMs,
+			&tu.InsertPosition,
 			&tu.ExecutedAt,
 		)
 		if err != nil {
@@ -126,4 +129,16 @@ func (r *ToolUsageRepository) FindBySessionID(sessionID uuid.UUID) ([]*conversat
 	}
 
 	return toolUsages, nil
+}
+
+// UpdateInsertPosition はツール使用履歴の挿入位置を更新
+func (r *ToolUsageRepository) UpdateInsertPosition(toolUsageID uuid.UUID, insertPosition int) error {
+	query := `
+		UPDATE ai_tool_usage
+		SET insert_position = $1
+		WHERE id = $2
+	`
+
+	_, err := r.db.ExecContext(context.Background(), query, insertPosition, toolUsageID)
+	return err
 }

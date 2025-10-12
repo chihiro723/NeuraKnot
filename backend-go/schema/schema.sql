@@ -229,6 +229,9 @@ CREATE TABLE ai_tool_usage (
     error_message TEXT,
     execution_time_ms INTEGER,
     
+    -- UI表示用：メッセージ内での挿入位置（文字数）
+    insert_position INTEGER,
+    
     -- タイムスタンプ
     executed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
