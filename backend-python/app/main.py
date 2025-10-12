@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.v1 import chat, tools, health
 from app.middleware.error_handler import add_exception_handlers
+from app.core.log_filter import setup_logging_with_filter
 import logging
 
 # ロギング設定
@@ -14,6 +15,9 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+
+# 機密情報フィルターを適用
+setup_logging_with_filter()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
