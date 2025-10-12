@@ -97,7 +97,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
               </h2>
               <p className="text-xs text-gray-600 dark:text-gray-400">
                 {selectedChat.type === "ai"
-                  ? "AIエージェント"
+                  ? "エージェント"
                   : selectedChat.type === "group"
                   ? `${selectedChat.member_count}人のメンバー`
                   : selectedChat.status === "online"
@@ -158,7 +158,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                 {selectedFriend.name}
               </h2>
               <p className="text-xs text-gray-600 dark:text-gray-400">
-                {selectedFriend.type === "ai" ? "AIエージェント" : "ユーザー"}
+                {selectedFriend.type === "ai" ? "エージェント" : "ユーザー"}
               </p>
             </div>
           </div>
