@@ -9,10 +9,24 @@ const BACKEND_GO_URL = process.env.BACKEND_GO_URL || 'http://localhost:8080'
  * AI Agent作成
  */
 export async function createAgent(data: {
+  // 基本情報
   name: string
-  persona_type: string
-  model: string
   description?: string
+  avatar_url?: string
+  
+  // ペルソナ設定
+  persona_type: string
+  system_prompt?: string
+  
+  // LLM設定
+  provider: string
+  model: string
+  temperature: number
+  max_tokens: number
+  
+  // 機能設定
+  tools_enabled: boolean
+  streaming_enabled: boolean
 }) {
   try {
     const cookieStore = await cookies()

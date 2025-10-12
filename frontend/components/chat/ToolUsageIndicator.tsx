@@ -36,8 +36,8 @@ export function ToolUsageIndicator({
   if (tools.length === 0) return null;
 
   return (
-    <div className="space-y-2 my-3">
-      {tools.map((tool) => {
+    <div className="my-3 space-y-2">
+      {tools.map((tool, index) => {
         const isExpanded = expandedTools.has(tool.tool_id);
         const isRunning = tool.status === "running";
         const isCompleted = tool.status === "completed";
@@ -52,8 +52,8 @@ export function ToolUsageIndicator({
 
         return (
           <div
-            key={tool.tool_id}
-            className={`border rounded-lg overflow-hidden transition-all duration-200 ${statusColor}`}
+            key={`${tool.tool_id}-${index}`}
+            className={`overflow-hidden rounded-lg border transition-all duration-200 ${statusColor}`}
           >
             {/* ヘッダー */}
             <div
@@ -64,7 +64,7 @@ export function ToolUsageIndicator({
                 {/* ステータスアイコン */}
                 <div className="flex-shrink-0">
                   {isRunning && (
-                    <Loader2 className="w-4 h-4 text-blue-600 dark:text-blue-400 animate-spin" />
+                    <Loader2 className="w-4 h-4 text-blue-600 animate-spin dark:text-blue-400" />
                   )}
                   {isCompleted && (
                     <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
@@ -75,8 +75,8 @@ export function ToolUsageIndicator({
                 </div>
 
                 {/* ツール情報 */}
-                <div className="flex items-center space-x-2 flex-1 min-w-0">
-                  <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
+                <div className="flex flex-1 items-center space-x-2 min-w-0">
+                  <span className="text-sm font-medium text-gray-800 truncate dark:text-gray-200">
                     {tool.tool_name}
                   </span>
 
@@ -102,57 +102,55 @@ export function ToolUsageIndicator({
 
             {/* 詳細（展開時） - アニメーション付き */}
             <div
-              className={`transition-all duration-200 ease-in-out overflow-hidden ${
+              className={`transition-all duration-300 ease-in-out overflow-hidden ${
                 isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
               }`}
             >
-              {isExpanded && (
-                <div className="px-3 pb-2.5 pt-2.5 space-y-2 border-t border-current/10 bg-white/30 dark:bg-gray-900/30">
-                  {/* 入力 */}
-                  {tool.input && (
-                    <div className="space-y-1">
-                      <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                        入力
-                      </span>
-                      <div className="text-xs text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-700">
-                        <pre className="whitespace-pre-wrap break-words font-mono leading-relaxed">
-                          {typeof tool.input === "string"
-                            ? tool.input
-                            : JSON.stringify(tool.input, null, 2)}
-                        </pre>
-                      </div>
+              <div className="px-3 pb-2.5 pt-2.5 space-y-2 border-t border-current/10 bg-white/30 dark:bg-gray-900/30">
+                {/* 入力 */}
+                {tool.input && (
+                  <div className="space-y-1">
+                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                      入力
+                    </span>
+                    <div className="p-2 text-xs text-gray-700 bg-gray-50 rounded border border-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:border-gray-700">
+                      <pre className="font-mono leading-relaxed whitespace-pre-wrap break-words">
+                        {typeof tool.input === "string"
+                          ? tool.input
+                          : JSON.stringify(tool.input, null, 2)}
+                      </pre>
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {/* 出力 */}
-                  {tool.output && (
-                    <div className="space-y-1">
-                      <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                        結果
-                      </span>
-                      <div className="text-xs text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-700">
-                        <pre className="whitespace-pre-wrap break-words font-mono leading-relaxed">
-                          {tool.output}
-                        </pre>
-                      </div>
+                {/* 出力 */}
+                {tool.output && (
+                  <div className="space-y-1">
+                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                      結果
+                    </span>
+                    <div className="p-2 text-xs text-gray-700 bg-gray-50 rounded border border-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:border-gray-700">
+                      <pre className="font-mono leading-relaxed whitespace-pre-wrap break-words">
+                        {tool.output}
+                      </pre>
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {/* エラー */}
-                  {tool.error && (
-                    <div className="space-y-1">
-                      <span className="text-xs font-medium text-red-700 dark:text-red-300">
-                        エラー
-                      </span>
-                      <div className="text-xs text-red-800 dark:text-red-200 bg-red-50 dark:bg-red-900/30 p-2 rounded border border-red-300 dark:border-red-700">
-                        <pre className="whitespace-pre-wrap break-words font-mono leading-relaxed">
-                          {tool.error}
-                        </pre>
-                      </div>
+                {/* エラー */}
+                {tool.error && (
+                  <div className="space-y-1">
+                    <span className="text-xs font-medium text-red-700 dark:text-red-300">
+                      エラー
+                    </span>
+                    <div className="p-2 text-xs text-red-800 bg-red-50 rounded border border-red-300 dark:text-red-200 dark:bg-red-900/30 dark:border-red-700">
+                      <pre className="font-mono leading-relaxed whitespace-pre-wrap break-words">
+                        {tool.error}
+                      </pre>
                     </div>
-                  )}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         );

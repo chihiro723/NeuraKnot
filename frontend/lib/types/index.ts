@@ -89,6 +89,7 @@ export interface ToolUsage {
   status: 'completed' | 'failed'
   error_message?: string
   execution_time_ms?: number
+  insert_position?: number // メッセージ内での挿入位置
   executed_at: string
 }
 
@@ -236,6 +237,7 @@ export interface StreamEvent {
   status?: 'completed' | 'failed'
   error?: string
   execution_time_ms?: number
+  insert_position?: number
   code?: string
   message?: string
 }
@@ -250,4 +252,5 @@ export interface ToolUsageData {
   error?: string
   execution_time_ms?: number
   expanded: boolean
+  insertPosition?: number // ツールが使用されたメッセージ内の文字位置
 }

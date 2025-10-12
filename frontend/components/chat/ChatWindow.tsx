@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Send, Smile, Paperclip, Copy, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -13,6 +13,7 @@ import { useServerActionsWithAuth } from "@/lib/hooks/useServerActionWithAuth";
 import { getProfile } from "@/lib/actions/user-actions";
 import { StreamingMessage } from "./StreamingMessage";
 import { ToolUsageIndicator } from "./ToolUsageIndicator";
+import { StampPicker } from "./StampPicker";
 import { getCookie } from "@/lib/utils/cookies";
 import type {
   StreamEvent,
@@ -50,13 +51,19 @@ export function ChatWindow({ selectedChat }: ChatWindowProps) {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // ストリーミング状態
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [streamingTools, setStreamingTools] = useState<ToolUsageData[]>([]);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
+  const streamingContentRef = useRef(""); // ストリーミング内容の最新値を追跡
+
+  // スタンプピッカーの表示状態
+  const [showStampPicker, setShowStampPicker] = useState(false);
 
   // 401エラー時に自動リフレッシュ（複数のServer Actionsをラップ）
   const {
@@ -136,29 +143,29 @@ export function ChatWindow({ selectedChat }: ChatWindowProps) {
     initConversation();
   }, [selectedChat]);
 
-  // 新しいメッセージが追加されたときに最下部にスクロール
-  useEffect(() => {
-    if (messages.length > 0) {
-      requestAnimationFrame(() => {
-        messagesEndRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "end",
-        });
-      });
-    }
-  }, [messages]);
+  // 自動スクロールを無効化（メッセージ送信時は画面上部に固定）
+  // useEffect(() => {
+  //   if (messages.length > 0) {
+  //     requestAnimationFrame(() => {
+  //       messagesEndRef.current?.scrollIntoView({
+  //         behavior: "smooth",
+  //         block: "end",
+  //       });
+  //     });
+  //   }
+  // }, [messages]);
 
-  // ストリーミング中もコンテンツ更新時に最下部にスクロール
-  useEffect(() => {
-    if (isStreaming && streamingContent) {
-      requestAnimationFrame(() => {
-        messagesEndRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "end",
-        });
-      });
-    }
-  }, [streamingContent, isStreaming]);
+  // ストリーミング中の自動スクロールを無効化（UX改善）
+  // useEffect(() => {
+  //   if (isStreaming && streamingContent) {
+  //     requestAnimationFrame(() => {
+  //       messagesEndRef.current?.scrollIntoView({
+  //         behavior: "smooth",
+  //         block: "end",
+  //       });
+  //     });
+  //   }
+  // }, [streamingContent, isStreaming]);
 
   // クリーンアップ
   useEffect(() => {
@@ -169,6 +176,49 @@ export function ChatWindow({ selectedChat }: ChatWindowProps) {
     };
   }, []);
 
+  // テキストエリアの高さを自動調整（最大10行まで）
+  const adjustTextareaHeight = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    // 高さをリセットして正確な scrollHeight を取得
+    textarea.style.height = "auto";
+
+    const lineHeight = 24; // 1行の高さ（px）
+    const maxLines = 10;
+    const maxHeight = lineHeight * maxLines;
+
+    // 内容に応じた高さを計算
+    const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+    textarea.style.height = `${newHeight}px`;
+  }, []);
+
+  // メッセージ変更時に高さを調整
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [newMessage, adjustTextareaHeight]);
+
+  // スタンプピッカー外側クリックで閉じる
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showStampPicker) {
+        const target = event.target as HTMLElement;
+        // スタンプピッカーとSmileボタン以外をクリックしたら閉じる
+        if (
+          !target.closest("[data-stamp-picker]") &&
+          !target.closest("[data-smile-button]")
+        ) {
+          setShowStampPicker(false);
+        }
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showStampPicker]);
+
   const handleSendMessage = async () => {
     if (!newMessage.trim() || (isLoading && !isStreaming) || !conversationId)
       return;
@@ -176,9 +226,15 @@ export function ChatWindow({ selectedChat }: ChatWindowProps) {
     const messageContent = newMessage.trim();
     setNewMessage("");
 
+    // textareaの高さをリセット
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "48px";
+    }
+
     // ユーザーメッセージを即座に表示
+    const tempMessageId = `temp-${Date.now()}`;
     const tempUserMessage: Message = {
-      id: `temp-${Date.now()}`,
+      id: tempMessageId,
       content: messageContent,
       sender_type: "user",
       sender_id: "current-user",
@@ -186,30 +242,58 @@ export function ChatWindow({ selectedChat }: ChatWindowProps) {
     };
     setMessages((prev) => [...prev, tempUserMessage]);
 
+    // メッセージ送信後、新しいメッセージが画面の一番上に表示されるようにスクロール
+    // DOMの更新を待つために複数のrequestAnimationFrameを使用
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const messageElement = document.getElementById(
+          `message-${tempMessageId}`
+        );
+        const container = messagesContainerRef.current;
+
+        if (messageElement && container) {
+          // コンテナとメッセージの絶対位置を取得
+          const containerRect = container.getBoundingClientRect();
+          const messageRect = messageElement.getBoundingClientRect();
+
+          // 現在のスクロール位置を取得
+          const currentScrollTop = container.scrollTop;
+
+          // メッセージがコンテナの一番上に来るために必要なスクロール量を計算
+          const scrollOffset = messageRect.top - containerRect.top;
+          const targetScrollTop = currentScrollTop + scrollOffset;
+
+          // 確実に一番上に表示されるようスクロール
+          container.scrollTo({
+            top: targetScrollTop,
+            behavior: "smooth",
+          });
+        }
+      });
+    });
+
     if (selectedChat.type === "ai") {
       // AIチャット: ストリーミングAPIを使用（非ストリーミングも自動処理）
       // Cookieは自動的にリクエストに含まれる（credentials: 'include'）
       setIsStreaming(true);
       setStreamingContent("");
       setStreamingTools([]);
+      streamingContentRef.current = ""; // refもリセット
 
       try {
         await sendMessageStream(
           conversationId,
           messageContent,
           (event: StreamEvent) => {
-            console.log("📨 Received stream event:", event);
             switch (event.type) {
               case "token":
-                setStreamingContent((prev) => prev + (event.content || ""));
+                setStreamingContent((prev) => {
+                  const newContent = prev + (event.content || "");
+                  streamingContentRef.current = newContent; // refも更新
+                  return newContent;
+                });
                 break;
               case "tool_start":
-                console.log(
-                  "🔧 Tool started:",
-                  event.tool_name,
-                  "Input:",
-                  event.input
-                );
                 setStreamingTools((prev) => [
                   ...prev,
                   {
@@ -218,16 +302,15 @@ export function ChatWindow({ selectedChat }: ChatWindowProps) {
                     status: "running",
                     input: event.input || "",
                     expanded: false,
+                    // Backend-Pythonから送られてくる位置を使用（より正確）
+                    insertPosition:
+                      event.insert_position !== undefined
+                        ? event.insert_position
+                        : streamingContentRef.current.length,
                   },
                 ]);
                 break;
               case "tool_end":
-                console.log(
-                  "✅ Tool ended:",
-                  event.tool_name,
-                  "Status:",
-                  event.status
-                );
                 setStreamingTools((prev) =>
                   prev.map((tool) =>
                     tool.tool_id === event.tool_id
@@ -244,12 +327,76 @@ export function ChatWindow({ selectedChat }: ChatWindowProps) {
                 );
                 break;
               case "done":
-                // ストリーミング完了: メッセージ一覧をリロード
+                // ストリーミング完了: ツール位置情報をDBに保存してメッセージをリロード
                 setTimeout(async () => {
-                  console.log("🔄 Streaming done, reloading messages...");
+                  // ツールの位置情報を記録
+                  const toolPositions: Record<string, number> = {};
+                  streamingTools.forEach((tool) => {
+                    if (tool.insertPosition !== undefined) {
+                      toolPositions[tool.tool_name] = tool.insertPosition;
+                    }
+                  });
+
                   const result = await getMessagesWithAuth(conversationId, 50);
                   if (result.success && result.data) {
-                    setMessages(result.data.messages || []);
+                    const newMessages = result.data.messages || [];
+
+                    // 最新のAIメッセージ（今ストリーミングしたもの）を見つけて、ツール位置情報をDBに保存
+                    if (newMessages.length > 0) {
+                      const latestAIMessage = newMessages.find(
+                        (msg: Message) =>
+                          msg.sender_type === "ai" &&
+                          msg.tool_usages &&
+                          msg.tool_usages.length > 0
+                      );
+
+                      if (latestAIMessage && latestAIMessage.tool_usages) {
+                        // ToolUsageID -> InsertPosition のマッピングを作成
+                        const positions: Record<string, number> = {};
+
+                        latestAIMessage.tool_usages.forEach(
+                          (toolUsage: ToolUsage) => {
+                            if (
+                              toolPositions[toolUsage.tool_name] !== undefined
+                            ) {
+                              positions[toolUsage.id] =
+                                toolPositions[toolUsage.tool_name];
+                            }
+                          }
+                        );
+
+                        // APIを呼び出してDBを更新
+                        if (Object.keys(positions).length > 0) {
+                          try {
+                            const response = await fetch(
+                              `${process.env.NEXT_PUBLIC_API_URL}/api/v1/conversations/${conversationId}/messages/${latestAIMessage.id}/tools/positions`,
+                              {
+                                method: "PATCH",
+                                headers: {
+                                  "Content-Type": "application/json",
+                                },
+                                credentials: "include",
+                                body: JSON.stringify({ positions }),
+                              }
+                            );
+
+                            if (!response.ok) {
+                              console.error(
+                                "Failed to update tool positions:",
+                                await response.text()
+                              );
+                            }
+                          } catch (error) {
+                            console.error(
+                              "Error updating tool positions:",
+                              error
+                            );
+                          }
+                        }
+                      }
+                    }
+
+                    setMessages(newMessages);
                   }
                   setIsStreaming(false);
                   setStreamingContent("");
@@ -287,11 +434,13 @@ export function ChatWindow({ selectedChat }: ChatWindowProps) {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Cmd+Enter（Mac）またはCtrl+Enter（Windows）で送信
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       handleSendMessage();
     }
+    // 通常のEnterキーは改行として処理（デフォルト動作）
   };
 
   const formatTime = (dateString: string) => {
@@ -300,6 +449,12 @@ export function ChatWindow({ selectedChat }: ChatWindowProps) {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const handleStampSelect = (stamp: string) => {
+    // スタンプをメッセージ入力欄に追加
+    setNewMessage((prev) => prev + stamp);
+    // スタンプピッカーは開いたまま（ユーザーが✖️ボタンまたは外側をクリックするまで）
   };
 
   const handleCopyMessage = async (messageId: string, content: string) => {
@@ -311,11 +466,15 @@ export function ChatWindow({ selectedChat }: ChatWindowProps) {
   return (
     <div className="flex overflow-hidden flex-col flex-1">
       {/* メッセージエリア */}
-      <div className="overflow-y-auto overflow-x-hidden flex-1 p-4 bg-gray-50 dark:bg-gray-900 lg:p-6">
+      <div
+        ref={messagesContainerRef}
+        className="overflow-y-auto overflow-x-hidden flex-1 p-4 bg-gray-50 dark:bg-gray-900 lg:p-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+      >
         <div className="space-y-6">
           {messages.map((message) => (
             <div
               key={message.id}
+              id={`message-${message.id}`}
               className={`flex ${
                 message.sender_type === "user" ? "justify-end" : "justify-start"
               }`}
@@ -331,7 +490,7 @@ export function ChatWindow({ selectedChat }: ChatWindowProps) {
                   /* 自分のメッセージ（右側） */
                   <div className="flex flex-row-reverse flex-1 items-start space-x-3 space-x-reverse min-w-0">
                     {/* 自分のアイコン */}
-                    <div className="flex overflow-hidden flex-shrink-0 justify-center items-center w-10 h-10 bg-blue-500 rounded-full">
+                    <div className="flex overflow-hidden flex-shrink-0 justify-center items-center w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full shadow-md shadow-green-500/40">
                       {currentUser?.avatar_url ? (
                         <img
                           src={currentUser.avatar_url}
@@ -368,7 +527,7 @@ export function ChatWindow({ selectedChat }: ChatWindowProps) {
                         <div
                           className={cn(
                             "px-4 py-3 min-w-0 rounded-2xl rounded-tr-sm shadow-sm",
-                            "text-white bg-blue-500"
+                            "text-white bg-gradient-to-br from-green-500 to-emerald-600 shadow-green-500/30"
                           )}
                         >
                           <div className="max-w-none text-sm leading-relaxed break-words lg:text-base prose prose-sm prose-invert overflow-wrap-anywhere">
@@ -413,33 +572,118 @@ export function ChatWindow({ selectedChat }: ChatWindowProps) {
                             "flex-1 px-4 py-3 min-w-0 shadow-sm"
                           )}
                         >
-                          {/* ツール使用履歴（DBから） */}
-                          {message.tool_usages &&
-                            message.tool_usages.length > 0 && (
-                              <div className="mb-3">
-                                <ToolUsageIndicator
-                                  tools={message.tool_usages.map(
-                                    (toolUsage) => ({
-                                      tool_id: toolUsage.id,
-                                      tool_name: toolUsage.tool_name,
-                                      status: toolUsage.status,
-                                      input: JSON.parse(toolUsage.input_data),
-                                      output: toolUsage.output_data,
-                                      error: toolUsage.error_message,
-                                      execution_time_ms:
-                                        toolUsage.execution_time_ms,
-                                      expanded: false,
-                                    })
-                                  )}
-                                />
-                              </div>
-                            )}
+                          {/* メッセージとツールを時系列順に表示 */}
+                          {(() => {
+                            // ツール使用履歴を変換
+                            const tools = message.tool_usages
+                              ? message.tool_usages.map((toolUsage) => ({
+                                  tool_id: toolUsage.id,
+                                  tool_name: toolUsage.tool_name,
+                                  status: toolUsage.status,
+                                  input: JSON.parse(toolUsage.input_data),
+                                  output: toolUsage.output_data,
+                                  error: toolUsage.error_message,
+                                  execution_time_ms:
+                                    toolUsage.execution_time_ms,
+                                  // DBから取得した位置情報を使用
+                                  insertPosition: toolUsage.insert_position,
+                                  expanded: false,
+                                }))
+                              : [];
 
-                          <div className="max-w-none text-sm leading-relaxed break-words lg:text-base prose prose-sm dark:prose-invert overflow-wrap-anywhere">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                              {message.content}
-                            </ReactMarkdown>
-                          </div>
+                            // ツールをinsertPositionでソート（null/undefinedは0として扱う）
+                            const sortedTools = [...tools].sort(
+                              (a, b) =>
+                                (a.insertPosition ?? 0) -
+                                (b.insertPosition ?? 0)
+                            );
+
+                            // ツールがないか、insertPositionが設定されていない場合は通常の表示
+                            if (
+                              sortedTools.length === 0 ||
+                              !sortedTools.some(
+                                (t) => t.insertPosition != null // undefined と null の両方をチェック
+                              )
+                            ) {
+                              return (
+                                <>
+                                  {tools.length > 0 && (
+                                    <div className="mb-3">
+                                      <ToolUsageIndicator tools={tools} />
+                                    </div>
+                                  )}
+                                  <div className="max-w-none text-sm leading-relaxed break-words lg:text-base prose prose-sm dark:prose-invert overflow-wrap-anywhere">
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                      {message.content}
+                                    </ReactMarkdown>
+                                  </div>
+                                </>
+                              );
+                            }
+
+                            // メッセージを分割してツールUIを挿入
+                            const segments: React.ReactElement[] = [];
+                            let lastPosition = 0;
+
+                            sortedTools.forEach((tool, index) => {
+                              const insertPos = tool.insertPosition ?? 0;
+
+                              // 前回の位置から現在のツール位置までのテキスト
+                              if (insertPos > lastPosition && message.content) {
+                                const textSegment = message.content.slice(
+                                  lastPosition,
+                                  insertPos
+                                );
+                                if (textSegment) {
+                                  segments.push(
+                                    <div
+                                      key={`text-${index}`}
+                                      className="max-w-none text-sm leading-relaxed break-words lg:text-base prose prose-sm dark:prose-invert overflow-wrap-anywhere"
+                                    >
+                                      <ReactMarkdown
+                                        remarkPlugins={[remarkGfm]}
+                                      >
+                                        {textSegment}
+                                      </ReactMarkdown>
+                                    </div>
+                                  );
+                                }
+                              }
+
+                              // ツールUI
+                              segments.push(
+                                <ToolUsageIndicator
+                                  key={`tool-${index}`}
+                                  tools={[tool]}
+                                />
+                              );
+
+                              lastPosition = insertPos;
+                            });
+
+                            // 最後のツール以降のテキスト
+                            if (
+                              lastPosition < message.content.length &&
+                              message.content
+                            ) {
+                              const remainingText =
+                                message.content.slice(lastPosition);
+                              if (remainingText) {
+                                segments.push(
+                                  <div
+                                    key="text-final"
+                                    className="max-w-none text-sm leading-relaxed break-words lg:text-base prose prose-sm dark:prose-invert overflow-wrap-anywhere"
+                                  >
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                      {remainingText}
+                                    </ReactMarkdown>
+                                  </div>
+                                );
+                              }
+                            }
+
+                            return <>{segments}</>;
+                          })()}
                         </div>
 
                         {/* コピーボタンとタイムスタンプ（吹き出しの右側） */}
@@ -526,43 +770,83 @@ export function ChatWindow({ selectedChat }: ChatWindowProps) {
 
       {/* 入力エリア */}
       <div className="flex-shrink-0 p-4 bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-        <div className="w-full">
-          <div className="flex items-end space-x-2 w-full">
-            <button className="flex-shrink-0 p-2 text-gray-400 rounded-lg transition-colors dark:text-gray-500 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700">
-              <Paperclip className="w-5 h-5" />
-            </button>
+        <div className="relative w-full">
+          {/* 統合されたモダンな入力コンテナ */}
+          <div
+            className={cn(
+              "flex flex-col gap-2 px-4 py-3 bg-gray-50 rounded-2xl border border-gray-300 dark:bg-gray-700 dark:border-gray-600",
+              "transition-all duration-200 focus-within:ring-2 focus-within:ring-green-500 dark:focus-within:ring-emerald-500 focus-within:border-green-500 dark:focus-within:border-emerald-500"
+            )}
+          >
+            {/* テキストエリア */}
+            <textarea
+              ref={textareaRef}
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="メッセージを入力...（Cmd/Ctrl+Enterで送信）"
+              className={cn(
+                "px-0 py-0 w-full bg-transparent border-0 resize-none",
+                "overflow-y-auto focus:outline-none",
+                "text-sm placeholder-gray-500 text-gray-900 dark:placeholder-gray-400 dark:text-gray-100 lg:text-base"
+              )}
+              rows={1}
+              style={{ minHeight: "32px", lineHeight: "24px" }}
+              disabled={isLoading || isStreaming}
+            />
 
-            <div className="relative flex-1 min-w-0">
-              <textarea
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="メッセージを入力..."
+            {/* ボタン類 */}
+            <div className="flex justify-between items-center pt-1 border-t border-gray-200 dark:border-gray-600">
+              <div className="flex gap-1 items-center">
+                {/* ファイル添付ボタン */}
+                <button
+                  className="p-1.5 text-gray-400 rounded-lg transition-colors dark:text-gray-500 hover:text-green-500 dark:hover:text-emerald-500 hover:bg-gray-100 dark:hover:bg-gray-600"
+                  title="ファイルを添付"
+                >
+                  <Paperclip className="w-5 h-5" />
+                </button>
+
+                {/* スマイルボタン */}
+                <button
+                  data-smile-button
+                  onClick={() => setShowStampPicker(!showStampPicker)}
+                  className={cn(
+                    "p-1.5 rounded-lg transition-colors",
+                    showStampPicker
+                      ? "text-green-500 bg-green-50 dark:text-emerald-500 dark:bg-green-500/10"
+                      : "text-gray-400 dark:text-gray-500 hover:text-green-500 dark:hover:text-emerald-500 hover:bg-gray-100 dark:hover:bg-gray-600"
+                  )}
+                  title="スタンプを選択"
+                >
+                  <Smile className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* 送信ボタン */}
+              <button
+                onClick={handleSendMessage}
+                disabled={!newMessage.trim() || isLoading || isStreaming}
+                title="送信（Cmd/Ctrl+Enter）"
                 className={cn(
-                  "px-4 py-3 pr-12 w-full bg-gray-50 rounded-2xl border border-gray-300 dark:bg-gray-700 dark:border-gray-600",
-                  "focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400",
-                  "max-h-32 text-sm placeholder-gray-500 text-gray-900 resize-none dark:placeholder-gray-400 dark:text-gray-100 lg:text-base"
+                  "px-4 py-1.5 rounded-xl transition-all duration-200 disabled:cursor-not-allowed flex items-center gap-1.5",
+                  newMessage.trim() && !isLoading && !isStreaming
+                    ? "text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 shadow-sm hover:shadow-md shadow-green-500/40 dark:from-green-500 dark:to-emerald-600 dark:hover:from-green-600 dark:hover:to-emerald-700"
+                    : "text-gray-400 bg-gray-200 dark:text-gray-500 dark:bg-gray-600"
                 )}
-                rows={1}
-                style={{ minHeight: "44px" }}
-                disabled={isLoading || isStreaming}
-              />
-              <button className="absolute right-2 top-1/2 p-1 text-gray-400 rounded-lg transition-colors transform -translate-y-1/2 dark:text-gray-500 hover:text-blue-500 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700">
-                <Smile className="w-5 h-5" />
+              >
+                <Send className="w-4 h-4" />
+                <span className="text-sm font-medium">送信</span>
               </button>
             </div>
-
-            <button
-              onClick={handleSendMessage}
-              disabled={!newMessage.trim() || isLoading || isStreaming}
-              className={cn(
-                "flex-shrink-0 p-3 rounded-full transition-colors disabled:cursor-not-allowed",
-                "text-white bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 dark:bg-blue-600 dark:hover:bg-blue-700 dark:disabled:bg-gray-600"
-              )}
-            >
-              <Send className="w-5 h-5" />
-            </button>
           </div>
+
+          {/* スタンプピッカー */}
+          {showStampPicker && (
+            <StampPicker
+              onSelectStamp={handleStampSelect}
+              onClose={() => setShowStampPicker(false)}
+            />
+          )}
         </div>
       </div>
     </div>

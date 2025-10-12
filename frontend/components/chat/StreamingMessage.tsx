@@ -51,6 +51,84 @@ export function StreamingMessage({
     );
   }
 
+  // メッセージとツールを時系列順に組み合わせる
+  const renderContentWithTools = () => {
+    // ツールをinsertPositionでソート（null/undefinedは0として扱う）
+    const sortedTools = [...tools].sort(
+      (a, b) => (a.insertPosition ?? 0) - (b.insertPosition ?? 0)
+    );
+
+    // ツールがない場合は通常のレンダリング
+    if (
+      sortedTools.length === 0 ||
+      !sortedTools.some((t) => t.insertPosition != null) // undefined と null の両方をチェック
+    ) {
+      return (
+        <>
+          {tools.length > 0 && <ToolUsageIndicator tools={tools} />}
+          {content && (
+            <div className="max-w-none text-sm leading-relaxed break-words lg:text-base prose prose-sm dark:prose-invert overflow-wrap-anywhere">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {content}
+              </ReactMarkdown>
+            </div>
+          )}
+        </>
+      );
+    }
+
+    // メッセージを分割してツールUIを挿入
+    const segments: React.ReactElement[] = [];
+    let lastPosition = 0;
+
+    sortedTools.forEach((tool, index) => {
+      const insertPos = tool.insertPosition ?? 0;
+
+      // 前回の位置から現在のツール位置までのテキスト
+      if (insertPos > lastPosition && content) {
+        const textSegment = content.slice(lastPosition, insertPos);
+        if (textSegment) {
+          segments.push(
+            <div
+              key={`text-${index}`}
+              className="max-w-none text-sm leading-relaxed break-words lg:text-base prose prose-sm dark:prose-invert overflow-wrap-anywhere"
+            >
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {textSegment}
+              </ReactMarkdown>
+            </div>
+          );
+        }
+      }
+
+      // ツールUI
+      segments.push(
+        <ToolUsageIndicator key={`tool-${index}`} tools={[tool]} />
+      );
+
+      lastPosition = insertPos;
+    });
+
+    // 最後のツール以降のテキスト
+    if (lastPosition < content.length && content) {
+      const remainingText = content.slice(lastPosition);
+      if (remainingText) {
+        segments.push(
+          <div
+            key="text-final"
+            className="max-w-none text-sm leading-relaxed break-words lg:text-base prose prose-sm dark:prose-invert overflow-wrap-anywhere"
+          >
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {remainingText}
+            </ReactMarkdown>
+          </div>
+        );
+      }
+    }
+
+    return <>{segments}</>;
+  };
+
   return (
     <div className="flex justify-start">
       <div className="flex items-start space-x-3 max-w-[85%] lg:max-w-[75%]">
@@ -70,7 +148,7 @@ export function StreamingMessage({
         </div>
 
         {/* 右側のコンテンツ */}
-        <div className="flex flex-col flex-1 space-y-1 min-w-0 overflow-hidden">
+        <div className="flex overflow-hidden flex-col flex-1 space-y-1 min-w-0">
           {/* 名前 */}
           <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
             {name}
@@ -79,11 +157,11 @@ export function StreamingMessage({
           <div className="flex flex-col space-y-2 min-w-0">
             {/* ツール実行中バナー */}
             {tools.some((t) => t.status === "running") && (
-              <div className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/40 dark:to-blue-900/40 border border-blue-200 dark:border-blue-800 rounded-lg shadow-sm">
-                <div className="flex items-center space-x-2 flex-1 min-w-0">
+              <div className="flex items-center px-3 py-2 space-x-2 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200 shadow-sm dark:from-blue-950/40 dark:to-blue-900/40 dark:border-blue-800">
+                <div className="flex flex-1 items-center space-x-2 min-w-0">
                   <div className="relative flex-shrink-0">
                     <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
-                    <div className="w-2 h-2 bg-blue-600 rounded-full absolute inset-0"></div>
+                    <div className="absolute inset-0 w-2 h-2 bg-blue-600 rounded-full"></div>
                   </div>
                   <div className="flex flex-col flex-1 min-w-0">
                     <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
@@ -103,18 +181,9 @@ export function StreamingMessage({
 
             <div className="flex space-x-2 min-w-0">
               {/* メッセージバブル */}
-              <div className="px-4 py-3 text-gray-900 bg-white rounded-2xl rounded-tl-sm border border-gray-200 shadow-sm dark:text-gray-100 dark:bg-gray-800 dark:border-gray-700 min-w-0 flex-1">
-                {/* ツールインジケーター */}
-                {tools.length > 0 && <ToolUsageIndicator tools={tools} />}
-
-                {/* メッセージ内容 */}
-                {content && (
-                  <div className="max-w-none text-sm leading-relaxed break-words lg:text-base prose prose-sm dark:prose-invert overflow-wrap-anywhere">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {content}
-                    </ReactMarkdown>
-                  </div>
-                )}
+              <div className="flex-1 px-4 py-3 min-w-0 text-gray-900 bg-white rounded-2xl rounded-tl-sm border border-gray-200 shadow-sm dark:text-gray-100 dark:bg-gray-800 dark:border-gray-700">
+                {/* メッセージとツールを時系列順に表示 */}
+                {renderContentWithTools()}
               </div>
 
               {/* コピーボタンとタイムスタンプ（ストリーミング中は透明） */}
