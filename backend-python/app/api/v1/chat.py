@@ -15,6 +15,7 @@ from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 import json
 import asyncio
+import time
 import logging
 
 router = APIRouter()
@@ -139,12 +140,44 @@ async def chat_stream(request: ChatRequest):
             chat_history = AgentService._convert_history_to_messages(request.conversation_history)
 
             # エージェント実行とイベントストリームを並行処理
+            start_time = time.time()
+            
             async def run_agent():
                 """エージェントを実行"""
                 try:
                     await agent_executor.ainvoke({
                         "input": request.message,
                         "chat_history": chat_history
+                    })
+                    
+                    # 処理完了時に完全なメタデータを含むdoneイベントを送信
+                    processing_time_ms = int((time.time() - start_time) * 1000)
+                    
+                    basic_tools_count = len(basic_tools) if request.include_basic_tools else 0
+                    
+                    # 生成されたメッセージ
+                    completion_text = "".join(callback.accumulated_tokens)
+                    
+                    # トークン使用量を取得（callback.token_usageから）
+                    # stream_usage=Trueで設定されているため、on_llm_endで取得できる
+                    tokens_used = callback.token_usage
+                    logger.info(f"💰 Token usage from API: {tokens_used}")
+                    
+                    await callback.queue.put({
+                        "type": "done",
+                        "conversation_id": request.conversation_id,
+                        "message": completion_text,
+                        "tool_calls": callback.tool_calls,
+                        "metadata": {
+                            "model": request.agent_config.model,
+                            "provider": request.agent_config.provider,
+                            "tokens_used": tokens_used,
+                            "processing_time_ms": processing_time_ms,
+                            "completion_mode_used": "streaming",
+                            "tools_available": len(tools),
+                            "basic_tools_count": basic_tools_count,
+                            "mcp_tools_count": len(mcp_tools)
+                        }
                     })
                 except Exception as e:
                     logger.error(f"Agent execution error: {e}", exc_info=True)

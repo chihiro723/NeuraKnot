@@ -95,6 +95,7 @@ class LLMFactory:
                 temperature=temperature,
                 max_tokens=max_tokens,
                 streaming=streaming,
+                stream_usage=True,  # ストリーミング時にトークン使用量を取得
                 callbacks=callbacks,
                 api_key=settings.OPENAI_API_KEY,
                 **kwargs
