@@ -168,29 +168,6 @@ export function useCognitoAuth() {
     }
   }, [])
 
-  const updateUser = useCallback(async (displayName: string): Promise<AuthUser> => {
-    try {
-      setState(prev => ({ ...prev, loading: true, error: null }))
-      
-      const updatedUser = await cognitoAuth.updateUser(displayName)
-      
-      setState(prev => ({
-        ...prev,
-        user: updatedUser,
-        loading: false,
-        error: null
-      }))
-      
-      return updatedUser
-    } catch (error) {
-      setState(prev => ({
-        ...prev,
-        loading: false,
-        error: error instanceof Error ? error.message : 'ユーザー情報の更新に失敗しました'
-      }))
-      throw error
-    }
-  }, [])
 
   const forgotPassword = useCallback(async (emailData: ForgotPasswordRequest): Promise<void> => {
     try {
@@ -230,9 +207,6 @@ export function useCognitoAuth() {
     }
   }, [])
 
-  const clearError = useCallback(() => {
-    setState(prev => ({ ...prev, error: null }))
-  }, [])
 
   return {
     ...state,
@@ -241,10 +215,8 @@ export function useCognitoAuth() {
     confirmSignUp,
     signOut,
     refreshToken,
-    updateUser,
     forgotPassword,
     confirmForgotPassword,
-    clearError,
     isAuthenticated: !!state.user
   }
 }
