@@ -1,3 +1,5 @@
+"use client";
+
 import { User, Mail, Calendar, Edit } from "lucide-react";
 import { useState } from "react";
 import { useDashboard } from "@/components/dashboard/DashboardProvider";
@@ -50,7 +52,7 @@ export function ProfileSettingsPanel() {
       <div className="overflow-y-auto flex-1 p-8 bg-white transition-colors duration-200 dark:bg-gray-900">
         <div className="mx-auto max-w-3xl">
           {/* プロフィール画像とメイン情報 */}
-          <div className="pb-8 mb-8 border-b border-gray-200 dark:border-gray-700 animate-fadeIn">
+          <div className="pb-8 mb-8 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-start space-x-8">
               <div className="relative">
                 <div className="flex overflow-hidden relative justify-center items-center w-32 h-32 bg-gray-300 rounded-full shadow-lg dark:bg-gray-600">
@@ -109,7 +111,7 @@ export function ProfileSettingsPanel() {
           </div>
 
           {/* アカウント情報 */}
-          <div className="animate-fadeIn">
+          <div>
             <h2 className="mb-6 text-lg font-semibold text-gray-900 dark:text-white">
               アカウント情報
             </h2>

@@ -27,12 +27,10 @@ import type { MCPServer, ToolSelectionMode } from "@/lib/types/mcp";
 type AddType = "user" | "ai" | "group" | null;
 
 /**
- * 友だち追加パネル - 完璧に統一されたデザインシステム
+ * 新規追加パネル - 完璧に統一されたデザインシステム
  */
 export function AddFriendsPanel() {
   const [selectedType, setSelectedType] = useState<AddType>(null);
-  const { setActiveTab, selectedAddFriendType, setSelectedAddFriendType } =
-    useDashboard();
 
   // デスクトップかどうかを判定
   const [isDesktop, setIsDesktop] = useState(false);
@@ -48,11 +46,9 @@ export function AddFriendsPanel() {
     return () => window.removeEventListener("resize", checkIsDesktop);
   }, []);
 
-  // デスクトップでは全体の状態を使用、モバイルではローカル状態を使用
-  const currentSelectedType = isDesktop ? selectedAddFriendType : selectedType;
-  const setCurrentSelectedType = isDesktop
-    ? setSelectedAddFriendType
-    : setSelectedType;
+  // ローカル状態を使用
+  const currentSelectedType = selectedType;
+  const setCurrentSelectedType = setSelectedType;
 
   const addTypes = [
     {
@@ -236,8 +232,6 @@ export function AddFriendsRightPanel({
 }: {
   selectedType: AddType;
 }) {
-  console.log("🔍 AddFriendsRightPanel selectedType:", selectedType);
-
   if (selectedType === "ai") {
     return <AIAgentCreationPanel onBack={() => {}} isDesktop />;
   }
@@ -260,7 +254,7 @@ export function AddFriendsRightPanel({
           </div>
           <div>
             <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
-              友だち追加
+              新規追加
             </h2>
             <p className="text-xs text-gray-500 dark:text-gray-400">
               左側から追加したい種類を選択してください
@@ -307,12 +301,12 @@ export function AddFriendsRightPanel({
   );
 }
 
-interface AIAgentCreationPanelProps {
+export interface AIAgentCreationPanelProps {
   onBack: () => void;
   isDesktop?: boolean;
 }
 
-function AIAgentCreationPanel({
+export function AIAgentCreationPanel({
   onBack,
   isDesktop = false,
 }: AIAgentCreationPanelProps) {
@@ -435,8 +429,6 @@ function AIAgentCreationPanel({
 
     startTransition(async () => {
       try {
-        console.log("[SUBMIT] Creating agent with data:", formData);
-
         // MCP設定を構築
         const mcpServerConfigs = Object.entries(mcpConfig)
           .filter(([_, config]) => config.enabled)
@@ -464,8 +456,6 @@ function AIAgentCreationPanel({
             mcpServerConfigs.length > 0 ? mcpServerConfigs : undefined,
         });
 
-        console.log("[SUBMIT] Result from createAgent:", result);
-
         if (!result) {
           throw new Error("Server Actionから応答がありません");
         }
@@ -473,8 +463,6 @@ function AIAgentCreationPanel({
         if (!result.success) {
           throw new Error(result.error || "Failed to create agent");
         }
-
-        console.log("AI Agent created:", result.data);
 
         // フォームをリセット
         setFormData({
@@ -1025,12 +1013,12 @@ function AIAgentCreationPanel({
   );
 }
 
-interface UserFriendAddPanelProps {
+export interface UserFriendAddPanelProps {
   onBack: () => void;
   isDesktop?: boolean;
 }
 
-function UserFriendAddPanel({
+export function UserFriendAddPanel({
   onBack,
   isDesktop = false,
 }: UserFriendAddPanelProps) {
@@ -1040,7 +1028,7 @@ function UserFriendAddPanel({
     {
       icon: QrCode,
       title: "QRコードスキャン",
-      description: "QRコードをスキャンして友だち追加",
+      description: "QRコードをスキャンして新規追加",
       iconColor: "text-gray-600 dark:text-gray-400",
       bgColor: "bg-gray-100 dark:bg-gray-800",
     },
@@ -1133,7 +1121,9 @@ function UserFriendAddPanel({
                 return (
                   <button
                     key={index}
-                    onClick={() => console.log(`${method.title}を実行`)}
+                    onClick={() => {
+                      // TODO: 実装予定
+                    }}
                     className={cn(
                       "flex items-center p-4 space-x-3 w-full bg-white rounded-lg border border-gray-300",
                       "text-left transition-all dark:bg-gray-900 dark:border-gray-700",
@@ -1188,12 +1178,12 @@ function UserFriendAddPanel({
   );
 }
 
-interface GroupCreationPanelProps {
+export interface GroupCreationPanelProps {
   onBack: () => void;
   isDesktop?: boolean;
 }
 
-function GroupCreationPanel({
+export function GroupCreationPanel({
   onBack,
   isDesktop = false,
 }: GroupCreationPanelProps) {
@@ -1239,12 +1229,7 @@ function GroupCreationPanel({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("グループ作成:", {
-      ...formData,
-      selectedMembers: Array.from(selectedMembers),
-      memberCount: selectedMembers.size + 1, // +1 for the creator
-    });
-    // TODO: グループ作成処理
+    // TODO: グループ作成処理の実装
     if (!isDesktop) {
       onBack();
     }

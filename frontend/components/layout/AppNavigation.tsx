@@ -1,6 +1,8 @@
 "use client";
 
 import { LogOut } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useDashboard } from "@/components/dashboard/DashboardProvider";
 import { NAVIGATION_TABS } from "@/lib/constants/navigation";
 import { cn } from "@/lib/utils/cn";
@@ -9,7 +11,8 @@ import { cn } from "@/lib/utils/cn";
  * アプリケーション左側の縦型ナビゲーション - モダンでスタイリッシュなデザイン
  */
 export function AppNavigation() {
-  const { activeTab, setActiveTab, profile } = useDashboard();
+  const { profile } = useDashboard();
+  const pathname = usePathname();
 
   return (
     <div className="flex relative flex-col w-20 h-screen bg-gradient-to-br from-black via-gray-950 to-black border-r border-gray-800/80 shadow-[0_0_50px_rgba(0,0,0,0.8),inset_0_0_30px_rgba(0,0,0,0.5)]">
@@ -41,7 +44,7 @@ export function AppNavigation() {
       <nav className="flex flex-col items-center pt-4 space-y-2">
         {NAVIGATION_TABS.map((tab) => {
           const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
+          const isActive = pathname.startsWith(tab.path);
 
           return (
             <div key={tab.id} className="relative group">
@@ -53,9 +56,9 @@ export function AppNavigation() {
                 )}
               />
 
-              {/* ナビゲーションボタン */}
-              <button
-                onClick={() => setActiveTab(tab.id)}
+              {/* ナビゲーションリンク */}
+              <Link
+                href={tab.path}
                 className={cn(
                   "flex relative justify-center items-center w-12 h-12 rounded-2xl transition-all duration-300 transform",
                   isActive
@@ -75,7 +78,7 @@ export function AppNavigation() {
                 {isActive && (
                   <div className="absolute inset-0 bg-gradient-to-br rounded-2xl animate-pulse from-green-400/10 to-emerald-500/10" />
                 )}
-              </button>
+              </Link>
             </div>
           );
         })}

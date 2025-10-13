@@ -1,3 +1,5 @@
+"use client";
+
 import {
   MessageCircle,
   Phone,
@@ -7,6 +9,7 @@ import {
   Bot,
   User,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useDashboard } from "@/components/dashboard/DashboardProvider";
 import type { SelectedFriend } from "@/lib/types";
 
@@ -18,7 +21,8 @@ interface FriendDetailPanelProps {
  * 友だち詳細パネル
  */
 export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
-  const { setSelectedChat, setActiveTab } = useDashboard();
+  const router = useRouter();
+  const { setSelectedChat } = useDashboard();
 
   const handleStartChat = () => {
     // グループの場合は会話開始できないようにするか、別の処理を行う
@@ -32,7 +36,9 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
       status: friend.status,
       personality_preset: friend.personality_preset,
     });
-    setActiveTab("chats");
+
+    // URLベースのナビゲーションに変更
+    router.push(`/dashboard/chats/${friend.id}`);
   };
 
   const getPersonalityInfo = (preset: string) => {

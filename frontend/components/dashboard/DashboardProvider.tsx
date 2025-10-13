@@ -1,16 +1,12 @@
 "use client";
 
 import { createContext, useContext, useState } from "react";
+import type { AuthUser } from "@/lib/types/auth";
 import type {
-  User,
   Profile,
   SelectedChat,
   SelectedGroup,
   SelectedFriend,
-  AddFriendType,
-  MCPServiceType,
-  SettingSection,
-  TabType,
   DashboardContextType,
 } from "@/lib/types";
 
@@ -32,7 +28,7 @@ export function useDashboard() {
 
 interface DashboardProviderProps {
   children: React.ReactNode;
-  user: User;
+  user: AuthUser;
   profile: Profile;
 }
 
@@ -45,71 +41,26 @@ export function DashboardProvider({
   user,
   profile,
 }: DashboardProviderProps) {
-  // アクティブなタブの状態管理（デフォルトはチャット）
-  const [activeTab, setActiveTab] = useState<TabType>("chats");
   // 選択されたチャットの状態管理
   const [selectedChat, setSelectedChat] = useState<SelectedChat | null>(null);
   // 選択された友だちの状態管理
   const [selectedFriend, setSelectedFriend] = useState<SelectedFriend | null>(
     null
   );
-  // 友だち追加の選択タイプの状態管理
-  const [selectedAddFriendType, setSelectedAddFriendType] =
-    useState<AddFriendType>(null);
-  // MCPサービスの選択タイプの状態管理
-  const [selectedMCPServiceType, setSelectedMCPServiceType] =
-    useState<MCPServiceType>(null);
-  // 設定セクションの選択タイプの状態管理
-  const [selectedSettingSection, setSelectedSettingSection] =
-    useState<SettingSection>(null);
   // 選択されたグループの状態管理
   const [selectedGroup, setSelectedGroup] = useState<SelectedGroup | null>(
     null
   );
-  // プロフィール設定画面の表示状態
-  const [showProfileSettings, setShowProfileSettings] = useState(false);
-
-  // タブが変更されたときに選択をリセット
-  const handleSetActiveTab = (tab: TabType) => {
-    if (tab !== "add-friends") {
-      setSelectedAddFriendType(null);
-    }
-    if (tab !== "mcp-servers") {
-      setSelectedMCPServiceType(null);
-    }
-    if (tab !== "friends") {
-      setSelectedFriend(null);
-    }
-    if (tab !== "chats") {
-      setSelectedChat(null);
-      setSelectedGroup(null);
-    }
-    if (tab !== "settings") {
-      setShowProfileSettings(false);
-      setSelectedSettingSection(null);
-    }
-    setActiveTab(tab);
-  };
 
   return (
     <DashboardContext.Provider
       value={{
         user,
         profile,
-        activeTab,
-        setActiveTab: handleSetActiveTab,
         selectedChat,
         setSelectedChat,
         selectedFriend,
         setSelectedFriend,
-        selectedAddFriendType,
-        setSelectedAddFriendType,
-        selectedMCPServiceType,
-        setSelectedMCPServiceType,
-        selectedSettingSection,
-        setSelectedSettingSection,
-        showProfileSettings,
-        setShowProfileSettings,
         selectedGroup,
         setSelectedGroup,
       }}
