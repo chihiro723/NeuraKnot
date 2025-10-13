@@ -1,25 +1,36 @@
 "use client";
 
 import { User, Mail, Calendar, Edit } from "lucide-react";
-import { useState } from "react";
-import { useDashboard } from "@/components/dashboard/DashboardProvider";
+import { useState, useEffect } from "react";
 import { EditProfileModal } from "./EditProfileModal";
+import type { Profile } from "@/lib/types";
+import type { AuthUser } from "@/lib/types/auth";
+
+interface ProfileSettingsPanelProps {
+  profile: Profile;
+  user: AuthUser;
+}
 
 /**
  * プロフィール設定パネル
  */
-export function ProfileSettingsPanel() {
-  const { profile, user } = useDashboard();
+export function ProfileSettingsPanel({
+  profile,
+  user,
+}: ProfileSettingsPanelProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formattedDate, setFormattedDate] = useState<string>("");
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("ja-JP", {
+  // クライアント側でのみ日付をフォーマット（Hydration mismatch回避）
+  useEffect(() => {
+    const date = new Date(profile.created_at);
+    const formatted = date.toLocaleDateString("ja-JP", {
       year: "numeric",
       month: "long",
       day: "numeric",
     });
-  };
+    setFormattedDate(formatted);
+  }, [profile.created_at]);
 
   return (
     <>
@@ -49,7 +60,7 @@ export function ProfileSettingsPanel() {
       </div>
 
       {/* メインコンテンツ */}
-      <div className="overflow-y-auto flex-1 p-8 bg-white transition-colors duration-200 dark:bg-gray-900">
+      <div className="overflow-y-auto flex-1 p-8 bg-gray-50 transition-colors duration-200 dark:bg-gray-900">
         <div className="mx-auto max-w-3xl">
           {/* プロフィール画像とメイン情報 */}
           <div className="pb-8 mb-8 border-b border-gray-200 dark:border-gray-700">
@@ -146,7 +157,7 @@ export function ProfileSettingsPanel() {
                   </span>
                 </div>
                 <span className="font-semibold text-gray-900 dark:text-white">
-                  {formatDate(profile.created_at)}
+                  {formattedDate || "読み込み中..."}
                 </span>
               </div>
             </div>

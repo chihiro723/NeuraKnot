@@ -13,23 +13,26 @@ import {
   Handshake,
   Server,
 } from "lucide-react";
-import { useDashboard } from "@/components/dashboard/DashboardProvider";
-import { getAllSampleFriends } from "@/lib/data/sampleData";
 import { getPersonalityLabel } from "@/lib/constants/personalities";
 import { cn } from "@/lib/utils/cn";
 import type { FriendData } from "@/lib/types";
-import { createAgent } from "@/lib/actions/ai-agent-actions";
+import type { AuthUser } from "@/lib/types/auth";
+import { createAgent } from "@/lib/actions/ai-agent";
 import { useServerActionWithAuth } from "@/lib/hooks/useServerActionWithAuth";
 import { ToolSelector } from "@/components/mcp/ToolSelector";
-import { listMCPServers } from "@/lib/actions/mcp-actions";
+import { listMCPServers } from "@/lib/actions/mcp";
 import type { MCPServer, ToolSelectionMode } from "@/lib/types/mcp";
 
 type AddType = "user" | "ai" | "group" | null;
 
+interface AddFriendsPanelProps {
+  user: AuthUser;
+}
+
 /**
  * 新規追加パネル - 完璧に統一されたデザインシステム
  */
-export function AddFriendsPanel() {
+export function AddFriendsPanel({ user }: AddFriendsPanelProps) {
   const [selectedType, setSelectedType] = useState<AddType>(null);
 
   // デスクトップかどうかを判定
@@ -88,7 +91,10 @@ export function AddFriendsPanel() {
           currentSelectedType === "ai" ? (
             <AIAgentCreationPanel onBack={() => setCurrentSelectedType(null)} />
           ) : currentSelectedType === "group" ? (
-            <GroupCreationPanel onBack={() => setCurrentSelectedType(null)} />
+            <GroupCreationPanel
+              onBack={() => setCurrentSelectedType(null)}
+              user={user}
+            />
           ) : (
             <UserFriendAddPanel onBack={() => setCurrentSelectedType(null)} />
           )
@@ -229,15 +235,17 @@ export function AddFriendsPanel() {
  */
 export function AddFriendsRightPanel({
   selectedType,
+  user,
 }: {
   selectedType: AddType;
+  user: AuthUser;
 }) {
   if (selectedType === "ai") {
     return <AIAgentCreationPanel onBack={() => {}} isDesktop />;
   }
 
   if (selectedType === "group") {
-    return <GroupCreationPanel onBack={() => {}} isDesktop />;
+    return <GroupCreationPanel onBack={() => {}} isDesktop user={user} />;
   }
 
   if (selectedType === "user") {
@@ -494,7 +502,7 @@ export function AIAgentCreationPanel({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-gray-900">
+    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
       {/* ヘッダー */}
       <div className="flex items-center px-6 h-16 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
         <div className="flex items-center space-x-3">
@@ -1042,7 +1050,7 @@ export function UserFriendAddPanel({
   ];
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-gray-900">
+    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
       {/* ヘッダー */}
       <div className="flex items-center px-6 h-16 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
         <div className="flex items-center space-x-3">
@@ -1181,13 +1189,14 @@ export function UserFriendAddPanel({
 export interface GroupCreationPanelProps {
   onBack: () => void;
   isDesktop?: boolean;
+  user: AuthUser;
 }
 
 export function GroupCreationPanel({
   onBack,
   isDesktop = false,
+  user,
 }: GroupCreationPanelProps) {
-  const { user } = useDashboard();
   const [friends, setFriends] = useState<FriendData[]>([]);
   const [selectedMembers, setSelectedMembers] = useState<Set<string>>(
     new Set()
@@ -1202,11 +1211,8 @@ export function GroupCreationPanel({
   useEffect(() => {
     const loadFriends = async () => {
       try {
-        if (user.id === "guest-user-id") {
-          setFriends(getAllSampleFriends());
-        } else {
-          setFriends([]);
-        }
+        // TODO: 実際の友だちリストを取得するAPIを実装
+        setFriends([]);
       } catch (error) {
         console.error("友だちリストの読み込みでエラーが発生しました:", error);
       } finally {
@@ -1236,7 +1242,7 @@ export function GroupCreationPanel({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-gray-900">
+    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
       {/* ヘッダー */}
       <div className="flex items-center px-6 h-16 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
         <div className="flex items-center space-x-3">

@@ -3,15 +3,20 @@
 import { LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useDashboard } from "@/components/dashboard/DashboardProvider";
 import { NAVIGATION_TABS } from "@/lib/constants/navigation";
 import { cn } from "@/lib/utils/cn";
+import type { Profile } from "@/lib/types";
+import type { AuthUser } from "@/lib/types/auth";
+
+interface AppNavigationProps {
+  profile: Profile;
+  user: AuthUser;
+}
 
 /**
  * アプリケーション左側の縦型ナビゲーション - モダンでスタイリッシュなデザイン
  */
-export function AppNavigation() {
-  const { profile } = useDashboard();
+export function AppNavigation({ profile }: AppNavigationProps) {
   const pathname = usePathname();
 
   return (

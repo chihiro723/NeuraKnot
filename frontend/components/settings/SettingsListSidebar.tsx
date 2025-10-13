@@ -9,22 +9,26 @@ import {
   Palette,
   Shield,
   Home,
+  ChevronRight,
 } from "lucide-react";
-import { useDashboard } from "@/components/dashboard/DashboardProvider";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { SignOutButton } from "./SignOutButton";
 import { cn } from "@/lib/utils/cn";
+import type { Profile } from "@/lib/types";
+
+interface SettingsListSidebarProps {
+  profile: Profile;
+}
 
 /**
  * 設定のサイドバー - 設定項目一覧
  */
-export function SettingsListSidebar() {
-  const { profile } = useDashboard();
+export function SettingsListSidebar({ profile }: SettingsListSidebarProps) {
   const pathname = usePathname();
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto pb-8 lg:pb-6 bg-white dark:bg-gray-900">
-      <div className="p-4 lg:p-6 space-y-6">
+    <div className="flex overflow-y-auto flex-col pb-8 h-full bg-white lg:pb-6 dark:bg-gray-900">
+      <div className="p-4 space-y-6 lg:p-6">
         {/* プロフィール情報 */}
         <Link
           href="/dashboard/settings/profile"
@@ -35,21 +39,24 @@ export function SettingsListSidebar() {
               : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600"
           )}
         >
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4 lg:text-base flex items-center">
-            <User className="w-5 h-5 mr-2" />
-            プロフィール
-          </h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="flex items-center text-lg font-medium text-gray-900 dark:text-white lg:text-base">
+              <User className="mr-2 w-5 h-5" />
+              プロフィール
+            </h2>
+            <ChevronRight className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+          </div>
           <div className="flex items-center space-x-4">
             {/* アバター */}
-            <div className="w-16 h-16 lg:w-12 lg:h-12 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center overflow-hidden">
+            <div className="flex overflow-hidden justify-center items-center w-16 h-16 bg-gray-300 rounded-full lg:w-12 lg:h-12 dark:bg-gray-600">
               {profile.avatar_url ? (
                 <img
                   src={profile.avatar_url}
                   alt={profile.display_name}
-                  className="w-full h-full object-cover"
+                  className="object-cover w-full h-full"
                 />
               ) : (
-                <span className="text-white font-medium text-lg lg:text-sm">
+                <span className="text-lg font-medium text-white lg:text-sm">
                   {profile.display_name.charAt(0)}
                 </span>
               )}
@@ -86,13 +93,16 @@ export function SettingsListSidebar() {
               : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600"
           )}
         >
-          <h3 className="font-medium text-gray-900 dark:text-white mb-2 lg:text-sm flex items-center">
-            <CreditCard className="w-5 h-5 mr-2" />
-            サブスクリプション
-            <span className="ml-2 px-2 py-0.5 text-[10px] font-medium text-gray-600 bg-gray-100 rounded dark:text-gray-400 dark:bg-gray-700">
-              近日追加予定
-            </span>
-          </h3>
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="flex items-center font-medium text-gray-900 dark:text-white lg:text-sm">
+              <CreditCard className="mr-2 w-5 h-5" />
+              サブスクリプション
+              <span className="ml-2 px-2 py-0.5 text-[10px] font-medium text-gray-600 bg-gray-100 rounded dark:text-gray-400 dark:bg-gray-700">
+                近日追加予定
+              </span>
+            </h3>
+            <ChevronRight className="flex-shrink-0 w-5 h-5 text-gray-400 dark:text-gray-500" />
+          </div>
           <p className="text-sm text-gray-600 dark:text-gray-400 lg:text-xs">
             プラン管理と利用状況を確認
           </p>
@@ -108,27 +118,30 @@ export function SettingsListSidebar() {
               : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600"
           )}
         >
-          <h3 className="font-medium text-gray-900 dark:text-white mb-2 lg:text-sm flex items-center">
-            <BarChart3 className="w-5 h-5 mr-2" />
-            統計・分析
-            <span className="ml-2 px-2 py-0.5 text-[10px] font-medium text-gray-600 bg-gray-100 rounded dark:text-gray-400 dark:bg-gray-700">
-              近日追加予定
-            </span>
-          </h3>
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="flex items-center font-medium text-gray-900 dark:text-white lg:text-sm">
+              <BarChart3 className="mr-2 w-5 h-5" />
+              統計・分析
+              <span className="ml-2 px-2 py-0.5 text-[10px] font-medium text-gray-600 bg-gray-100 rounded dark:text-gray-400 dark:bg-gray-700">
+                近日追加予定
+              </span>
+            </h3>
+            <ChevronRight className="flex-shrink-0 w-5 h-5 text-gray-400 dark:text-gray-500" />
+          </div>
           <p className="text-sm text-gray-600 dark:text-gray-400 lg:text-xs">
             利用統計、コスト、APIトークン使用量を確認
           </p>
         </Link>
 
         {/* テーマ設定 */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
-          <h3 className="font-medium text-gray-900 dark:text-white mb-4 lg:text-sm flex items-center">
-            <Palette className="w-5 h-5 mr-2" />
+        <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+          <h3 className="flex items-center mb-4 font-medium text-gray-900 dark:text-white lg:text-sm">
+            <Palette className="mr-2 w-5 h-5" />
             外観設定
           </h3>
           <div className="space-y-4">
             <div>
-              <label className="text-sm text-gray-600 dark:text-gray-400 mb-2 block">
+              <label className="block mb-2 text-sm text-gray-600 dark:text-gray-400">
                 テーマ
               </label>
               <ThemeToggle />
@@ -137,17 +150,17 @@ export function SettingsListSidebar() {
         </div>
 
         {/* ランディングページへ戻る */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
-          <h3 className="font-medium text-gray-900 dark:text-white mb-2 lg:text-sm flex items-center">
-            <Home className="w-5 h-5 mr-2" />
+        <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+          <h3 className="flex items-center mb-2 font-medium text-gray-900 dark:text-white lg:text-sm">
+            <Home className="mr-2 w-5 h-5" />
             ホーム
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 lg:text-xs">
+          <p className="mb-4 text-sm text-gray-600 dark:text-gray-400 lg:text-xs">
             ランディングページに戻ってサービスの詳細を確認
           </p>
           <a
             href="/"
-            className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white text-sm font-medium rounded-lg transition-all duration-200 transform hover:scale-105"
+            className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-lg transition-all duration-200 transform hover:from-emerald-600 hover:to-cyan-600 hover:scale-105"
           >
             ランディングページへ
           </a>
@@ -155,12 +168,12 @@ export function SettingsListSidebar() {
 
         {/* アクション */}
         <div className="space-y-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
-            <h3 className="font-medium text-gray-900 dark:text-white mb-2 lg:text-sm flex items-center">
-              <Shield className="w-5 h-5 mr-2" />
+          <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
+            <h3 className="flex items-center mb-2 font-medium text-gray-900 dark:text-white lg:text-sm">
+              <Shield className="mr-2 w-5 h-5" />
               アカウント
             </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 lg:text-xs">
+            <p className="mb-4 text-sm text-gray-600 dark:text-gray-400 lg:text-xs">
               アカウント設定を管理します
             </p>
             <SignOutButton />

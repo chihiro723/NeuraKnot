@@ -1,30 +1,38 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { useDashboard } from "@/components/dashboard/DashboardProvider";
 import { cn } from "@/lib/utils/cn";
+import type { Profile } from "@/lib/types";
 
 interface DashboardSidebarProps {
   title: string;
   children: React.ReactNode;
+  profile: Profile;
 }
 
 /**
  * ダッシュボード共通サイドバー
  * リサイズ可能で、ヘッダー付きサイドバーコンテナ
  */
-export function DashboardSidebar({ title, children }: DashboardSidebarProps) {
-  const { profile } = useDashboard();
-  // サイドバーの幅を管理（ローカルストレージから初期値を取得）
-  const [sidebarWidth, setSidebarWidth] = useState(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("sidebarWidth");
-      return saved ? parseInt(saved, 10) : 384;
-    }
-    return 384; // デフォルト値: 96 * 4 = 384px (w-96)
-  });
+export function DashboardSidebar({
+  title,
+  children,
+  profile,
+}: DashboardSidebarProps) {
+  // サイドバーの幅を管理（初期値は常に384、useEffectでlocalStorageから読み込む）
+  const [sidebarWidth, setSidebarWidth] = useState(384); // デフォルト値: 96 * 4 = 384px (w-96)
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
+
+  // クライアント側でのみ localStorage から幅を読み込む（ハイドレーションミスマッチを防ぐ）
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("sidebarWidth");
+      if (saved) {
+        setSidebarWidth(parseInt(saved, 10));
+      }
+    }
+  }, []);
 
   // リサイズ開始
   const startResizing = useCallback(() => {

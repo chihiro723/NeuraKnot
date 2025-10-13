@@ -1,22 +1,17 @@
 "use client";
 
-import { AppNavigation } from "./AppNavigation";
-
 interface SidebarLayoutProps {
   sidebar: React.ReactNode;
   children: React.ReactNode;
 }
 
 /**
- * 3カラムレイアウト: 左ナビ + サイドバー + メインコンテンツ
- * デスクトップ専用（モバイルは別レイアウト）
+ * 2カラムレイアウト: サイドバー + メインコンテンツ
+ * AppNavigation は親の dashboard/layout.tsx で表示されます
  */
 export function SidebarLayout({ sidebar, children }: SidebarLayoutProps) {
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      {/* 左側：アプリナビゲーション */}
-      <AppNavigation />
-
+    <div className="flex overflow-hidden flex-1">
       {/* 中央：サイドバー */}
       {sidebar}
 
@@ -27,5 +22,3 @@ export function SidebarLayout({ sidebar, children }: SidebarLayoutProps) {
     </div>
   );
 }
-
-
