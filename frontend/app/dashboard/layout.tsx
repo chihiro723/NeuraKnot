@@ -4,11 +4,11 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCognitoAuth } from "@/lib/hooks/useCognitoAuth";
 import { DashboardProvider } from "@/components/dashboard/DashboardProvider";
-import { ResponsiveLayout } from "@/components/layout/ResponsiveLayout";
-import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { LoadingSpinner } from "@/components/ui/feedback/LoadingSpinner";
 
 /**
  * ダッシュボードレイアウト（認証必須）
+ * 各セクションのlayout.tsxがレイアウトを提供
  */
 export default function DashboardLayout({
   children,
@@ -50,7 +50,7 @@ export default function DashboardLayout({
 
   return (
     <DashboardProvider user={user} profile={profile}>
-      <ResponsiveLayout>{children}</ResponsiveLayout>
+      {children}
     </DashboardProvider>
   );
 }

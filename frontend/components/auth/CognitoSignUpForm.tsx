@@ -63,18 +63,12 @@ export function CognitoSignUpForm() {
     }
 
     try {
-      console.log("SignUp API呼び出し開始:", {
-        email: formData.email.toLowerCase(),
-        display_name: formData.displayName,
-      });
-
       await signUp({
         email: formData.email.toLowerCase(),
         password: formData.password,
         display_name: formData.displayName,
       });
 
-      console.log("SignUp成功");
       // メールアドレスとパスワードをsessionStorageに保存（自動ログイン用）
       sessionStorage.setItem("verify_email", formData.email.toLowerCase());
       sessionStorage.setItem("verify_password", formData.password);
@@ -158,7 +152,7 @@ export function CognitoSignUpForm() {
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80 transition-colors"
+            className="absolute right-3 top-1/2 transition-colors -translate-y-1/2 text-white/50 hover:text-white/80"
             aria-label={showPassword ? "パスワードを隠す" : "パスワードを表示"}
           >
             {showPassword ? (
@@ -192,7 +186,7 @@ export function CognitoSignUpForm() {
           <button
             type="button"
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80 transition-colors"
+            className="absolute right-3 top-1/2 transition-colors -translate-y-1/2 text-white/50 hover:text-white/80"
             aria-label={
               showConfirmPassword ? "パスワードを隠す" : "パスワードを表示"
             }

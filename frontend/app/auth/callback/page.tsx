@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCognitoAuth } from "@/lib/hooks/useCognitoAuth";
-import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
+import { LoadingSpinner } from "@/components/ui/feedback/LoadingSpinner";
 
 function AuthCallbackContent() {
   const [status, setStatus] = useState<"loading" | "success" | "error">(
