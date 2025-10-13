@@ -1,23 +1,11 @@
 "use client";
 
 import { AIAgentCreationPanel } from "@/components/friends/AddFriendsPanel";
-import { SidebarLayout } from "@/components/layout/SidebarLayout";
-import { DashboardSidebar } from "@/components/layout/DashboardSidebar";
-import { AddTypeSidebar } from "@/components/friends/AddTypeSidebar";
 
 /**
  * AIエージェント作成ページ
+ * サイドバーは layout.tsx で定義されている
  */
 export default function AddAIPage() {
-  return (
-    <SidebarLayout
-      sidebar={
-        <DashboardSidebar title="新規追加">
-          <AddTypeSidebar />
-        </DashboardSidebar>
-      }
-    >
-      <AIAgentCreationPanel onBack={() => {}} isDesktop />
-    </SidebarLayout>
-  );
+  return <AIAgentCreationPanel onBack={() => {}} isDesktop />;
 }

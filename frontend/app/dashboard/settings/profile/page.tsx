@@ -1,21 +1,12 @@
-import { SidebarLayout } from "@/components/layout/SidebarLayout";
-import { DashboardSidebar } from "@/components/layout/DashboardSidebar";
-import { SettingsListSidebar } from "@/components/settings/SettingsListSidebar";
+import { getAuthUser } from "@/lib/actions/auth-queries";
 import { ProfileSettingsPanel } from "@/components/settings/ProfileSettingsPanel";
 
 /**
  * プロフィール設定ページ（サーバーコンポーネント）
+ * サイドバーは layout.tsx で定義されている
  */
-export default function ProfileSettingsPage() {
-  return (
-    <SidebarLayout
-      sidebar={
-        <DashboardSidebar title="設定">
-          <SettingsListSidebar />
-        </DashboardSidebar>
-      }
-    >
-      <ProfileSettingsPanel />
-    </SidebarLayout>
-  );
+export default async function ProfileSettingsPage() {
+  const { user, profile } = await getAuthUser();
+
+  return <ProfileSettingsPanel user={user} profile={profile} />;
 }
