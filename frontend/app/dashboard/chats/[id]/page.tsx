@@ -4,20 +4,17 @@ import {
   listConversations,
   getOrCreateConversation,
   getMessages,
-} from "@/lib/actions/conversation-actions";
-import { listAIAgents } from "@/lib/actions/ai-agent-actions";
-import { getProfile } from "@/lib/actions/user-actions";
-import { SidebarLayout } from "@/components/layout/SidebarLayout";
-import { DashboardSidebar } from "@/components/layout/DashboardSidebar";
-import { ChatListClient } from "@/components/chat/ChatListClient";
+} from "@/lib/actions/conversation";
+import { listAIAgents } from "@/lib/actions/ai-agent";
+import { getProfile } from "@/lib/actions/user";
 import { ChatWindowClient } from "@/components/chat/ChatWindowClient";
-import { ChatListSkeleton } from "@/components/ui/skeletons/ChatListSkeleton";
-import { ChatWindowSkeleton } from "@/components/ui/skeletons/ChatWindowSkeleton";
+import { LoadingSpinner } from "@/components/ui/feedback/LoadingSpinner";
 import { devDelayCustom } from "@/lib/utils/dev-delay";
 
 /**
  * 個別チャット画面（サーバーコンポーネント）
  * URLパラメータからチャットIDを取得してSSRで表示
+ * サイドバーは layout.tsx で定義されている
  */
 export const revalidate = 30; // 30秒ごとに再検証
 
@@ -28,31 +25,11 @@ interface ChatDetailPageProps {
 }
 
 /**
- * サイドバーのチャットリストデータを取得
- * 詳細ページでは遅延なし（高速ロード）
- */
-async function ChatListData() {
-  const [conversationsResult, agentsResult] = await Promise.all([
-    listConversations(),
-    listAIAgents(),
-  ]);
-
-  return (
-    <ChatListClient
-      initialConversations={
-        conversationsResult.success ? conversationsResult.data : null
-      }
-      initialAgents={agentsResult.success ? agentsResult.data : null}
-    />
-  );
-}
-
-/**
  * チャットウィンドウのデータを取得
  */
 async function ChatWindowData({ chatId }: { chatId: string }) {
   // スケルトンUI確認用の遅延（環境変数で制御）
-  // await devDelayCustom();
+  await devDelayCustom();
 
   // サーバーサイドでデータフェッチ
   const [conversationsResult, agentsResult, profileResult] = await Promise.all([
@@ -150,18 +127,8 @@ export default async function ChatDetailPage({ params }: ChatDetailPageProps) {
   const { id: chatId } = await params;
 
   return (
-    <SidebarLayout
-      sidebar={
-        <DashboardSidebar title="トーク">
-          <Suspense fallback={<ChatListSkeleton />}>
-            <ChatListData />
-          </Suspense>
-        </DashboardSidebar>
-      }
-    >
-      <Suspense fallback={<ChatWindowSkeleton />}>
-        <ChatWindowData chatId={chatId} />
-      </Suspense>
-    </SidebarLayout>
+    <Suspense fallback={<LoadingSpinner text="会話を読み込んでいます..." />}>
+      <ChatWindowData chatId={chatId} />
+    </Suspense>
   );
 }

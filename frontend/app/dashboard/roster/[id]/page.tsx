@@ -1,17 +1,14 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { listAIAgents } from "@/lib/actions/ai-agent-actions";
-import { SidebarLayout } from "@/components/layout/SidebarLayout";
-import { DashboardSidebar } from "@/components/layout/DashboardSidebar";
-import { RosterListClient } from "@/components/friends/RosterListClient";
+import { listAIAgents } from "@/lib/actions/ai-agent";
 import { FriendDetailPanel } from "@/components/friends/FriendDetailPanel";
-import { ChatListSkeleton } from "@/components/ui/skeletons/ChatListSkeleton";
-import { FriendDetailSkeleton } from "@/components/ui/skeletons/FriendDetailSkeleton";
+import { LoadingSpinner } from "@/components/ui/feedback/LoadingSpinner";
 import { devDelayCustom } from "@/lib/utils/dev-delay";
 
 /**
  * 友だち詳細ページ（サーバーコンポーネント）
  * URLパラメータから友だちIDを取得してSSRで表示
+ * サイドバーは layout.tsx で定義されている
  */
 export const revalidate = 60; // 60秒ごとに再検証
 
@@ -22,25 +19,11 @@ interface FriendDetailPageProps {
 }
 
 /**
- * サイドバーのロスターリストデータを取得
- * 詳細ページでは遅延なし（高速ロード）
- */
-async function RosterListData() {
-  const agentsResult = await listAIAgents();
-
-  return (
-    <RosterListClient
-      initialAgents={agentsResult.success ? agentsResult.data : null}
-    />
-  );
-}
-
-/**
  * 友だち詳細データを取得
  */
 async function FriendDetailData({ friendId }: { friendId: string }) {
   // スケルトンUI確認用の遅延（環境変数で制御）
-  // await devDelayCustom();
+  await devDelayCustom();
 
   // サーバーサイドでデータフェッチ
   const agentsResult = await listAIAgents();
@@ -78,18 +61,10 @@ export default async function FriendDetailPage({
   const { id: friendId } = await params;
 
   return (
-    <SidebarLayout
-      sidebar={
-        <DashboardSidebar title="一覧管理">
-          <Suspense fallback={<ChatListSkeleton />}>
-            <RosterListData />
-          </Suspense>
-        </DashboardSidebar>
-      }
+    <Suspense
+      fallback={<LoadingSpinner text="プロフィールを読み込んでいます..." />}
     >
-      <Suspense fallback={<FriendDetailSkeleton />}>
-        <FriendDetailData friendId={friendId} />
-      </Suspense>
-    </SidebarLayout>
+      <FriendDetailData friendId={friendId} />
+    </Suspense>
   );
 }

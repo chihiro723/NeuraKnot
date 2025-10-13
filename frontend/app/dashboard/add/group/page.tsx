@@ -1,23 +1,12 @@
-"use client";
-
+import { getAuthUser } from "@/lib/actions/auth-queries";
 import { GroupCreationPanel } from "@/components/friends/AddFriendsPanel";
-import { SidebarLayout } from "@/components/layout/SidebarLayout";
-import { DashboardSidebar } from "@/components/layout/DashboardSidebar";
-import { AddTypeSidebar } from "@/components/friends/AddTypeSidebar";
 
 /**
- * グループ作成ページ
+ * グループ作成ページ（サーバーコンポーネント）
+ * サイドバーは layout.tsx で定義されている
  */
-export default function AddGroupPage() {
-  return (
-    <SidebarLayout
-      sidebar={
-        <DashboardSidebar title="新規追加">
-          <AddTypeSidebar />
-        </DashboardSidebar>
-      }
-    >
-      <GroupCreationPanel onBack={() => {}} isDesktop />
-    </SidebarLayout>
-  );
+export default async function AddGroupPage() {
+  const { user } = await getAuthUser();
+
+  return <GroupCreationPanel onBack={() => {}} isDesktop user={user} />;
 }
