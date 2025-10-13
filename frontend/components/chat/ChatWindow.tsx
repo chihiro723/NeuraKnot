@@ -33,6 +33,9 @@ interface Message {
 
 interface ChatWindowProps {
   selectedChat: SelectedChat;
+  initialMessages?: Message[];
+  initialConversationId?: string;
+  initialUserProfile?: UserProfile;
 }
 
 interface UserProfile {
@@ -44,12 +47,21 @@ interface UserProfile {
 /**
  * チャットウィンドウコンポーネント - 完璧に統一されたデザインシステム
  */
-export function ChatWindow({ selectedChat }: ChatWindowProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
+export function ChatWindow({
+  selectedChat,
+  initialMessages = [],
+  initialConversationId,
+  initialUserProfile,
+}: ChatWindowProps) {
+  const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [conversationId, setConversationId] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(
+    initialConversationId || null
+  );
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(
+    initialUserProfile || null
+  );
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -78,8 +90,10 @@ export function ChatWindow({ selectedChat }: ChatWindowProps) {
     getProfile,
   });
 
-  // 現在のユーザー情報を取得
+  // 現在のユーザー情報を取得（初期データがない場合のみ）
   useEffect(() => {
+    if (initialUserProfile) return; // 初期データがあればスキップ
+
     const fetchUserProfile = async () => {
       try {
         const result = await getProfileWithAuth();
@@ -96,10 +110,19 @@ export function ChatWindow({ selectedChat }: ChatWindowProps) {
     };
 
     fetchUserProfile();
-  }, []);
+  }, [initialUserProfile]);
 
-  // 会話を初期化してメッセージを取得
+  // 会話を初期化してメッセージを取得（初期データがない場合のみ）
   useEffect(() => {
+    if (initialConversationId && initialMessages.length > 0) {
+      // 初期データがあればスキップ
+      // メッセージ読み込み後、即座に最下部にスクロール
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
+      });
+      return;
+    }
+
     const initConversation = async () => {
       if (selectedChat.type !== "ai") return;
 
@@ -141,7 +164,7 @@ export function ChatWindow({ selectedChat }: ChatWindowProps) {
     };
 
     initConversation();
-  }, [selectedChat]);
+  }, [selectedChat, initialConversationId, initialMessages]);
 
   // 自動スクロールを無効化（メッセージ送信時は画面上部に固定）
   // useEffect(() => {
