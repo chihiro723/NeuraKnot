@@ -324,7 +324,9 @@ export function MCPServerManager() {
       <div className="space-y-3">
         {servers.length === 0 ? (
           <div className="py-12 text-center text-gray-500 dark:text-gray-400">
-            <Server className="mx-auto mb-3 w-12 h-12 opacity-50" />
+            <div className="flex justify-center items-center mx-auto mb-4 w-16 h-16 bg-green-100 rounded-2xl shadow-lg dark:bg-green-500/20 shadow-green-500/20">
+              <Server className="w-8 h-8 text-green-600 drop-shadow-[0_0_8px_rgba(34,197,94,0.5)] dark:text-green-400" />
+            </div>
             <p>MCPサーバーが登録されていません</p>
             <p className="mt-1 text-sm">
               「サーバー追加」ボタンから登録してください

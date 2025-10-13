@@ -255,8 +255,8 @@ export function AddFriendsRightPanel({
       {/* ヘッダー */}
       <div className="flex justify-between items-center px-6 h-16 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
         <div className="flex items-center space-x-3">
-          <div className="flex justify-center items-center w-10 h-10 bg-gray-100 rounded-lg dark:bg-gray-800">
-            <UserPlus className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          <div className="flex justify-center items-center w-10 h-10 bg-green-100 rounded-lg dark:bg-green-500/20">
+            <UserPlus className="w-5 h-5 text-green-600 dark:text-green-400" />
           </div>
           <div>
             <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -272,8 +272,8 @@ export function AddFriendsRightPanel({
       {/* メインコンテンツエリア */}
       <div className="flex flex-1 justify-center items-center bg-gray-50 dark:bg-gray-900">
         <div className="p-8 text-center">
-          <div className="flex justify-center items-center mx-auto mb-4 w-16 h-16 bg-gray-100 rounded-2xl dark:bg-gray-800">
-            <UserPlus className="w-8 h-8 text-gray-600 dark:text-gray-400" />
+          <div className="flex justify-center items-center mx-auto mb-4 w-16 h-16 bg-green-100 rounded-2xl shadow-lg dark:bg-green-500/20 shadow-green-500/20">
+            <UserPlus className="w-8 h-8 text-green-600 drop-shadow-[0_0_8px_rgba(34,197,94,0.5)] dark:text-green-400" />
           </div>
           <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
             友だちを追加
@@ -283,20 +283,20 @@ export function AddFriendsRightPanel({
           </p>
           <div className="flex gap-6 justify-center">
             <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
-              <div className="flex justify-center items-center w-8 h-8 bg-gray-100 rounded-lg dark:bg-gray-800">
-                <User className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              <div className="flex justify-center items-center w-8 h-8 bg-green-100 rounded-lg dark:bg-green-500/20">
+                <User className="w-4 h-4 text-green-600 dark:text-green-400" />
               </div>
               <span>ユーザー</span>
             </div>
             <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
-              <div className="flex justify-center items-center w-8 h-8 bg-gray-100 rounded-lg dark:bg-gray-800">
-                <Bot className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              <div className="flex justify-center items-center w-8 h-8 bg-green-100 rounded-lg dark:bg-green-500/20">
+                <Bot className="w-4 h-4 text-green-600 dark:text-green-400" />
               </div>
               <span>AI</span>
             </div>
             <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
-              <div className="flex justify-center items-center w-8 h-8 bg-gray-100 rounded-lg dark:bg-gray-800">
-                <Handshake className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              <div className="flex justify-center items-center w-8 h-8 bg-green-100 rounded-lg dark:bg-green-500/20">
+                <Handshake className="w-4 h-4 text-green-600 dark:text-green-400" />
               </div>
               <span>グループ</span>
             </div>

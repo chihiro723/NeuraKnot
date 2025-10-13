@@ -93,11 +93,11 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
       {/* ヘッダー */}
       <div className="flex justify-between items-center px-6 h-16 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
         <div className="flex items-center space-x-3">
-          <div className="flex justify-center items-center w-10 h-10 bg-gray-100 rounded-lg dark:bg-gray-800">
+          <div className="flex justify-center items-center w-10 h-10 bg-green-100 rounded-lg dark:bg-green-500/20">
             {friend.type === "ai" ? (
-              <Bot className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <Bot className="w-5 h-5 text-green-600 dark:text-green-400" />
             ) : (
-              <User className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <User className="w-5 h-5 text-green-600 dark:text-green-400" />
             )}
           </div>
           <div>
@@ -227,8 +227,8 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
                 </h2>
               </div>
               <div className="flex items-start space-x-4">
-                <div className="flex justify-center items-center w-12 h-12 bg-gray-100 rounded-lg dark:bg-gray-800">
-                  <PersonalityIcon className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+                <div className="flex justify-center items-center w-12 h-12 bg-green-100 rounded-lg shadow-lg dark:bg-green-500/20 shadow-green-500/20">
+                  <PersonalityIcon className="w-6 h-6 text-green-600 drop-shadow-[0_0_6px_rgba(34,197,94,0.4)] dark:text-green-400" />
                 </div>
                 <div className="flex-1">
                   <h4 className="mb-2 font-medium text-gray-900 dark:text-white">
