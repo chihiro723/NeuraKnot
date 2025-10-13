@@ -581,7 +581,7 @@ export function ChatWindow({
                     </div>
 
                     {/* 右側のコンテンツ */}
-                    <div className="flex overflow-hidden flex-col flex-1 space-y-1 min-w-0">
+                    <div className="flex overflow-hidden flex-col space-y-1 min-w-0">
                       {/* 名前 */}
                       <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
                         {selectedChat.name}
@@ -592,7 +592,7 @@ export function ChatWindow({
                         <div
                           className={cn(
                             "text-gray-900 bg-white rounded-2xl rounded-tl-sm border border-gray-200 dark:text-gray-100 dark:bg-gray-800 dark:border-gray-700",
-                            "flex-1 px-4 py-3 min-w-0 shadow-sm"
+                            "px-4 py-3 shadow-sm"
                           )}
                         >
                           {/* メッセージとツールを時系列順に表示 */}
