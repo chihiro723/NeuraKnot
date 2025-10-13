@@ -36,11 +36,11 @@ export default function ForgotPasswordPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="max-w-md w-full space-y-8">
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="space-y-8 w-full max-w-md">
           <div className="text-center">
-            <div className="text-green-600 text-xl mb-4">メール送信完了</div>
-            <p className="text-gray-600 mb-4">
+            <div className="mb-4 text-xl text-green-600">メール送信完了</div>
+            <p className="mb-4 text-gray-600">
               {email} にパスワードリセット用のメールを送信しました。
               メール内のリンクをクリックして、新しいパスワードを設定してください。
             </p>
@@ -57,13 +57,13 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="max-w-md w-full space-y-8">
+    <div className="flex justify-center items-center min-h-screen">
+      <div className="space-y-8 w-full max-w-md">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-3xl font-extrabold text-center text-gray-900">
             パスワードリセット
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-2 text-sm text-center text-gray-600">
             登録されているメールアドレスを入力してください。
             パスワードリセット用のメールを送信します。
           </p>
@@ -88,7 +88,7 @@ export default function ForgotPasswordPage() {
             />
           </div>
 
-          {error && <div className="text-red-600 text-sm">{error}</div>}
+          {error && <div className="text-sm text-red-600">{error}</div>}
 
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? "送信中..." : "リセットメールを送信"}
@@ -108,4 +108,3 @@ export default function ForgotPasswordPage() {
     </div>
   );
 }
-
