@@ -130,8 +130,8 @@ export function StreamingMessage({
   };
 
   return (
-    <div className="flex justify-start">
-      <div className="flex items-start space-x-3 max-w-[85%] lg:max-w-[75%]">
+    <div className="flex justify-start px-2">
+      <div className="flex items-start space-x-3">
         {/* アイコン */}
         <div className="flex overflow-hidden flex-shrink-0 justify-center items-center w-10 h-10 bg-green-500 rounded-full">
           {avatarUrl ? (
@@ -148,7 +148,7 @@ export function StreamingMessage({
         </div>
 
         {/* 右側のコンテンツ */}
-        <div className="flex overflow-hidden flex-col flex-1 space-y-1 min-w-0">
+        <div className="flex overflow-hidden flex-col space-y-1 min-w-0">
           {/* 名前 */}
           <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
             {name}
@@ -181,7 +181,7 @@ export function StreamingMessage({
 
             <div className="flex space-x-2 min-w-0">
               {/* メッセージバブル */}
-              <div className="flex-1 px-4 py-3 min-w-0 text-gray-900 bg-white rounded-2xl rounded-tl-sm border border-gray-200 shadow-sm dark:text-gray-100 dark:bg-gray-800 dark:border-gray-700">
+              <div className="px-4 py-3 text-gray-900 bg-white rounded-2xl rounded-tl-sm border border-gray-200 shadow-sm dark:text-gray-100 dark:bg-gray-800 dark:border-gray-700">
                 {/* メッセージとツールを時系列順に表示 */}
                 {renderContentWithTools()}
               </div>

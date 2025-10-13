@@ -754,7 +754,7 @@ export function ChatWindow({
           {((isStreaming && !streamingContent) ||
             (isLoading && !isStreaming)) && (
             <div className="flex justify-start px-2">
-              <div className="flex items-start space-x-3 max-w-[90%] lg:max-w-[80%]">
+              <div className="flex items-start space-x-3">
                 {/* アイコン */}
                 <div className="flex overflow-hidden flex-shrink-0 justify-center items-center w-10 h-10 bg-green-500 rounded-full">
                   <span className="text-sm font-medium text-white">
@@ -762,15 +762,15 @@ export function ChatWindow({
                   </span>
                 </div>
 
-                {/* 名前 */}
+                {/* 名前とバブル */}
                 <div className="flex flex-col space-y-1">
                   <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
                     {selectedChat.name}
                   </span>
 
-                  {/* 入力中バブル */}
-                  <div className="px-4 py-3 text-gray-900 bg-white rounded-2xl rounded-tl-sm border border-gray-200 shadow-sm dark:text-gray-100 dark:bg-gray-800 dark:border-gray-700">
-                    <div className="flex space-x-1">
+                  {/* 入力中バブル（固定幅） */}
+                  <div className="px-4 py-3 w-20 text-gray-900 bg-white rounded-2xl rounded-tl-sm border border-gray-200 shadow-sm dark:text-gray-100 dark:bg-gray-800 dark:border-gray-700">
+                    <div className="flex justify-center space-x-1">
                       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce dark:bg-gray-500"></div>
                       <div
                         className="w-2 h-2 bg-gray-400 rounded-full animate-bounce dark:bg-gray-500"
