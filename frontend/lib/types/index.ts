@@ -23,7 +23,7 @@ export interface SelectedChat {
   name: string
   avatar_url?: string
   type: 'human' | 'ai' | 'group'
-  status: 'online' | 'offline'
+  status: 'online' | 'offline' | 'away'
   personality_preset?: string
   member_count?: number
   description?: string
@@ -35,7 +35,7 @@ export interface SelectedFriend {
   name: string
   avatar_url?: string
   type: 'human' | 'ai' | 'group'
-  status: 'online' | 'offline'
+  status: 'online' | 'offline' | 'away'
   personality_preset?: string
   created_at?: string
   description?: string
@@ -47,8 +47,12 @@ export interface FriendData {
   type: 'human' | 'ai' | 'group'
   name: string
   avatar_url?: string
-  status: 'online' | 'offline'
+  status: 'online' | 'offline' | 'away'
   personality_preset?: string
+  description?: string
+  last_message?: string
+  last_message_at?: string
+  unread_count?: number
 }
 
 // 会話データの型定義（グループも含む）
@@ -62,7 +66,7 @@ export interface ConversationData {
     name: string
     avatar_url?: string
     type: 'human' | 'ai'
-    status: 'online' | 'offline'
+    status: 'online' | 'offline' | 'away'
     personality_preset?: string
   } | null
   groupInfo?: {
@@ -112,57 +116,13 @@ export interface AIPersonality {
   description: string
 }
 
-// 友だち追加の選択タイプ
-export type AddFriendType = 'user' | 'ai' | 'group' | null
-
-// MCPサービスの選択タイプ
-export type MCPServiceType = 'my-services' | 'register' | null
-
-// 設定セクションの選択タイプ
-export type SettingSection = 'subscription' | 'analytics' | null
-
-// フィルタータイプ（グループを追加）
+// フィルタータイプ
 export type FriendFilter = 'all' | 'ai' | 'human' | 'group'
 export type ChatFilter = 'all' | 'users' | 'ai' | 'groups'
-
-// タブタイプ（groupsを削除）
-export type TabType = 'chats' | 'friends' | 'add-friends' | 'mcp-servers' | 'settings'
 
 // テーマタイプ
 export type Theme = 'light' | 'dark' | 'system'
 
-// グループデータの型定義
-export interface GroupData {
-  id: string
-  name: string
-  description?: string
-  avatar_url?: string
-  creator_id: string
-  is_active: boolean
-  created_at: string
-  updated_at: string
-  member_count?: number
-  last_message?: {
-    content: string
-    created_at: string
-    sender_type: string
-    sender_name: string
-  } | null
-}
-
-// グループメンバーの型定義
-export interface GroupMember {
-  id: string
-  group_id: string
-  member_type: 'human' | 'ai'
-  member_id: string
-  role: 'admin' | 'member'
-  joined_at: string
-  name: string
-  avatar_url?: string
-  status?: 'online' | 'offline'
-  personality_preset?: string
-}
 
 // グループメッセージの型定義
 export interface GroupMessage {
@@ -184,47 +144,29 @@ export interface SelectedGroup {
   description?: string
   avatar_url?: string
   member_count: number
-  members: GroupMember[]
+  members: Array<{
+    id: string
+    group_id: string
+    member_type: 'human' | 'ai'
+    member_id: string
+    role: 'admin' | 'member'
+    joined_at: string
+    name: string
+    avatar_url?: string
+    status?: 'online' | 'offline'
+    personality_preset?: string
+  }>
 }
 
-// 認証結果の型定義
-export interface AuthResult {
-  user: AuthUser | null
-  session: any | null
-}
-
-// 認証設定の型定義
-export interface AuthConfig {
-  cognitoUserPoolId: string
-  cognitoClientId: string
-  cognitoDomain: string
-  isConfigured: boolean
-}
-
-// 認証アクションの結果
-export interface AuthActionResult {
-  error?: string
-  success?: boolean
-}
 
 // ダッシュボードコンテキストの型定義
 export interface DashboardContextType {
   user: AuthUser
   profile: Profile
-  activeTab: TabType
-  setActiveTab: (tab: TabType) => void
   selectedChat: SelectedChat | null
   setSelectedChat: (chat: SelectedChat | null) => void
   selectedFriend: SelectedFriend | null
   setSelectedFriend: (friend: SelectedFriend | null) => void
-  selectedAddFriendType: AddFriendType
-  setSelectedAddFriendType: (type: AddFriendType) => void
-  selectedMCPServiceType: MCPServiceType
-  setSelectedMCPServiceType: (type: MCPServiceType) => void
-  selectedSettingSection: SettingSection
-  setSelectedSettingSection: (section: SettingSection) => void
-  showProfileSettings: boolean
-  setShowProfileSettings: (show: boolean) => void
   selectedGroup: SelectedGroup | null
   setSelectedGroup: (group: SelectedGroup | null) => void
 }

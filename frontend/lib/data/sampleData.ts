@@ -1,5 +1,11 @@
 /**
  * サンプルデータの生成
+ * 
+ * ⚠️ 注意: このファイルは開発・テスト用です
+ * 本番環境では実際のデータベースからデータを取得する実装に置き換えてください
+ * 
+ * 使用箇所:
+ * - components/friends/AddFriendsPanel.tsx (グループ作成のメンバー選択)
  */
 
 import type { FriendData, ConversationData } from '@/lib/types'
