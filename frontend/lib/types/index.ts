@@ -115,6 +115,12 @@ export interface AIPersonality {
 // 友だち追加の選択タイプ
 export type AddFriendType = 'user' | 'ai' | 'group' | null
 
+// MCPサービスの選択タイプ
+export type MCPServiceType = 'my-services' | 'register' | null
+
+// 設定セクションの選択タイプ
+export type SettingSection = 'subscription' | 'analytics' | null
+
 // フィルタータイプ（グループを追加）
 export type FriendFilter = 'all' | 'ai' | 'human' | 'group'
 export type ChatFilter = 'all' | 'users' | 'ai' | 'groups'
@@ -213,6 +219,10 @@ export interface DashboardContextType {
   setSelectedFriend: (friend: SelectedFriend | null) => void
   selectedAddFriendType: AddFriendType
   setSelectedAddFriendType: (type: AddFriendType) => void
+  selectedMCPServiceType: MCPServiceType
+  setSelectedMCPServiceType: (type: MCPServiceType) => void
+  selectedSettingSection: SettingSection
+  setSelectedSettingSection: (section: SettingSection) => void
   showProfileSettings: boolean
   setShowProfileSettings: (show: boolean) => void
   selectedGroup: SelectedGroup | null

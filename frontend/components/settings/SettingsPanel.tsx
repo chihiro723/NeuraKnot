@@ -3,19 +3,40 @@
 import { useDashboard } from "@/components/dashboard/DashboardProvider";
 import { SignOutButton } from "./SignOutButton";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { User, Palette, Shield, Home } from "lucide-react";
+import {
+  User,
+  Palette,
+  Shield,
+  Home,
+  CreditCard,
+  BarChart3,
+  ChevronRight,
+} from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import type { SettingSection } from "@/lib/types";
 
 /**
  * 設定パネルコンポーネント
  * ユーザープロフィール表示とアカウント管理機能を提供
  */
 export function SettingsPanel() {
-  const { profile, user, showProfileSettings, setShowProfileSettings } =
-    useDashboard();
+  const {
+    profile,
+    user,
+    showProfileSettings,
+    setShowProfileSettings,
+    selectedSettingSection,
+    setSelectedSettingSection,
+  } = useDashboard();
 
   const handleProfileClick = () => {
     setShowProfileSettings(true);
+    setSelectedSettingSection(null); // 他のセクションをリセット
+  };
+
+  const handleSectionClick = (section: SettingSection) => {
+    setSelectedSettingSection(section);
+    setShowProfileSettings(false); // プロフィール設定をリセット
   };
 
   return (
@@ -33,12 +54,13 @@ export function SettingsPanel() {
         <button
           onClick={handleProfileClick}
           className={cn(
-            "w-full bg-white dark:bg-gray-800 rounded-xl border p-6 shadow-sm animate-fadeIn hover:shadow-md transition-all duration-200 text-left",
-            showProfileSettings
+            "relative w-full bg-white dark:bg-gray-800 rounded-xl border p-6 shadow-sm animate-fadeIn hover:shadow-md transition-all duration-200 text-left",
+            showProfileSettings && !selectedSettingSection
               ? "border-green-400 bg-green-50 dark:bg-green-500/10"
-              : "border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600"
+              : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600"
           )}
         >
+          <ChevronRight className="absolute top-4 right-4 w-5 h-5 text-gray-400 dark:text-gray-500" />
           <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4 lg:text-base flex items-center">
             <User className="w-5 h-5 mr-2" />
             プロフィール
@@ -78,6 +100,52 @@ export function SettingsPanel() {
               </div>
             </div>
           </div>
+        </button>
+
+        {/* サブスクリプション */}
+        <button
+          onClick={() => handleSectionClick("subscription")}
+          className={cn(
+            "relative w-full bg-white dark:bg-gray-800 rounded-xl border p-6 shadow-sm animate-fadeIn hover:shadow-md transition-all duration-200 text-left",
+            selectedSettingSection === "subscription"
+              ? "border-green-400 bg-green-50 dark:bg-green-500/10"
+              : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600"
+          )}
+        >
+          <ChevronRight className="absolute top-4 right-4 w-5 h-5 text-gray-400 dark:text-gray-500" />
+          <h3 className="font-medium text-gray-900 dark:text-white mb-2 lg:text-sm flex items-center">
+            <CreditCard className="w-5 h-5 mr-2" />
+            サブスクリプション
+            <span className="ml-2 px-2 py-0.5 text-[10px] font-medium text-gray-600 bg-gray-100 rounded dark:text-gray-400 dark:bg-gray-700">
+              近日追加予定
+            </span>
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 lg:text-xs">
+            プラン管理と利用状況を確認
+          </p>
+        </button>
+
+        {/* 統計・分析 */}
+        <button
+          onClick={() => handleSectionClick("analytics")}
+          className={cn(
+            "relative w-full bg-white dark:bg-gray-800 rounded-xl border p-6 shadow-sm animate-fadeIn hover:shadow-md transition-all duration-200 text-left",
+            selectedSettingSection === "analytics"
+              ? "border-green-400 bg-green-50 dark:bg-green-500/10"
+              : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600"
+          )}
+        >
+          <ChevronRight className="absolute top-4 right-4 w-5 h-5 text-gray-400 dark:text-gray-500" />
+          <h3 className="font-medium text-gray-900 dark:text-white mb-2 lg:text-sm flex items-center">
+            <BarChart3 className="w-5 h-5 mr-2" />
+            統計・分析
+            <span className="ml-2 px-2 py-0.5 text-[10px] font-medium text-gray-600 bg-gray-100 rounded dark:text-gray-400 dark:bg-gray-700">
+              近日追加予定
+            </span>
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 lg:text-xs">
+            利用統計、コスト、APIトークン使用量を確認
+          </p>
         </button>
 
         {/* テーマ設定 */}

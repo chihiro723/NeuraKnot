@@ -16,7 +16,8 @@ import { GroupChatWindow } from "@/components/groups/GroupChatWindow";
 import { AddFriendsRightPanel } from "@/components/friends/AddFriendsPanel";
 import { FriendDetailPanel } from "@/components/friends/FriendDetailPanel";
 import { ProfileSettingsPanel } from "@/components/settings/ProfileSettingsPanel";
-import { MCPServerManager } from "@/components/mcp/MCPServerManager";
+import { SettingsRightPanel } from "@/components/settings/SettingsRightPanel";
+import { MCPServiceRightPanel } from "@/components/mcp/MCPServiceRightPanel";
 import { Avatar } from "@/components/ui/Avatar";
 import { AppNavigation } from "./AppNavigation";
 import { cn } from "@/lib/utils/cn";
@@ -36,6 +37,8 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     selectedChat,
     selectedGroup,
     selectedAddFriendType,
+    selectedMCPServiceType,
+    selectedSettingSection,
     selectedFriend,
     showProfileSettings,
   } = useDashboard();
@@ -160,30 +163,13 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       {/* 右メインエリア */}
       <div className="flex overflow-hidden flex-col flex-1 min-w-0">
         {activeTab === "mcp-servers" ? (
-          <div className="flex flex-col h-full bg-white dark:bg-gray-900">
-            <div className="flex items-center px-6 h-16 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
-              <div className="flex items-center space-x-3">
-                <div className="flex justify-center items-center w-10 h-10 bg-gray-100 rounded-lg dark:bg-gray-800">
-                  <Server className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
-                    外部サービス連携
-                  </h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    外部ツールを連携してAIを強化
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="overflow-y-auto flex-1 p-6">
-              <MCPServerManager />
-            </div>
-          </div>
+          <MCPServiceRightPanel selectedType={selectedMCPServiceType} />
         ) : activeTab === "add-friends" ? (
           <AddFriendsRightPanel selectedType={selectedAddFriendType} />
         ) : activeTab === "friends" && selectedFriend ? (
           <FriendDetailPanel friend={selectedFriend} />
+        ) : activeTab === "settings" && selectedSettingSection ? (
+          <SettingsRightPanel selectedSection={selectedSettingSection} />
         ) : activeTab === "settings" && showProfileSettings ? (
           <ProfileSettingsPanel />
         ) : activeTab === "chats" && selectedChat ? (
@@ -255,22 +241,30 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
             {/* デフォルト表示 */}
             <div className="flex justify-between items-center px-6 h-16 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
               <div className="flex items-center space-x-3">
-                <Avatar
-                  src=""
-                  alt="Default"
-                  name="?"
-                  size="md"
-                  className="bg-gray-300 dark:bg-gray-600"
-                />
+                <div className="flex justify-center items-center w-10 h-10 bg-green-100 rounded-lg dark:bg-green-500/20">
+                  {(() => {
+                    const Icon =
+                      activeTab === "chats"
+                        ? MessageCircle
+                        : activeTab === "friends"
+                        ? Users
+                        : activeTab === "settings"
+                        ? MoreHorizontal
+                        : MessageCircle;
+                    return (
+                      <Icon className="w-5 h-5 text-green-600 dark:text-green-400" />
+                    );
+                  })()}
+                </div>
                 <div>
-                  <h2 className="font-medium text-gray-900 dark:text-white">
+                  <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
                     {activeTab === "friends"
-                      ? "選択してください"
+                      ? "一覧管理"
                       : activeTab === "settings"
-                      ? "設定項目を選択してください"
-                      : "チャットを選択してください"}
+                      ? "設定"
+                      : "トーク"}
                   </h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {activeTab === "friends"
                       ? "左側から選んで詳細を表示"
                       : activeTab === "settings"
@@ -283,71 +277,36 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
 
             {/* メインコンテンツエリア */}
             <div className="flex flex-1 justify-center items-center bg-gray-50 dark:bg-gray-900">
-              <div className="text-center">
-                {(() => {
-                  // activeTabに基づいてアイコンを決定
-                  const Icon =
-                    activeTab === "chats"
-                      ? MessageCircle
-                      : activeTab === "friends"
-                      ? Users
-                      : activeTab === "settings"
-                      ? MoreHorizontal
-                      : MessageCircle;
-                  return (
-                    <div className="flex justify-center items-center mx-auto mb-4 w-24 h-24 bg-gray-100 rounded-full dark:bg-gray-900">
-                      <Icon className="w-12 h-12 text-green-500" />
-                    </div>
-                  );
-                })()}
-                <h3 className="mb-2 text-xl font-medium text-gray-900 dark:text-white">
+              <div className="p-8 text-center">
+                <div className="flex justify-center items-center mx-auto mb-4 w-16 h-16 bg-green-100 rounded-2xl shadow-lg dark:bg-green-500/20 shadow-green-500/20">
+                  {(() => {
+                    const Icon =
+                      activeTab === "chats"
+                        ? MessageCircle
+                        : activeTab === "friends"
+                        ? Users
+                        : activeTab === "settings"
+                        ? MoreHorizontal
+                        : MessageCircle;
+                    return (
+                      <Icon className="w-8 h-8 text-green-600 drop-shadow-[0_0_8px_rgba(34,197,94,0.5)] dark:text-green-400" />
+                    );
+                  })()}
+                </div>
+                <h3 className="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
                   {activeTab === "friends"
-                    ? "一覧管理"
+                    ? "友だちを選択"
                     : activeTab === "settings"
-                    ? "設定"
-                    : "ハイブリッドメッセージング"}
+                    ? "設定を選択"
+                    : "会話を選択"}
                 </h3>
-                <p className="mb-6 max-w-md text-gray-600 dark:text-gray-400">
-                  {activeTab === "friends" ? (
-                    <>
-                      友だちやエージェントの詳細情報を確認できます。
-                      <br />
-                      左側から選択してください
-                    </>
-                  ) : activeTab === "settings" ? (
-                    <>
-                      アプリの設定やプロフィール管理を行えます。
-                      <br />
-                      左側から設定項目を選択してください。
-                    </>
-                  ) : (
-                    <>
-                      人間とエージェント、グループとの新しいコミュニケーション体験。
-                      <br />
-                      左側から友だちやエージェント、グループを選んでトークを始めましょう。
-                    </>
-                  )}
+                <p className="max-w-md text-sm text-gray-500 dark:text-gray-400">
+                  {activeTab === "friends"
+                    ? "左側から友だちやエージェントを選択して詳細を表示します"
+                    : activeTab === "settings"
+                    ? "左側から設定項目を選択してください"
+                    : "左側から会話を選んでトークを開始しましょう"}
                 </p>
-                {activeTab === "chats" && (
-                  <div className="flex justify-center space-x-4">
-                    <button
-                      onClick={() => setActiveTab("friends")}
-                      className={cn(
-                        "px-6 py-3 font-semibold rounded-xl transition-colors",
-                        "bg-green-500 hover:bg-green-600",
-                        "text-white shadow-lg"
-                      )}
-                    >
-                      友だちを見る
-                    </button>
-                    <button
-                      onClick={() => setActiveTab("add-friends")}
-                      className="px-6 py-3 font-semibold text-gray-900 bg-white rounded-xl border border-gray-300 transition-colors dark:bg-gray-900 dark:text-white dark:border-gray-700 hover:border-green-400 dark:hover:border-green-400"
-                    >
-                      友だちを追加
-                    </button>
-                  </div>
-                )}
               </div>
             </div>
           </>
