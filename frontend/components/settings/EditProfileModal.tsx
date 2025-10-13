@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { X, Save, Camera } from "lucide-react";
-import { updateProfile } from "@/lib/actions/user-actions";
+import { updateProfile } from "@/lib/actions/user";
 import { useRouter } from "next/navigation";
 
 interface EditProfileModalProps {

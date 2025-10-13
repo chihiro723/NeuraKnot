@@ -1,5 +1,5 @@
 import { AuthResponse, AuthUser } from '@/lib/types/auth'
-import { signUp as serverSignUp, confirmSignUp as serverConfirmSignUp, signOut as serverSignOut } from '@/lib/actions/auth-actions'
+import { signUp as serverSignUp, confirmSignUp as serverConfirmSignUp, signOut as serverSignOut } from '@/lib/actions/auth-mutations'
 
 /**
  * Cognito認証クライアント

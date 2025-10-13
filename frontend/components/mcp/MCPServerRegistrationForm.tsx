@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Plus, Check } from "lucide-react";
-import { createMCPServer } from "@/lib/actions/mcp-actions";
+import { createMCPServer } from "@/lib/actions/mcp";
 import type { RegisterMCPServerInput, MCPAuthType } from "@/lib/types/mcp";
 import { cn } from "@/lib/utils/cn";
 

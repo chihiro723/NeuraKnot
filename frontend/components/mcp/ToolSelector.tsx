@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from "react";
 import { Server, Check, ChevronDown, ChevronUp, Search } from "lucide-react";
-import { listMCPTools } from "@/lib/actions/mcp-actions";
+import { listMCPTools } from "@/lib/actions/mcp";
 import type { MCPTool, ToolSelectionMode } from "@/lib/types/mcp";
 
 interface ToolSelectorProps {

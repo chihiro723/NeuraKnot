@@ -7,10 +7,10 @@ import {
   getOrCreateConversation,
   getMessages,
   sendMessage as serverSendMessage,
-} from "@/lib/actions/conversation-actions";
+} from "@/lib/actions/conversation";
 import { sendMessageStream } from "@/lib/api/streaming";
 import { useServerActionsWithAuth } from "@/lib/hooks/useServerActionWithAuth";
-import { getProfile } from "@/lib/actions/user-actions";
+import { getProfile } from "@/lib/actions/user";
 import { StreamingMessage } from "./StreamingMessage";
 import { ToolUsageIndicator } from "./ToolUsageIndicator";
 import { StampPicker } from "./StampPicker";
@@ -491,7 +491,7 @@ export function ChatWindow({
       {/* メッセージエリア */}
       <div
         ref={messagesContainerRef}
-        className="overflow-y-auto overflow-x-hidden flex-1 p-4 bg-gray-50 dark:bg-gray-900 lg:p-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        className="overflow-y-auto overflow-x-hidden flex-1 pt-4 px-4 pb-0 bg-gray-50 dark:bg-gray-900 lg:pt-6 lg:px-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
         <div className="space-y-6">
           {messages.map((message) => (
@@ -787,12 +787,13 @@ export function ChatWindow({
             </div>
           )}
 
-          <div ref={messagesEndRef} />
+          {/* 最後のメッセージと入力欄の間のスペース */}
+          <div ref={messagesEndRef} className="pb-4" />
         </div>
       </div>
 
       {/* 入力エリア */}
-      <div className="flex-shrink-0 p-4 bg-white border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+      <div className="flex-shrink-0 px-4 pt-0 pb-4 bg-gray-50 dark:bg-gray-900">
         <div className="relative w-full">
           {/* 統合されたモダンな入力コンテナ */}
           <div

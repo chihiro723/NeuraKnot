@@ -7,7 +7,7 @@ import {
   deleteMCPServer,
   syncMCPTools,
   listMCPTools,
-} from "@/lib/actions/mcp-actions";
+} from "@/lib/actions/mcp";
 import type { MCPServer, MCPTool } from "@/lib/types/mcp";
 
 /**
