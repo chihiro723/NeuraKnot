@@ -45,7 +45,7 @@ export function AddTypeSidebar() {
   ];
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-col h-full bg-white dark:bg-gray-900">
       <div className="flex flex-1 justify-center items-start p-4">
         <div className="space-y-2 w-full">
           {addTypes.map((type) => {
@@ -59,12 +59,12 @@ export function AddTypeSidebar() {
                   if (type.comingSoon) e.preventDefault();
                 }}
                 className={cn(
-                  "p-3 w-full text-left bg-white rounded-lg border transition-all duration-200 dark:bg-gray-800 block",
+                  "p-3 w-full text-left bg-white rounded-lg border shadow-sm transition-all duration-200 dark:bg-gray-800 block",
                   type.comingSoon
-                    ? "opacity-60 cursor-not-allowed"
+                    ? "opacity-60 cursor-not-allowed border-gray-200 dark:border-gray-700"
                     : isSelected
-                    ? `bg-green-50 border-green-500 dark:bg-green-500/10 dark:border-green-500`
-                    : `border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-750`
+                    ? `bg-green-50 border-green-400 shadow-md dark:bg-green-500/10 dark:border-green-500`
+                    : `border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600 hover:shadow-md`
                 )}
               >
                 <div className="flex items-center space-x-3">
