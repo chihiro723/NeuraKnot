@@ -159,16 +159,18 @@ export interface SelectedGroup {
 }
 
 
-// ダッシュボードコンテキストの型定義
+// 認証コンテキストの型定義（簡素化版）
+// 注: DashboardContextType は非推奨。AuthProvider は user と profile のみ提供
+// 選択状態（selectedChat など）は URL パラメータで管理します
 export interface DashboardContextType {
   user: AuthUser
   profile: Profile
-  selectedChat: SelectedChat | null
-  setSelectedChat: (chat: SelectedChat | null) => void
-  selectedFriend: SelectedFriend | null
-  setSelectedFriend: (friend: SelectedFriend | null) => void
-  selectedGroup: SelectedGroup | null
-  setSelectedGroup: (group: SelectedGroup | null) => void
+  selectedChat?: SelectedChat | null // @deprecated URL パラメータで管理
+  setSelectedChat?: (chat: SelectedChat | null) => void // @deprecated 使用しない
+  selectedFriend?: SelectedFriend | null // @deprecated URL パラメータで管理
+  setSelectedFriend?: (friend: SelectedFriend | null) => void // @deprecated 使用しない
+  selectedGroup?: SelectedGroup | null // @deprecated URL パラメータで管理
+  setSelectedGroup?: (group: SelectedGroup | null) => void // @deprecated 使用しない
 }
 
 // テーマコンテキストの型定義

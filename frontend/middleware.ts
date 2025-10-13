@@ -10,7 +10,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // 認証チェックはページレベルで行うため、ミドルウェアでは基本的なルーティングのみ
+  // ダッシュボードへのアクセス時は認証チェック
+  if (pathname.startsWith('/dashboard')) {
+    const accessToken = request.cookies.get('access_token')?.value
+    
+    if (!accessToken) {
+      console.log('[Middleware] No access token found, redirecting to login')
+      return NextResponse.redirect(new URL('/auth/login', request.url))
+    }
+  }
 
   return NextResponse.next()
 }

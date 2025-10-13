@@ -1,56 +1,27 @@
-"use client";
-
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useCognitoAuth } from "@/lib/hooks/useCognitoAuth";
-import { DashboardProvider } from "@/components/dashboard/DashboardProvider";
-import { LoadingSpinner } from "@/components/ui/feedback/LoadingSpinner";
+import { getAuthUser } from "@/lib/actions/auth-queries";
+import { AppNavigation } from "@/components/layout/AppNavigation";
 
 /**
  * ダッシュボードレイアウト（認証必須）
- * 各セクションのlayout.tsxがレイアウトを提供
+ * Server Component として認証情報を取得し、子コンポーネントに提供
+ * 各セクションの layout.tsx がレイアウトを提供
  */
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading, isAuthenticated } = useCognitoAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.push("/auth/login");
-    }
-  }, [loading, isAuthenticated, router]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
-
-  if (!isAuthenticated || !user) {
-    return null;
-  }
-
-  // Cognitoのユーザー情報をプロフィール形式に変換
-  const profile = {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    username: user.preferred_username,
-    display_name: user.display_name,
-    status: "online",
-    created_at: user.created_at,
-    updated_at: user.updated_at,
-  };
+  // サーバー側で認証ユーザー情報を取得
+  // 認証失敗時は自動的に /auth/login にリダイレクト
+  const { user, profile } = await getAuthUser();
 
   return (
-    <DashboardProvider user={user} profile={profile}>
-      {children}
-    </DashboardProvider>
+    <div className="flex overflow-hidden h-screen bg-gray-50 dark:bg-gray-950">
+      {/* 左側ナビゲーション */}
+      <AppNavigation profile={profile} user={user} />
+
+      {/* メインコンテンツエリア */}
+      <div className="flex overflow-hidden flex-col flex-1">{children}</div>
+    </div>
   );
 }
