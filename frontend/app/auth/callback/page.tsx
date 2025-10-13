@@ -46,14 +46,7 @@ function AuthCallbackContent() {
   }, [searchParams, handleOAuthCallback, router]);
 
   if (status === "loading") {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-center">
-          <LoadingSpinner size="lg" />
-          <p className="mt-4 text-gray-600">認証を処理中...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner text="認証を処理しています..." />;
   }
 
   if (status === "error") {
@@ -87,16 +80,7 @@ function AuthCallbackContent() {
 
 export default function AuthCallbackPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex justify-center items-center min-h-screen">
-          <div className="text-center">
-            <LoadingSpinner size="lg" />
-            <p className="mt-4 text-gray-600">読み込み中...</p>
-          </div>
-        </div>
-      }
-    >
+    <Suspense fallback={<LoadingSpinner text="ページを準備しています..." />}>
       <AuthCallbackContent />
     </Suspense>
   );

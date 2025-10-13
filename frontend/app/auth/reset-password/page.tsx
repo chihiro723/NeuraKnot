@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCognitoAuth } from "@/lib/hooks/useCognitoAuth";
+import { LoadingSpinner } from "@/components/ui/feedback/LoadingSpinner";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
@@ -197,12 +198,7 @@ export default function ResetPasswordPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex justify-center items-center min-h-screen">
-          <div className="text-center">
-            <div className="mx-auto w-8 h-8 rounded-full border-b-2 border-blue-600 animate-spin"></div>
-            <p className="mt-2 text-gray-600">読み込み中...</p>
-          </div>
-        </div>
+        <LoadingSpinner text="パスワードリセット画面を準備しています..." />
       }
     >
       <ResetPasswordForm />
