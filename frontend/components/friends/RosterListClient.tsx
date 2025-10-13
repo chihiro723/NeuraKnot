@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { Users } from "lucide-react";
-import { useDashboard } from "@/components/dashboard/DashboardProvider";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { EmptyState } from "@/components/ui/feedback/EmptyState";
 import { Avatar } from "@/components/ui/Avatar";
@@ -21,9 +20,12 @@ interface RosterListClientProps {
  */
 export function RosterListClient({ initialAgents }: RosterListClientProps) {
   const router = useRouter();
-  const { setSelectedFriend } = useDashboard();
+  const params = useParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FriendFilter>("all");
+
+  // URLパラメータから現在選択されている友だちIDを取得
+  const selectedFriendId = params?.id as string | undefined;
 
   // サーバーから渡されたデータを変換
   const friends = useMemo(() => {
@@ -51,23 +53,7 @@ export function RosterListClient({ initialAgents }: RosterListClientProps) {
   }, [initialAgents]);
 
   const handleSelectFriend = (friend: FriendData) => {
-    setSelectedFriend({
-      id: friend.id,
-      name: friend.name,
-      avatar_url: friend.avatar_url,
-      type: friend.type,
-      status: friend.status,
-      personality_preset: friend.personality_preset,
-      created_at: new Date().toISOString(),
-      description:
-        friend.type === "ai"
-          ? `${getPersonalityLabel(
-              friend.personality_preset || ""
-            )}タイプのエージェントです。`
-          : "ユーザーの友だちです。",
-    });
-
-    // URLに遷移
+    // URLベースのナビゲーション（状態管理なし）
     router.push(`/dashboard/roster/${friend.id}`);
   };
 
@@ -105,12 +91,12 @@ export function RosterListClient({ initialAgents }: RosterListClientProps) {
     <div className="flex flex-col h-full bg-white transition-colors duration-200 lg:border-r-0 dark:bg-gray-900">
       {/* モバイル用検索バー */}
       <div className="p-4 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700 lg:hidden">
-        <SearchInput placeholder="名簿を検索" onSearch={setSearchQuery} />
+        <SearchInput placeholder="検索" onSearch={setSearchQuery} />
       </div>
 
       {/* デスクトップ用検索バー */}
       <div className="hidden p-4 bg-white border-b border-gray-200 lg:block dark:bg-gray-900 dark:border-gray-700">
-        <SearchInput placeholder="名簿を検索" onSearch={setSearchQuery} />
+        <SearchInput placeholder="検索" onSearch={setSearchQuery} />
       </div>
 
       {/* フィルタータブ */}

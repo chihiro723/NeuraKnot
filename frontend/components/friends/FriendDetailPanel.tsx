@@ -10,7 +10,7 @@ import {
   User,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useDashboard } from "@/components/dashboard/DashboardProvider";
+// useDashboard は不要（URLベースのナビゲーション）
 import type { SelectedFriend } from "@/lib/types";
 
 interface FriendDetailPanelProps {
@@ -22,22 +22,12 @@ interface FriendDetailPanelProps {
  */
 export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
   const router = useRouter();
-  const { setSelectedChat } = useDashboard();
 
   const handleStartChat = () => {
     // グループの場合は会話開始できないようにするか、別の処理を行う
     if (friend.type === "group") return;
 
-    setSelectedChat({
-      id: friend.id,
-      name: friend.name,
-      avatar_url: friend.avatar_url,
-      type: friend.type,
-      status: friend.status,
-      personality_preset: friend.personality_preset,
-    });
-
-    // URLベースのナビゲーションに変更
+    // URLベースのナビゲーション（状態管理なし）
     router.push(`/dashboard/chats/${friend.id}`);
   };
 
@@ -141,7 +131,7 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
       </div>
 
       {/* メインコンテンツ */}
-      <div className="overflow-y-auto flex-1 bg-white dark:bg-gray-900">
+      <div className="overflow-y-auto flex-1 bg-gray-50 dark:bg-gray-900">
         <div className="p-8 mx-auto space-y-10 max-w-2xl">
           {/* プロフィール情報 */}
           <div className="space-y-6">

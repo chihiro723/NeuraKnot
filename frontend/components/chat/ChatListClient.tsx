@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { MessageCircle, Handshake } from "lucide-react";
-import { useDashboard } from "@/components/dashboard/DashboardProvider";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Avatar } from "@/components/ui/Avatar";
 import { EmptyState } from "@/components/ui/feedback/EmptyState";
@@ -25,9 +24,12 @@ export function ChatListClient({
   initialAgents,
 }: ChatListClientProps) {
   const router = useRouter();
-  const { setSelectedChat, selectedChat, setSelectedGroup } = useDashboard();
+  const params = useParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<ChatFilter>("all");
+
+  // URLパラメータから現在選択されているチャットIDを取得
+  const selectedChatId = params?.id as string | undefined;
 
   // サーバーから渡されたデータを変換
   const conversations = useMemo(() => {
@@ -72,28 +74,9 @@ export function ChatListClient({
   }, [initialConversations, initialAgents]);
 
   const handleChatSelect = (conversation: ConversationData) => {
+    // URLベースのナビゲーション（状態管理なし）
     if (conversation.type === "group" && conversation.groupInfo) {
       // グループチャットの場合
-      setSelectedGroup({
-        id: conversation.id,
-        name: conversation.groupInfo.name,
-        description: conversation.groupInfo.description,
-        avatar_url: conversation.groupInfo.avatar_url,
-        member_count: conversation.groupInfo.member_count,
-        members: [], // TODO: Load real group members from database
-      });
-
-      setSelectedChat({
-        id: conversation.id,
-        name: conversation.groupInfo.name,
-        avatar_url: conversation.groupInfo.avatar_url,
-        type: "group",
-        status: "online",
-        member_count: conversation.groupInfo.member_count,
-        description: conversation.groupInfo.description,
-      });
-
-      // URLに遷移
       router.push(`/dashboard/chats/${conversation.id}`);
     } else if (conversation.otherParticipant) {
       // 1対1チャットの場合
@@ -102,16 +85,6 @@ export function ChatListClient({
           ? conversation.otherParticipant.id || conversation.id // AI Agent IDを使用
           : conversation.otherParticipant.name;
 
-      setSelectedChat({
-        id: chatId,
-        name: conversation.otherParticipant.name,
-        avatar_url: conversation.otherParticipant.avatar_url,
-        type: conversation.otherParticipant.type,
-        status: conversation.otherParticipant.status,
-        personality_preset: conversation.otherParticipant.personality_preset,
-      });
-
-      // URLに遷移
       router.push(`/dashboard/chats/${chatId}`);
     }
   };
@@ -172,12 +145,12 @@ export function ChatListClient({
   return (
     <div className="flex flex-col h-full bg-white transition-colors duration-200 lg:border-r-0 dark:bg-gray-900">
       <div className="p-4 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700 lg:hidden">
-        <SearchInput placeholder="トークを検索" onSearch={setSearchQuery} />
+        <SearchInput placeholder="検索" onSearch={setSearchQuery} />
       </div>
 
       {/* デスクトップ用検索バー */}
       <div className="hidden p-4 bg-white border-b border-gray-200 lg:block dark:bg-gray-900 dark:border-gray-700">
-        <SearchInput placeholder="トークを検索" onSearch={setSearchQuery} />
+        <SearchInput placeholder="検索" onSearch={setSearchQuery} />
       </div>
 
       {/* フィルタータブ */}
@@ -233,14 +206,23 @@ export function ChatListClient({
           )
         ) : (
           <div className="pb-4 divide-y divide-gray-100 dark:divide-gray-800 lg:pb-0">
-            {filteredConversations.map((conversation: ConversationData) => (
-              <ConversationItem
-                key={conversation.id}
-                conversation={conversation}
-                onSelect={() => handleChatSelect(conversation)}
-                isSelected={selectedChat?.id === conversation.id}
-              />
-            ))}
+            {filteredConversations.map((conversation: ConversationData) => {
+              // 選択状態の判定（URLベース）
+              const isSelected =
+                conversation.type === "group"
+                  ? selectedChatId === conversation.id
+                  : selectedChatId === conversation.otherParticipant?.id ||
+                    selectedChatId === conversation.id;
+
+              return (
+                <ConversationItem
+                  key={conversation.id}
+                  conversation={conversation}
+                  onSelect={() => handleChatSelect(conversation)}
+                  isSelected={isSelected}
+                />
+              );
+            })}
           </div>
         )}
       </div>

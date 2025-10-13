@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useDashboard } from "@/components/dashboard/DashboardProvider";
+// useDashboard は不要（URLベースのナビゲーション）
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { Avatar } from "@/components/ui/Avatar";
 import { Phone, Video, MoreHorizontal } from "lucide-react";
@@ -46,19 +46,7 @@ export function ChatWindowClient({
   initialMessages,
   initialUserProfile,
 }: ChatWindowClientProps) {
-  const { setSelectedChat } = useDashboard();
-
-  // マウント時にDashboard Contextを更新
-  useEffect(() => {
-    setSelectedChat({
-      id: chatData.id,
-      name: chatData.name,
-      avatar_url: chatData.avatar_url,
-      type: chatData.type,
-      status: chatData.status,
-      personality_preset: chatData.personality_preset,
-    });
-  }, [chatData, setSelectedChat]);
+  // 選択状態は URL で管理されるため、Context は不要
 
   return (
     <>
