@@ -65,7 +65,6 @@ export function StreamingMessage({
     ) {
       return (
         <>
-          {tools.length > 0 && <ToolUsageIndicator tools={tools} />}
           {content && (
             <div className="max-w-none text-sm leading-relaxed break-words lg:text-base prose prose-sm dark:prose-invert overflow-wrap-anywhere">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -131,7 +130,7 @@ export function StreamingMessage({
 
   return (
     <div className="flex justify-start px-2">
-      <div className="flex items-start space-x-3">
+      <div className="flex items-start space-x-3 max-w-[85%] lg:max-w-[75%]">
         {/* アイコン */}
         <div className="flex overflow-hidden flex-shrink-0 justify-center items-center w-10 h-10 bg-green-500 rounded-full">
           {avatarUrl ? (
@@ -155,30 +154,6 @@ export function StreamingMessage({
           </span>
 
           <div className="flex flex-col space-y-2 min-w-0">
-            {/* ツール実行中バナー */}
-            {tools.some((t) => t.status === "running") && (
-              <div className="flex items-center px-3 py-2 space-x-2 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200 shadow-sm dark:from-blue-950/40 dark:to-blue-900/40 dark:border-blue-800">
-                <div className="flex flex-1 items-center space-x-2 min-w-0">
-                  <div className="relative flex-shrink-0">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
-                    <div className="absolute inset-0 w-2 h-2 bg-blue-600 rounded-full"></div>
-                  </div>
-                  <div className="flex flex-col flex-1 min-w-0">
-                    <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
-                      {tools
-                        .filter((t) => t.status === "running")
-                        .map((t) => t.tool_name)
-                        .join(", ")}{" "}
-                      を使用中
-                    </span>
-                    <span className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
-                      処理しています...
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
             <div className="flex space-x-2 min-w-0">
               {/* メッセージバブル */}
               <div className="px-4 py-3 text-gray-900 bg-white rounded-2xl rounded-tl-sm border border-gray-200 shadow-sm dark:text-gray-100 dark:bg-gray-800 dark:border-gray-700">
@@ -186,17 +161,16 @@ export function StreamingMessage({
                 {renderContentWithTools()}
               </div>
 
-              {/* コピーボタンとタイムスタンプ（ストリーミング中は透明） */}
+              {/* コピーボタンとタイムスタンプ（生成中と生成後で完全に同じUI） */}
               <div
-                className={`flex flex-col flex-shrink-0 items-center self-end pb-1 transition-opacity ${
-                  showCursor ? "opacity-0 pointer-events-none" : "opacity-100"
-                }`}
+                className="flex flex-col flex-shrink-0 items-center self-end pb-1"
                 style={{ gap: "4px" }}
               >
                 <button
                   onClick={handleCopy}
+                  disabled={showCursor}
                   className="p-1 text-gray-400 rounded transition-colors hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  title="コピー"
+                  title={showCursor ? "生成中..." : "コピー"}
                 >
                   {copied ? (
                     <Check className="w-4 h-4" />

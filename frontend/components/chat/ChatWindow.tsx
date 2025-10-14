@@ -392,7 +392,7 @@ export function ChatWindow({
                         if (Object.keys(positions).length > 0) {
                           try {
                             const response = await fetch(
-                              `${process.env.NEXT_PUBLIC_API_URL}/api/v1/conversations/${conversationId}/messages/${latestAIMessage.id}/tools/positions`,
+                              `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/conversations/${conversationId}/messages/${latestAIMessage.id}/tools/positions`,
                               {
                                 method: "PATCH",
                                 headers: {
@@ -563,177 +563,28 @@ export function ChatWindow({
                     </div>
                   </div>
                 ) : (
-                  /* 相手のメッセージ（左側） */
-                  <div className="flex flex-1 items-start space-x-3 min-w-0">
-                    {/* アイコン */}
-                    <div className="flex overflow-hidden flex-shrink-0 justify-center items-center w-10 h-10 bg-green-500 rounded-full">
-                      {selectedChat.avatar_url ? (
-                        <img
-                          src={selectedChat.avatar_url}
-                          alt={selectedChat.name}
-                          className="object-cover w-full h-full"
-                        />
-                      ) : (
-                        <span className="text-sm font-medium text-white">
-                          {selectedChat.name.charAt(0)}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* 右側のコンテンツ */}
-                    <div className="flex overflow-hidden flex-col space-y-1 min-w-0">
-                      {/* 名前 */}
-                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                        {selectedChat.name}
-                      </span>
-
-                      <div className="flex space-x-2 min-w-0">
-                        {/* メッセージバブル */}
-                        <div
-                          className={cn(
-                            "text-gray-900 bg-white rounded-2xl rounded-tl-sm border border-gray-200 dark:text-gray-100 dark:bg-gray-800 dark:border-gray-700",
-                            "px-4 py-3 shadow-sm"
-                          )}
-                        >
-                          {/* メッセージとツールを時系列順に表示 */}
-                          {(() => {
-                            // ツール使用履歴を変換
-                            const tools = message.tool_usages
-                              ? message.tool_usages.map((toolUsage) => ({
-                                  tool_id: toolUsage.id,
-                                  tool_name: toolUsage.tool_name,
-                                  status: toolUsage.status,
-                                  input: JSON.parse(toolUsage.input_data),
-                                  output: toolUsage.output_data,
-                                  error: toolUsage.error_message,
-                                  execution_time_ms:
-                                    toolUsage.execution_time_ms,
-                                  // DBから取得した位置情報を使用
-                                  insertPosition: toolUsage.insert_position,
-                                  expanded: false,
-                                }))
-                              : [];
-
-                            // ツールをinsertPositionでソート（null/undefinedは0として扱う）
-                            const sortedTools = [...tools].sort(
-                              (a, b) =>
-                                (a.insertPosition ?? 0) -
-                                (b.insertPosition ?? 0)
-                            );
-
-                            // ツールがないか、insertPositionが設定されていない場合は通常の表示
-                            if (
-                              sortedTools.length === 0 ||
-                              !sortedTools.some(
-                                (t) => t.insertPosition != null // undefined と null の両方をチェック
-                              )
-                            ) {
-                              return (
-                                <>
-                                  {tools.length > 0 && (
-                                    <div className="mb-3">
-                                      <ToolUsageIndicator tools={tools} />
-                                    </div>
-                                  )}
-                                  <div className="max-w-none text-sm leading-relaxed break-words lg:text-base prose prose-sm dark:prose-invert overflow-wrap-anywhere">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                      {message.content}
-                                    </ReactMarkdown>
-                                  </div>
-                                </>
-                              );
-                            }
-
-                            // メッセージを分割してツールUIを挿入
-                            const segments: React.ReactElement[] = [];
-                            let lastPosition = 0;
-
-                            sortedTools.forEach((tool, index) => {
-                              const insertPos = tool.insertPosition ?? 0;
-
-                              // 前回の位置から現在のツール位置までのテキスト
-                              if (insertPos > lastPosition && message.content) {
-                                const textSegment = message.content.slice(
-                                  lastPosition,
-                                  insertPos
-                                );
-                                if (textSegment) {
-                                  segments.push(
-                                    <div
-                                      key={`text-${index}`}
-                                      className="max-w-none text-sm leading-relaxed break-words lg:text-base prose prose-sm dark:prose-invert overflow-wrap-anywhere"
-                                    >
-                                      <ReactMarkdown
-                                        remarkPlugins={[remarkGfm]}
-                                      >
-                                        {textSegment}
-                                      </ReactMarkdown>
-                                    </div>
-                                  );
-                                }
-                              }
-
-                              // ツールUI
-                              segments.push(
-                                <ToolUsageIndicator
-                                  key={`tool-${index}`}
-                                  tools={[tool]}
-                                />
-                              );
-
-                              lastPosition = insertPos;
-                            });
-
-                            // 最後のツール以降のテキスト
-                            if (
-                              lastPosition < message.content.length &&
-                              message.content
-                            ) {
-                              const remainingText =
-                                message.content.slice(lastPosition);
-                              if (remainingText) {
-                                segments.push(
-                                  <div
-                                    key="text-final"
-                                    className="max-w-none text-sm leading-relaxed break-words lg:text-base prose prose-sm dark:prose-invert overflow-wrap-anywhere"
-                                  >
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                      {remainingText}
-                                    </ReactMarkdown>
-                                  </div>
-                                );
-                              }
-                            }
-
-                            return <>{segments}</>;
-                          })()}
-                        </div>
-
-                        {/* コピーボタンとタイムスタンプ（吹き出しの右側） */}
-                        <div
-                          className="flex flex-col flex-shrink-0 items-center self-end pb-1"
-                          style={{ gap: "4px" }}
-                        >
-                          <button
-                            onClick={() =>
-                              handleCopyMessage(message.id, message.content)
-                            }
-                            className="p-1 text-gray-400 rounded transition-colors hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                            title="コピー"
-                          >
-                            {copiedMessageId === message.id ? (
-                              <Check className="w-4 h-4" />
-                            ) : (
-                              <Copy className="w-4 h-4" />
-                            )}
-                          </button>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {formatTime(message.created_at)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  /* AIメッセージ（左側） - StreamingMessageコンポーネントを使用 */
+                  <StreamingMessage
+                    content={message.content}
+                    tools={
+                      message.tool_usages
+                        ? message.tool_usages.map((toolUsage) => ({
+                            tool_id: toolUsage.id,
+                            tool_name: toolUsage.tool_name,
+                            status: toolUsage.status,
+                            input: JSON.parse(toolUsage.input_data),
+                            output: toolUsage.output_data,
+                            error: toolUsage.error_message,
+                            execution_time_ms: toolUsage.execution_time_ms,
+                            insertPosition: toolUsage.insert_position,
+                            expanded: false,
+                          }))
+                        : []
+                    }
+                    avatarUrl={selectedChat.avatar_url}
+                    name={selectedChat.name}
+                    showCursor={false}
+                  />
                 )}
               </div>
             </div>
