@@ -220,7 +220,7 @@ class AgentService:
                 completion_mode_used=request.completion_mode,
                 tools_available=tools_count,
                 basic_tools_count=0,  # 呼び出し側で設定
-                mcp_tools_count=0  # 呼び出し側で設定
+                service_tools_count=0  # 呼び出し側で設定
             )
         )
 

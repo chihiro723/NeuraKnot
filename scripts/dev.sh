@@ -236,12 +236,6 @@ rebuild_services() {
     # サービスを起動
     run_docker_compose "up -d" "$service"
     
-    # 全サービス起動時はデータベースを完全再構築
-    if [ -z "$service" ]; then
-        log_info "データベースを完全再構築中..."
-        build_schema
-    fi
-    
     if [ -n "$service" ]; then
         log_info "$service サービス完全再ビルド完了！"
     else

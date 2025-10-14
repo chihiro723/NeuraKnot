@@ -76,7 +76,7 @@ export function CognitoLoginForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
-          className="mt-1"
+          className="mt-1 bg-white/10 border-white/20 text-white placeholder-white/50 focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400 autofill:bg-white/10 autofill:shadow-[inset_0_0_0px_1000px_rgba(255,255,255,0.1)] autofill:text-white"
           placeholder="your@email.com"
           autoFocus
         />
@@ -97,7 +97,7 @@ export function CognitoLoginForm() {
             onChange={(e) => setPassword(e.target.value)}
             required
             placeholder="パスワードを入力"
-            className="pr-10"
+            className="pr-10 bg-white/10 border-white/20 text-white placeholder-white/50 focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400 autofill:bg-white/10 autofill:shadow-[inset_0_0_0px_1000px_rgba(255,255,255,0.1)] autofill:text-white"
           />
           <button
             type="button"

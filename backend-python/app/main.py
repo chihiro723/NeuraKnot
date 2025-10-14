@@ -5,7 +5,7 @@ BridgeSpeak AI Server
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.v1 import chat, tools, health
+from app.api.v1 import chat, health, services
 from app.middleware.error_handler import add_exception_handlers
 from app.core.log_filter import setup_logging_with_filter
 import logging
@@ -42,10 +42,11 @@ app.include_router(
     prefix=f"{settings.API_V1_PREFIX}/ai",
     tags=["AI Chat"]
 )
+# tools.routerは削除されました（サービスシステムに移行）
 app.include_router(
-    tools.router,
-    prefix=f"{settings.API_V1_PREFIX}/tools",
-    tags=["Tools"]
+    services.router,
+    prefix=f"{settings.API_V1_PREFIX}/services",
+    tags=["Services"]
 )
 app.include_router(
     health.router,

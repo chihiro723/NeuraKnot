@@ -46,7 +46,7 @@ function AuthCallbackContent() {
   }, [searchParams, handleOAuthCallback, router]);
 
   if (status === "loading") {
-    return <LoadingSpinner text="認証を処理しています..." />;
+    return <LoadingSpinner />;
   }
 
   if (status === "error") {
@@ -80,7 +80,7 @@ function AuthCallbackContent() {
 
 export default function AuthCallbackPage() {
   return (
-    <Suspense fallback={<LoadingSpinner text="ページを準備しています..." />}>
+    <Suspense fallback={<LoadingSpinner />}>
       <AuthCallbackContent />
     </Suspense>
   );

@@ -10,16 +10,16 @@ import (
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 
-	"github.com/yourusername/bridgespeak/backend-go/internal/crypto"
-	"github.com/yourusername/bridgespeak/backend-go/internal/infrastructure/config"
+	"backend-go/internal/crypto"
+	"backend-go/internal/infrastructure/config"
 )
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: go run cmd/decrypt-key/main.go <server_id>")
+		fmt.Println("Usage: go run cmd/decrypt-key/main.go <service_config_id>")
 		fmt.Println()
 		fmt.Println("Description:")
-		fmt.Println("  This tool decrypts and displays an API key for debugging purposes.")
+		fmt.Println("  This tool decrypts and displays service authentication credentials for debugging purposes.")
 		fmt.Println("  ⚠️  Use with caution! Only use in secure environments.")
 		fmt.Println()
 		fmt.Println("Example:")
@@ -27,9 +27,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	serverID, err := uuid.Parse(os.Args[1])
+	configID, err := uuid.Parse(os.Args[1])
 	if err != nil {
-		fmt.Printf("❌ Invalid server ID: %v\n", err)
+		fmt.Printf("❌ Invalid service config ID: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -77,67 +77,67 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println("🔍 Fetching encrypted API key from database...")
+	fmt.Println("🔍 Fetching encrypted service credentials from database...")
 
-	// 暗号化されたキーを取得
-	var encryptedKey []byte
-	var nonce []byte
-	var serverName string
-	var baseURL string
+	// 暗号化された認証情報を取得
+	var encryptedAuth []byte
+	var authNonce []byte
+	var serviceClass string
+	var userID string
 
 	query := `
-		SELECT name, base_url, encrypted_api_key, key_nonce
-		FROM mcp_servers
+		SELECT user_id, service_class, encrypted_auth, auth_nonce
+		FROM user_service_configs
 		WHERE id = $1
 	`
 
-	err = db.QueryRowContext(context.Background(), query, serverID).Scan(
-		&serverName, &baseURL, &encryptedKey, &nonce,
+	err = db.QueryRowContext(context.Background(), query, configID).Scan(
+		&userID, &serviceClass, &encryptedAuth, &authNonce,
 	)
 
 	if err == sql.ErrNoRows {
-		fmt.Printf("❌ MCP server not found with ID: %s\n", serverID)
+		fmt.Printf("❌ Service config not found with ID: %s\n", configID)
 		os.Exit(1)
 	}
 
 	if err != nil {
-		fmt.Printf("❌ Failed to get encrypted key: %v\n", err)
+		fmt.Printf("❌ Failed to get encrypted credentials: %v\n", err)
 		os.Exit(1)
 	}
 
-	if len(encryptedKey) == 0 || len(nonce) == 0 {
-		fmt.Println("❌ No API key is set for this server")
+	if len(encryptedAuth) == 0 || len(authNonce) == 0 {
+		fmt.Println("❌ No credentials are set for this service")
 		os.Exit(1)
 	}
 
-	fmt.Println("✅ Found encrypted API key")
+	fmt.Println("✅ Found encrypted credentials")
 	fmt.Println()
-	fmt.Println("Server Information:")
+	fmt.Println("Service Information:")
 	fmt.Println("═══════════════════════════════════════")
-	fmt.Printf("ID:       %s\n", serverID)
-	fmt.Printf("Name:     %s\n", serverName)
-	fmt.Printf("Base URL: %s\n", baseURL)
+	fmt.Printf("Config ID:     %s\n", configID)
+	fmt.Printf("User ID:       %s\n", userID)
+	fmt.Printf("Service Class: %s\n", serviceClass)
 	fmt.Println()
 
 	// 復号化
-	fmt.Println("🔓 Decrypting API key...")
-	apiKey, err := encService.Decrypt(encryptedKey, nonce)
+	fmt.Println("🔓 Decrypting credentials...")
+	credentials, err := encService.Decrypt(encryptedAuth, authNonce)
 	if err != nil {
 		fmt.Printf("❌ Failed to decrypt: %v\n", err)
 		fmt.Println()
 		fmt.Println("Possible causes:")
 		fmt.Println("  - Wrong ENCRYPTION_MASTER_KEY")
 		fmt.Println("  - Corrupted data in database")
-		fmt.Println("  - Key was encrypted with different master key")
+		fmt.Println("  - Credentials were encrypted with different master key")
 		os.Exit(1)
 	}
 
 	fmt.Println("✅ Successfully decrypted")
 	fmt.Println()
-	fmt.Println("Decrypted API Key:")
+	fmt.Println("Decrypted Credentials:")
 	fmt.Println("═══════════════════════════════════════")
-	fmt.Println(apiKey)
+	fmt.Println(credentials)
 	fmt.Println("═══════════════════════════════════════")
 	fmt.Println()
-	fmt.Println("⚠️  Keep this key secure and do not share it!")
+	fmt.Println("⚠️  Keep these credentials secure and do not share them!")
 }

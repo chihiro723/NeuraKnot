@@ -3,7 +3,6 @@ package http
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 
@@ -305,84 +304,6 @@ func (h *ChatHandler) GetMessages(c *gin.Context) {
 	c.JSON(http.StatusOK, &response.MessagesResponse{
 		Messages: messageResponses,
 		Total:    len(messageResponses),
-	})
-}
-
-// SendMessageStream はストリーミングでメッセージを送信
-// @Summary メッセージ送信（ストリーミング）
-// @Description 会話にメッセージを送信してAI応答をストリーミングで取得します
-// @Tags Chat
-// @Accept json
-// @Produce text/event-stream
-// @Security BearerAuth
-// @Param id path string true "会話ID"
-// @Param request body request.SendMessageRequest true "メッセージ内容"
-// @Success 200 {string} string "SSEストリーム"
-// @Failure 400 {object} response.ErrorResponse "バリデーションエラー"
-// @Failure 401 {object} response.ErrorResponse "認証エラー"
-// @Failure 500 {object} response.ErrorResponse "サーバーエラー"
-// @Router /api/v1/conversations/{id}/messages/stream [post]
-func (h *ChatHandler) SendMessageStream(c *gin.Context) {
-	// 認証ミドルウェアからユーザーを取得
-	user, exists := middleware.GetUserFromContext(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, response.NewUnauthorizedErrorResponse("User not found in context"))
-		return
-	}
-
-	// UserIDをUUIDに変換
-	userID, err := uuid.Parse(string(user.ID))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid user ID"))
-		return
-	}
-
-	// 会話IDをパース
-	idStr := c.Param("id")
-	conversationID, err := uuid.Parse(idStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid conversation ID"))
-		return
-	}
-
-	// リクエストボディをパース
-	var req request.SendMessageRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(err.Error()))
-		return
-	}
-
-	// ストリーミング開始
-	eventChan, errChan, err := h.chatUsecase.SendMessageStream(c.Request.Context(), userID, conversationID, req.Content)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
-		return
-	}
-
-	// SSEヘッダーを設定
-	c.Header("Content-Type", "text/event-stream")
-	c.Header("Cache-Control", "no-cache")
-	c.Header("Connection", "keep-alive")
-
-	// SSEストリームを送信
-	c.Stream(func(w io.Writer) bool {
-		select {
-		case event, ok := <-eventChan:
-			if !ok {
-				return false
-			}
-			// イベントをJSON形式でSSE送信
-			c.SSEvent("message", event)
-			return true
-		case err := <-errChan:
-			if err != nil {
-				// エラーイベントを送信
-				c.SSEvent("error", gin.H{"message": err.Error()})
-			}
-			return false
-		case <-c.Request.Context().Done():
-			return false
-		}
 	})
 }
 

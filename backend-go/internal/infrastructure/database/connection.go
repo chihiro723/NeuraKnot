@@ -45,11 +45,3 @@ func (c *Connection) Close() error {
 	}
 	return nil
 }
-
-
-
-
-
-
-
-

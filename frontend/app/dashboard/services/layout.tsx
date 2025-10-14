@@ -1,7 +1,7 @@
 import { getAuthUser } from "@/lib/actions/auth-queries";
 import { SidebarLayout } from "@/components/layout/SidebarLayout";
 import { DashboardSidebar } from "@/components/layout/DashboardSidebar";
-import { ServiceTypeSidebar } from "@/components/mcp/ServiceTypeSidebar";
+import { ServiceListSidebar } from "@/components/services/ServiceListSidebar";
 
 /**
  * 外部サービスセクション全体のレイアウト
@@ -12,14 +12,13 @@ export default async function ServicesLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // プロフィール情報を取得（DashboardSidebar で使用）
   const { profile } = await getAuthUser();
 
   return (
     <SidebarLayout
       sidebar={
         <DashboardSidebar title="外部サービス" profile={profile}>
-          <ServiceTypeSidebar />
+          <ServiceListSidebar />
         </DashboardSidebar>
       }
     >

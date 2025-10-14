@@ -34,10 +34,12 @@ type ConversationMessage struct {
 	Content string `json:"content"` // メッセージ内容
 }
 
-// MCPServerConfig はMCPサーバーの設定（オプション）
-type MCPServerConfig struct {
-	URL    string  `json:"url"`
-	APIKey *string `json:"api_key,omitempty"` // APIキー（復号化済み、オプション）
+// ServiceConfig はサービスの設定（オプション）
+type ServiceConfig struct {
+	ServiceClass      string   `json:"service_class"`
+	ToolSelectionMode string   `json:"tool_selection_mode,omitempty"` // "all" or "selected"
+	SelectedTools     []string `json:"selected_tools,omitempty"`      // 選択されたツール名のリスト
+	APIKey            *string  `json:"api_key,omitempty"`             // APIキー（復号化済み、オプション）
 }
 
 // AgentConfig はAI Agentの設定
@@ -57,8 +59,7 @@ type ChatRequest struct {
 	Message             string                `json:"message"`                        // ユーザーメッセージ
 	ConversationHistory []ConversationMessage `json:"conversation_history,omitempty"` // 会話履歴
 	AgentConfig         AgentConfig           `json:"agent_config"`                   // AI設定
-	MCPServers          []MCPServerConfig     `json:"mcp_servers,omitempty"`          // MCPサーバー（オプション）
-	IncludeBasicTools   bool                  `json:"include_basic_tools"`            // 基本ツールを含めるか
+	Services            []ServiceConfig       `json:"services,omitempty"`             // サービス（オプション）
 }
 
 // ToolCall はツール呼び出し情報
@@ -82,13 +83,13 @@ type TokenUsage struct {
 
 // AIMetadata はAI処理のメタデータ
 type AIMetadata struct {
-	Model            string     `json:"model"`
-	Provider         string     `json:"provider"`
-	TokensUsed       TokenUsage `json:"tokens_used"`        // Pythonの形式に合わせる
-	ProcessingTimeMs int        `json:"processing_time_ms"` // Pythonの形式に合わせる
-	ToolsAvailable   int        `json:"tools_available"`
-	BasicToolsCount  int        `json:"basic_tools_count"`
-	MCPToolsCount    int        `json:"mcp_tools_count"`
+	Model             string     `json:"model"`
+	Provider          string     `json:"provider"`
+	TokensUsed        TokenUsage `json:"tokens_used"`        // Pythonの形式に合わせる
+	ProcessingTimeMs  int        `json:"processing_time_ms"` // Pythonの形式に合わせる
+	ToolsAvailable    int        `json:"tools_available"`
+	BasicToolsCount   int        `json:"basic_tools_count"`
+	ServiceToolsCount int        `json:"service_tools_count"`
 }
 
 // ChatResponse はチャットレスポンス
@@ -281,64 +282,4 @@ func (c *AIClient) HealthCheck(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-// MCPToolCatalogRequest はツールカタログ取得リクエスト
-type MCPToolCatalogRequest struct {
-	ServerURL     string            `json:"server_url"`
-	APIKey        *string           `json:"api_key,omitempty"`
-	CustomHeaders map[string]string `json:"custom_headers,omitempty"`
-}
-
-// MCPToolCatalogResponse はツールカタログレスポンス
-type MCPToolCatalogResponse struct {
-	Server MCPServerInfo `json:"server"`
-	Tools  []MCPToolInfo `json:"tools"`
-}
-
-// MCPServerInfo はMCPサーバー情報
-type MCPServerInfo struct {
-	Name        string `json:"name"`
-	Version     string `json:"version"`
-	Description string `json:"description"`
-}
-
-// MCPToolInfo はツール情報
-type MCPToolInfo struct {
-	Name        string                 `json:"name"`
-	Description string                 `json:"description"`
-	Schema      map[string]interface{} `json:"schema"`
-}
-
-// FetchToolCatalog はMCPサーバーからツールカタログを取得
-func (c *AIClient) FetchToolCatalog(ctx context.Context, req MCPToolCatalogRequest) (*MCPToolCatalogResponse, error) {
-	reqBody, err := json.Marshal(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal request: %w", err)
-	}
-
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", c.baseURL+"/api/v1/tools/catalog", bytes.NewBuffer(reqBody))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	httpReq.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.httpClient.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("catalog fetch failed: status %d, body: %s", resp.StatusCode, string(body))
-	}
-
-	var catalog MCPToolCatalogResponse
-	if err := json.NewDecoder(resp.Body).Decode(&catalog); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	return &catalog, nil
 }

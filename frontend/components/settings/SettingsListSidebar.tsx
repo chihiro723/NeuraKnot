@@ -87,7 +87,7 @@ export function SettingsListSidebar({ profile }: SettingsListSidebarProps) {
         <Link
           href="/dashboard/settings/subscription"
           className={cn(
-            "relative w-full bg-white dark:bg-gray-800 rounded-xl border p-6 shadow-sm hover:shadow-md transition-all duration-200 text-left block",
+            "relative w-full bg-white dark:bg-gray-800 rounded-xl border p-6 shadow-sm hover:shadow-md transition-all duration-200 text-left block min-h-[104px]",
             pathname === "/dashboard/settings/subscription"
               ? "border-green-400 bg-green-50 dark:bg-green-500/10"
               : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600"
@@ -112,7 +112,7 @@ export function SettingsListSidebar({ profile }: SettingsListSidebarProps) {
         <Link
           href="/dashboard/settings/analytics"
           className={cn(
-            "relative w-full bg-white dark:bg-gray-800 rounded-xl border p-6 shadow-sm hover:shadow-md transition-all duration-200 text-left block",
+            "relative w-full bg-white dark:bg-gray-800 rounded-xl border p-6 shadow-sm hover:shadow-md transition-all duration-200 text-left block min-h-[104px]",
             pathname === "/dashboard/settings/analytics"
               ? "border-green-400 bg-green-50 dark:bg-green-500/10"
               : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600"

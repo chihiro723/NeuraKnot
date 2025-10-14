@@ -467,116 +467,36 @@
                 }
             }
         },
-        "/api/v1/conversations/{id}/messages/stream": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "会話にメッセージを送信してAI応答をストリーミングで取得します",
+        "/api/v1/services": {
+            "get": {
+                "description": "Pythonから全サービスの一覧を取得",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
-                    "text/event-stream"
-                ],
-                "tags": [
-                    "Chat"
-                ],
-                "summary": "メッセージ送信（ストリーミング）",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "会話ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "メッセージ内容",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/backend-go_internal_handler_http_request.SendMessageRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "SSEストリーム",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "バリデーションエラー",
-                        "schema": {
-                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "認証エラー",
-                        "schema": {
-                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "サーバーエラー",
-                        "schema": {
-                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/mcp-servers": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "ユーザーがアクセス可能なMCPサーバー一覧を取得します（システム共通 + ユーザー登録）",
-                "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "MCP"
+                    "Services"
                 ],
-                "summary": "MCPサーバー一覧を取得",
+                "summary": "サービス一覧取得",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/backend-go_internal_domain_mcp.MCPServer"
+                                "type": "object",
+                                "additionalProperties": true
                             }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
                         }
                     }
                 }
-            },
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "ユーザーが外部MCPサーバーを登録します。APIキーは暗号化されてDBに保存されます。",
+            }
+        },
+        "/api/v1/services/config": {
+            "get": {
+                "description": "ユーザーのサービス設定一覧を取得",
                 "consumes": [
                     "application/json"
                 ],
@@ -584,17 +504,41 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCP"
+                    "Services"
                 ],
-                "summary": "MCPサーバーを登録",
+                "summary": "サービス設定一覧取得",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/backend-go_internal_domain_service.ServiceConfig"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "ユーザーのサービス設定を作成",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Services"
+                ],
+                "summary": "サービス設定作成",
                 "parameters": [
                     {
-                        "description": "登録情報",
+                        "description": "サービス設定",
                         "name": "input",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/backend-go_internal_domain_mcp.RegisterMCPServerInput"
+                            "$ref": "#/definitions/backend-go_internal_domain_service.CreateServiceConfigInput"
                         }
                     }
                 ],
@@ -602,89 +546,15 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/backend-go_internal_domain_mcp.MCPServer"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
+                            "$ref": "#/definitions/backend-go_internal_domain_service.ServiceConfig"
                         }
                     }
                 }
             }
         },
-        "/api/v1/mcp-servers/{id}": {
+        "/api/v1/services/config/{id}": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "指定されたIDのMCPサーバーを取得します",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "MCP"
-                ],
-                "summary": "MCPサーバーを取得",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "Server ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/backend-go_internal_domain_mcp.MCPServer"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "MCPサーバーの情報を更新します",
+                "description": "指定したIDのサービス設定を取得",
                 "consumes": [
                     "application/json"
                 ],
@@ -692,25 +562,54 @@
                     "application/json"
                 ],
                 "tags": [
-                    "MCP"
+                    "Services"
                 ],
-                "summary": "MCPサーバーを更新",
+                "summary": "サービス設定取得",
                 "parameters": [
                     {
                         "type": "string",
-                        "format": "uuid",
-                        "description": "Server ID",
+                        "description": "サービス設定ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_domain_service.ServiceConfig"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "サービス設定を更新",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Services"
+                ],
+                "summary": "サービス設定更新",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "サービス設定ID",
                         "name": "id",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "更新情報",
+                        "description": "更新内容",
                         "name": "input",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/backend-go_internal_domain_mcp.UpdateMCPServerInput"
+                            "$ref": "#/definitions/backend-go_internal_domain_service.UpdateServiceConfigInput"
                         }
                     }
                 ],
@@ -718,60 +617,27 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/backend-go_internal_domain_mcp.MCPServer"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
+                            "$ref": "#/definitions/backend-go_internal_domain_service.ServiceConfig"
                         }
                     }
                 }
             },
             "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
+                "description": "サービス設定を削除",
+                "consumes": [
+                    "application/json"
                 ],
-                "description": "MCPサーバーを削除します",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "MCP"
+                    "Services"
                 ],
-                "summary": "MCPサーバーを削除",
+                "summary": "サービス設定削除",
                 "parameters": [
                     {
                         "type": "string",
-                        "format": "uuid",
-                        "description": "Server ID",
+                        "description": "サービス設定ID",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -780,115 +646,28 @@
                 "responses": {
                     "204": {
                         "description": "No Content"
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
-                        }
                     }
                 }
             }
         },
-        "/api/v1/mcp-servers/{id}/sync": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "MCPサーバーからツールカタログを取得して同期します",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "MCP"
-                ],
-                "summary": "ツールカタログを同期",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "format": "uuid",
-                        "description": "Server ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/mcp-servers/{id}/tools": {
+        "/api/v1/services/{service_class}/tools": {
             "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
+                "description": "指定したサービスのツール一覧を取得",
+                "consumes": [
+                    "application/json"
                 ],
-                "description": "指定されたMCPサーバーのツール一覧を取得します",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "MCP"
+                    "Services"
                 ],
-                "summary": "サーバーのツール一覧を取得",
+                "summary": "サービスツール一覧取得",
                 "parameters": [
                     {
                         "type": "string",
-                        "format": "uuid",
-                        "description": "Server ID",
-                        "name": "id",
+                        "description": "サービスクラス名",
+                        "name": "service_class",
                         "in": "path",
                         "required": true
                     }
@@ -899,96 +678,9 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/backend-go_internal_domain_mcp.MCPTool"
+                                "type": "object",
+                                "additionalProperties": true
                             }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/mcp-tools/search": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "カテゴリ、タグ、キーワードでツールを検索します",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "MCP"
-                ],
-                "summary": "ツールを検索",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Category",
-                        "name": "category",
-                        "in": "query"
-                    },
-                    {
-                        "type": "array",
-                        "items": {
-                            "type": "string"
-                        },
-                        "collectionFormat": "csv",
-                        "description": "Tags (comma-separated)",
-                        "name": "tags",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "Search query",
-                        "name": "q",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/backend-go_internal_domain_mcp.MCPTool"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/internal_handler_http.ErrorResponse"
                         }
                     }
                 }
@@ -1535,203 +1227,68 @@
         }
     },
     "definitions": {
-        "backend-go_internal_domain_mcp.AuthType": {
-            "type": "string",
-            "enum": [
-                "bearer",
-                "api_key",
-                "custom"
+        "backend-go_internal_domain_service.CreateServiceConfigInput": {
+            "type": "object",
+            "required": [
+                "service_class"
             ],
-            "x-enum-comments": {
-                "AuthTypeAPIKey": "API Key",
-                "AuthTypeBearer": "Bearer Token",
-                "AuthTypeCustom": "カスタムヘッダー"
-            },
-            "x-enum-varnames": [
-                "AuthTypeBearer",
-                "AuthTypeAPIKey",
-                "AuthTypeCustom"
-            ]
+            "properties": {
+                "auth": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "config": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "service_class": {
+                    "type": "string"
+                }
+            }
         },
-        "backend-go_internal_domain_mcp.MCPServer": {
+        "backend-go_internal_domain_service.ServiceConfig": {
             "type": "object",
             "properties": {
-                "auth_type": {
-                    "$ref": "#/definitions/backend-go_internal_domain_mcp.AuthType"
+                "auth": {
+                    "type": "object",
+                    "additionalProperties": true
                 },
-                "base_url": {
-                    "type": "string"
+                "config": {
+                    "type": "object",
+                    "additionalProperties": true
                 },
                 "created_at": {
                     "type": "string"
                 },
-                "custom_headers": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "description": {
-                    "type": "string"
-                },
-                "enabled": {
-                    "type": "boolean"
-                },
                 "id": {
                     "type": "string"
                 },
-                "last_synced_at": {
-                    "type": "string"
-                },
-                "last_used_at": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "requires_auth": {
+                "is_enabled": {
                     "type": "boolean"
                 },
-                "server_type": {
-                    "$ref": "#/definitions/backend-go_internal_domain_mcp.ServerType"
-                },
-                "tools_count": {
-                    "type": "integer"
+                "service_class": {
+                    "type": "string"
                 },
                 "updated_at": {
                     "type": "string"
                 },
                 "user_id": {
-                    "description": "NULL = システム共通",
                     "type": "string"
                 }
             }
         },
-        "backend-go_internal_domain_mcp.MCPTool": {
+        "backend-go_internal_domain_service.UpdateServiceConfigInput": {
             "type": "object",
             "properties": {
-                "category": {
-                    "type": "string"
-                },
-                "created_at": {
-                    "type": "string"
-                },
-                "enabled": {
-                    "type": "boolean"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "input_schema": {
+                "auth": {
                     "type": "object",
                     "additionalProperties": true
                 },
-                "mcp_server_id": {
-                    "type": "string"
-                },
-                "synced_at": {
-                    "type": "string"
-                },
-                "tags": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "tool_description": {
-                    "type": "string"
-                },
-                "tool_name": {
-                    "type": "string"
-                },
-                "usage_count": {
-                    "type": "integer"
-                }
-            }
-        },
-        "backend-go_internal_domain_mcp.RegisterMCPServerInput": {
-            "type": "object",
-            "required": [
-                "base_url",
-                "name"
-            ],
-            "properties": {
-                "api_key": {
-                    "description": "平文で受け取る",
-                    "type": "string",
-                    "maxLength": 500
-                },
-                "auth_type": {
-                    "$ref": "#/definitions/backend-go_internal_domain_mcp.AuthType"
-                },
-                "base_url": {
-                    "type": "string"
-                },
-                "custom_headers": {
+                "config": {
                     "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
+                    "additionalProperties": true
                 },
-                "description": {
-                    "type": "string",
-                    "maxLength": 1000
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 255
-                },
-                "requires_auth": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "backend-go_internal_domain_mcp.ServerType": {
-            "type": "string",
-            "enum": [
-                "built_in",
-                "external"
-            ],
-            "x-enum-comments": {
-                "ServerTypeBuiltIn": "システム組み込み",
-                "ServerTypeExternal": "ユーザー登録"
-            },
-            "x-enum-varnames": [
-                "ServerTypeBuiltIn",
-                "ServerTypeExternal"
-            ]
-        },
-        "backend-go_internal_domain_mcp.UpdateMCPServerInput": {
-            "type": "object",
-            "properties": {
-                "api_key": {
-                    "type": "string",
-                    "maxLength": 500
-                },
-                "auth_type": {
-                    "$ref": "#/definitions/backend-go_internal_domain_mcp.AuthType"
-                },
-                "base_url": {
-                    "type": "string"
-                },
-                "custom_headers": {
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    }
-                },
-                "description": {
-                    "type": "string",
-                    "maxLength": 1000
-                },
-                "enabled": {
-                    "type": "boolean"
-                },
-                "name": {
-                    "type": "string",
-                    "maxLength": 255
-                },
-                "requires_auth": {
+                "is_enabled": {
                     "type": "boolean"
                 }
             }
@@ -1804,6 +1361,13 @@
                 "provider": {
                     "type": "string"
                 },
+                "services": {
+                    "description": "サービス設定",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/backend-go_internal_handler_http_request.ServiceConfigRequest"
+                    }
+                },
                 "streaming_enabled": {
                     "description": "nilの場合はtrueがデフォルト",
                     "type": "boolean"
@@ -1839,6 +1403,28 @@
             ],
             "properties": {
                 "content": {
+                    "type": "string"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_request.ServiceConfigRequest": {
+            "type": "object",
+            "required": [
+                "service_class",
+                "tool_selection_mode"
+            ],
+            "properties": {
+                "selected_tools": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "service_class": {
+                    "type": "string"
+                },
+                "tool_selection_mode": {
+                    "description": "\"all\" or \"selected\"",
                     "type": "string"
                 }
             }
@@ -2202,14 +1788,6 @@
                     "items": {
                         "$ref": "#/definitions/backend-go_internal_handler_http_response.UserResponse"
                     }
-                }
-            }
-        },
-        "internal_handler_http.ErrorResponse": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "type": "string"
                 }
             }
         }

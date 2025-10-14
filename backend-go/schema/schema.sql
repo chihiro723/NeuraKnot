@@ -215,7 +215,7 @@ CREATE TABLE ai_tool_usage (
     tool_name VARCHAR(255) NOT NULL,
     tool_category VARCHAR(100) DEFAULT 'basic',
     -- basic: 基本ツール（日時、計算など）
-    -- mcp: MCPツール
+    -- service: サービスツール
     
     -- 実行情報
     input_data JSONB NOT NULL,
@@ -238,6 +238,70 @@ CREATE TABLE ai_tool_usage (
     -- 制約
     CONSTRAINT chk_tool_status CHECK (status IN ('completed', 'failed')),
     CONSTRAINT chk_tool_reference CHECK (session_id IS NOT NULL OR message_id IS NOT NULL)
+);
+
+-- ===========================================
+-- 7. ユーザーのサービス設定テーブル
+-- ===========================================
+CREATE TABLE user_service_configs (
+    -- プライマリキー
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    
+    -- ユーザー（必須）
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    
+    -- サービスクラス名（例：NotionService、SlackService）
+    service_class VARCHAR(255) NOT NULL,
+    
+    -- 暗号化された設定情報（AES-256-GCM）
+    encrypted_config BYTEA,
+    config_nonce BYTEA,
+    
+    -- 暗号化された認証情報（APIキー等、AES-256-GCM）
+    encrypted_auth BYTEA,
+    auth_nonce BYTEA,
+    
+    -- サービスが有効かどうか
+    is_enabled BOOLEAN DEFAULT TRUE,
+    
+    -- タイムスタンプ
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    -- 制約：1ユーザーにつき1サービスクラス
+    UNIQUE (user_id, service_class)
+);
+
+-- ===========================================
+-- 8. AI Agentとサービスの紐付けテーブル
+-- ===========================================
+CREATE TABLE ai_agent_services (
+    -- プライマリキー
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    
+    -- AI Agent（必須）
+    ai_agent_id UUID NOT NULL REFERENCES ai_agents(id) ON DELETE CASCADE,
+    
+    -- サービスクラス名（例：NotionService、SlackService）
+    service_class VARCHAR(255) NOT NULL,
+    
+    -- ツール選択モード
+    tool_selection_mode VARCHAR(50) DEFAULT 'all',
+    -- all: 全ツール使用
+    -- selected: selected_toolsで指定したツールのみ
+    
+    -- 選択されたツール名の配列（tool_selection_mode='selected'の場合）
+    selected_tools TEXT[],
+    
+    -- このサービスをAI Agentで使用するかどうか
+    enabled BOOLEAN DEFAULT TRUE,
+    
+    -- タイムスタンプ
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    -- 制約
+    UNIQUE (ai_agent_id, service_class),
+    CONSTRAINT chk_tool_selection_mode CHECK (tool_selection_mode IN ('all', 'selected'))
 );
 
 -- ===========================================
@@ -277,6 +341,16 @@ CREATE INDEX idx_ai_tool_usage_message ON ai_tool_usage(message_id) WHERE messag
 CREATE INDEX idx_ai_tool_usage_tool ON ai_tool_usage(tool_name);
 CREATE INDEX idx_ai_tool_usage_executed ON ai_tool_usage(executed_at DESC);
 CREATE INDEX idx_ai_tool_usage_input ON ai_tool_usage USING GIN(input_data);
+
+-- ユーザーサービス設定テーブルのインデックス
+CREATE INDEX idx_user_service_configs_user ON user_service_configs(user_id);
+CREATE INDEX idx_user_service_configs_service ON user_service_configs(service_class);
+CREATE INDEX idx_user_service_configs_enabled ON user_service_configs(user_id, is_enabled);
+
+-- AI Agentサービステーブルのインデックス
+CREATE INDEX idx_ai_agent_services_agent ON ai_agent_services(ai_agent_id);
+CREATE INDEX idx_ai_agent_services_service ON ai_agent_services(service_class);
+CREATE INDEX idx_ai_agent_services_enabled ON ai_agent_services(ai_agent_id, enabled);
 
 -- ===========================================
 -- 制約定義
@@ -344,6 +418,10 @@ CREATE TRIGGER update_ai_agents_updated_at BEFORE UPDATE ON ai_agents
 CREATE TRIGGER update_conversations_updated_at BEFORE UPDATE ON conversations
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+-- user_service_configs自動更新トリガー
+CREATE TRIGGER update_user_service_configs_updated_at BEFORE UPDATE ON user_service_configs
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- メッセージ送信時の統計更新トリガー
 CREATE TRIGGER trigger_update_conversation_on_message
 AFTER INSERT ON messages
@@ -360,6 +438,8 @@ COMMENT ON TABLE conversations IS 'ユーザーとAI Agent間の会話（MVP版�
 COMMENT ON TABLE messages IS 'チャットメッセージ（ユーザーまたはAI Agentが送信）';
 COMMENT ON TABLE ai_chat_sessions IS 'AI処理の実行セッション履歴（分析・デバッグ用）';
 COMMENT ON TABLE ai_tool_usage IS 'AIが使用したツールの実行履歴';
+COMMENT ON TABLE user_service_configs IS 'ユーザーごとのサービス設定と認証情報を保存';
+COMMENT ON TABLE ai_agent_services IS 'AI Agentとサービスの紐付けを管理';
 
 -- カラムコメント
 COMMENT ON COLUMN users.cognito_user_id IS 'AWS CognitoのユーザーID（一意）';
@@ -384,253 +464,19 @@ COMMENT ON COLUMN ai_chat_sessions.tools_used IS '使用したツールの数';
 
 COMMENT ON COLUMN ai_tool_usage.session_id IS 'AI処理セッションID（バッチ処理時に使用）';
 COMMENT ON COLUMN ai_tool_usage.message_id IS 'メッセージID（ストリーミング時に使用、リアルタイム表示用）';
-COMMENT ON COLUMN ai_tool_usage.tool_category IS 'ツールカテゴリ（basic: 基本ツール, mcp: MCPツール）';
+COMMENT ON COLUMN ai_tool_usage.tool_category IS 'ツールカテゴリ（basic: 基本ツール, service: サービスツール）';
 COMMENT ON COLUMN ai_tool_usage.input_data IS 'ツールへの入力データ（JSON形式）';
 COMMENT ON COLUMN ai_tool_usage.execution_time_ms IS 'ツール実行時間（ミリ秒）';
 
--- ===========================================
--- 7. MCPサーバー管理テーブル
--- ===========================================
-CREATE TABLE mcp_servers (
-    -- プライマリキー
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    
-    -- 所有者
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    
-    -- サーバー基本情報
-    name VARCHAR(255) NOT NULL,
-    base_url TEXT NOT NULL,
-    description TEXT,
-    
-    -- サーバータイプ
-    server_type VARCHAR(50) NOT NULL DEFAULT 'external',
-    -- built_in: システム組み込み（全ユーザー共通）
-    -- external: ユーザーが登録した外部サーバー
-    
-    -- 暗号化されたAPIキー
-    encrypted_api_key BYTEA,        -- 暗号化されたキー本体
-    key_nonce BYTEA,                -- 暗号化時のNonce（12バイト）
-    key_salt BYTEA,                 -- 追加のソルト（オプション）
-    
-    -- 認証設定
-    requires_auth BOOLEAN DEFAULT FALSE,
-    auth_type VARCHAR(50),          -- bearer, api_key, custom
-    custom_headers JSONB,           -- カスタムヘッダー（オプション）
-    
-    -- フラグ
-    key_exists BOOLEAN DEFAULT FALSE,  -- キーが設定されているか
-    is_active BOOLEAN DEFAULT TRUE,     -- サーバーが有効か
-    
-    -- 統計情報
-    tools_count INTEGER DEFAULT 0,      -- ツール数
-    
-    -- タイムスタンプ
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    last_synced_at TIMESTAMP,           -- 最後にツール同期した日時
-    last_used_at TIMESTAMP,             -- 最後に使用された日時
-    
-    -- 制約
-    CONSTRAINT unique_user_server_name UNIQUE(user_id, name),
-    CONSTRAINT chk_server_type CHECK (server_type IN ('built_in', 'external')),
-    CONSTRAINT chk_auth_type CHECK (auth_type IS NULL OR auth_type IN ('bearer', 'api_key', 'custom'))
-);
+COMMENT ON COLUMN user_service_configs.service_class IS 'Pythonクラス名（例：NotionService、SlackService）';
+COMMENT ON COLUMN user_service_configs.encrypted_config IS 'AES-256-GCMで暗号化された設定情報（JSON）';
+COMMENT ON COLUMN user_service_configs.config_nonce IS 'AES-256-GCM暗号化用のNonce';
+COMMENT ON COLUMN user_service_configs.encrypted_auth IS 'AES-256-GCMで暗号化された認証情報（APIキー等）';
+COMMENT ON COLUMN user_service_configs.auth_nonce IS 'AES-256-GCM暗号化用のNonce';
+COMMENT ON COLUMN user_service_configs.is_enabled IS 'サービスが有効かどうか';
 
--- ===========================================
--- 8. MCPツール管理テーブル
--- ===========================================
-CREATE TABLE mcp_tools (
-    -- プライマリキー
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    
-    -- 所属MCPサーバー
-    mcp_server_id UUID NOT NULL REFERENCES mcp_servers(id) ON DELETE CASCADE,
-    
-    -- ツール情報
-    tool_name VARCHAR(255) NOT NULL,
-    tool_description TEXT,
-    input_schema JSONB,             -- ツールの入力スキーマ（JSON Schema形式）
-    
-    -- 分類
-    category VARCHAR(100),          -- ツールのカテゴリ（datetime, math, text, etc）
-    tags TEXT[],                    -- タグ配列
-    
-    -- ステータス
-    enabled BOOLEAN DEFAULT TRUE,
-    
-    -- 統計情報
-    usage_count INTEGER DEFAULT 0,
-    
-    -- タイムスタンプ
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    last_used_at TIMESTAMP,
-    
-    -- 制約
-    CONSTRAINT unique_mcp_server_tool_name UNIQUE(mcp_server_id, tool_name)
-);
-
--- ===========================================
--- 9. AI Agent - MCPサーバー紐付けテーブル
--- ===========================================
-CREATE TABLE ai_agent_mcp_servers (
-    -- AI Agent
-    ai_agent_id UUID NOT NULL REFERENCES ai_agents(id) ON DELETE CASCADE,
-    
-    -- MCPサーバー
-    mcp_server_id UUID NOT NULL REFERENCES mcp_servers(id) ON DELETE CASCADE,
-    
-    -- ツール選択モード
-    tool_selection_mode VARCHAR(50) NOT NULL DEFAULT 'all',
-    -- all: そのサーバーの全ツールを使用
-    -- selected: ai_agent_mcp_toolsで指定されたツールのみ使用
-    
-    -- タイムスタンプ
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    
-    -- プライマリキー
-    PRIMARY KEY (ai_agent_id, mcp_server_id),
-    
-    -- 制約
-    CONSTRAINT chk_tool_selection_mode CHECK (tool_selection_mode IN ('all', 'selected'))
-);
-
--- ===========================================
--- 10. AI Agent - 個別MCPツール紐付けテーブル
--- ===========================================
-CREATE TABLE ai_agent_mcp_tools (
-    -- AI Agent
-    ai_agent_id UUID NOT NULL REFERENCES ai_agents(id) ON DELETE CASCADE,
-    
-    -- MCPツール
-    mcp_tool_id UUID NOT NULL REFERENCES mcp_tools(id) ON DELETE CASCADE,
-    
-    -- タイムスタンプ
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    
-    -- プライマリキー
-    PRIMARY KEY (ai_agent_id, mcp_tool_id)
-);
-
--- ===========================================
--- MCPインデックス定義
--- ===========================================
-
--- MCPサーバーテーブルのインデックス
-CREATE INDEX idx_mcp_servers_user ON mcp_servers(user_id, is_active);
-CREATE INDEX idx_mcp_servers_type ON mcp_servers(server_type);
-CREATE INDEX idx_mcp_servers_active ON mcp_servers(is_active) WHERE is_active = true;
-CREATE INDEX idx_mcp_servers_last_used ON mcp_servers(last_used_at DESC NULLS LAST);
-
--- MCPツールテーブルのインデックス
-CREATE INDEX idx_mcp_tools_server ON mcp_tools(mcp_server_id, enabled);
-CREATE INDEX idx_mcp_tools_name ON mcp_tools(tool_name);
-CREATE INDEX idx_mcp_tools_category ON mcp_tools(category) WHERE category IS NOT NULL;
-CREATE INDEX idx_mcp_tools_enabled ON mcp_tools(enabled) WHERE enabled = true;
-CREATE INDEX idx_mcp_tools_schema ON mcp_tools USING GIN(input_schema);
-
--- AI Agent - MCPサーバー紐付けのインデックス
-CREATE INDEX idx_ai_agent_mcp_servers_agent ON ai_agent_mcp_servers(ai_agent_id);
-CREATE INDEX idx_ai_agent_mcp_servers_server ON ai_agent_mcp_servers(mcp_server_id);
-
--- AI Agent - MCPツール紐付けのインデックス
-CREATE INDEX idx_ai_agent_mcp_tools_agent ON ai_agent_mcp_tools(ai_agent_id);
-CREATE INDEX idx_ai_agent_mcp_tools_tool ON ai_agent_mcp_tools(mcp_tool_id);
-
--- ===========================================
--- MCPトリガー定義
--- ===========================================
-
--- updated_at自動更新トリガー
-CREATE TRIGGER update_mcp_servers_updated_at BEFORE UPDATE ON mcp_servers
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_mcp_tools_updated_at BEFORE UPDATE ON mcp_tools
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- ===========================================
--- MCPコメント定義
--- ===========================================
-
--- テーブルコメント
-COMMENT ON TABLE mcp_servers IS 'MCPサーバー情報（外部ツールサーバー + 組み込みツール）';
-COMMENT ON TABLE mcp_tools IS 'MCPサーバーが提供するツールの定義';
-COMMENT ON TABLE ai_agent_mcp_servers IS 'AI AgentとMCPサーバーの紐付け';
-COMMENT ON TABLE ai_agent_mcp_tools IS 'AI Agentが使用する個別MCPツールの紐付け';
-
--- カラムコメント
-COMMENT ON COLUMN mcp_servers.server_type IS 'サーバータイプ（built_in: 組み込み, external: 外部）';
-COMMENT ON COLUMN mcp_servers.encrypted_api_key IS 'AES-256-GCMで暗号化されたAPIキー';
-COMMENT ON COLUMN mcp_servers.key_nonce IS '暗号化時に使用したNonce（12バイト）';
-COMMENT ON COLUMN mcp_servers.key_exists IS 'APIキーが設定されているかのフラグ（検索用）';
-COMMENT ON COLUMN mcp_servers.custom_headers IS 'カスタムHTTPヘッダー（JSON形式）';
-
-COMMENT ON COLUMN mcp_tools.input_schema IS 'ツールの入力スキーマ（JSON Schema形式）';
-COMMENT ON COLUMN mcp_tools.category IS 'ツールカテゴリ（datetime, math, text, data, security, utility）';
-COMMENT ON COLUMN mcp_tools.usage_count IS 'ツールの使用回数';
-
-COMMENT ON COLUMN ai_agent_mcp_servers.tool_selection_mode IS 'ツール選択モード（all: 全ツール, selected: 個別選択）';
-
--- ===========================================
--- Built-in Tools 初期データ
--- ===========================================
-
--- システム共通の Built-in Tools サーバーを登録
--- user_id = '00000000-0000-0000-0000-000000000000' はシステムユーザー
-INSERT INTO mcp_servers (id, user_id, name, base_url, description, server_type, is_active, key_exists)
-VALUES (
-    '00000000-0000-0000-0000-000000000001', -- 固定UUID for built-in server
-    '00000000-0000-0000-0000-000000000000', -- System user ID
-    'Built-in Tools',
-    'http://backend-python:8001',
-    'BridgeSpeakに組み込まれた基本的なツール群です。日時計算、テキスト処理、データ変換、セキュリティユーティリティなどが含まれます。',
-    'built_in',
-    TRUE,
-    FALSE -- APIキーは不要
-) ON CONFLICT (id) DO NOTHING;
-
--- Built-in Toolsのツール定義を挿入
--- Pythonの`backend-python/app/tools/basic_tools.py`のツール名と一致させる
-INSERT INTO mcp_tools (mcp_server_id, tool_name, tool_description, category, input_schema) VALUES
--- 日時関連ツール
-('00000000-0000-0000-0000-000000000001', 'get_current_time_tool', '現在の日時（日本時間）を取得するツール', 'datetime', '{}'),
-('00000000-0000-0000-0000-000000000001', 'calculate_date_tool', '指定した日数後/前の日付を計算するツール', 'datetime', '{"type": "object", "properties": {"days": {"type": "integer"}}}'),
-('00000000-0000-0000-0000-000000000001', 'days_between_tool', '2つの日付間の日数を計算するツール', 'datetime', '{"type": "object", "properties": {"start_date": {"type": "string"}, "end_date": {"type": "string"}}}'),
-
--- 計算関連ツール
-('00000000-0000-0000-0000-000000000001', 'calculate_tool', '簡単な数式を計算するツール', 'math', '{"type": "object", "properties": {"expression": {"type": "string"}}}'),
-('00000000-0000-0000-0000-000000000001', 'statistics_tool', '数値リストの統計情報を計算するツール', 'math', '{"type": "object", "properties": {"numbers": {"type": "array"}}}'),
-('00000000-0000-0000-0000-000000000001', 'percentage_tool', 'パーセンテージを計算するツール', 'math', '{"type": "object", "properties": {"value": {"type": "number"}, "total": {"type": "number"}}}'),
-
--- テキスト処理ツール
-('00000000-0000-0000-0000-000000000001', 'count_characters_tool', 'テキストの文字数をカウントするツール', 'text', '{"type": "object", "properties": {"text": {"type": "string"}}}'),
-('00000000-0000-0000-0000-000000000001', 'text_case_tool', 'テキストの大文字/小文字を変換するツール', 'text', '{"type": "object", "properties": {"text": {"type": "string"}, "mode": {"type": "string"}}}'),
-('00000000-0000-0000-0000-000000000001', 'search_text_tool', 'テキスト内の文字列を検索するツール（正規表現対応）', 'text', '{"type": "object", "properties": {"text": {"type": "string"}, "pattern": {"type": "string"}}}'),
-('00000000-0000-0000-0000-000000000001', 'replace_text_tool', 'テキスト内の文字列を置換するツール', 'text', '{"type": "object", "properties": {"text": {"type": "string"}, "find": {"type": "string"}, "replace": {"type": "string"}}}'),
-
--- データ変換ツール
-('00000000-0000-0000-0000-000000000001', 'format_json_tool', 'JSON文字列を整形するツール', 'data', '{"type": "object", "properties": {"json_string": {"type": "string"}}}'),
-('00000000-0000-0000-0000-000000000001', 'base64_encode_tool', 'テキストをBase64エンコードするツール', 'data', '{"type": "object", "properties": {"text": {"type": "string"}}}'),
-('00000000-0000-0000-0000-000000000001', 'base64_decode_tool', 'Base64文字列をデコードするツール', 'data', '{"type": "object", "properties": {"encoded": {"type": "string"}}}'),
-('00000000-0000-0000-0000-000000000001', 'url_encode_tool', 'テキストをURLエンコードするツール', 'data', '{"type": "object", "properties": {"text": {"type": "string"}}}'),
-('00000000-0000-0000-0000-000000000001', 'url_decode_tool', 'URLエンコードされたテキストをデコードするツール', 'data', '{"type": "object", "properties": {"encoded": {"type": "string"}}}'),
-
--- セキュリティ・ユーティリティツール
-('00000000-0000-0000-0000-000000000001', 'generate_uuid_tool', 'ユニークなUUID（v4）を生成するツール', 'utility', '{}'),
-('00000000-0000-0000-0000-000000000001', 'hash_text_tool', 'テキストのハッシュ値を生成するツール', 'security', '{"type": "object", "properties": {"text": {"type": "string"}, "algorithm": {"type": "string"}}}'),
-
--- 単位変換ツール
-('00000000-0000-0000-0000-000000000001', 'convert_temperature_tool', '温度を変換するツール', 'utility', '{"type": "object", "properties": {"value": {"type": "number"}, "from_unit": {"type": "string"}, "to_unit": {"type": "string"}}}'),
-('00000000-0000-0000-0000-000000000001', 'convert_length_tool', '長さを変換するツール', 'utility', '{"type": "object", "properties": {"value": {"type": "number"}, "from_unit": {"type": "string"}, "to_unit": {"type": "string"}}}')
-ON CONFLICT (mcp_server_id, tool_name) DO NOTHING;
-
--- Built-in Tools サーバーのツール数を更新
-UPDATE mcp_servers 
-SET tools_count = (SELECT COUNT(*) FROM mcp_tools WHERE mcp_server_id = '00000000-0000-0000-0000-000000000001')
-WHERE id = '00000000-0000-0000-0000-000000000001';
-
--- ===========================================
--- スキーマ構築完了
--- ===========================================
+COMMENT ON COLUMN ai_agent_services.service_class IS 'Pythonクラス名（例：NotionService、SlackService）';
+COMMENT ON COLUMN ai_agent_services.tool_selection_mode IS 'all: 全ツール使用、selected: selected_toolsで指定したツールのみ';
+COMMENT ON COLUMN ai_agent_services.selected_tools IS 'ツール名の配列（tool_selection_mode=selectedの場合）';
+COMMENT ON COLUMN ai_agent_services.enabled IS 'このサービスをAI Agentで使用するかどうか';
 

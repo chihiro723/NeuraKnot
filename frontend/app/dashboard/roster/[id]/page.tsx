@@ -61,9 +61,7 @@ export default async function FriendDetailPage({
   const { id: friendId } = await params;
 
   return (
-    <Suspense
-      fallback={<LoadingSpinner text="プロフィールを読み込んでいます..." />}
-    >
+    <Suspense fallback={<LoadingSpinner />}>
       <FriendDetailData friendId={friendId} />
     </Suspense>
   );

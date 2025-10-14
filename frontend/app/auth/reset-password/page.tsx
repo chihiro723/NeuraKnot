@@ -196,11 +196,7 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense
-      fallback={
-        <LoadingSpinner text="パスワードリセット画面を準備しています..." />
-      }
-    >
+    <Suspense fallback={<LoadingSpinner />}>
       <ResetPasswordForm />
     </Suspense>
   );

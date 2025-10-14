@@ -5,10 +5,10 @@
 import { cn } from "@/lib/utils/cn";
 
 /**
- * パルス型リングスピナー
- * 拡大しながらフェードアウトするリングアニメーション
+ * パルス型スピナー
+ * 拡大しながらフェードアウトするアニメーション
  */
-export function PulseSpinner({ className }: { className?: string }) {
+function PulseSpinner({ className }: { className?: string }) {
   return (
     <div className={cn("relative w-16 h-16", className)}>
       {/* 外側のリング */}
@@ -38,7 +38,7 @@ export function PulseSpinner({ className }: { className?: string }) {
  * 二重リングスピナー
  * 2つのリングが逆方向に回転するモダンなアニメーション
  */
-export function DoubleRingSpinner({ className }: { className?: string }) {
+function DoubleRingSpinner({ className }: { className?: string }) {
   return (
     <div className={cn("relative w-12 h-12", className)}>
       {/* 外側のリング（時計回り） */}
@@ -62,13 +62,23 @@ export function DoubleRingSpinner({ className }: { className?: string }) {
 interface LoadingSpinnerProps {
   /** ローディング中に表示するテキスト */
   text?: string;
+  /** 画面中央に配置するかどうか */
+  centerScreen?: boolean;
 }
 
 export function LoadingSpinner({
-  text = "読み込み中...",
+  text,
+  centerScreen = false,
 }: LoadingSpinnerProps) {
   return (
-    <div className="flex flex-col flex-1 justify-center items-center h-full min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div
+      className={cn(
+        "flex flex-col justify-center items-center",
+        centerScreen
+          ? "fixed inset-0 z-50 bg-gray-50 dark:bg-gray-900"
+          : "flex-1 h-full min-h-screen bg-gray-50 dark:bg-gray-900"
+      )}
+    >
       {/* メインスピナー */}
       <div className="relative">
         <DoubleRingSpinner />
@@ -78,9 +88,11 @@ export function LoadingSpinner({
       </div>
 
       {/* ローディングテキスト */}
-      <p className="mt-12 text-sm font-medium text-gray-500 dark:text-gray-400">
-        {text}
-      </p>
+      {text && (
+        <p className="mt-12 text-sm font-medium text-gray-500 dark:text-gray-400">
+          {text}
+        </p>
+      )}
     </div>
   );
 }

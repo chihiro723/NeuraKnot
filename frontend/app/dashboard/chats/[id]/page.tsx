@@ -127,7 +127,7 @@ export default async function ChatDetailPage({ params }: ChatDetailPageProps) {
   const { id: chatId } = await params;
 
   return (
-    <Suspense fallback={<LoadingSpinner text="会話を読み込んでいます..." />}>
+    <Suspense fallback={<LoadingSpinner />}>
       <ChatWindowData chatId={chatId} />
     </Suspense>
   );

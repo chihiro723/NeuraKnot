@@ -31,8 +31,8 @@ class Settings(BaseSettings):
     LANGSMITH_ENDPOINT: str = "https://smith.langchain.com"
     
     # タイムアウト設定（秒）
-    MCP_CONNECTION_TIMEOUT: int = 10
-    MCP_TOOL_TIMEOUT: int = 30
+    SERVICE_CONNECTION_TIMEOUT: int = 10
+    SERVICE_TOOL_TIMEOUT: int = 30
     AGENT_EXECUTION_TIMEOUT: int = 120
     
     class Config:

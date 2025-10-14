@@ -12,6 +12,12 @@ import {
   Users,
   Handshake,
   Server,
+  ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  X,
+  CheckSquare,
+  Square,
 } from "lucide-react";
 import { getPersonalityLabel } from "@/lib/constants/personalities";
 import { cn } from "@/lib/utils/cn";
@@ -19,9 +25,9 @@ import type { FriendData } from "@/lib/types";
 import type { AuthUser } from "@/lib/types/auth";
 import { createAgent } from "@/lib/actions/ai-agent";
 import { useServerActionWithAuth } from "@/lib/hooks/useServerActionWithAuth";
-import { ToolSelector } from "@/components/mcp/ToolSelector";
-import { listMCPServers } from "@/lib/actions/mcp";
-import type { MCPServer, ToolSelectionMode } from "@/lib/types/mcp";
+import { getUserServicesWithDetails } from "@/lib/actions/services";
+import type { UserServiceWithDetails } from "@/lib/types/service";
+import { ServiceSelectorModal } from "@/components/services/ServiceSelectorModal";
 
 type AddType = "user" | "ai" | "group" | null;
 
@@ -58,9 +64,7 @@ export function AddFriendsPanel({ user }: AddFriendsPanelProps) {
       type: "user" as const,
       icon: User,
       title: "ユーザー",
-      description: "実際の人とつながって会話しよう",
-      iconColor: "text-gray-600 dark:text-gray-400",
-      bgColor: "bg-gray-100 dark:bg-gray-800",
+      description: "他のユーザーとつながって会話しよう",
       comingSoon: true,
     },
     {
@@ -68,8 +72,6 @@ export function AddFriendsPanel({ user }: AddFriendsPanelProps) {
       icon: Bot,
       title: "エージェント",
       description: "様々な個性を持つAIと会話しよう",
-      iconColor: "text-gray-600 dark:text-gray-400",
-      bgColor: "bg-gray-100 dark:bg-gray-800",
       comingSoon: false,
     },
     {
@@ -77,8 +79,6 @@ export function AddFriendsPanel({ user }: AddFriendsPanelProps) {
       icon: Handshake,
       title: "グループ",
       description: "複数の友だちやAIとグループチャット",
-      iconColor: "text-gray-600 dark:text-gray-400",
-      bgColor: "bg-gray-100 dark:bg-gray-800",
       comingSoon: true,
     },
   ];
@@ -108,8 +108,8 @@ export function AddFriendsPanel({ user }: AddFriendsPanelProps) {
             </div>
 
             {/* 選択カード */}
-            <div className="flex overflow-y-auto flex-1 justify-center items-start p-6 pb-8">
-              <div className="space-y-3 w-full">
+            <div className="flex overflow-y-auto flex-1 justify-center items-start p-4 pb-8">
+              <div className="space-y-4 w-full">
                 {addTypes.map((type) => {
                   const Icon = type.icon;
                   return (
@@ -120,39 +120,27 @@ export function AddFriendsPanel({ user }: AddFriendsPanelProps) {
                       }
                       disabled={type.comingSoon}
                       className={cn(
-                        "p-5 w-full bg-white rounded-xl border border-gray-200 dark:bg-gray-800 dark:border-gray-700",
-                        "transition-all duration-200 group animate-fadeIn",
+                        "relative w-full bg-white dark:bg-gray-800 rounded-xl border p-6 shadow-sm hover:shadow-md transition-all duration-200 text-left block min-h-[104px]",
                         type.comingSoon
-                          ? "opacity-60 cursor-not-allowed"
-                          : "hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm active:scale-[0.98]"
+                          ? "opacity-60 cursor-not-allowed border-gray-300 dark:border-gray-700"
+                          : "border-gray-300 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600"
                       )}
                     >
-                      <div className="flex items-center space-x-4">
-                        <div
-                          className={cn(
-                            "w-12 h-12 rounded-xl flex items-center justify-center transition-colors",
-                            type.bgColor
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="flex items-center font-medium text-gray-900 dark:text-white">
+                          <Icon className="mr-2 w-5 h-5" />
+                          {type.title}
+                          {type.comingSoon && (
+                            <span className="ml-2 px-2 py-0.5 text-[10px] font-medium text-gray-600 bg-gray-100 rounded dark:text-gray-400 dark:bg-gray-700">
+                              近日追加予定
+                            </span>
                           )}
-                        >
-                          <Icon className={cn("w-6 h-6", type.iconColor)} />
-                        </div>
-                        <div className="flex-1 text-left">
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-                              {type.title}
-                            </h3>
-                            {type.comingSoon && (
-                              <span className="px-2 py-0.5 text-[10px] font-medium text-gray-600 bg-gray-100 rounded dark:text-gray-400 dark:bg-gray-800">
-                                近日追加予定
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                            {type.description}
-                          </p>
-                        </div>
-                        <ArrowRight className="w-5 h-5 text-gray-400 transition-transform group-hover:translate-x-0.5" />
+                        </h3>
+                        <ChevronRight className="flex-shrink-0 w-5 h-5 text-gray-400 dark:text-gray-500" />
                       </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {type.description}
+                      </p>
                     </button>
                   );
                 })}
@@ -165,8 +153,8 @@ export function AddFriendsPanel({ user }: AddFriendsPanelProps) {
       {/* デスクトップ用レイアウト */}
       <div className="hidden flex-col h-full lg:flex">
         {/* 選択カード */}
-        <div className="flex flex-1 justify-center items-start p-4">
-          <div className="space-y-2 w-full">
+        <div className="flex overflow-y-auto flex-1 items-start p-4 lg:p-6">
+          <div className="space-y-6 w-full">
             {addTypes.map((type) => {
               const Icon = type.icon;
               const isSelected = currentSelectedType === type.type;
@@ -178,48 +166,29 @@ export function AddFriendsPanel({ user }: AddFriendsPanelProps) {
                   }
                   disabled={type.comingSoon}
                   className={cn(
-                    "p-3 w-full text-left bg-white rounded-lg border transition-all duration-200 dark:bg-gray-800 animate-fadeIn",
+                    "relative w-full bg-white dark:bg-gray-800 rounded-xl border p-6 shadow-sm hover:shadow-md transition-all duration-200 text-left block min-h-[104px]",
                     type.comingSoon
-                      ? "opacity-60 cursor-not-allowed"
+                      ? "opacity-60 cursor-not-allowed border-gray-300 dark:border-gray-700"
                       : isSelected
-                      ? `bg-green-50 border-green-500 dark:bg-green-500/10 dark:border-green-500`
-                      : `border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-750`
+                      ? "border-green-400 bg-green-50 dark:bg-green-500/10"
+                      : "border-gray-300 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600"
                   )}
                 >
-                  <div className="flex items-center space-x-3">
-                    <div
-                      className={cn(
-                        "w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
-                        isSelected
-                          ? "bg-green-100 dark:bg-green-500/20"
-                          : type.bgColor
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="flex items-center font-medium text-gray-900 dark:text-white lg:text-sm">
+                      <Icon className="mr-2 w-5 h-5" />
+                      {type.title}
+                      {type.comingSoon && (
+                        <span className="ml-2 px-2 py-0.5 text-[10px] font-medium text-gray-600 bg-gray-100 rounded dark:text-gray-400 dark:bg-gray-700">
+                          近日追加予定
+                        </span>
                       )}
-                    >
-                      <Icon
-                        className={cn(
-                          "w-5 h-5",
-                          isSelected
-                            ? "text-green-600 dark:text-green-400"
-                            : type.iconColor
-                        )}
-                      />
-                    </div>
-                    <div className="flex-1 text-left">
-                      <div className="flex gap-2 items-center">
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                          {type.title}
-                        </h3>
-                        {type.comingSoon && (
-                          <span className="px-2 py-0.5 text-[10px] font-medium text-gray-600 bg-gray-100 rounded dark:text-gray-400 dark:bg-gray-800">
-                            近日追加予定
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                        {type.description}
-                      </p>
-                    </div>
+                    </h3>
+                    <ChevronRight className="flex-shrink-0 w-5 h-5 text-gray-400 dark:text-gray-500" />
                   </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 lg:text-xs">
+                    {type.description}
+                  </p>
                 </button>
               );
             })}
@@ -341,38 +310,35 @@ export function AIAgentCreationPanel({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  // MCP設定
-  const [mcpServers, setMcpServers] = useState<MCPServer[]>([]);
-  const [mcpConfig, setMcpConfig] = useState<
-    Record<
-      string,
-      {
-        enabled: boolean;
-        mode: ToolSelectionMode;
-        selectedToolIds: string[];
-      }
-    >
-  >({});
+  // サービス選択
+  const [userServices, setUserServices] = useState<UserServiceWithDetails[]>(
+    []
+  );
+  const [selectedServices, setSelectedServices] = useState<
+    Array<{
+      service_class: string;
+      service_name: string;
+      tool_selection_mode: "all" | "selected";
+      selected_tools: string[];
+      enabled: boolean;
+    }>
+  >([]);
+  const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
+  const [expandedServices, setExpandedServices] = useState<Set<string>>(
+    new Set()
+  );
 
-  // MCPサーバー一覧を取得
+  // ユーザーのサービス一覧を取得
   useEffect(() => {
-    const fetchMCPServers = async () => {
-      const result = await listMCPServers();
-      if (result.success && result.servers) {
-        setMcpServers(result.servers);
-        // 初期状態を設定（Built-inサーバーはデフォルトで有効）
-        const initialConfig: typeof mcpConfig = {};
-        result.servers.forEach((server) => {
-          initialConfig[server.id] = {
-            enabled: server.server_type === "built_in",
-            mode: "all",
-            selectedToolIds: [],
-          };
-        });
-        setMcpConfig(initialConfig);
+    const fetchServices = async () => {
+      try {
+        const services = await getUserServicesWithDetails();
+        setUserServices(services);
+      } catch (err) {
+        console.error("Failed to load services:", err);
       }
     };
-    fetchMCPServers();
+    fetchServices();
   }, []);
 
   // 401エラー時に自動リフレッシュ
@@ -431,22 +397,65 @@ export function AIAgentCreationPanel({
 
   const currentProvider = providers.find((p) => p.id === formData.provider);
 
+  // サービス追加処理
+  const handleAddServices = (
+    services: Array<{
+      service_class: string;
+      service_name: string;
+      tool_selection_mode: "all" | "selected";
+      selected_tools: string[];
+      enabled: boolean;
+    }>
+  ) => {
+    setSelectedServices([...selectedServices, ...services]);
+  };
+
+  // サービス削除処理
+  const handleRemoveService = (serviceClass: string) => {
+    setSelectedServices(
+      selectedServices.filter((s) => s.service_class !== serviceClass)
+    );
+    setExpandedServices((prev) => {
+      const next = new Set(prev);
+      next.delete(serviceClass);
+      return next;
+    });
+  };
+
+  // ツール選択の切り替え
+  const toggleServiceExpand = (serviceClass: string) => {
+    setExpandedServices((prev) => {
+      const next = new Set(prev);
+      if (next.has(serviceClass)) {
+        next.delete(serviceClass);
+      } else {
+        next.add(serviceClass);
+      }
+      return next;
+    });
+  };
+
+  // ツール選択モードの変更
+  const updateToolSelection = (
+    serviceClass: string,
+    mode: "all" | "selected",
+    tools: string[]
+  ) => {
+    setSelectedServices(
+      selectedServices.map((s) =>
+        s.service_class === serviceClass
+          ? { ...s, tool_selection_mode: mode, selected_tools: tools }
+          : s
+      )
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
     startTransition(async () => {
       try {
-        // MCP設定を構築
-        const mcpServerConfigs = Object.entries(mcpConfig)
-          .filter(([_, config]) => config.enabled)
-          .map(([serverId, config]) => ({
-            mcp_server_id: serverId,
-            tool_selection_mode: config.mode,
-            selected_tool_ids:
-              config.mode === "selected" ? config.selectedToolIds : undefined,
-          }));
-
         // Server Actionを呼び出す（401エラー時に自動リフレッシュ）
         const result = await createAgentWithAuth({
           name: formData.name,
@@ -458,10 +467,9 @@ export function AIAgentCreationPanel({
           provider: formData.provider,
           temperature: formData.temperature,
           max_tokens: formData.max_tokens,
-          tools_enabled: formData.tools_enabled,
+          tools_enabled: true, // 常に有効
           streaming_enabled: formData.streaming_enabled,
-          mcp_servers:
-            mcpServerConfigs.length > 0 ? mcpServerConfigs : undefined,
+          services: selectedServices.length > 0 ? selectedServices : undefined,
         });
 
         if (!result) {
@@ -514,8 +522,8 @@ export function AIAgentCreationPanel({
               <ArrowRight className="w-5 h-5 rotate-180" />
             </button>
           )}
-          <div className="flex justify-center items-center w-10 h-10 bg-gray-100 rounded-lg dark:bg-gray-800">
-            <Bot className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          <div className="flex justify-center items-center w-10 h-10 bg-green-100 rounded-lg dark:bg-green-500/20">
+            <Bot className="w-5 h-5 text-green-600 drop-shadow-[0_0_8px_rgba(34,197,94,0.5)] dark:text-green-400" />
           </div>
           <div>
             <h1 className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -556,7 +564,7 @@ export function AIAgentCreationPanel({
                 placeholder="例: マイアシスタント"
                 className={cn(
                   "px-4 py-3 w-full bg-white rounded-lg border border-gray-300 dark:bg-gray-900 dark:border-gray-700",
-                  "focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500",
+                  "focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500",
                   "placeholder-gray-400 text-gray-900 dark:text-white dark:placeholder-gray-500"
                 )}
                 required
@@ -577,7 +585,7 @@ export function AIAgentCreationPanel({
                 rows={3}
                 className={cn(
                   "px-4 py-3 w-full bg-white rounded-lg border border-gray-300 dark:bg-gray-900 dark:border-gray-700",
-                  "focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500",
+                  "focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500",
                   "placeholder-gray-400 text-gray-900 resize-none dark:text-white dark:placeholder-gray-500"
                 )}
               />
@@ -611,7 +619,7 @@ export function AIAgentCreationPanel({
                         })
                       }
                       className={cn(
-                        "relative p-4 text-center rounded-lg border-2 transition-all",
+                        "relative p-4 text-center rounded-lg border transition-all",
                         isSelected
                           ? "bg-green-50 border-green-500 dark:bg-green-900/20 dark:border-green-500"
                           : "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600"
@@ -649,7 +657,7 @@ export function AIAgentCreationPanel({
                 rows={4}
                 className={cn(
                   "px-4 py-3 w-full bg-white rounded-lg border border-gray-300 dark:bg-gray-900 dark:border-gray-700",
-                  "focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500",
+                  "focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500",
                   "text-sm placeholder-gray-400 text-gray-900 resize-none dark:text-white dark:placeholder-gray-500"
                 )}
               />
@@ -682,7 +690,7 @@ export function AIAgentCreationPanel({
                       })
                     }
                     className={cn(
-                      "p-3 rounded-lg border-2 transition-all font-medium text-sm",
+                      "p-3 rounded-lg border transition-all font-medium text-sm",
                       formData.provider === provider.id
                         ? "bg-green-50 border-green-500 text-green-700 dark:bg-green-900/20 dark:text-green-400 dark:border-green-500"
                         : "bg-white border-gray-300 text-gray-700 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-600"
@@ -707,7 +715,7 @@ export function AIAgentCreationPanel({
                       setFormData({ ...formData, model: model.id })
                     }
                     className={cn(
-                      "w-full p-4 rounded-lg border-2 transition-all text-left",
+                      "w-full p-4 rounded-lg border transition-all text-left",
                       formData.model === model.id
                         ? "bg-green-50 border-green-500 dark:bg-green-900/20 dark:border-green-500"
                         : "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600"
@@ -798,40 +806,6 @@ export function AIAgentCreationPanel({
             </div>
 
             <div className="space-y-4">
-              {/* ツール有効化 */}
-              <div className="flex justify-between items-center py-3">
-                <div className="flex-1">
-                  <h4 className="font-medium text-gray-900 dark:text-white">
-                    ツール使用を許可
-                  </h4>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    日時取得、計算などの基本ツールを使用できるようにします
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setFormData({
-                      ...formData,
-                      tools_enabled: !formData.tools_enabled,
-                    })
-                  }
-                  className={cn(
-                    "relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2",
-                    formData.tools_enabled
-                      ? "bg-green-500"
-                      : "bg-gray-300 dark:bg-gray-600"
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-200",
-                      formData.tools_enabled ? "translate-x-6" : "translate-x-1"
-                    )}
-                  />
-                </button>
-              </div>
-
               {/* ストリーミング有効化 */}
               <div className="flex justify-between items-center py-3">
                 <div className="flex-1">
@@ -851,7 +825,7 @@ export function AIAgentCreationPanel({
                     })
                   }
                   className={cn(
-                    "relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2",
+                    "relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-1 focus:ring-green-500 focus:ring-offset-2",
                     formData.streaming_enabled
                       ? "bg-green-500"
                       : "bg-gray-300 dark:bg-gray-600"
@@ -867,109 +841,196 @@ export function AIAgentCreationPanel({
                   />
                 </button>
               </div>
-            </div>
-          </div>
 
-          {/* セクション5: MCPサーバー＆ツール設定 */}
-          {mcpServers.length > 0 && (
-            <div className="space-y-6">
-              <div className="pb-3 border-b border-gray-200 dark:border-gray-800">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  MCPサーバー＆ツール設定
-                </h2>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  このAI Agentが使用するMCPサーバーとツールを設定します
-                </p>
-              </div>
+              {/* サービス選択 */}
+              <div className="py-3">
+                <div className="flex justify-between items-center mb-3">
+                  <div>
+                    <h4 className="font-medium text-gray-900 dark:text-white">
+                      外部サービス連携
+                    </h4>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      このエージェントが使用できるサービスとツールを設定
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsServiceModalOpen(true)}
+                    className="px-3 py-1.5 text-sm font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+                  >
+                    サービスを追加
+                  </button>
+                </div>
 
-              <div className="space-y-4">
-                <div className="space-y-3">
-                  {mcpServers.map((server) => (
-                    <div key={server.id} className="space-y-2">
-                      {/* サーバー有効化チェックボックス */}
-                      <div className="flex items-center p-3 space-x-3 rounded-lg border border-gray-300 dark:border-gray-700">
-                        <input
-                          type="checkbox"
-                          id={`server-${server.id}`}
-                          checked={mcpConfig[server.id]?.enabled || false}
-                          onChange={(e) =>
-                            setMcpConfig({
-                              ...mcpConfig,
-                              [server.id]: {
-                                ...mcpConfig[server.id],
-                                enabled: e.target.checked,
-                              },
-                            })
-                          }
-                          className="w-4 h-4 rounded border-gray-300"
-                        />
-                        <label
-                          htmlFor={`server-${server.id}`}
-                          className="flex-1 cursor-pointer"
+                {/* 選択済みサービス一覧 */}
+                {selectedServices.length > 0 ? (
+                  <div className="space-y-2">
+                    {selectedServices.map((service) => {
+                      const userService = userServices.find(
+                        (s) => s.service.class_name === service.service_class
+                      );
+                      const isExpanded = expandedServices.has(
+                        service.service_class
+                      );
+
+                      return (
+                        <div
+                          key={service.service_class}
+                          className="bg-white rounded-lg border border-gray-200 dark:border-gray-700 dark:bg-gray-800/50"
                         >
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <span className="font-medium text-gray-900 dark:text-white">
-                                {server.name}
-                              </span>
-                              {server.server_type === "built_in" && (
-                                <span className="ml-2 px-2 py-0.5 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded">
-                                  Built-in
-                                </span>
+                          {/* サービスヘッダー */}
+                          <div className="flex gap-3 items-center p-3">
+                            <div
+                              className={cn(
+                                "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
+                                userService?.service.type === "built_in"
+                                  ? "bg-gradient-to-br from-blue-500 to-blue-600"
+                                  : "bg-gradient-to-br from-green-500 to-green-600"
+                              )}
+                            >
+                              <Server className="w-5 h-5 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h5 className="font-medium text-gray-900 truncate dark:text-white">
+                                {service.service_name}
+                              </h5>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {service.tool_selection_mode === "all"
+                                  ? "全ツール使用可能"
+                                  : `${service.selected_tools.length}個のツールを選択中`}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                toggleServiceExpand(service.service_class)
+                              }
+                              className="p-2 text-gray-400 rounded-lg transition-colors hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            >
+                              {isExpanded ? (
+                                <ChevronUp className="w-4 h-4" />
+                              ) : (
+                                <ChevronDown className="w-4 h-4" />
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleRemoveService(service.service_class)
+                              }
+                              className="p-2 text-red-400 rounded-lg transition-colors hover:text-red-600 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+
+                          {/* ツール一覧（展開時） */}
+                          {isExpanded && userService && (
+                            <div className="p-3 space-y-2 border-t border-gray-200 dark:border-gray-700">
+                              <div className="flex gap-2 mb-2">
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    updateToolSelection(
+                                      service.service_class,
+                                      "all",
+                                      []
+                                    )
+                                  }
+                                  className={cn(
+                                    "px-3 py-1 text-xs rounded-lg transition-colors",
+                                    service.tool_selection_mode === "all"
+                                      ? "bg-green-500 text-white"
+                                      : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                                  )}
+                                >
+                                  全ツール
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    updateToolSelection(
+                                      service.service_class,
+                                      "selected",
+                                      []
+                                    )
+                                  }
+                                  className={cn(
+                                    "px-3 py-1 text-xs rounded-lg transition-colors",
+                                    service.tool_selection_mode === "selected"
+                                      ? "bg-green-500 text-white"
+                                      : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                                  )}
+                                >
+                                  個別選択
+                                </button>
+                              </div>
+
+                              {service.tool_selection_mode === "selected" && (
+                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                  {userService.tools.map((tool) => {
+                                    const isSelected =
+                                      service.selected_tools.includes(
+                                        tool.name
+                                      );
+                                    return (
+                                      <button
+                                        key={tool.name}
+                                        type="button"
+                                        onClick={() => {
+                                          const newTools = isSelected
+                                            ? service.selected_tools.filter(
+                                                (t) => t !== tool.name
+                                              )
+                                            : [
+                                                ...service.selected_tools,
+                                                tool.name,
+                                              ];
+                                          updateToolSelection(
+                                            service.service_class,
+                                            "selected",
+                                            newTools
+                                          );
+                                        }}
+                                        className={cn(
+                                          "flex gap-2 items-center p-2 text-left rounded-lg transition-colors",
+                                          isSelected
+                                            ? "text-green-900 bg-green-100 dark:bg-green-900/30 dark:text-green-300"
+                                            : "text-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-400"
+                                        )}
+                                      >
+                                        {isSelected ? (
+                                          <CheckSquare className="flex-shrink-0 w-4 h-4" />
+                                        ) : (
+                                          <Square className="flex-shrink-0 w-4 h-4" />
+                                        )}
+                                        <div className="flex-1 min-w-0">
+                                          <div className="text-sm font-medium truncate">
+                                            {tool.name}
+                                          </div>
+                                        </div>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
                               )}
                             </div>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              {server.tools_count}個のツール
-                            </span>
-                          </div>
-                          {server.description && (
-                            <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-                              {server.description}
-                            </p>
                           )}
-                        </label>
-                      </div>
-
-                      {/* ツールセレクター */}
-                      {mcpConfig[server.id]?.enabled && (
-                        <ToolSelector
-                          serverId={server.id}
-                          serverName={server.name}
-                          mode={mcpConfig[server.id]?.mode || "all"}
-                          selectedToolIds={
-                            mcpConfig[server.id]?.selectedToolIds || []
-                          }
-                          onModeChange={(mode: ToolSelectionMode) =>
-                            setMcpConfig({
-                              ...mcpConfig,
-                              [server.id]: {
-                                ...mcpConfig[server.id],
-                                enabled: true,
-                                mode,
-                                selectedToolIds:
-                                  mcpConfig[server.id]?.selectedToolIds || [],
-                              },
-                            })
-                          }
-                          onToolsChange={(toolIds: string[]) =>
-                            setMcpConfig({
-                              ...mcpConfig,
-                              [server.id]: {
-                                ...mcpConfig[server.id],
-                                enabled: true,
-                                mode: mcpConfig[server.id]?.mode || "all",
-                                selectedToolIds: toolIds,
-                              },
-                            })
-                          }
-                        />
-                      )}
-                    </div>
-                  ))}
-                </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="py-6 text-center rounded-lg border border-gray-300 border-dashed dark:border-gray-700">
+                    <Server className="mx-auto mb-2 w-8 h-8 text-gray-400" />
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      サービスが選択されていません
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
-          )}
+          </div>
 
           {/* エラー表示 */}
           {error && (
@@ -1016,6 +1077,14 @@ export function AIAgentCreationPanel({
             </button>
           </div>
         </form>
+
+        {/* サービス選択モーダル */}
+        <ServiceSelectorModal
+          isOpen={isServiceModalOpen}
+          onClose={() => setIsServiceModalOpen(false)}
+          userServices={userServices}
+          onAddServices={handleAddServices}
+        />
       </div>
     </div>
   );
@@ -1094,7 +1163,7 @@ export function UserFriendAddPanel({
                 placeholder="ユーザー名を入力..."
                 className={cn(
                   "flex-1 px-4 py-3 bg-white rounded-lg border border-gray-300 dark:bg-gray-900 dark:border-gray-700",
-                  "focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500",
+                  "focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500",
                   "placeholder-gray-400 text-gray-900 dark:text-white dark:placeholder-gray-500"
                 )}
               />
@@ -1295,7 +1364,7 @@ export function GroupCreationPanel({
                 placeholder="例: プロジェクトチーム"
                 className={cn(
                   "px-4 py-3 w-full bg-white rounded-lg border border-gray-300 dark:bg-gray-900 dark:border-gray-700",
-                  "focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500",
+                  "focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500",
                   "placeholder-gray-400 text-gray-900 dark:text-white dark:placeholder-gray-500"
                 )}
                 required
@@ -1315,7 +1384,7 @@ export function GroupCreationPanel({
                 rows={4}
                 className={cn(
                   "px-4 py-3 w-full bg-white rounded-lg border border-gray-300 dark:bg-gray-900 dark:border-gray-700",
-                  "focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500",
+                  "focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500",
                   "placeholder-gray-400 text-gray-900 resize-none dark:text-white dark:placeholder-gray-500"
                 )}
               />
@@ -1359,7 +1428,7 @@ export function GroupCreationPanel({
                       type="button"
                       onClick={() => handleMemberToggle(friend.id)}
                       className={cn(
-                        "flex items-center p-3 space-x-3 w-full bg-white rounded-lg border-2 dark:bg-gray-900",
+                        "flex items-center p-3 space-x-3 w-full bg-white rounded-lg border dark:bg-gray-900",
                         "text-left transition-all",
                         isSelected
                           ? "bg-green-50 border-green-500 dark:bg-green-500/10 dark:border-green-500"

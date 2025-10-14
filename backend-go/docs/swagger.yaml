@@ -1,142 +1,48 @@
 basePath: /api/v1
 definitions:
-  backend-go_internal_domain_mcp.AuthType:
-    enum:
-    - bearer
-    - api_key
-    - custom
-    type: string
-    x-enum-comments:
-      AuthTypeAPIKey: API Key
-      AuthTypeBearer: Bearer Token
-      AuthTypeCustom: カスタムヘッダー
-    x-enum-varnames:
-    - AuthTypeBearer
-    - AuthTypeAPIKey
-    - AuthTypeCustom
-  backend-go_internal_domain_mcp.MCPServer:
+  backend-go_internal_domain_service.CreateServiceConfigInput:
     properties:
-      auth_type:
-        $ref: '#/definitions/backend-go_internal_domain_mcp.AuthType'
-      base_url:
+      auth:
+        additionalProperties: true
+        type: object
+      config:
+        additionalProperties: true
+        type: object
+      service_class:
         type: string
+    required:
+    - service_class
+    type: object
+  backend-go_internal_domain_service.ServiceConfig:
+    properties:
+      auth:
+        additionalProperties: true
+        type: object
+      config:
+        additionalProperties: true
+        type: object
       created_at:
         type: string
-      custom_headers:
-        additionalProperties:
-          type: string
-        type: object
-      description:
-        type: string
-      enabled:
-        type: boolean
       id:
         type: string
-      last_synced_at:
-        type: string
-      last_used_at:
-        type: string
-      name:
-        type: string
-      requires_auth:
+      is_enabled:
         type: boolean
-      server_type:
-        $ref: '#/definitions/backend-go_internal_domain_mcp.ServerType'
-      tools_count:
-        type: integer
+      service_class:
+        type: string
       updated_at:
         type: string
       user_id:
-        description: NULL = システム共通
         type: string
     type: object
-  backend-go_internal_domain_mcp.MCPTool:
+  backend-go_internal_domain_service.UpdateServiceConfigInput:
     properties:
-      category:
-        type: string
-      created_at:
-        type: string
-      enabled:
-        type: boolean
-      id:
-        type: string
-      input_schema:
+      auth:
         additionalProperties: true
         type: object
-      mcp_server_id:
-        type: string
-      synced_at:
-        type: string
-      tags:
-        items:
-          type: string
-        type: array
-      tool_description:
-        type: string
-      tool_name:
-        type: string
-      usage_count:
-        type: integer
-    type: object
-  backend-go_internal_domain_mcp.RegisterMCPServerInput:
-    properties:
-      api_key:
-        description: 平文で受け取る
-        maxLength: 500
-        type: string
-      auth_type:
-        $ref: '#/definitions/backend-go_internal_domain_mcp.AuthType'
-      base_url:
-        type: string
-      custom_headers:
-        additionalProperties:
-          type: string
+      config:
+        additionalProperties: true
         type: object
-      description:
-        maxLength: 1000
-        type: string
-      name:
-        maxLength: 255
-        type: string
-      requires_auth:
-        type: boolean
-    required:
-    - base_url
-    - name
-    type: object
-  backend-go_internal_domain_mcp.ServerType:
-    enum:
-    - built_in
-    - external
-    type: string
-    x-enum-comments:
-      ServerTypeBuiltIn: システム組み込み
-      ServerTypeExternal: ユーザー登録
-    x-enum-varnames:
-    - ServerTypeBuiltIn
-    - ServerTypeExternal
-  backend-go_internal_domain_mcp.UpdateMCPServerInput:
-    properties:
-      api_key:
-        maxLength: 500
-        type: string
-      auth_type:
-        $ref: '#/definitions/backend-go_internal_domain_mcp.AuthType'
-      base_url:
-        type: string
-      custom_headers:
-        additionalProperties:
-          type: string
-        type: object
-      description:
-        maxLength: 1000
-        type: string
-      enabled:
-        type: boolean
-      name:
-        maxLength: 255
-        type: string
-      requires_auth:
+      is_enabled:
         type: boolean
     type: object
   backend-go_internal_handler_http_request.ChangeEmailRequest:
@@ -182,6 +88,11 @@ definitions:
         type: string
       provider:
         type: string
+      services:
+        description: サービス設定
+        items:
+          $ref: '#/definitions/backend-go_internal_handler_http_request.ServiceConfigRequest'
+        type: array
       streaming_enabled:
         description: nilの場合はtrueがデフォルト
         type: boolean
@@ -209,6 +120,21 @@ definitions:
         type: string
     required:
     - content
+    type: object
+  backend-go_internal_handler_http_request.ServiceConfigRequest:
+    properties:
+      selected_tools:
+        items:
+          type: string
+        type: array
+      service_class:
+        type: string
+      tool_selection_mode:
+        description: '"all" or "selected"'
+        type: string
+    required:
+    - service_class
+    - tool_selection_mode
     type: object
   backend-go_internal_handler_http_request.SignInRequest:
     properties:
@@ -448,11 +374,6 @@ definitions:
         items:
           $ref: '#/definitions/backend-go_internal_handler_http_response.UserResponse'
         type: array
-    type: object
-  internal_handler_http.ErrorResponse:
-    properties:
-      error:
-        type: string
     type: object
 host: localhost:8080
 info:
@@ -755,50 +676,11 @@ paths:
       summary: メッセージ送信
       tags:
       - Chat
-  /api/v1/conversations/{id}/messages/stream:
-    post:
+  /api/v1/services:
+    get:
       consumes:
       - application/json
-      description: 会話にメッセージを送信してAI応答をストリーミングで取得します
-      parameters:
-      - description: 会話ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: メッセージ内容
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/backend-go_internal_handler_http_request.SendMessageRequest'
-      produces:
-      - text/event-stream
-      responses:
-        "200":
-          description: SSEストリーム
-          schema:
-            type: string
-        "400":
-          description: バリデーションエラー
-          schema:
-            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
-        "401":
-          description: 認証エラー
-          schema:
-            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
-        "500":
-          description: サーバーエラー
-          schema:
-            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: メッセージ送信（ストリーミング）
-      tags:
-      - Chat
-  /api/v1/mcp-servers:
-    get:
-      description: ユーザーがアクセス可能なMCPサーバー一覧を取得します（システム共通 + ユーザー登録）
+      description: Pythonから全サービスの一覧を取得
       produces:
       - application/json
       responses:
@@ -806,62 +688,81 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/backend-go_internal_domain_mcp.MCPServer'
+              additionalProperties: true
+              type: object
             type: array
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: MCPサーバー一覧を取得
+      summary: サービス一覧取得
       tags:
-      - MCP
+      - Services
+  /api/v1/services/{service_class}/tools:
+    get:
+      consumes:
+      - application/json
+      description: 指定したサービスのツール一覧を取得
+      parameters:
+      - description: サービスクラス名
+        in: path
+        name: service_class
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+      summary: サービスツール一覧取得
+      tags:
+      - Services
+  /api/v1/services/config:
+    get:
+      consumes:
+      - application/json
+      description: ユーザーのサービス設定一覧を取得
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/backend-go_internal_domain_service.ServiceConfig'
+            type: array
+      summary: サービス設定一覧取得
+      tags:
+      - Services
     post:
       consumes:
       - application/json
-      description: ユーザーが外部MCPサーバーを登録します。APIキーは暗号化されてDBに保存されます。
+      description: ユーザーのサービス設定を作成
       parameters:
-      - description: 登録情報
+      - description: サービス設定
         in: body
         name: input
         required: true
         schema:
-          $ref: '#/definitions/backend-go_internal_domain_mcp.RegisterMCPServerInput'
+          $ref: '#/definitions/backend-go_internal_domain_service.CreateServiceConfigInput'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/backend-go_internal_domain_mcp.MCPServer'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: MCPサーバーを登録
+            $ref: '#/definitions/backend-go_internal_domain_service.ServiceConfig'
+      summary: サービス設定作成
       tags:
-      - MCP
-  /api/v1/mcp-servers/{id}:
+      - Services
+  /api/v1/services/config/{id}:
     delete:
-      description: MCPサーバーを削除します
+      consumes:
+      - application/json
+      description: サービス設定を削除
       parameters:
-      - description: Server ID
-        format: uuid
+      - description: サービス設定ID
         in: path
         name: id
         required: true
@@ -871,32 +772,15 @@ paths:
       responses:
         "204":
           description: No Content
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: MCPサーバーを削除
+      summary: サービス設定削除
       tags:
-      - MCP
+      - Services
     get:
-      description: 指定されたIDのMCPサーバーを取得します
+      consumes:
+      - application/json
+      description: 指定したIDのサービス設定を取得
       parameters:
-      - description: Server ID
-        format: uuid
+      - description: サービス設定ID
         in: path
         name: id
         required: true
@@ -907,193 +791,36 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/backend-go_internal_domain_mcp.MCPServer'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: MCPサーバーを取得
+            $ref: '#/definitions/backend-go_internal_domain_service.ServiceConfig'
+      summary: サービス設定取得
       tags:
-      - MCP
+      - Services
     put:
       consumes:
       - application/json
-      description: MCPサーバーの情報を更新します
+      description: サービス設定を更新
       parameters:
-      - description: Server ID
-        format: uuid
+      - description: サービス設定ID
         in: path
         name: id
         required: true
         type: string
-      - description: 更新情報
+      - description: 更新内容
         in: body
         name: input
         required: true
         schema:
-          $ref: '#/definitions/backend-go_internal_domain_mcp.UpdateMCPServerInput'
+          $ref: '#/definitions/backend-go_internal_domain_service.UpdateServiceConfigInput'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/backend-go_internal_domain_mcp.MCPServer'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: MCPサーバーを更新
+            $ref: '#/definitions/backend-go_internal_domain_service.ServiceConfig'
+      summary: サービス設定更新
       tags:
-      - MCP
-  /api/v1/mcp-servers/{id}/sync:
-    post:
-      description: MCPサーバーからツールカタログを取得して同期します
-      parameters:
-      - description: Server ID
-        format: uuid
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: ツールカタログを同期
-      tags:
-      - MCP
-  /api/v1/mcp-servers/{id}/tools:
-    get:
-      description: 指定されたMCPサーバーのツール一覧を取得します
-      parameters:
-      - description: Server ID
-        format: uuid
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/backend-go_internal_domain_mcp.MCPTool'
-            type: array
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: サーバーのツール一覧を取得
-      tags:
-      - MCP
-  /api/v1/mcp-tools/search:
-    get:
-      description: カテゴリ、タグ、キーワードでツールを検索します
-      parameters:
-      - description: Category
-        in: query
-        name: category
-        type: string
-      - collectionFormat: csv
-        description: Tags (comma-separated)
-        in: query
-        items:
-          type: string
-        name: tags
-        type: array
-      - description: Search query
-        in: query
-        name: q
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/backend-go_internal_domain_mcp.MCPTool'
-            type: array
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/internal_handler_http.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: ツールを検索
-      tags:
-      - MCP
+      - Services
   /auth/confirm-forgot-password:
     post:
       consumes:

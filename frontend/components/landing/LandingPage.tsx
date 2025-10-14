@@ -1153,7 +1153,7 @@ export function LandingPage({
               </Link>
 
               <p className="mb-8 max-w-md leading-relaxed text-slate-400">
-                MCP統合により4,000以上のサービスと連携可能な、あなた専用のスーパーAIアシスタント。
+                サービス統合により多数のツールと連携可能な、あなた専用のスーパーAIアシスタント。
               </p>
 
               <div className="flex space-x-4">

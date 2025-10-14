@@ -113,13 +113,13 @@ class ToolsRequiredButAllDisallowed(BridgeSpeakException):
         )
 
 
-class MCPToolExecutionError(BridgeSpeakException):
-    """MCPツール実行エラー"""
+class ServiceToolExecutionError(BridgeSpeakException):
+    """サービスツール実行エラー"""
     
     def __init__(self, tool_name: str, error_message: str):
         super().__init__(
-            "MCP_TOOL_EXECUTION_ERROR",
-            f"MCPツール '{tool_name}' の実行に失敗しました",
+            "SERVICE_TOOL_EXECUTION_ERROR",
+            f"サービスツール '{tool_name}' の実行に失敗しました",
             {"tool_name": tool_name, "error": error_message},
             422
         )
@@ -156,13 +156,13 @@ class InternalError(BridgeSpeakException):
 # 外部サービスエラー (503)
 # ========================================
 
-class MCPConnectionError(BridgeSpeakException):
-    """MCP接続エラー"""
+class ServiceConnectionError(BridgeSpeakException):
+    """サービス接続エラー"""
     
-    def __init__(self, server_name: str, details: Optional[Dict] = None):
+    def __init__(self, service_name: str, details: Optional[Dict] = None):
         super().__init__(
-            "MCP_CONNECTION_ERROR",
-            f"MCPサーバー '{server_name}' に接続できません",
+            "SERVICE_CONNECTION_ERROR",
+            f"サービス '{service_name}' に接続できません",
             details,
             503
         )
@@ -184,14 +184,14 @@ class LLMAPIError(BridgeSpeakException):
 # タイムアウトエラー (504)
 # ========================================
 
-class MCPTimeoutError(BridgeSpeakException):
-    """MCPタイムアウト"""
+class ServiceTimeoutError(BridgeSpeakException):
+    """サービスタイムアウト"""
     
-    def __init__(self, server_name: str, timeout: float):
+    def __init__(self, service_name: str, timeout: float):
         super().__init__(
-            "MCP_TIMEOUT_ERROR",
-            f"MCPサーバー '{server_name}' がタイムアウトしました ({timeout}秒)",
-            {"server_name": server_name, "timeout": timeout},
+            "SERVICE_TIMEOUT_ERROR",
+            f"サービス '{service_name}' がタイムアウトしました ({timeout}秒)",
+            {"service_name": service_name, "timeout": timeout},
             504
         )
 

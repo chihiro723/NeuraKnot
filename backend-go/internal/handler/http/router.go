@@ -11,7 +11,7 @@ import (
 	userrepo "backend-go/internal/infrastructure/persistence/user"
 	aiusecase "backend-go/internal/usecase/ai"
 	chatusecase "backend-go/internal/usecase/chat"
-	mcpusecase "backend-go/internal/usecase/mcp"
+	serviceusecase "backend-go/internal/usecase/service"
 	userusecase "backend-go/internal/usecase/user"
 	"log"
 	"net/http"
@@ -50,6 +50,7 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 
 	// AI関連の依存関係
 	aiAgentRepo := persistence.NewAIAgentRepository(db.DB)
+	aiAgentServiceRepo := persistence.NewAIAgentServiceRepository(db.DB)
 	conversationRepo := persistence.NewConversationRepository(db.DB)
 	messageRepo := persistence.NewMessageRepository(db.DB)
 	toolUsageRepo := persistence.NewToolUsageRepository(db.DB)
@@ -58,38 +59,37 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 
 	// AI関連のユースケースとハンドラー
 	agentUsecase := aiusecase.NewAgentUsecase(aiAgentRepo)
-	chatUsecase := chatusecase.NewChatUsecase(aiAgentRepo, conversationRepo, messageRepo, toolUsageRepo, chatSessionRepo, aiClient)
+	chatUsecase := chatusecase.NewChatUsecase(aiAgentRepo, conversationRepo, messageRepo, toolUsageRepo, chatSessionRepo, aiAgentServiceRepo, aiClient)
 
-	aiAgentHandler := NewAIAgentHandler(agentUsecase)
+	aiAgentHandler := NewAIAgentHandler(agentUsecase, aiAgentServiceRepo)
 	chatHandler := NewChatHandler(chatUsecase)
 
 	// 暗号化サービスの初期化
-	var encryptionService *crypto.EncryptionService
+	var encryption *crypto.EncryptionService
 	if cfg.Security.EncryptionMasterKey != "" {
 		var err error
-		encryptionService, err = crypto.NewEncryptionService(cfg.Security.EncryptionMasterKey)
+		encryption, err = crypto.NewEncryptionService(cfg.Security.EncryptionMasterKey)
 		if err != nil {
 			log.Printf("Warning: Failed to initialize encryption service: %v", err)
-			// 暗号化サービスなしで継続（MCP機能は制限される）
+			// 暗号化サービスなしで継続（サービス機能は制限される）
 		}
 	} else {
-		log.Println("Warning: ENCRYPTION_MASTER_KEY not set, MCP server registration will be disabled")
+		log.Println("Warning: ENCRYPTION_MASTER_KEY not set, service registration will be disabled")
 	}
 
-	// MCP関連の依存関係とハンドラー
-	var mcpHandler *MCPHandler
-	if encryptionService != nil {
-		mcpServerRepo := persistence.NewMCPServerRepository(db.DB)
-		mcpToolRepo := persistence.NewMCPToolRepository(db.DB)
+	// Service関連の依存関係とハンドラー
+	var serviceHandler *ServiceHandler
+	if encryption != nil {
+		serviceConfigRepo := persistence.NewServiceConfigRepository(db.DB, encryption)
+		aiAgentServiceRepo := persistence.NewAIAgentServiceRepository(db.DB)
 
-		serverUsecase := mcpusecase.NewMCPServerUsecase(mcpServerRepo, mcpToolRepo, encryptionService, aiClient)
-		toolUsecase := mcpusecase.NewMCPToolUsecase(mcpToolRepo, mcpServerRepo)
+		serviceUsecase := serviceusecase.NewServiceUsecase(serviceConfigRepo, aiAgentServiceRepo, encryption, cfg.AIService.URL)
 
-		mcpHandler = NewMCPHandler(serverUsecase, toolUsecase)
+		serviceHandler = NewServiceHandler(serviceUsecase)
 	}
 
 	// ルートを設定
-	setupRoutes(engine, userHandler, aiAgentHandler, chatHandler, mcpHandler, authService)
+	setupRoutes(engine, userHandler, aiAgentHandler, chatHandler, serviceHandler, authService)
 
 	return &Router{
 		engine: engine,
@@ -97,7 +97,7 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 }
 
 // setupRoutes ルートを設定
-func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *AIAgentHandler, chatHandler *ChatHandler, mcpHandler *MCPHandler, authService user.AuthService) {
+func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *AIAgentHandler, chatHandler *ChatHandler, serviceHandler *ServiceHandler, authService user.AuthService) {
 	// ヘルスチェック
 	engine.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -150,24 +150,26 @@ func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *A
 		{
 			conversations.GET("", chatHandler.ListConversations)
 			conversations.POST("", chatHandler.GetOrCreateConversation)
-			conversations.POST("/:id/messages", chatHandler.SendMessage)
-			conversations.POST("/:id/messages/stream", chatHandler.SendMessageStream)
+			conversations.POST("/:id/messages", chatHandler.SendMessage) // ストリーミングも自動対応
 			conversations.GET("/:id/messages", chatHandler.GetMessages)
 			conversations.PATCH("/:conversation_id/messages/:message_id/tools/positions", chatHandler.UpdateToolPositions)
 		}
 
-		// MCPサーバー関連（認証必要）
-		if mcpHandler != nil {
-			mcpServers := v1.Group("/mcp-servers")
-			mcpServers.Use(authMiddleware.RequireAuth())
+		// サービス関連（認証必要）
+		if serviceHandler != nil {
+			// サービス一覧・ツール一覧（Pythonプロキシ）
+			services := v1.Group("/services")
+			services.Use(authMiddleware.RequireAuth())
 			{
-				mcpServers.POST("", mcpHandler.RegisterServer)
-				mcpServers.GET("", mcpHandler.ListServers)
-				mcpServers.GET("/:id", mcpHandler.GetServer)
-				mcpServers.PUT("/:id", mcpHandler.UpdateServer)
-				mcpServers.DELETE("/:id", mcpHandler.DeleteServer)
-				mcpServers.POST("/:id/sync", mcpHandler.SyncToolCatalog)
-				mcpServers.GET("/:id/tools", mcpHandler.ListTools)
+				services.GET("", serviceHandler.ListServices)
+				services.GET("/:service_class/tools", serviceHandler.GetServiceTools)
+
+				// サービス設定のCRUD
+				services.POST("/config", serviceHandler.CreateServiceConfig)
+				services.GET("/config", serviceHandler.GetUserServiceConfigs)
+				services.GET("/config/:id", serviceHandler.GetServiceConfigByID)
+				services.PUT("/config/:id", serviceHandler.UpdateServiceConfig)
+				services.DELETE("/config/:id", serviceHandler.DeleteServiceConfig)
 			}
 		}
 	}
