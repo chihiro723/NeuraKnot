@@ -1,0 +1,237 @@
+"use client";
+
+import { useState } from "react";
+import { X, Plus, Check } from "lucide-react";
+import { cn } from "@/lib/utils/cn";
+import { getServiceIcon, getServiceGradient } from "@/lib/utils/serviceIcons";
+import { registerService } from "@/lib/actions/services";
+import type { Service, ServiceConfig } from "@/lib/types/service";
+
+interface ServiceRegistrationModalProps {
+  service: Service | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess?: (config: ServiceConfig) => void;
+}
+
+/**
+ * サービス登録モーダル
+ * サービス詳細と認証情報入力フォームを表示
+ */
+export function ServiceRegistrationModal({
+  service,
+  isOpen,
+  onClose,
+  onSuccess,
+}: ServiceRegistrationModalProps) {
+  const [authData, setAuthData] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  if (!isOpen || !service) return null;
+
+  // サービスに適したアイコンとグラデーションを取得
+  const ServiceIcon = getServiceIcon(service.name);
+  const gradientClass = getServiceGradient(service.name);
+
+  // 認証が必要かチェック
+  const requiresAuth =
+    service.auth_schema &&
+    Object.keys(service.auth_schema.properties || {}).length > 0;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsSubmitting(true);
+
+    try {
+      const config = await registerService(
+        service.class_name,
+        undefined,
+        requiresAuth ? authData : undefined
+      );
+
+      if (onSuccess) {
+        onSuccess(config);
+      }
+      onClose();
+    } catch (err: any) {
+      setError(err.message || "サービスの登録に失敗しました");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div
+      className="flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-sm bg-black/50"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-2xl bg-white dark:bg-gray-800 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* ヘッダー */}
+        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center space-x-4">
+            <div
+              className={cn(
+                "flex justify-center items-center w-12 h-12 rounded-xl shadow-lg bg-gradient-to-br",
+                gradientClass
+              )}
+            >
+              {service.icon ? (
+                <span className="text-2xl">{service.icon}</span>
+              ) : (
+                <ServiceIcon className="w-6 h-6 text-white" />
+              )}
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                {service.name}
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                サービスを登録
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* コンテンツ */}
+        <div className="overflow-y-auto max-h-[calc(90vh-200px)] p-6">
+          {/* 説明 */}
+          {service.description && (
+            <div className="mb-6">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {service.description}
+              </p>
+            </div>
+          )}
+
+          {/* 詳細情報 */}
+          <div className="p-4 mb-6 space-y-2 bg-gray-50 rounded-lg dark:bg-gray-900">
+            <div className="flex justify-between text-sm">
+              <span className="font-medium text-gray-700 dark:text-gray-300">
+                クラス名
+              </span>
+              <span className="font-mono text-xs text-gray-600 dark:text-gray-400">
+                {service.class_name}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="font-medium text-gray-700 dark:text-gray-300">
+                タイプ
+              </span>
+              <span className="text-gray-600 dark:text-gray-400">
+                {service.type === "built_in"
+                  ? "組み込み"
+                  : service.type === "api_wrapper"
+                  ? "API ラッパー"
+                  : "カスタム"}
+              </span>
+            </div>
+          </div>
+
+          {/* 認証情報入力フォーム */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {requiresAuth ? (
+              <div>
+                <h3 className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">
+                  認証情報を入力
+                </h3>
+                <div className="space-y-4">
+                  {Object.entries(service.auth_schema.properties || {}).map(
+                    ([key, field]: [string, any]) => (
+                      <div key={key}>
+                        <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+                          {field.title || key}
+                          {field.required && (
+                            <span className="ml-1 text-red-500">*</span>
+                          )}
+                        </label>
+                        <input
+                          type={field.type === "string" ? "text" : "password"}
+                          value={authData[key] || ""}
+                          onChange={(e) =>
+                            setAuthData({
+                              ...authData,
+                              [key]: e.target.value,
+                            })
+                          }
+                          placeholder={field.description || `Enter ${key}`}
+                          required={field.required}
+                          className="px-4 py-3 w-full text-gray-900 bg-white rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-white focus:ring-1 focus:ring-green-500 focus:border-green-500"
+                        />
+                        {field.description && (
+                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            {field.description}
+                          </p>
+                        )}
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 dark:bg-blue-900/20 dark:border-blue-800">
+                <div className="flex items-center">
+                  <Check className="mr-2 w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    このサービスは認証情報が不要です
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* エラー表示 */}
+            {error && (
+              <div className="p-4 bg-red-50 rounded-lg border border-red-200 dark:bg-red-900/20 dark:border-red-800">
+                <p className="text-sm text-red-800 dark:text-red-200">
+                  {error}
+                </p>
+              </div>
+            )}
+          </form>
+        </div>
+
+        {/* アクションボタン */}
+        <div className="flex gap-3 justify-end px-6 py-4 bg-gray-50 border-t border-gray-200 dark:border-gray-700 dark:bg-gray-900">
+          <button
+            onClick={onClose}
+            disabled={isSubmitting}
+            className="px-4 py-2 text-gray-700 bg-white rounded-lg border border-gray-300 transition-colors dark:text-gray-300 dark:bg-gray-800 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            キャンセル
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className={cn(
+              "flex items-center space-x-2 px-6 py-2 rounded-lg transition-colors",
+              "bg-green-600 text-white hover:bg-green-700",
+              "disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
+            )}
+          >
+            {isSubmitting ? (
+              <>
+                <div className="w-4 h-4 rounded-full border-2 border-white animate-spin border-t-transparent" />
+                <span>登録中...</span>
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4" />
+                <span>登録する</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
