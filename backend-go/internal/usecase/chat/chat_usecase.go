@@ -9,6 +9,7 @@ import (
 
 	"backend-go/internal/domain/ai"
 	"backend-go/internal/domain/conversation"
+	"backend-go/internal/domain/service"
 	"backend-go/internal/infrastructure/external"
 
 	"github.com/google/uuid"
@@ -16,12 +17,13 @@ import (
 
 // ChatUsecase はチャットのユースケース
 type ChatUsecase struct {
-	aiRepo          ai.Repository
-	convRepo        conversation.ConversationRepository
-	msgRepo         conversation.MessageRepository
-	toolUsageRepo   conversation.ToolUsageRepository
-	chatSessionRepo conversation.ChatSessionRepository
-	aiClient        *external.AIClient
+	aiRepo             ai.Repository
+	convRepo           conversation.ConversationRepository
+	msgRepo            conversation.MessageRepository
+	toolUsageRepo      conversation.ToolUsageRepository
+	chatSessionRepo    conversation.ChatSessionRepository
+	aiAgentServiceRepo service.AIAgentServiceRepository
+	aiClient           *external.AIClient
 }
 
 // NewChatUsecase はチャットユースケースを作成
@@ -31,15 +33,17 @@ func NewChatUsecase(
 	msgRepo conversation.MessageRepository,
 	toolUsageRepo conversation.ToolUsageRepository,
 	chatSessionRepo conversation.ChatSessionRepository,
+	aiAgentServiceRepo service.AIAgentServiceRepository,
 	aiClient *external.AIClient,
 ) *ChatUsecase {
 	return &ChatUsecase{
-		aiRepo:          aiRepo,
-		convRepo:        convRepo,
-		msgRepo:         msgRepo,
-		toolUsageRepo:   toolUsageRepo,
-		chatSessionRepo: chatSessionRepo,
-		aiClient:        aiClient,
+		aiRepo:             aiRepo,
+		convRepo:           convRepo,
+		msgRepo:            msgRepo,
+		toolUsageRepo:      toolUsageRepo,
+		chatSessionRepo:    chatSessionRepo,
+		aiAgentServiceRepo: aiAgentServiceRepo,
+		aiClient:           aiClient,
 	}
 }
 
@@ -163,7 +167,25 @@ func (uc *ChatUsecase) SendMessage(
 		return nil, fmt.Errorf("failed to get AI agent: %w", err)
 	}
 
-	// 5. Backend-pythonにリクエスト
+	// 5. エージェントに紐付けられたサービス情報を取得
+	var services []external.ServiceConfig
+	if uc.aiAgentServiceRepo != nil {
+		agentServices, err := uc.aiAgentServiceRepo.FindByAgentID(conv.AIAgentID)
+		if err == nil && len(agentServices) > 0 {
+			services = make([]external.ServiceConfig, 0, len(agentServices))
+			for _, as := range agentServices {
+				if as.Enabled {
+					services = append(services, external.ServiceConfig{
+						ServiceClass:      as.ServiceClass,
+						ToolSelectionMode: as.ToolSelectionMode,
+						SelectedTools:     as.SelectedTools,
+					})
+				}
+			}
+		}
+	}
+
+	// 6. Backend-pythonにリクエスト
 	// システムプロンプトをカスタムシステムプロンプトとして設定
 	systemPrompt := agent.GetSystemPrompt()
 	aiReq := external.ChatRequest{
@@ -179,7 +201,7 @@ func (uc *ChatUsecase) SendMessage(
 			Persona:            agent.PersonaType.String(), // PersonaTypeを文字列に変換
 			CustomSystemPrompt: &systemPrompt,
 		},
-		IncludeBasicTools: true, // 基本ツールを含める
+		Services: services,
 	}
 
 	aiResp, err := uc.aiClient.Chat(ctx, aiReq)
@@ -255,16 +277,17 @@ func (uc *ChatUsecase) SendMessage(
 			continue
 		}
 
-		// 出力、実行時間、挿入位置を設定
+		// 出力、実行時間を設定（insert_positionはクライアント側で設定）
 		if toolCall.Output != "" {
 			toolUsage.SetOutput(toolCall.Output)
 		}
 		if toolCall.ExecutionTimeMs > 0 {
 			toolUsage.SetExecutionTime(toolCall.ExecutionTimeMs)
 		}
-		if toolCall.InsertPosition != nil {
-			toolUsage.SetInsertPosition(*toolCall.InsertPosition)
-		}
+		// insert_positionはクライアント側で後から設定するため、ここでは設定しない
+		// if toolCall.InsertPosition != nil {
+		// 	toolUsage.SetInsertPosition(*toolCall.InsertPosition)
+		// }
 		if toolCall.Error != nil {
 			toolUsage.SetError(*toolCall.Error)
 		}
@@ -434,7 +457,25 @@ func (uc *ChatUsecase) SendMessageStream(
 		return nil, nil, fmt.Errorf("failed to get AI agent: %w", err)
 	}
 
-	// 5. Backend-pythonにストリーミングリクエスト
+	// 5. エージェントに紐付けられたサービス情報を取得
+	var services []external.ServiceConfig
+	if uc.aiAgentServiceRepo != nil {
+		agentServices, err := uc.aiAgentServiceRepo.FindByAgentID(conv.AIAgentID)
+		if err == nil && len(agentServices) > 0 {
+			services = make([]external.ServiceConfig, 0, len(agentServices))
+			for _, as := range agentServices {
+				if as.Enabled {
+					services = append(services, external.ServiceConfig{
+						ServiceClass:      as.ServiceClass,
+						ToolSelectionMode: as.ToolSelectionMode,
+						SelectedTools:     as.SelectedTools,
+					})
+				}
+			}
+		}
+	}
+
+	// 6. Backend-pythonにストリーミングリクエスト
 	systemPrompt := agent.GetSystemPrompt()
 	aiReq := external.ChatRequest{
 		UserID:              userID.String(),
@@ -449,7 +490,7 @@ func (uc *ChatUsecase) SendMessageStream(
 			Persona:            agent.PersonaType.String(),
 			CustomSystemPrompt: &systemPrompt,
 		},
-		IncludeBasicTools: true,
+		Services: services,
 	}
 
 	eventChan, errChan := uc.aiClient.ChatStream(ctx, aiReq)
