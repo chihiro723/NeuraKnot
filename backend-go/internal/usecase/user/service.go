@@ -189,6 +189,11 @@ func (s *Service) ConfirmForgotPassword(ctx context.Context, email, confirmation
 	return s.authService.ConfirmForgotPassword(ctx, email, confirmationCode, newPassword)
 }
 
+// ResendConfirmationCode 確認コード再送信
+func (s *Service) ResendConfirmationCode(ctx context.Context, email string) error {
+	return s.authService.ResendConfirmationCode(ctx, email)
+}
+
 // RefreshToken リフレッシュトークンで新しいアクセストークンを取得
 func (s *Service) RefreshToken(ctx context.Context, refreshToken string) (*user.AuthResult, error) {
 	// 認証サービスでトークンをリフレッシュ

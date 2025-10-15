@@ -7,6 +7,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"time"
 
@@ -137,7 +138,21 @@ func (c *CognitoService) SignUp(ctx context.Context, email, password, displayNam
 
 	result, err := c.client.SignUp(ctx, input)
 	if err != nil {
-		return nil, fmt.Errorf("failed to sign up: %w", err)
+		// Cognitoの特定エラーを検出して適切なエラーメッセージを返す
+		var usernameExistsErr *types.UsernameExistsException
+		var invalidPasswordErr *types.InvalidPasswordException
+		var invalidParameterErr *types.InvalidParameterException
+
+		if errors.As(err, &usernameExistsErr) {
+			return nil, fmt.Errorf("このメールアドレスは既に登録されています")
+		}
+		if errors.As(err, &invalidPasswordErr) {
+			return nil, fmt.Errorf("パスワードは8文字以上で、大文字、小文字、数字、記号を含む必要があります")
+		}
+		if errors.As(err, &invalidParameterErr) {
+			return nil, fmt.Errorf("入力された情報に問題があります")
+		}
+		return nil, fmt.Errorf("アカウント作成に失敗しました")
 	}
 
 	// ユーザーエンティティを作成
@@ -184,7 +199,21 @@ func (c *CognitoService) SignIn(ctx context.Context, email, password string) (*u
 
 	result, err := c.client.InitiateAuth(ctx, input)
 	if err != nil {
-		return nil, fmt.Errorf("failed to sign in: %w", err)
+		// Cognitoの特定エラーを検出して適切なエラーメッセージを返す
+		var awsErr *types.UserNotConfirmedException
+		var notAuthErr *types.NotAuthorizedException
+		var userNotFoundErr *types.UserNotFoundException
+
+		if errors.As(err, &awsErr) {
+			return nil, fmt.Errorf("メールアドレスが未確認です。確認コードを入力してください")
+		}
+		if errors.As(err, &userNotFoundErr) {
+			return nil, fmt.Errorf("このメールアドレスは登録されていません")
+		}
+		if errors.As(err, &notAuthErr) {
+			return nil, fmt.Errorf("メールアドレスまたはパスワードが正しくありません")
+		}
+		return nil, fmt.Errorf("ログインに失敗しました")
 	}
 
 	authResult := result.AuthenticationResult
@@ -217,7 +246,20 @@ func (c *CognitoService) ConfirmSignUp(ctx context.Context, email, confirmationC
 
 	_, err := c.client.ConfirmSignUp(ctx, input)
 	if err != nil {
-		return fmt.Errorf("failed to confirm sign up: %w", err)
+		var codeMismatchErr *types.CodeMismatchException
+		var expiredCodeErr *types.ExpiredCodeException
+		var notFoundErr *types.UserNotFoundException
+
+		if errors.As(err, &codeMismatchErr) {
+			return fmt.Errorf("確認コードが間違っています")
+		}
+		if errors.As(err, &expiredCodeErr) {
+			return fmt.Errorf("確認コードの有効期限が切れています")
+		}
+		if errors.As(err, &notFoundErr) {
+			return fmt.Errorf("ユーザーが見つかりません")
+		}
+		return fmt.Errorf("アカウント確認に失敗しました")
 	}
 
 	return nil
@@ -237,7 +279,16 @@ func (c *CognitoService) ForgotPassword(ctx context.Context, email string) error
 
 	_, err := c.client.ForgotPassword(ctx, input)
 	if err != nil {
-		return fmt.Errorf("failed to initiate forgot password: %w", err)
+		var notFoundErr *types.UserNotFoundException
+		var limitExceededErr *types.LimitExceededException
+
+		if errors.As(err, &notFoundErr) {
+			return fmt.Errorf("このメールアドレスは登録されていません")
+		}
+		if errors.As(err, &limitExceededErr) {
+			return fmt.Errorf("リセット要求の回数が上限に達しました。しばらく時間をおいてから再試行してください")
+		}
+		return fmt.Errorf("パスワードリセットの開始に失敗しました")
 	}
 
 	return nil
@@ -259,7 +310,57 @@ func (c *CognitoService) ConfirmForgotPassword(ctx context.Context, email, confi
 
 	_, err := c.client.ConfirmForgotPassword(ctx, input)
 	if err != nil {
-		return fmt.Errorf("failed to confirm forgot password: %w", err)
+		var codeMismatchErr *types.CodeMismatchException
+		var expiredCodeErr *types.ExpiredCodeException
+		var notFoundErr *types.UserNotFoundException
+		var invalidPasswordErr *types.InvalidPasswordException
+
+		if errors.As(err, &codeMismatchErr) {
+			return fmt.Errorf("確認コードが間違っています")
+		}
+		if errors.As(err, &expiredCodeErr) {
+			return fmt.Errorf("確認コードの有効期限が切れています")
+		}
+		if errors.As(err, &notFoundErr) {
+			return fmt.Errorf("ユーザーが見つかりません")
+		}
+		if errors.As(err, &invalidPasswordErr) {
+			return fmt.Errorf("パスワードは8文字以上で、大文字、小文字、数字、記号を含む必要があります")
+		}
+		return fmt.Errorf("パスワードリセットに失敗しました")
+	}
+
+	return nil
+}
+
+// ResendConfirmationCode 確認コード再送信
+func (c *CognitoService) ResendConfirmationCode(ctx context.Context, email string) error {
+	input := &cognitoidentityprovider.ResendConfirmationCodeInput{
+		ClientId: aws.String(c.clientID),
+		Username: aws.String(email),
+	}
+
+	// Client Secretが設定されている場合、SECRET_HASHを追加
+	if c.clientSecret != "" {
+		input.SecretHash = aws.String(c.computeSecretHash(email))
+	}
+
+	_, err := c.client.ResendConfirmationCode(ctx, input)
+	if err != nil {
+		var notFoundErr *types.UserNotFoundException
+		var limitExceededErr *types.LimitExceededException
+		var invalidParameterErr *types.InvalidParameterException
+
+		if errors.As(err, &notFoundErr) {
+			return fmt.Errorf("このメールアドレスは登録されていません")
+		}
+		if errors.As(err, &limitExceededErr) {
+			return fmt.Errorf("再送信の回数が上限に達しました。しばらく時間をおいてから再試行してください")
+		}
+		if errors.As(err, &invalidParameterErr) {
+			return fmt.Errorf("メールアドレスが正しくありません")
+		}
+		return fmt.Errorf("確認コードの再送信に失敗しました")
 	}
 
 	return nil

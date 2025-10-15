@@ -40,3 +40,8 @@ type ConfirmForgotPasswordRequest struct {
 	ConfirmationCode string `json:"confirmation_code" binding:"required"`
 	NewPassword      string `json:"new_password" binding:"required,min=8"`
 }
+
+// ResendConfirmationCodeRequest 確認コード再送信リクエスト
+type ResendConfirmationCodeRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}

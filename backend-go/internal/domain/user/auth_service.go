@@ -38,6 +38,7 @@ type AuthService interface {
 	SignUp(ctx context.Context, email, password, displayName string) (*AuthResult, error)
 	SignIn(ctx context.Context, email, password string) (*AuthResult, error)
 	ConfirmSignUp(ctx context.Context, email, confirmationCode string) error
+	ResendConfirmationCode(ctx context.Context, email string) error
 	ForgotPassword(ctx context.Context, email string) error
 	ConfirmForgotPassword(ctx context.Context, email, confirmationCode, newPassword string) error
 }

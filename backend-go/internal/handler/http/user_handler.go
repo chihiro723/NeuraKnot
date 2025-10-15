@@ -8,6 +8,7 @@ import (
 	userusecase "backend-go/internal/usecase/user"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -76,7 +77,14 @@ func (h *UserHandler) SignIn(c *gin.Context) {
 
 	authResult, err := h.userService.SignIn(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, response.NewUnauthorizedErrorResponse("Invalid email or password"))
+		// エラーメッセージに基づいて適切なHTTPステータスコードを返す
+		if strings.Contains(err.Error(), "登録されていません") {
+			c.JSON(http.StatusNotFound, response.NewErrorResponse(err, http.StatusNotFound))
+		} else if strings.Contains(err.Error(), "未確認") {
+			c.JSON(http.StatusUnauthorized, response.NewErrorResponse(err, http.StatusUnauthorized))
+		} else {
+			c.JSON(http.StatusUnauthorized, response.NewErrorResponse(err, http.StatusUnauthorized))
+		}
 		return
 	}
 
@@ -162,6 +170,33 @@ func (h *UserHandler) ConfirmForgotPassword(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Password reset successfully"})
+}
+
+// ResendConfirmationCode 確認コード再送信
+// @Summary 確認コード再送信
+// @Description ユーザー登録確認用のコードを再送信します
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body request.ResendConfirmationCodeRequest true "再送信リクエスト"
+// @Success 200 {object} map[string]string "再送信成功"
+// @Failure 400 {object} response.ErrorResponse "バリデーションエラー"
+// @Router /auth/resend-confirmation-code [post]
+func (h *UserHandler) ResendConfirmationCode(c *gin.Context) {
+	var req request.ResendConfirmationCodeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(err.Error()))
+		return
+	}
+
+	// 確認コード再送信
+	err := h.userService.ResendConfirmationCode(c.Request.Context(), req.Email)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.NewErrorResponse(err, http.StatusBadRequest))
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Confirmation code resent successfully"})
 }
 
 // GetProfile プロフィール取得

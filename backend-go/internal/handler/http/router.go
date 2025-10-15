@@ -113,6 +113,7 @@ func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *A
 			auth.POST("/signup", userHandler.SignUp)
 			auth.POST("/signin", userHandler.SignIn)
 			auth.POST("/confirm-signup", userHandler.ConfirmSignUp)
+			auth.POST("/resend-confirmation-code", userHandler.ResendConfirmationCode)
 			auth.POST("/forgot-password", userHandler.ForgotPassword)
 			auth.POST("/confirm-forgot-password", userHandler.ConfirmForgotPassword)
 			auth.POST("/refresh", userHandler.RefreshToken)
