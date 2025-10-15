@@ -71,7 +71,7 @@ export function StreamingMessage({
       return (
         <>
           {content && (
-            <div className="max-w-none text-sm leading-relaxed break-words lg:text-base prose prose-sm dark:prose-invert overflow-wrap-anywhere">
+            <div className="max-w-none text-sm leading-relaxed break-words lg:text-base overflow-wrap-anywhere markdown-chat">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {content}
               </ReactMarkdown>
@@ -95,7 +95,7 @@ export function StreamingMessage({
           segments.push(
             <div
               key={`text-${index}`}
-              className="max-w-none text-sm leading-relaxed break-words lg:text-base prose prose-sm dark:prose-invert overflow-wrap-anywhere"
+              className="max-w-none text-sm leading-relaxed break-words lg:text-base overflow-wrap-anywhere markdown-chat"
             >
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {textSegment}
@@ -120,7 +120,7 @@ export function StreamingMessage({
         segments.push(
           <div
             key="text-final"
-            className="max-w-none text-sm leading-relaxed break-words lg:text-base prose prose-sm dark:prose-invert overflow-wrap-anywhere"
+            className="max-w-none text-sm leading-relaxed break-words lg:text-base overflow-wrap-anywhere markdown-chat"
           >
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {remainingText}
