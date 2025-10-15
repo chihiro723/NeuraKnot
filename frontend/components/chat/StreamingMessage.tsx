@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Copy, Check } from "lucide-react";
@@ -14,6 +15,7 @@ interface StreamingMessageProps {
   name: string;
   showCursor?: boolean;
   hideContent?: boolean;
+  agentId?: string; // エージェントID（ナビゲーション用）
 }
 
 export function StreamingMessage({
@@ -23,9 +25,11 @@ export function StreamingMessage({
   name,
   showCursor = true,
   hideContent = false,
+  agentId,
 }: StreamingMessageProps) {
   const [copied, setCopied] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setIsClient(true);
@@ -47,6 +51,12 @@ export function StreamingMessage({
     }
   };
 
+  const handleAvatarClick = () => {
+    if (agentId) {
+      router.push(`/dashboard/roster/${agentId}`);
+    }
+  };
+
   // hideContentがtrueの場合は、ツールインジケーターのみ表示
   if (hideContent) {
     return (
@@ -58,16 +68,8 @@ export function StreamingMessage({
 
   // メッセージとツールを時系列順に組み合わせる
   const renderContentWithTools = () => {
-    // ツールをinsertPositionでソート（null/undefinedは0として扱う）
-    const sortedTools = [...tools].sort(
-      (a, b) => (a.insertPosition ?? 0) - (b.insertPosition ?? 0)
-    );
-
     // ツールがない場合は通常のレンダリング
-    if (
-      sortedTools.length === 0 ||
-      !sortedTools.some((t) => t.insertPosition != null) // undefined と null の両方をチェック
-    ) {
+    if (tools.length === 0) {
       return (
         <>
           {content && (
@@ -77,6 +79,32 @@ export function StreamingMessage({
               </ReactMarkdown>
             </div>
           )}
+        </>
+      );
+    }
+
+    // ツールをinsertPositionでソート（null/undefinedは0として扱う）
+    const sortedTools = [...tools].sort(
+      (a, b) => (a.insertPosition ?? 0) - (b.insertPosition ?? 0)
+    );
+
+    // insertPositionが設定されているツールがあるかチェック
+    const hasPositionedTools = sortedTools.some(
+      (t) => t.insertPosition != null
+    );
+
+    // insertPositionが設定されていない場合は、ツールをメッセージの後に表示
+    if (!hasPositionedTools) {
+      return (
+        <>
+          {content && (
+            <div className="max-w-none text-sm leading-relaxed break-words lg:text-base overflow-wrap-anywhere markdown-chat">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {content}
+              </ReactMarkdown>
+            </div>
+          )}
+          <ToolUsageIndicator tools={sortedTools} />
         </>
       );
     }
@@ -136,8 +164,17 @@ export function StreamingMessage({
   return (
     <div className="flex justify-start px-2">
       <div className="flex items-start space-x-3 max-w-[85%] lg:max-w-[75%]">
-        {/* アイコン */}
-        <div className="flex overflow-hidden flex-shrink-0 justify-center items-center w-10 h-10 bg-green-500 rounded-full">
+        {/* アイコン（クリック可能） */}
+        <button
+          onClick={handleAvatarClick}
+          disabled={!agentId}
+          className={`flex overflow-hidden flex-shrink-0 justify-center items-center w-10 h-10 bg-green-500 rounded-full transition-all duration-200 ${
+            agentId
+              ? "hover:bg-green-600 hover:scale-105 cursor-pointer shadow-md hover:shadow-lg"
+              : "cursor-default"
+          }`}
+          title={agentId ? "エージェントの詳細を表示" : ""}
+        >
           {avatarUrl ? (
             <img
               src={avatarUrl}
@@ -149,7 +186,7 @@ export function StreamingMessage({
               {name.charAt(0)}
             </span>
           )}
-        </div>
+        </button>
 
         {/* 右側のコンテンツ */}
         <div className="flex overflow-hidden flex-col space-y-1 min-w-0">
@@ -166,9 +203,11 @@ export function StreamingMessage({
                 {renderContentWithTools()}
               </div>
 
-              {/* コピーボタンとタイムスタンプ（生成中と生成後で完全に同じUI） */}
+              {/* コピーボタンとタイムスタンプ（生成中は透明、生成後は通常表示） */}
               <div
-                className="flex flex-col flex-shrink-0 items-center self-end pb-1"
+                className={`flex flex-col flex-shrink-0 items-center self-end pb-1 ${
+                  showCursor ? "opacity-0" : "opacity-100"
+                }`}
                 style={{ gap: "4px" }}
               >
                 <button
