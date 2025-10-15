@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCognitoAuth } from "@/lib/hooks/useCognitoAuth";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { getAuthErrorMessage } from "@/lib/utils/auth-errors";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -24,11 +25,8 @@ export default function ForgotPasswordPage() {
       await forgotPassword({ email: email.trim() });
       setSuccess(true);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "パスワードリセットメールの送信に失敗しました"
-      );
+      console.error("Forgot password error:", err);
+      setError(getAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }

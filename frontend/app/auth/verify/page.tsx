@@ -1,34 +1,38 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { VerifyCodeInput } from "@/components/auth/VerifyCodeInput";
 import { cognitoAuth } from "@/lib/auth/cognito";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/feedback/LoadingSpinner";
+import { getAuthErrorMessage } from "@/lib/utils/auth-errors";
 
 export default function VerifyEmailPage() {
   const [email, setEmail] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [canResend, setCanResend] = useState(true);
+  const [resendCountdown, setResendCountdown] = useState(0);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    // sessionStorageからメールアドレスとパスワードを取得
-    const verifyEmail = sessionStorage.getItem("verify_email");
-    const verifyPassword = sessionStorage.getItem("verify_password");
+    // URLパラメータまたはsessionStorageからメールアドレスを取得
+    const urlEmail = searchParams.get("email");
+    const storageEmail = sessionStorage.getItem("verify_email");
+    const email = urlEmail || storageEmail;
 
-    if (!verifyEmail || !verifyPassword) {
-      // メールアドレスまたはパスワードがない場合は新規登録ページへ
+    if (!email) {
+      // メールアドレスがない場合は新規登録ページへ
       router.push("/auth/signup");
       return;
     }
 
-    setEmail(verifyEmail);
-    setPassword(verifyPassword);
-  }, [router]);
+    setEmail(email);
+  }, [router, searchParams]);
 
   // メールアドレスをマスク表示
   const maskEmail = (email: string) => {
@@ -42,41 +46,55 @@ export default function VerifyEmailPage() {
   const handleCodeComplete = async (code: string) => {
     setLoading(true);
     setError("");
+    setSuccessMessage("");
 
     try {
       // メール確認
       await cognitoAuth.confirmSignUp(email, code);
 
-      // 自動ログインを試行
-      try {
-        await cognitoAuth.signIn(email, password);
-
-        // 成功したらsessionStorageをクリア
-        sessionStorage.removeItem("verify_email");
-        sessionStorage.removeItem("verify_password");
-
-        // ダッシュボードへリダイレクト
-        router.push("/dashboard");
-      } catch (loginErr) {
-        // ログインに失敗した場合はsessionStorageをクリアしてログインページへ
-        sessionStorage.removeItem("verify_email");
-        sessionStorage.removeItem("verify_password");
-
-        console.error("自動ログインエラー:", loginErr);
-        router.push("/auth/login?verified=true");
-      }
-    } catch (err) {
-      // メール確認自体が失敗した場合もsessionStorageをクリア
+      // 成功したらsessionStorageをクリア
       sessionStorage.removeItem("verify_email");
       sessionStorage.removeItem("verify_password");
 
-      setError(
-        err instanceof Error ? err.message : "認証コードの確認に失敗しました"
-      );
+      // ログインページへリダイレクト（認証完了メッセージ付き）
+      router.push("/auth/login?verified=true");
+    } catch (err) {
+      console.error("Verify error:", err);
+      setError(getAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }
   };
+
+  const handleResendCode = async () => {
+    setLoading(true);
+    setError("");
+    setSuccessMessage("");
+
+    try {
+      await cognitoAuth.resendConfirmationCode(email);
+      setSuccessMessage("認証コードを再送信しました");
+      setCanResend(false);
+      setResendCountdown(60);
+    } catch (err) {
+      console.error("Resend error:", err);
+      setError(getAuthErrorMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // カウントダウンタイマー
+  useEffect(() => {
+    if (resendCountdown > 0) {
+      const timer = setTimeout(() => {
+        setResendCountdown(resendCountdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (resendCountdown === 0 && !canResend) {
+      setCanResend(true);
+    }
+  }, [resendCountdown, canResend]);
 
   if (!email) {
     return (
@@ -154,21 +172,39 @@ export default function VerifyEmailPage() {
             </div>
           )}
 
-          <div className="space-y-3 text-center">
-            <p className="text-sm text-white/70">
-              コードが届かない場合
-              <br />
-              <span className="text-xs text-white/50">
-                ※再送信機能は近日実装予定です
-              </span>
-            </p>
+          {successMessage && (
+            <div className="mb-4 p-3 text-sm text-center text-green-300 rounded-lg border bg-green-500/20 border-green-500/30">
+              {successMessage}
+            </div>
+          )}
 
-            <Link
-              href="/auth/signup"
-              className="inline-block text-sm text-emerald-400 transition-colors hover:text-emerald-300"
-            >
-              別のメールアドレスを使用
-            </Link>
+          <div className="space-y-3 text-center">
+            <div className="space-y-2">
+              <p className="text-sm text-white/70">コードが届かない場合</p>
+
+              {canResend ? (
+                <button
+                  onClick={handleResendCode}
+                  disabled={loading}
+                  className="px-4 py-2 text-sm text-emerald-400 border border-emerald-400/30 rounded-lg transition-colors hover:bg-emerald-400/10 hover:border-emerald-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  認証コードを再送信
+                </button>
+              ) : (
+                <div className="text-sm text-white/50">
+                  再送信可能まで {resendCountdown} 秒
+                </div>
+              )}
+            </div>
+
+            <div className="pt-2 border-t border-white/10">
+              <Link
+                href="/auth/signup"
+                className="inline-block text-sm text-emerald-400 transition-colors hover:text-emerald-300"
+              >
+                別のメールアドレスを使用
+              </Link>
+            </div>
           </div>
         </div>
       </div>

@@ -6,6 +6,7 @@ import { useCognitoAuth } from "@/lib/hooks/useCognitoAuth";
 import { LoadingSpinner } from "@/components/ui/feedback/LoadingSpinner";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { getAuthErrorMessage } from "@/lib/utils/auth-errors";
 
 function ResetPasswordForm() {
   const [formData, setFormData] = useState({
@@ -55,9 +56,8 @@ function ResetPasswordForm() {
       });
       setSuccess(true);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "パスワードリセットに失敗しました"
-      );
+      console.error("Reset password error:", err);
+      setError(getAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -96,6 +96,10 @@ function ResetPasswordForm() {
           </h2>
           <p className="mt-2 text-sm text-center text-gray-600">
             メールに送信された確認コードと新しいパスワードを入力してください。
+            <br />
+            <span className="text-xs text-gray-500">
+              ※確認コードは24時間以内に入力してください
+            </span>
           </p>
         </div>
 
