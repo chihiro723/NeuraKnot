@@ -374,7 +374,6 @@ func (h *UserHandler) SignOut(c *gin.Context) {
 	if err == nil && token != "" {
 		if err := h.userService.SignOut(c.Request.Context(), token); err != nil {
 			// GlobalSignOutエラーは無視（トークンが既に無効の可能性）
-			println("DEBUG: GlobalSignOut error (ignored):", err.Error())
 		}
 	}
 

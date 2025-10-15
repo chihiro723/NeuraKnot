@@ -27,33 +27,22 @@ func NewAuthMiddleware(authService user.AuthService) *AuthMiddleware {
 // RequireAuth 認証が必要なエンドポイント用ミドルウェア
 func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// デバッグ: すべてのCookieを表示
-		allCookies := c.Request.Cookies()
-		for _, cookie := range allCookies {
-			println("DEBUG: Cookie -", cookie.Name, ":", cookie.Value[:min(20, len(cookie.Value))]+"...")
-		}
 
 		// Cookieからアクセストークンを取得
 		token, err := c.Cookie(AccessTokenCookie)
 		if err != nil || token == "" {
-			println("DEBUG: Failed to get access_token cookie:", err)
 			c.JSON(http.StatusUnauthorized, response.NewUnauthorizedErrorResponse("Authentication required"))
 			c.Abort()
 			return
 		}
 
-		println("DEBUG: Access token retrieved successfully, length:", len(token))
-
 		// トークンを検証
 		authResult, err := m.authService.ValidateToken(c.Request.Context(), token)
 		if err != nil {
-			println("DEBUG: Token validation failed:", err.Error())
 			c.JSON(http.StatusUnauthorized, response.NewUnauthorizedErrorResponse("Invalid token"))
 			c.Abort()
 			return
 		}
-
-		println("DEBUG: Token validated successfully for user ID:", string(authResult.User.ID))
 
 		// ユーザー情報をコンテキストに保存
 		c.Set("user", authResult.User)
