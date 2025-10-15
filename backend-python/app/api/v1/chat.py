@@ -106,10 +106,6 @@ async def chat_stream(request: ChatRequest):
             logger.info(f"📦 Services in request: {len(request.services) if request.services else 0}")
             logger.info(f"📦 Service details: {[s.service_class for s in request.services] if request.services else []}")
             
-            # デバッグログ: サービス設定の詳細を確認
-            if request.services:
-                for i, service_config in enumerate(request.services):
-                    logger.info(f"📦 Service {i}: class={service_config.service_class}, api_key={'***' if service_config.api_key else 'None'}, headers={service_config.headers}")
             
             # サービス設定に基づいてツールを取得
             if request.services:
