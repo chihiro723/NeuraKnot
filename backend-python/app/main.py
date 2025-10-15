@@ -42,7 +42,6 @@ app.include_router(
     prefix=f"{settings.API_V1_PREFIX}/ai",
     tags=["AI Chat"]
 )
-# tools.routerは削除されました（サービスシステムに移行）
 app.include_router(
     services.router,
     prefix=f"{settings.API_V1_PREFIX}/services",

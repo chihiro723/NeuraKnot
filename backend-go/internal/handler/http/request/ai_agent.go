@@ -17,3 +17,18 @@ type CreateAgentRequest struct {
 	StreamingEnabled *bool                  `json:"streaming_enabled"`  // nilの場合はtrueがデフォルト
 	Services         []ServiceConfigRequest `json:"services,omitempty"` // サービス設定
 }
+
+// UpdateAgentRequest はAI Agent更新リクエスト
+type UpdateAgentRequest struct {
+	Name             *string  `json:"name,omitempty"`
+	Description      *string  `json:"description,omitempty"`
+	AvatarURL        *string  `json:"avatar_url,omitempty"`
+	PersonaType      *string  `json:"persona_type,omitempty"`
+	Provider         *string  `json:"provider,omitempty"`
+	Model            *string  `json:"model,omitempty"`
+	Temperature      *float64 `json:"temperature,omitempty"`
+	MaxTokens        *int     `json:"max_tokens,omitempty"`
+	SystemPrompt     *string  `json:"system_prompt,omitempty"`
+	ToolsEnabled     *bool    `json:"tools_enabled,omitempty"`
+	StreamingEnabled *bool    `json:"streaming_enabled,omitempty"`
+}

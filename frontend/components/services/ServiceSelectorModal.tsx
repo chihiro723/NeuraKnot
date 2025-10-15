@@ -140,16 +140,22 @@ export function ServiceSelectorModal({
   };
 
   return (
-    <div className="flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-sm bg-black/50">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col">
+    <div
+      className="flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-md bg-black/60"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* ヘッダー */}
         <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             サービスを選択
           </h2>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 rounded-lg transition-colors hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="p-2 text-gray-400 rounded-full transition-colors hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
           >
             <X className="w-5 h-5" />
           </button>
@@ -181,64 +187,60 @@ export function ServiceSelectorModal({
                 <div
                   key={userService.service.class_name}
                   className={cn(
-                    "border rounded-xl transition-all",
+                    "border rounded-xl",
                     isSelected
                       ? "border-green-500 bg-green-50 dark:bg-green-900/20"
-                      : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50",
+                      : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800",
                     isDisabled && "opacity-60"
                   )}
                 >
                   {/* サービス選択 */}
-                  <div className="flex gap-3 items-center p-4">
-                    <button
-                      type="button"
-                      onClick={() => toggleServiceSelection(userService)}
-                      disabled={isDisabled}
+                  <div
+                    className="flex gap-3 items-center p-4 cursor-pointer"
+                    onClick={() =>
+                      !isDisabled && toggleServiceSelection(userService)
+                    }
+                  >
+                    {isSelected ? (
+                      <CheckSquare className="flex-shrink-0 w-5 h-5 text-green-500" />
+                    ) : (
+                      <Square className="flex-shrink-0 w-5 h-5 text-gray-400" />
+                    )}
+                    <div
                       className={cn(
-                        "flex items-center gap-3 flex-1 text-left",
-                        !isDisabled && "cursor-pointer"
+                        "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
+                        userService.service.type === "built_in"
+                          ? "bg-gradient-to-br from-blue-500 to-blue-600"
+                          : "bg-gradient-to-br from-green-500 to-green-600"
                       )}
                     >
-                      {isSelected ? (
-                        <CheckSquare className="flex-shrink-0 w-5 h-5 text-green-500" />
-                      ) : (
-                        <Square className="flex-shrink-0 w-5 h-5 text-gray-400" />
-                      )}
-                      <div
-                        className={cn(
-                          "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
-                          userService.service.type === "built_in"
-                            ? "bg-gradient-to-br from-blue-500 to-blue-600"
-                            : "bg-gradient-to-br from-green-500 to-green-600"
+                      <Server className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex gap-2 items-center">
+                        <h3 className="font-medium text-gray-900 truncate dark:text-white">
+                          {userService.service.name}
+                        </h3>
+                        {isDisabled && (
+                          <span className="text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded">
+                            無効
+                          </span>
                         )}
-                      >
-                        <Server className="w-5 h-5 text-white" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex gap-2 items-center">
-                          <h3 className="font-medium text-gray-900 truncate dark:text-white">
-                            {userService.service.name}
-                          </h3>
-                          {isDisabled && (
-                            <span className="text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded">
-                              無効
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-500 truncate dark:text-gray-400">
-                          {userService.service.description}
-                        </p>
-                      </div>
-                    </button>
+                      <p className="text-sm text-gray-500 truncate dark:text-gray-400">
+                        {userService.service.description}
+                      </p>
+                    </div>
 
                     {/* 展開ボタン */}
                     {isSelected && (
                       <button
                         type="button"
-                        onClick={() =>
-                          toggleExpand(userService.service.class_name)
-                        }
-                        className="p-2 text-gray-400 rounded-lg transition-colors hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleExpand(userService.service.class_name);
+                        }}
+                        className="p-3 text-gray-400 rounded-full transition-colors hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                       >
                         {isExpanded ? (
                           <ChevronUp className="w-5 h-5" />
@@ -350,7 +352,7 @@ export function ServiceSelectorModal({
           <div className="flex gap-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-lg border border-gray-300 transition-colors dark:text-gray-300 dark:bg-gray-700 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-600"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white rounded-lg border border-gray-300 transition-colors hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
             >
               キャンセル
             </button>
@@ -360,7 +362,7 @@ export function ServiceSelectorModal({
               className={cn(
                 "px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors",
                 selectedServices.size > 0
-                  ? "bg-green-500 hover:bg-green-600"
+                  ? "bg-green-600 hover:bg-green-700"
                   : "bg-gray-300 dark:bg-gray-600 cursor-not-allowed"
               )}
             >

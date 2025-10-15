@@ -84,18 +84,18 @@ export function EditProfileModal({
     <>
       {/* モーダルコンテナ */}
       <div
-        className="flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-md bg-black/60 animate-fadeIn"
+        className="flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-md bg-black/60"
         onClick={onClose}
       >
         <div
-          className="w-full max-w-lg bg-gray-50 rounded-3xl border border-gray-200 shadow-2xl dark:bg-gray-950 animate-slideUp dark:border-gray-800"
+          className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           {/* ヘッダー */}
           <div className="relative px-8 pt-8 pb-6">
             <button
               onClick={onClose}
-              className="absolute top-6 right-6 p-2 text-gray-400 rounded-full transition-colors dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800"
+              className="absolute top-6 right-6 p-2 text-gray-400 rounded-full transition-colors hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
             >
               <X className="w-5 h-5" />
             </button>
@@ -103,7 +103,7 @@ export function EditProfileModal({
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                 プロフィールを編集
               </h2>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                 表示名とアイコンを変更できます
               </p>
             </div>
@@ -151,7 +151,7 @@ export function EditProfileModal({
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full px-4 py-2.5 text-base text-gray-900 dark:text-white bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-2.5 text-base text-gray-900 dark:text-white bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all placeholder-gray-500 dark:placeholder-gray-400"
                 placeholder="表示名を入力"
                 maxLength={50}
                 disabled={isSaving}

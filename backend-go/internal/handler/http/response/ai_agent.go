@@ -71,3 +71,19 @@ func ToAgentsResponse(agents []*ai.Agent) *AgentsResponse {
 		Total:  len(resp),
 	}
 }
+
+// AgentServicesResponse はAI Agentのサービス一覧レスポンス
+type AgentServicesResponse struct {
+	Services []*AgentServiceResponse `json:"services"`
+}
+
+// AgentServiceResponse はAI Agentサービスレスポンス
+type AgentServiceResponse struct {
+	ID                string   `json:"id"`
+	AIAgentID         string   `json:"ai_agent_id"`
+	ServiceClass      string   `json:"service_class"`
+	ToolSelectionMode string   `json:"tool_selection_mode"`
+	SelectedTools     []string `json:"selected_tools"`
+	Enabled           bool     `json:"enabled"`
+	CreatedAt         string   `json:"created_at"`
+}
