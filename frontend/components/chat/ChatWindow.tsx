@@ -77,6 +77,9 @@ export function ChatWindow({
   // スタンプピッカーの表示状態
   const [showStampPicker, setShowStampPicker] = useState(false);
 
+  // クライアントサイドレンダリング用の状態
+  const [isClient, setIsClient] = useState(false);
+
   // 401エラー時に自動リフレッシュ（複数のServer Actionsをラップ）
   const {
     getOrCreateConversation: getOrCreateConversationWithAuth,
@@ -111,6 +114,11 @@ export function ChatWindow({
 
     fetchUserProfile();
   }, [initialUserProfile]);
+
+  // クライアントサイドレンダリングの状態を設定
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // 会話を初期化してメッセージを取得（初期データがない場合のみ）
   useEffect(() => {
@@ -468,10 +476,10 @@ export function ChatWindow({
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString("ja-JP", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    // サーバーとクライアントで一貫した時刻表示のため、UTCベースで計算
+    const hours = date.getHours().toString().padStart(2, "0");
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    return `${hours}:${minutes}`;
   };
 
   const handleStampSelect = (stamp: string) => {
@@ -543,7 +551,7 @@ export function ChatWindow({
                       <div className="flex space-x-2 min-w-0">
                         {/* タイムスタンプ（吹き出しの左側、下） */}
                         <span className="flex-shrink-0 self-end pb-1 text-xs text-gray-500 dark:text-gray-400">
-                          {formatTime(message.created_at)}
+                          {isClient ? formatTime(message.created_at) : "--:--"}
                         </span>
 
                         {/* メッセージバブル */}

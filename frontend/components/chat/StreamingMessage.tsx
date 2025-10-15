@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Copy, Check } from "lucide-react";
@@ -25,13 +25,18 @@ export function StreamingMessage({
   hideContent = false,
 }: StreamingMessageProps) {
   const [copied, setCopied] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const formatTime = () => {
     const now = new Date();
-    return now.toLocaleTimeString("ja-JP", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    // サーバーとクライアントで一貫した時刻表示のため、UTCベースで計算
+    const hours = now.getHours().toString().padStart(2, "0");
+    const minutes = now.getMinutes().toString().padStart(2, "0");
+    return `${hours}:${minutes}`;
   };
 
   const handleCopy = async () => {
@@ -179,7 +184,7 @@ export function StreamingMessage({
                   )}
                 </button>
                 <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {formatTime()}
+                  {isClient ? formatTime() : "--:--"}
                 </span>
               </div>
             </div>
