@@ -6,6 +6,10 @@ import { useCognitoAuth } from "@/lib/hooks/useCognitoAuth";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Eye, EyeOff } from "lucide-react";
+import {
+  getAuthErrorMessage,
+  isUnconfirmedUserError,
+} from "@/lib/utils/auth-errors";
 
 // バリデーション
 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -18,7 +22,7 @@ export function CognitoLoginForm() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  const { signIn } = useCognitoAuth();
+  const { signIn, error: authError, clearError } = useCognitoAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -34,6 +38,7 @@ export function CognitoLoginForm() {
     setLoading(true);
     setError("");
     setSuccessMessage("");
+    clearError();
 
     // バリデーション
     if (!emailRegex.test(email)) {
@@ -42,17 +47,25 @@ export function CognitoLoginForm() {
       return;
     }
 
-    try {
-      await signIn({
-        email: email.toLowerCase(),
-        password,
-      });
+    await signIn({
+      email: email.toLowerCase(),
+      password,
+    });
+
+    // 未確認ユーザーの場合、verifyページに遷移
+    if (authError && isUnconfirmedUserError(new Error(authError))) {
+      sessionStorage.setItem("verify_email", email.toLowerCase());
+      router.push(
+        `/auth/verify?email=${encodeURIComponent(email.toLowerCase())}`
+      );
+    } else if (authError) {
+      setError(getAuthErrorMessage(new Error(authError)));
+    } else {
+      // ログイン成功時はダッシュボードに遷移
       router.push("/dashboard");
-    } catch (err) {
-      setError("メールアドレスまたはパスワードが間違っています");
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
   };
 
   return (
@@ -114,9 +127,9 @@ export function CognitoLoginForm() {
         </div>
       </div>
 
-      {error && (
+      {(error || authError) && (
         <div className="p-3 text-sm text-center text-red-300 rounded-lg border bg-red-500/20 border-red-500/30">
-          {error}
+          {error || authError}
         </div>
       )}
 

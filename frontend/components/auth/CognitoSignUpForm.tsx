@@ -6,6 +6,10 @@ import { useCognitoAuth } from "@/lib/hooks/useCognitoAuth";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Eye, EyeOff } from "lucide-react";
+import {
+  getAuthErrorMessage,
+  isExistingAccountError,
+} from "@/lib/utils/auth-errors";
 
 // バリデーション関数
 const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -22,7 +26,7 @@ export function CognitoSignUpForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const { signUp } = useCognitoAuth();
+  const { signUp, error: authError, clearError } = useCognitoAuth();
   const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,6 +40,7 @@ export function CognitoSignUpForm() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    clearError();
 
     // バリデーション
     if (!emailRegex.test(formData.email)) {
@@ -62,29 +67,53 @@ export function CognitoSignUpForm() {
       return;
     }
 
-    try {
-      await signUp({
-        email: formData.email.toLowerCase(),
-        password: formData.password,
-        display_name: formData.displayName,
-      });
+    await signUp({
+      email: formData.email.toLowerCase(),
+      password: formData.password,
+      display_name: formData.displayName,
+    });
 
+    // エラーがある場合の処理
+    if (authError) {
+      // エラー時はsessionStorageをクリア
+      sessionStorage.removeItem("verify_email");
+      sessionStorage.removeItem("verify_password");
+
+      // 既存アカウントエラーの場合、適切なメッセージとリンクを表示
+      if (isExistingAccountError(new Error(authError))) {
+        setError(
+          <div className="text-center">
+            <p className="mb-2">このメールアドレスは既に登録されています。</p>
+            <div className="space-x-4">
+              <a
+                href="/auth/login"
+                className="text-emerald-400 underline hover:text-emerald-300"
+              >
+                ログインページ
+              </a>
+              <span className="text-white/50">または</span>
+              <a
+                href="/auth/forgot-password"
+                className="text-emerald-400 underline hover:text-emerald-300"
+              >
+                パスワードをお忘れの場合
+              </a>
+            </div>
+          </div>
+        );
+      } else {
+        setError(getAuthErrorMessage(new Error(authError)));
+      }
+    } else {
+      // サインアップ成功時
       // メールアドレスとパスワードをsessionStorageに保存（自動ログイン用）
       sessionStorage.setItem("verify_email", formData.email.toLowerCase());
       sessionStorage.setItem("verify_password", formData.password);
       // 認証コード入力ページへ遷移
       router.push("/auth/verify");
-    } catch (err) {
-      console.error("SignUpエラー:", err);
-      // エラー時はsessionStorageをクリア
-      sessionStorage.removeItem("verify_email");
-      sessionStorage.removeItem("verify_password");
-      setError(
-        err instanceof Error ? err.message : "アカウント作成に失敗しました"
-      );
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
   };
 
   return (
@@ -200,9 +229,9 @@ export function CognitoSignUpForm() {
         </div>
       </div>
 
-      {error && (
+      {(error || authError) && (
         <div className="p-3 text-sm text-center text-red-300 rounded-lg border bg-red-500/20 border-red-500/30">
-          {error}
+          {error || authError}
         </div>
       )}
 
