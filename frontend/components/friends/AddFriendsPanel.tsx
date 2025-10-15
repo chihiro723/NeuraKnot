@@ -1094,7 +1094,7 @@ export function AIAgentCreationPanel({
                   <span>作成中...</span>
                 </>
               ) : (
-                <span>AI エージェントを作成</span>
+                <span>エージェントを作成</span>
               )}
             </button>
           </div>
