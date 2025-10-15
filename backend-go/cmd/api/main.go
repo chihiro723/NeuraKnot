@@ -27,9 +27,16 @@ import (
 	"log"
 
 	_ "backend-go/docs" // Swagger docs
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// .env.localファイルを読み込み
+	if err := godotenv.Load(".env.local"); err != nil {
+		log.Printf("Warning: .env.local file not found: %v", err)
+	}
+
 	// 設定を読み込み
 	cfg := config.Load()
 

@@ -2,6 +2,7 @@ package http
 
 import (
 	"backend-go/internal/crypto"
+	"backend-go/internal/domain/service"
 	"backend-go/internal/domain/user"
 	"backend-go/internal/handler/http/middleware"
 	"backend-go/internal/infrastructure/config"
@@ -73,15 +74,16 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 	// Service関連の依存関係を先に初期化
 	var serviceUsecase *serviceusecase.ServiceUsecase
 	var serviceHandler *ServiceHandler
+	var serviceConfigRepo service.ServiceConfigRepository
 	if encryption != nil {
-		serviceConfigRepo := persistence.NewServiceConfigRepository(db.DB, encryption)
+		serviceConfigRepo = persistence.NewServiceConfigRepository(db.DB, encryption)
 		serviceUsecase = serviceusecase.NewServiceUsecase(serviceConfigRepo, aiAgentServiceRepo, encryption, cfg.AIService.URL)
 		serviceHandler = NewServiceHandler(serviceUsecase)
 	}
 
 	// AI関連のユースケースとハンドラー
 	agentUsecase := aiusecase.NewAgentUsecase(aiAgentRepo)
-	chatUsecase := chatusecase.NewChatUsecase(aiAgentRepo, conversationRepo, messageRepo, toolUsageRepo, chatSessionRepo, aiAgentServiceRepo, aiClient)
+	chatUsecase := chatusecase.NewChatUsecase(aiAgentRepo, conversationRepo, messageRepo, toolUsageRepo, chatSessionRepo, aiAgentServiceRepo, serviceConfigRepo, aiClient)
 
 	aiAgentHandler := NewAIAgentHandler(agentUsecase, serviceUsecase, aiAgentServiceRepo)
 	chatHandler := NewChatHandler(chatUsecase)

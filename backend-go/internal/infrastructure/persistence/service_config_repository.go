@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"backend-go/internal/crypto"
@@ -171,14 +172,20 @@ func (r *serviceConfigRepository) FindByUserAndClass(userID uuid.UUID, serviceCl
 	// 復号化
 	if len(encryptedConfig) > 0 && len(configNonce) > 0 {
 		decryptedConfig, err := r.enc.Decrypt(encryptedConfig, configNonce)
-		if err == nil {
+		if err != nil {
+			// 復号化エラーのログ出力
+			fmt.Printf("WARNING: Failed to decrypt config for service %s: %v\n", serviceClass, err)
+		} else {
 			_ = json.Unmarshal([]byte(decryptedConfig), &config.Config)
 		}
 	}
 
 	if len(encryptedAuth) > 0 && len(authNonce) > 0 {
 		decryptedAuth, err := r.enc.Decrypt(encryptedAuth, authNonce)
-		if err == nil {
+		if err != nil {
+			// 復号化エラーのログ出力
+			fmt.Printf("WARNING: Failed to decrypt auth for service %s: %v\n", serviceClass, err)
+		} else {
 			_ = json.Unmarshal([]byte(decryptedAuth), &config.Auth)
 		}
 	}
