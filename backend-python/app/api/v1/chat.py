@@ -45,8 +45,15 @@ async def chat(request: ChatRequest):
         for service_config in request.services:
             service_class = registry.get_service_class(service_config.service_class)
             if service_class:
-                # サービスインスタンスを作成
-                service = service_class()
+                # サービスインスタンスを作成（認証情報付き）
+                auth = {}
+                if service_config.api_key:
+                    auth["api_key"] = service_config.api_key
+                
+                service = service_class(
+                    config=service_config.headers or {},
+                    auth=auth
+                )
                 service_tools = service.get_langchain_tools()
                 
                 # ツール選択モードに基づいてフィルタリング
@@ -99,13 +106,25 @@ async def chat_stream(request: ChatRequest):
             logger.info(f"📦 Services in request: {len(request.services) if request.services else 0}")
             logger.info(f"📦 Service details: {[s.service_class for s in request.services] if request.services else []}")
             
+            # デバッグログ: サービス設定の詳細を確認
+            if request.services:
+                for i, service_config in enumerate(request.services):
+                    logger.info(f"📦 Service {i}: class={service_config.service_class}, api_key={'***' if service_config.api_key else 'None'}, headers={service_config.headers}")
+            
             # サービス設定に基づいてツールを取得
             if request.services:
                 for service_config in request.services:
                     service_class = registry.get_service_class(service_config.service_class)
                     if service_class:
-                        # サービスインスタンスを作成
-                        service = service_class()
+                        # サービスインスタンスを作成（認証情報付き）
+                        auth = {}
+                        if service_config.api_key:
+                            auth["api_key"] = service_config.api_key
+                        
+                        service = service_class(
+                            config=service_config.headers or {},
+                            auth=auth
+                        )
                         service_tools = service.get_langchain_tools()
                         
                         # ツール選択モードに基づいてフィルタリング

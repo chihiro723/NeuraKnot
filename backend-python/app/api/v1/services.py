@@ -103,6 +103,9 @@ async def execute_tool(
     try:
         registry = get_registry()
         
+        # デバッグログ: 認証情報の内容を確認
+        logger.info(f"Service execution debug - service_class: {service_class}, config: {request.config}, auth: {request.auth}")
+        
         # サービスインスタンスを作成
         service_instance = registry.create_service_instance(
             service_class,
