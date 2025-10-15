@@ -5,7 +5,7 @@ import { CreditCard } from "lucide-react";
  * サイドバーは layout.tsx で定義されている
  */
 export default function SubscriptionPage() {
-  // TODO: サブスクリプション管理機能の実装
+  // サブスクリプション管理機能の実装
   return (
     <div className="flex flex-1 justify-center items-center bg-gray-50 dark:bg-gray-900">
       <div className="p-8 text-center">

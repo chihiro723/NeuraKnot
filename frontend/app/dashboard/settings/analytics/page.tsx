@@ -5,7 +5,7 @@ import { BarChart3 } from "lucide-react";
  * サイドバーは layout.tsx で定義されている
  */
 export default function AnalyticsPage() {
-  // TODO: 統計・分析機能の実装
+  // 統計・分析機能の実装
   return (
     <div className="flex flex-1 justify-center items-center bg-gray-50 dark:bg-gray-900">
       <div className="p-8 text-center">
