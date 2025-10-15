@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Send, Smile, Paperclip, Copy, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -80,6 +80,12 @@ export function ChatWindow({
   // クライアントサイドレンダリング用の状態
   const [isClient, setIsClient] = useState(false);
 
+  // 定数
+  const MESSAGE_LIMIT = 50;
+  const STREAMING_DELAY = 500;
+  const MAX_TEXTAREA_LINES = 10;
+  const LINE_HEIGHT = 24;
+
   // 401エラー時に自動リフレッシュ（複数のServer Actionsをラップ）
   const {
     getOrCreateConversation: getOrCreateConversationWithAuth,
@@ -155,10 +161,22 @@ export function ChatWindow({
 
     const loadMessages = async (convId: string) => {
       try {
-        const result = await getMessagesWithAuth(convId, 50);
+        const result = await getMessagesWithAuth(convId, MESSAGE_LIMIT);
 
         if (result.success && result.data) {
-          setMessages(result.data.messages || []);
+          const messages = result.data.messages || [];
+
+          // 開発環境でのみデバッグログを出力
+          if (process.env.NODE_ENV === "development") {
+            console.debug("Loaded messages:", messages);
+            // ツール使用履歴のデバッグ
+            messages.forEach((msg: Message, index: number) => {
+              if (msg.tool_usages && msg.tool_usages.length > 0) {
+                console.debug(`Message ${index} tool_usages:`, msg.tool_usages);
+              }
+            });
+          }
+          setMessages(messages);
           // メッセージ読み込み後、即座に最下部にスクロール
           requestAnimationFrame(() => {
             messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
@@ -215,9 +233,7 @@ export function ChatWindow({
     // 高さをリセットして正確な scrollHeight を取得
     textarea.style.height = "auto";
 
-    const lineHeight = 24; // 1行の高さ（px）
-    const maxLines = 10;
-    const maxHeight = lineHeight * maxLines;
+    const maxHeight = LINE_HEIGHT * MAX_TEXTAREA_LINES;
 
     // 内容に応じた高さを計算
     const newHeight = Math.min(textarea.scrollHeight, maxHeight);
@@ -250,7 +266,7 @@ export function ChatWindow({
     };
   }, [showStampPicker]);
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = useCallback(async () => {
     if (!newMessage.trim() || (isLoading && !isStreaming) || !conversationId)
       return;
 
@@ -325,26 +341,72 @@ export function ChatWindow({
                 });
                 break;
               case "tool_start":
-                setStreamingTools((prev) => [
-                  ...prev,
-                  {
-                    tool_id: event.tool_id || "",
-                    tool_name: event.tool_name || "",
-                    status: "running",
-                    input: event.input || "",
-                    expanded: false,
-                    // Backend-Pythonから送られてくる位置を使用（より正確）
-                    insertPosition:
-                      event.insert_position !== undefined
-                        ? event.insert_position
-                        : streamingContentRef.current.length,
-                  },
-                ]);
+                setStreamingTools((prev) => {
+                  const toolId = event.tool_id;
+                  if (!toolId) {
+                    console.warn(
+                      "Tool start event received without tool_id:",
+                      event
+                    );
+                    return prev;
+                  }
+
+                  // 同じtool_idのツールが既に存在するかチェック
+                  const existingTool = prev.find(
+                    (tool) => tool.tool_id === toolId
+                  );
+
+                  if (existingTool) {
+                    // 既に存在する場合は更新のみ（重複防止）
+                    console.debug(`Updating existing tool: ${toolId}`);
+                    return prev.map((tool) =>
+                      tool.tool_id === toolId
+                        ? {
+                            ...tool,
+                            tool_name: event.tool_name || tool.tool_name,
+                            status: "running",
+                            input: event.input || tool.input,
+                            insertPosition:
+                              event.insert_position !== undefined
+                                ? event.insert_position
+                                : tool.insertPosition,
+                          }
+                        : tool
+                    );
+                  } else {
+                    // 新しいツールを追加
+                    console.debug(`Adding new tool: ${toolId}`);
+                    return [
+                      ...prev,
+                      {
+                        tool_id: toolId,
+                        tool_name: event.tool_name || "",
+                        status: "running",
+                        input: event.input || "",
+                        expanded: false,
+                        // Backend-Pythonから送られてくる位置を使用（より正確）
+                        insertPosition:
+                          event.insert_position !== undefined
+                            ? event.insert_position
+                            : streamingContentRef.current.length,
+                      },
+                    ];
+                  }
+                });
                 break;
               case "tool_end":
-                setStreamingTools((prev) =>
-                  prev.map((tool) =>
-                    tool.tool_id === event.tool_id
+                setStreamingTools((prev) => {
+                  const toolId = event.tool_id;
+                  if (!toolId) {
+                    console.warn(
+                      "Tool end event received without tool_id:",
+                      event
+                    );
+                    return prev;
+                  }
+
+                  return prev.map((tool) =>
+                    tool.tool_id === toolId
                       ? {
                           ...tool,
                           status:
@@ -354,8 +416,8 @@ export function ChatWindow({
                           execution_time_ms: event.execution_time_ms,
                         }
                       : tool
-                  )
-                );
+                  );
+                });
                 break;
               case "done":
                 // ストリーミング完了: ツール位置情報をDBに保存してメッセージをリロード
@@ -368,7 +430,10 @@ export function ChatWindow({
                     }
                   });
 
-                  const result = await getMessagesWithAuth(conversationId, 50);
+                  const result = await getMessagesWithAuth(
+                    conversationId,
+                    MESSAGE_LIMIT
+                  );
                   if (result.success && result.data) {
                     const newMessages = result.data.messages || [];
 
@@ -428,18 +493,31 @@ export function ChatWindow({
                     }
 
                     setMessages(newMessages);
+                    // メッセージ更新後、即座にストリーミング状態を終了
+                    setIsStreaming(false);
+                    setStreamingContent("");
+                    setStreamingTools([]);
+                  } else {
+                    // メッセージ取得に失敗した場合もストリーミング状態を終了
+                    setIsStreaming(false);
+                    setStreamingContent("");
+                    setStreamingTools([]);
                   }
-                  setIsStreaming(false);
-                  setStreamingContent("");
-                  setStreamingTools([]);
-                }, 500);
+                }, STREAMING_DELAY);
                 break;
               case "error":
                 console.error("Streaming error:", event.message);
+                // エラー時は一時的なユーザーメッセージも削除
+                setMessages((prev) =>
+                  prev.filter((m) => m.id !== tempMessageId)
+                );
                 setIsStreaming(false);
                 setStreamingContent("");
                 setStreamingTools([]);
-                alert("ストリーミング中にエラーが発生しました");
+                // ユーザーフレンドリーなエラーメッセージを表示
+                alert(
+                  "メッセージの送信中にエラーが発生しました。もう一度お試しください。"
+                );
                 break;
             }
           },
@@ -463,24 +541,35 @@ export function ChatWindow({
         alert("メッセージの送信に失敗しました");
       }
     }
-  };
+  }, [
+    newMessage,
+    isLoading,
+    isStreaming,
+    conversationId,
+    selectedChat.type,
+    getOrCreateConversationWithAuth,
+    sendMessageWithAuth,
+  ]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Cmd+Enter（Mac）またはCtrl+Enter（Windows）で送信
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-    // 通常のEnterキーは改行として処理（デフォルト動作）
-  };
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      // Cmd+Enter（Mac）またはCtrl+Enter（Windows）で送信
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        handleSendMessage();
+      }
+      // 通常のEnterキーは改行として処理（デフォルト動作）
+    },
+    [handleSendMessage]
+  );
 
-  const formatTime = (dateString: string) => {
+  const formatTime = useCallback((dateString: string) => {
     const date = new Date(dateString);
     // サーバーとクライアントで一貫した時刻表示のため、UTCベースで計算
     const hours = date.getHours().toString().padStart(2, "0");
     const minutes = date.getMinutes().toString().padStart(2, "0");
     return `${hours}:${minutes}`;
-  };
+  }, []);
 
   const handleStampSelect = (stamp: string) => {
     // スタンプをメッセージ入力欄に追加
@@ -488,11 +577,19 @@ export function ChatWindow({
     // スタンプピッカーは開いたまま（ユーザーが✖️ボタンまたは外側をクリックするまで）
   };
 
-  const handleCopyMessage = async (messageId: string, content: string) => {
-    await navigator.clipboard.writeText(content);
-    setCopiedMessageId(messageId);
-    setTimeout(() => setCopiedMessageId(null), 2000);
-  };
+  const handleCopyMessage = useCallback(
+    async (messageId: string, content: string) => {
+      try {
+        await navigator.clipboard.writeText(content);
+        setCopiedMessageId(messageId);
+        setTimeout(() => setCopiedMessageId(null), 2000);
+      } catch (error) {
+        console.error("Failed to copy message:", error);
+        alert("メッセージのコピーに失敗しました");
+      }
+    },
+    []
+  );
 
   return (
     <div className="flex overflow-hidden flex-col flex-1">
@@ -511,9 +608,9 @@ export function ChatWindow({
               }`}
             >
               <div
-                className={`flex items-end space-x-3 max-w-[85%] lg:max-w-[75%] ${
+                className={`flex items-end space-x-3 ${
                   message.sender_type === "user"
-                    ? "flex-row-reverse space-x-reverse"
+                    ? "flex-row-reverse space-x-reverse max-w-[85%] lg:max-w-[75%]"
                     : ""
                 }`}
               >
@@ -592,6 +689,7 @@ export function ChatWindow({
                     avatarUrl={selectedChat.avatar_url}
                     name={selectedChat.name}
                     showCursor={false}
+                    agentId={selectedChat.id}
                   />
                 )}
               </div>
@@ -606,6 +704,7 @@ export function ChatWindow({
               avatarUrl={selectedChat.avatar_url}
               name={selectedChat.name}
               showCursor={true}
+              agentId={selectedChat.id}
             />
           )}
 
