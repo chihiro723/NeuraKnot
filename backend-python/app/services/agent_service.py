@@ -34,14 +34,23 @@ class AgentService:
         
         Args:
             persona: ペルソナ名
-            custom_prompt: カスタムプロンプト
+            custom_prompt: カスタムプロンプト（Go側で既にペルソナプロンプトと連結済み）
             
         Returns:
             システムプロンプト文字列
         """
+        # custom_promptが渡された場合は、既にGo側でペルソナプロンプトと連結されているのでそのまま使用
         if custom_prompt:
-            return custom_prompt
+            # ツール使用の指示を追加
+            return f"""{custom_prompt}
+
+【重要な指示】
+- ツールを使う必要がない場合は、直接回答してください
+- ツールを使う場合は、適切なツールを選択し、明確な引数を渡してください
+- ツールの結果を受け取ったら、それを元にユーザーにわかりやすく説明してください
+"""
         
+        # custom_promptがない場合は、ペルソナのデフォルトプロンプトを使用
         base_prompt = AgentService.PERSONA_PROMPTS.get(
             persona,
             AgentService.PERSONA_PROMPTS["assistant"]

@@ -72,12 +72,17 @@ func NewAgent(
 	}, nil
 }
 
-// GetSystemPrompt はシステムプロンプトを取得（カスタムがなければデフォルト）
+// GetSystemPrompt はシステムプロンプトを取得（ペルソナ + カスタム）
 func (a *Agent) GetSystemPrompt() string {
+	// ペルソナのデフォルトプロンプトを取得
+	basePrompt := DefaultSystemPrompts[a.PersonaType]
+
+	// カスタムプロンプトがあれば連結
 	if a.SystemPrompt != nil && *a.SystemPrompt != "" {
-		return *a.SystemPrompt
+		return basePrompt + "\n\n【追加の指示】\n" + *a.SystemPrompt
 	}
-	return DefaultSystemPrompts[a.PersonaType]
+
+	return basePrompt
 }
 
 // SetSystemPrompt はカスタムシステムプロンプトを設定
