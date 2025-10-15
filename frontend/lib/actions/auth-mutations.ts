@@ -65,6 +65,32 @@ export async function confirmSignUp(email: string, confirmationCode: string) {
 }
 
 /**
+ * 確認コード再送信
+ * Cookie設定が不要なため、Server Actionで実装
+ */
+export async function resendConfirmationCode(email: string) {
+  try {
+    const response = await fetch(`${BACKEND_GO_URL}/api/v1/auth/resend-confirmation-code`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: '再送信に失敗しました' }))
+      return { success: false, error: error.error || '再送信に失敗しました' }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('[AUTH] Resend confirmation code error:', error)
+    return { success: false, error: '再送信に失敗しました' }
+  }
+}
+
+/**
  * ログアウト
  * Cookieを削除するため、Server Actionで実装
  */

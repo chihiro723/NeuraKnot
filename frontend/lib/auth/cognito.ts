@@ -1,5 +1,5 @@
 import { AuthResponse, AuthUser } from '@/lib/types/auth'
-import { signUp as serverSignUp, confirmSignUp as serverConfirmSignUp, signOut as serverSignOut } from '@/lib/actions/auth-mutations'
+import { signUp as serverSignUp, confirmSignUp as serverConfirmSignUp, resendConfirmationCode, signOut as serverSignOut } from '@/lib/actions/auth-mutations'
 
 /**
  * Cognito認証クライアント
@@ -25,7 +25,15 @@ export class CognitoAuthClient {
 
     if (!response.ok) {
       const error = await response.json()
-      throw new Error(error.error || 'ログインに失敗しました')
+      
+      // HTTPステータスコードに基づいてエラーメッセージを決定
+      if (response.status === 401) {
+        throw new Error(error.error || 'unauthorized')
+      } else if (response.status === 404) {
+        throw new Error('UserNotFoundException')
+      } else {
+        throw new Error(error.error || 'ログインに失敗しました')
+      }
     }
 
     return response.json()
@@ -54,6 +62,18 @@ export class CognitoAuthClient {
     
     if (!result.success) {
       throw new Error(result.error || 'メール確認に失敗しました')
+    }
+  }
+
+  /**
+   * 確認コード再送信
+   * Server Action使用 - Cookie設定が不要なため
+   */
+  async resendConfirmationCode(email: string): Promise<void> {
+    const result = await resendConfirmationCode(email)
+    
+    if (!result.success) {
+      throw new Error(result.error || '再送信に失敗しました')
     }
   }
 
