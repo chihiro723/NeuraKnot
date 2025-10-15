@@ -131,7 +131,6 @@ func (h *ChatHandler) SendMessage(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(err.Error()))
 		return
 	}
-	log.Printf("DEBUG: Parsed message request: content=%s", req.Content)
 
 	// ストリーミングが有効な場合はストリーミングレスポンスを返す
 	if agent.StreamingEnabled {
@@ -186,6 +185,70 @@ func (h *ChatHandler) SendMessage(c *gin.Context) {
 	// レスポンスを返す
 	c.JSON(http.StatusOK, response.SendMessageResponse{
 		UserMessage: response.ToMessageResponse(result.UserMessage),
+		AIMessage:   response.ToMessageResponse(result.AIMessage),
+		Metadata:    result.Metadata,
+	})
+}
+
+// SendAgentIntroduction はAIエージェントが自己紹介メッセージを送信
+// @Summary AIエージェント自己紹介送信
+// @Description AIエージェントが自己紹介メッセージを送信します
+// @Tags Chat
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body request.SendAgentIntroductionRequest true "自己紹介リクエスト"
+// @Success 200 {object} response.SendMessageResponse "送信成功"
+// @Failure 400 {object} response.ErrorResponse "バリデーションエラー"
+// @Failure 401 {object} response.ErrorResponse "認証エラー"
+// @Failure 500 {object} response.ErrorResponse "サーバーエラー"
+// @Router /api/v1/conversations/agent-introduction [post]
+func (h *ChatHandler) SendAgentIntroduction(c *gin.Context) {
+	// 認証ミドルウェアからユーザーを取得
+	user, exists := middleware.GetUserFromContext(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, response.NewUnauthorizedErrorResponse("User not found in context"))
+		return
+	}
+
+	// UserIDをUUIDに変換
+	userID, err := uuid.Parse(string(user.ID))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid user ID"))
+		return
+	}
+
+	// リクエストボディをパース
+	var req request.SendAgentIntroductionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(err.Error()))
+		return
+	}
+
+	// AI Agent IDをパース
+	aiAgentID, err := uuid.Parse(req.AIAgentID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid AI agent ID"))
+		return
+	}
+
+	// 会話を取得または作成
+	conv, err := h.chatUsecase.GetOrCreateConversation(c.Request.Context(), userID, aiAgentID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
+		return
+	}
+
+	// AIエージェントが自己紹介メッセージを送信
+	result, err := h.chatUsecase.SendAgentIntroduction(c.Request.Context(), userID, conv.ID, req.Message)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
+		return
+	}
+
+	// レスポンスを返す
+	c.JSON(http.StatusOK, response.SendMessageResponse{
+		UserMessage: nil, // ユーザーメッセージはなし
 		AIMessage:   response.ToMessageResponse(result.AIMessage),
 		Metadata:    result.Metadata,
 	})
@@ -283,22 +346,10 @@ func (h *ChatHandler) GetMessages(c *gin.Context) {
 		return
 	}
 
-	log.Printf("DEBUG: Retrieved %d messages with tools", len(messagesWithTools))
-
 	// レスポンスに変換
 	messageResponses := make([]*response.MessageResponse, len(messagesWithTools))
 	for i, mwt := range messagesWithTools {
 		messageResponses[i] = response.ToMessageResponseWithTools(mwt.Message, mwt.ToolUsages)
-		log.Printf("DEBUG: Message %s has %d tool usages", mwt.Message.ID, len(mwt.ToolUsages))
-
-		// デバッグ: 各ツールのinsert_positionを確認
-		for _, tu := range mwt.ToolUsages {
-			if tu.InsertPosition != nil {
-				log.Printf("  🔍 Tool %s: insert_position=%d", tu.ToolName, *tu.InsertPosition)
-			} else {
-				log.Printf("  ⚠️ Tool %s: insert_position=NULL", tu.ToolName)
-			}
-		}
 	}
 
 	c.JSON(http.StatusOK, &response.MessagesResponse{
@@ -354,8 +405,6 @@ func (h *ChatHandler) UpdateToolPositions(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid request body"))
 		return
 	}
-
-	log.Printf("🔍 DEBUG: UpdateToolPositions request - ConversationID: %s, MessageID: %s, Positions: %+v", conversationID, messageID, req.Positions)
 
 	// ユースケース呼び出し（UserIDをuuid.UUIDに変換）
 	userUUID, err := uuid.Parse(string(user.ID))

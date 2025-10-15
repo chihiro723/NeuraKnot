@@ -57,13 +57,6 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 	chatSessionRepo := persistence.NewChatSessionRepository(db.DB)
 	aiClient := external.NewAIClient(cfg.AIService.URL, time.Duration(cfg.AIService.Timeout)*time.Second)
 
-	// AI関連のユースケースとハンドラー
-	agentUsecase := aiusecase.NewAgentUsecase(aiAgentRepo)
-	chatUsecase := chatusecase.NewChatUsecase(aiAgentRepo, conversationRepo, messageRepo, toolUsageRepo, chatSessionRepo, aiAgentServiceRepo, aiClient)
-
-	aiAgentHandler := NewAIAgentHandler(agentUsecase, aiAgentServiceRepo)
-	chatHandler := NewChatHandler(chatUsecase)
-
 	// 暗号化サービスの初期化
 	var encryption *crypto.EncryptionService
 	if cfg.Security.EncryptionMasterKey != "" {
@@ -77,16 +70,21 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 		log.Println("Warning: ENCRYPTION_MASTER_KEY not set, service registration will be disabled")
 	}
 
-	// Service関連の依存関係とハンドラー
+	// Service関連の依存関係を先に初期化
+	var serviceUsecase *serviceusecase.ServiceUsecase
 	var serviceHandler *ServiceHandler
 	if encryption != nil {
 		serviceConfigRepo := persistence.NewServiceConfigRepository(db.DB, encryption)
-		aiAgentServiceRepo := persistence.NewAIAgentServiceRepository(db.DB)
-
-		serviceUsecase := serviceusecase.NewServiceUsecase(serviceConfigRepo, aiAgentServiceRepo, encryption, cfg.AIService.URL)
-
+		serviceUsecase = serviceusecase.NewServiceUsecase(serviceConfigRepo, aiAgentServiceRepo, encryption, cfg.AIService.URL)
 		serviceHandler = NewServiceHandler(serviceUsecase)
 	}
+
+	// AI関連のユースケースとハンドラー
+	agentUsecase := aiusecase.NewAgentUsecase(aiAgentRepo)
+	chatUsecase := chatusecase.NewChatUsecase(aiAgentRepo, conversationRepo, messageRepo, toolUsageRepo, chatSessionRepo, aiAgentServiceRepo, aiClient)
+
+	aiAgentHandler := NewAIAgentHandler(agentUsecase, serviceUsecase, aiAgentServiceRepo)
+	chatHandler := NewChatHandler(chatUsecase)
 
 	// ルートを設定
 	setupRoutes(engine, userHandler, aiAgentHandler, chatHandler, serviceHandler, authService)
@@ -142,6 +140,11 @@ func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *A
 			aiAgents.POST("", aiAgentHandler.CreateAgent)
 			aiAgents.GET("", aiAgentHandler.ListAgents)
 			aiAgents.GET("/:id", aiAgentHandler.GetAgent)
+			aiAgents.PUT("/:id", aiAgentHandler.UpdateAgent)
+			aiAgents.GET("/:id/services", aiAgentHandler.GetAgentServices)
+			aiAgents.POST("/:id/services", aiAgentHandler.AddAgentService)
+			aiAgents.PUT("/:id/services/:service_id", aiAgentHandler.UpdateAgentService)
+			aiAgents.DELETE("/:id/services/:service_id", aiAgentHandler.DeleteAgentService)
 		}
 
 		// チャット関連（認証必要）
@@ -153,6 +156,7 @@ func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *A
 			conversations.POST("/:id/messages", chatHandler.SendMessage) // ストリーミングも自動対応
 			conversations.GET("/:id/messages", chatHandler.GetMessages)
 			conversations.PATCH("/:conversation_id/messages/:message_id/tools/positions", chatHandler.UpdateToolPositions)
+			conversations.POST("/agent-introduction", chatHandler.SendAgentIntroduction) // AIエージェント自己紹介送信
 		}
 
 		// サービス関連（認証必要）

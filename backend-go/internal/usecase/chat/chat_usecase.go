@@ -532,8 +532,6 @@ func (uc *ChatUsecase) relayAndHandleStream(
 		return
 	}
 
-	log.Printf("DEBUG: Created AI message %s for streaming response", aiMessage.ID)
-
 	// イベントを中継しながらバッファリング
 	for event := range eventChan {
 		// イベントを中継
@@ -561,16 +559,12 @@ func (uc *ChatUsecase) relayAndHandleStream(
 				// 挿入位置を設定
 				if event.InsertPosition != nil {
 					toolUsage.SetInsertPosition(*event.InsertPosition)
-					log.Printf("DEBUG: tool_start - Set InsertPosition %d for tool %s", *event.InsertPosition, event.ToolID)
 				}
 				toolUsages[event.ToolID] = toolUsage
-				log.Printf("DEBUG: tool_start - Created ToolUsage object for %s linked to AI message %s", event.ToolID, aiMessage.ID)
 			}
 		case "tool_end":
 			// ツール使用完了: 出力と実行時間を設定してDBに保存（1回だけ）
 			if toolUsage, exists := toolUsages[event.ToolID]; exists {
-				log.Printf("DEBUG: tool_end event - ToolID: %s, Output: '%s', ExecutionTimeMs: %d", event.ToolID, event.Output, event.ExecutionTimeMs)
-
 				// 出力データを設定
 				if event.Output != "" {
 					toolUsage.SetOutput(event.Output)
@@ -592,8 +586,6 @@ func (uc *ChatUsecase) relayAndHandleStream(
 				err := uc.toolUsageRepo.Save(toolUsage)
 				if err != nil {
 					log.Printf("ERROR: Failed to save tool usage: %v", err)
-				} else {
-					log.Printf("DEBUG: Successfully saved tool usage %s with status %s", toolUsage.ID, toolUsage.Status)
 				}
 			}
 		case "done", "error":
@@ -603,8 +595,6 @@ func (uc *ChatUsecase) relayAndHandleStream(
 				aiMessage.Content = fullContent
 				if err := uc.msgRepo.Update(ctx, aiMessage); err != nil {
 					log.Printf("ERROR: Failed to update AI message content: %v", err)
-				} else {
-					log.Printf("DEBUG: Updated AI message %s with final content", aiMessage.ID)
 				}
 
 				// 会話とAgentの統計を更新
@@ -620,7 +610,6 @@ func (uc *ChatUsecase) relayAndHandleStream(
 
 				// ChatSessionを保存（doneイベントにメタデータが含まれる場合）
 				if event.Metadata != nil {
-					log.Printf("DEBUG: Saving ChatSession with metadata: %+v", event.Metadata)
 					chatSession := conversation.NewChatSession(
 						userID,
 						conversationID,
@@ -639,8 +628,6 @@ func (uc *ChatUsecase) relayAndHandleStream(
 
 					if err := uc.chatSessionRepo.Save(ctx, chatSession); err != nil {
 						log.Printf("ERROR: Failed to save chat session: %v", err)
-					} else {
-						log.Printf("DEBUG: Successfully saved ChatSession %s", chatSession.ID)
 					}
 				} else {
 					log.Printf("WARN: Done event received without metadata")
@@ -692,4 +679,70 @@ func (uc *ChatUsecase) UpdateToolPositions(
 	}
 
 	return nil
+}
+
+// SendAgentIntroduction はAIエージェントが自己紹介メッセージを送信
+func (uc *ChatUsecase) SendAgentIntroduction(
+	ctx context.Context,
+	userID, conversationID uuid.UUID,
+	messageContent string,
+) (*ChatResult, error) {
+	// 1. 会話を取得
+	conv, err := uc.convRepo.FindByID(ctx, conversationID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find conversation: %w", err)
+	}
+
+	// ユーザーが会話の所有者か確認
+	if conv.UserID != userID {
+		return nil, fmt.Errorf("unauthorized: user does not own this conversation")
+	}
+
+	// 2. AIメッセージを直接保存（ユーザーメッセージは作成しない）
+	aiMessage, err := conversation.NewMessage(
+		conversationID,
+		conversation.SenderTypeAI,
+		conv.AIAgentID,
+		messageContent,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create AI message: %w", err)
+	}
+
+	if err := uc.msgRepo.Save(ctx, aiMessage); err != nil {
+		return nil, fmt.Errorf("failed to save AI message: %w", err)
+	}
+
+	// 3. 会話とAgentの統計を更新
+	conv.IncrementMessageCount()
+	if err := uc.convRepo.Update(ctx, conv); err != nil {
+		return nil, fmt.Errorf("failed to update conversation: %w", err)
+	}
+
+	agent, err := uc.aiRepo.FindByID(ctx, conv.AIAgentID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AI agent: %w", err)
+	}
+
+	agent.IncrementMessageCount()
+	if err := uc.aiRepo.Update(ctx, agent); err != nil {
+		return nil, fmt.Errorf("failed to update agent: %w", err)
+	}
+
+	// 4. 空のメタデータを返す（ツール使用なし）
+	metadata := external.AIMetadata{
+		Model:             agent.Model,
+		Provider:          agent.Provider.String(),
+		TokensUsed:        external.TokenUsage{},
+		ProcessingTimeMs:  0,
+		ToolsAvailable:    0,
+		BasicToolsCount:   0,
+		ServiceToolsCount: 0,
+	}
+
+	return &ChatResult{
+		UserMessage: nil, // ユーザーメッセージはなし
+		AIMessage:   aiMessage,
+		Metadata:    metadata,
+	}, nil
 }

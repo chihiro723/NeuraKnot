@@ -22,6 +22,12 @@ type UpdateToolPositionsRequest struct {
 	Positions map[string]int `json:"positions" binding:"required"` // ToolUsageID -> InsertPosition
 }
 
+// SendAgentIntroductionRequest はAIエージェント自己紹介送信リクエスト
+type SendAgentIntroductionRequest struct {
+	AIAgentID string `json:"ai_agent_id" binding:"required"`
+	Message   string `json:"message" binding:"required"`
+}
+
 // ParseAIAgentID はAI Agent IDをパース
 func (r *GetOrCreateConversationRequest) ParseAIAgentID() (uuid.UUID, error) {
 	return uuid.Parse(r.AIAgentID)
