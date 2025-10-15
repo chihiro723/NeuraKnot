@@ -561,7 +561,7 @@ export function ChatWindow({
                             "text-white bg-gradient-to-br from-green-500 to-emerald-600 shadow-green-500/30"
                           )}
                         >
-                          <div className="max-w-none text-sm leading-relaxed break-words lg:text-base prose prose-sm prose-invert overflow-wrap-anywhere">
+                          <div className="max-w-none text-sm leading-relaxed break-words lg:text-base overflow-wrap-anywhere markdown-chat">
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                               {message.content}
                             </ReactMarkdown>
