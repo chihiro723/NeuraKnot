@@ -18,9 +18,10 @@
   - [サービス起動](#サービス起動)
   - [動作確認](#動作確認)
 - [開発](#開発)
-  - [Docker Composeコマンド](#docker-composeコマンド)
+  - [Docker Compose コマンド](#docker-composeコマンド)
   - [個別開発](#個別開発)
-- [API仕様](#api仕様)
+  - [開発ルール](#開発ルール)
+- [API 仕様](#api仕様)
 - [認証](#認証)
 - [ドキュメント](#ドキュメント)
 - [デプロイ](#デプロイ)
@@ -29,7 +30,7 @@
 
 ## 概要
 
-BridgeSpeakは、AI エージェントとの対話を通じて様々なタスクを実行できるメッセージングアプリケーションです。複数の個性を持つAIエージェントと、外部サービス連携による拡張可能なツールシステムを提供します。
+BridgeSpeak は、AI エージェントとの対話を通じて様々なタスクを実行できるメッセージングアプリケーションです。複数の個性を持つ AI エージェントと、外部サービス連携による拡張可能なツールシステムを提供します。
 
 ## システムアーキテクチャ
 
@@ -64,7 +65,7 @@ Internet
 **バックエンド**
 
 - Go 1.25 - REST API (クリーンアーキテクチャ / DDD)
-- Python 3.11 - AI処理 (FastAPI + LangChain)
+- Python 3.11 - AI 処理 (FastAPI + LangChain)
 
 **AI / LLM**
 
@@ -131,7 +132,7 @@ bridgespeak/
 
 ### 開発環境（ローカル）
 
-ローカル開発環境では、全てのサービスをDockerコンテナで実行します。
+ローカル開発環境では、全てのサービスを Docker コンテナで実行します。
 
 ```
 開発者PC（ローカル）
@@ -153,7 +154,7 @@ AWS Cognito (DEV User Pool) - 認証専用
 
 ### 本番環境（AWS）
 
-本番環境では、AWSフルマネージドサービスを使用します。
+本番環境では、AWS フルマネージドサービスを使用します。
 
 ```
 [Vercel - Next.js]
@@ -174,11 +175,11 @@ AWS Cognito (DEV User Pool) - 認証専用
 
 - フロントエンド: Vercel（または ECS Fargate）
 - バックエンド: ECS Fargate
-- Python AIサーバー: ECS Fargate（内部通信のみ、ALBから直接アクセス不可）
+- Python AI サーバー: ECS Fargate（内部通信のみ、ALB から直接アクセス不可）
 - データベース: RDS PostgreSQL（Multi-AZ）
 - Service Discovery: Cloud Map（`python-ai.bridgespeak.local`）
 - ユーザー管理: AWS Cognito PROD User Pool
-- OAuth対応: Google, Apple, LINE
+- OAuth 対応: Google, Apple, LINE
 
 ## クイックスタート
 
@@ -208,7 +209,7 @@ cp frontend/.env frontend/.env.local
 - **認証**: `COGNITO_USER_POOL_ID`, `COGNITO_CLIENT_ID`, `COGNITO_CLIENT_SECRET`
 - **データベース**: `DB_PASSWORD`
 - **AI API**: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`
-- **外部サービス** (オプション): Slack, Notion, Weather API等
+- **外部サービス** (オプション): Slack, Notion, Weather API 等
 
 ### サービス起動
 
@@ -222,14 +223,14 @@ docker-compose -f docker-compose/dev.yml logs -f
 
 ### 動作確認
 
-| サービス         | URL                                      | 説明               |
-| ---------------- | ---------------------------------------- | ------------------ |
-| フロントエンド   | http://localhost:3000                    | Next.js Web UI     |
-| Go API           | http://localhost:8080                    | REST API           |
-| Swagger UI       | http://localhost:8080/swagger/index.html | API ドキュメント   |
-| Python AI Server | http://localhost:8001                    | AI 処理サーバー    |
-| PostgreSQL       | localhost:5432                           | データベース       |
-| Redis            | localhost:6379                           | キャッシュ         |
+| サービス         | URL                                      | 説明             |
+| ---------------- | ---------------------------------------- | ---------------- |
+| フロントエンド   | http://localhost:3000                    | Next.js Web UI   |
+| Go API           | http://localhost:8080                    | REST API         |
+| Swagger UI       | http://localhost:8080/swagger/index.html | API ドキュメント |
+| Python AI Server | http://localhost:8001                    | AI 処理サーバー  |
+| PostgreSQL       | localhost:5432                           | データベース     |
+| Redis            | localhost:6379                           | キャッシュ       |
 
 ```bash
 # ヘルスチェック
@@ -239,7 +240,7 @@ curl http://localhost:8001/api/health
 
 ## 開発
 
-### Docker Composeコマンド
+### Docker Compose コマンド
 
 ```bash
 # 全サービス起動
@@ -263,7 +264,7 @@ docker-compose -f docker-compose/dev.yml up -d --build
 
 ### 個別開発
 
-Docker Composeを使わず、各サービスを個別に開発する場合：
+Docker Compose を使わず、各サービスを個別に開発する場合：
 
 **フロントエンド**
 
@@ -297,7 +298,18 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 # http://localhost:8001
 ```
 
-## API仕様
+### 開発ルール
+
+開発に参加する前に、必ず[開発ルール・貢献ガイド](./docs/CONTRIBUTING.md)を確認してください。
+
+**重要なポイント:**
+
+- コミットメッセージ: `feat(frontend): 機能名` の形式
+- プルリクエスト: 詳細なテンプレートに従って作成
+- コードレビュー: 必須チェックリストを確認
+- ブランチ命名: `feature/123-機能名` の形式
+
+## API 仕様
 
 ### Go API (REST)
 
@@ -319,12 +331,12 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 - `GET /api/v1/users/:id` - ユーザー取得
 - `GET /api/v1/users` - ユーザー一覧
 
-**AIエージェント（認証必要）**
+**AI エージェント（認証必要）**
 
-- `POST /api/v1/ai-agents` - AIエージェント作成
-- `GET /api/v1/ai-agents/:id` - AIエージェント取得
-- `PUT /api/v1/ai-agents/:id` - AIエージェント更新
-- `DELETE /api/v1/ai-agents/:id` - AIエージェント削除
+- `POST /api/v1/ai-agents` - AI エージェント作成
+- `GET /api/v1/ai-agents/:id` - AI エージェント取得
+- `PUT /api/v1/ai-agents/:id` - AI エージェント更新
+- `DELETE /api/v1/ai-agents/:id` - AI エージェント削除
 
 **システム**
 
@@ -339,7 +351,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 - `POST /api/ai/chat/stream` - ストリーミングチャット (SSE)
 - `POST /api/tools/available` - 利用可能ツール一覧
 
-**対応LLMプロバイダー**
+**対応 LLM プロバイダー**
 
 - OpenAI (GPT-4o, GPT-4o-mini)
 - Anthropic (Claude 3.5 Sonnet, Claude 3.5 Haiku)
@@ -348,20 +360,22 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 **利用可能なサービス**
 
 組み込みサービス:
+
 - DateTimeService - 日時操作
 - CalculationService - 計算・統計
 - TextService - テキスト処理
 - DataService - データ変換
 - UtilityService - ユーティリティ
 
-外部API連携サービス:
+外部 API 連携サービス:
+
 - OpenWeatherService - 天気情報
-- SlackService - Slack連携
-- NotionService - Notion連携
-- BraveSearchService - Web検索
+- SlackService - Slack 連携
+- NotionService - Notion 連携
+- BraveSearchService - Web 検索
 - ExchangeRateService - 為替レート
 - GoogleCalendarService - カレンダー連携
-- IPApiService - IP位置情報
+- IPApiService - IP 位置情報
 
 ## 認証
 
@@ -385,14 +399,14 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 
 ### トークン設定
 
-- アクセストークン: 1時間
-- リフレッシュトークン: 30日
+- アクセストークン: 1 時間
+- リフレッシュトークン: 30 日
 
-### User Pool分離のメリット
+### User Pool 分離のメリット
 
-- DEV環境での実験がPRODに影響しない
+- DEV 環境での実験が PROD に影響しない
 - テストユーザーと本番ユーザーの完全分離
-- DEV環境でCognito統合テストが可能
+- DEV 環境で Cognito 統合テストが可能
 - 本番データの保護
 
 ## ドキュメント
@@ -402,24 +416,28 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 ### 主要ドキュメント
 
 **開発ガイド**
-- [開発ルール・貢献ガイド](./docs/CONTRIBUTING.md)
+
+- 📋 [開発ルール・貢献ガイド](./docs/CONTRIBUTING.md) - コミットメッセージ、プルリクエスト、コードレビューのルール
 - [フロントエンド開発](./docs/frontend/GETTING_STARTED.md)
-- [Go Backend開発](./backend-go/README.md)
-- [Python AI Server開発](./backend-python/README.md)
+- [Go Backend 開発](./backend-go/README.md)
+- [Python AI Server 開発](./backend-python/README.md)
 
 **アーキテクチャ**
+
 - [データベース設計](./docs/DATABASE_DESIGN.md)
 - [フロントエンドアーキテクチャ](./docs/frontend/ARCHITECTURE.md)
 - [認証アーキテクチャ](./docs/frontend/AUTH_ARCHITECTURE.md)
 - [エラーハンドリング](./docs/frontend/ERROR_HANDLING_ARCHITECTURE.md)
 
 **AWS インフラ**
-- [AWSインフラ構築](./docs/aws/INFRASTRUCTURE.md)
-- [AWS Cognito設定](./docs/aws/COGNITO_SETUP.md)
+
+- [AWS インフラ構築](./docs/aws/INFRASTRUCTURE.md)
+- [AWS Cognito 設定](./docs/aws/COGNITO_SETUP.md)
 - [AWS ドキュメント一覧](./docs/aws/)
 
 **その他**
-- [Swagger/OpenAPI設定](./docs/backend/SWAGGER_GUIDE.md)
+
+- [Swagger/OpenAPI 設定](./docs/backend/SWAGGER_GUIDE.md)
 - [ルーティングベストプラクティス](./docs/frontend/ROUTING_BEST_PRACTICES.md)
 - [サーバーサイドフェッチ](./docs/frontend/SERVER_SIDE_FETCH.md)
 
@@ -427,17 +445,17 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 
 - **認証**: AWS Cognito + JWT
 - **認可**: ロールベースアクセス制御
-- **暗号化**: 通信（TLS）+ データ保存（RDS暗号化）
-- **入力検証**: リクエストDTOバリデーション
+- **暗号化**: 通信（TLS）+ データ保存（RDS 暗号化）
+- **入力検証**: リクエスト DTO バリデーション
 - **機密情報管理**: AWS Secrets Manager
 
 **重要**: `.env.local`ファイルは絶対にコミットしないでください。
 
 ## デプロイ
 
-### CI/CDパイプライン
+### CI/CD パイプライン
 
-GitHub Actionsを使用した自動デプロイ：
+GitHub Actions を使用した自動デプロイ：
 
 ```
 feature/xxx → dev → main
@@ -462,8 +480,8 @@ feature/xxx → dev → main
 1. `feature/xxx`で開発（ローカル環境）
 2. `dev`ブランチにマージ
 3. ローカルで統合テスト（DEV User Pool）
-4. `main`ブランチへPR作成
-5. GitHub Actionsで自動テスト実行
+4. `main`ブランチへ PR 作成
+5. GitHub Actions で自動テスト実行
 6. レビュー & 承認
 7. `main`にマージ
 8. 自動デプロイ
@@ -490,7 +508,7 @@ GO_PYTHON_AI_URL=http://localhost:8001
 **本番環境（Vercel/ECS）**
 
 - Vercel: 環境変数設定画面で管理
-- ECS: AWS Secrets Managerから取得
+- ECS: AWS Secrets Manager から取得
 
 ## トラブルシューティング
 
@@ -522,7 +540,7 @@ docker-compose -f docker-compose/dev.yml restart postgres
 docker-compose -f docker-compose/dev.yml exec postgres psql -U postgres -d go_backend
 ```
 
-### Swagger UIが表示されない
+### Swagger UI が表示されない
 
 ```bash
 # Swaggerドキュメント再生成
@@ -536,7 +554,7 @@ docker-compose -f docker-compose/dev.yml restart backend-go
 docker-compose -f docker-compose/dev.yml logs backend-go
 ```
 
-### Python AIサーバーが起動しない
+### Python AI サーバーが起動しない
 
 ```bash
 # ログ確認
