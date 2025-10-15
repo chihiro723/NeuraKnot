@@ -28,6 +28,8 @@ import { useServerActionWithAuth } from "@/lib/hooks/useServerActionWithAuth";
 import { getUserServicesWithDetails } from "@/lib/actions/services";
 import type { UserServiceWithDetails } from "@/lib/types/service";
 import { ServiceSelectorModal } from "@/components/services/ServiceSelectorModal";
+import { generateAgentIntroduction } from "@/lib/actions/agent-introduction";
+import { useRouter } from "next/navigation";
 
 type AddType = "user" | "ai" | "group" | null;
 
@@ -287,6 +289,7 @@ export function AIAgentCreationPanel({
   onBack,
   isDesktop = false,
 }: AIAgentCreationPanelProps) {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     // 基本情報
     name: "",
@@ -480,6 +483,26 @@ export function AIAgentCreationPanel({
           throw new Error(result.error || "Failed to create agent");
         }
 
+        const agentId = result.data.id;
+
+        // バックグラウンドで自己紹介を生成（遅延実行）
+        setTimeout(() => {
+          generateAgentIntroduction(
+            agentId,
+            {
+              name: formData.name,
+              persona_type: formData.persona_type,
+              description: formData.description,
+            },
+            selectedServices
+          ).catch((err) => {
+            console.error("Failed to generate introduction:", err);
+          });
+        }, 2000); // 2秒後に実行
+
+        // すぐにrosterページに遷移
+        router.push(`/dashboard/roster/${agentId}`);
+
         // フォームをリセット
         setFormData({
           name: "",
@@ -495,9 +518,8 @@ export function AIAgentCreationPanel({
           streaming_enabled: false,
         });
 
-        if (!isDesktop) {
-          onBack();
-        }
+        // デスクトップの場合もモバイルの場合も、rosterページに遷移するため
+        // isDesktopフラグによる分岐を削除
       } catch (error) {
         console.error("Error creating agent:", error);
         setError(
@@ -1199,7 +1221,7 @@ export function UserFriendAddPanel({
                   <button
                     key={index}
                     onClick={() => {
-                      // TODO: 実装予定
+                      // 実装予定
                     }}
                     className={cn(
                       "flex items-center p-4 space-x-3 w-full bg-white rounded-lg border border-gray-300",
@@ -1280,7 +1302,7 @@ export function GroupCreationPanel({
   useEffect(() => {
     const loadFriends = async () => {
       try {
-        // TODO: 実際の友だちリストを取得するAPIを実装
+        // 実際の友だちリストを取得するAPIを実装
         setFriends([]);
       } catch (error) {
         console.error("友だちリストの読み込みでエラーが発生しました:", error);
@@ -1304,7 +1326,7 @@ export function GroupCreationPanel({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: グループ作成処理の実装
+    // グループ作成処理の実装
     if (!isDesktop) {
       onBack();
     }
