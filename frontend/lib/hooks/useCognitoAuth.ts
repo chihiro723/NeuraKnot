@@ -73,12 +73,13 @@ export function useCognitoAuth() {
         error: null
       })
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'ログインに失敗しました'
       setState(prev => ({
         ...prev,
         loading: false,
-        error: error instanceof Error ? error.message : 'ログインに失敗しました'
+        error: errorMessage
       }))
-      throw error
+      // エラーをthrowしない - フック内でエラーメッセージを管理
     }
   }, [])
 
@@ -103,7 +104,7 @@ export function useCognitoAuth() {
         loading: false,
         error: error instanceof Error ? error.message : 'アカウント作成に失敗しました'
       }))
-      throw error
+      // エラーをthrowしない - フック内でエラーメッセージを管理
     }
   }, [])
 
@@ -124,7 +125,7 @@ export function useCognitoAuth() {
         loading: false,
         error: error instanceof Error ? error.message : 'メール確認に失敗しました'
       }))
-      throw error
+      // エラーをthrowしない - フック内でエラーメッセージを管理
     }
   }, [])
 
@@ -182,7 +183,7 @@ export function useCognitoAuth() {
         loading: false,
         error: error instanceof Error ? error.message : 'パスワードリセットメールの送信に失敗しました'
       }))
-      throw error
+      // エラーをthrowしない - フック内でエラーメッセージを管理
     }
   }, [])
 
@@ -203,10 +204,13 @@ export function useCognitoAuth() {
         loading: false,
         error: error instanceof Error ? error.message : 'パスワードリセットの確認に失敗しました'
       }))
-      throw error
+      // エラーをthrowしない - フック内でエラーメッセージを管理
     }
   }, [])
 
+  const clearError = useCallback(() => {
+    setState(prev => ({ ...prev, error: null }))
+  }, [])
 
   return {
     ...state,
@@ -217,6 +221,7 @@ export function useCognitoAuth() {
     refreshToken,
     forgotPassword,
     confirmForgotPassword,
+    clearError,
     isAuthenticated: !!state.user
   }
 }
