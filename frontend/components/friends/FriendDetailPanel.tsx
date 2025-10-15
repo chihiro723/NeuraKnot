@@ -224,13 +224,18 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
     : null;
   const PersonalityIcon = personalityInfo?.icon;
 
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString("ja-JP", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    return `${year}年${month}月${day}日`;
   };
 
   // ローディング状態
@@ -421,7 +426,7 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
             {friend.created_at && (
               <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
                 <Calendar className="w-4 h-4" />
-                <span>友だちになった日: {formatDate(friend.created_at)}</span>
+                <span>友だちになった日: {isClient ? formatDate(friend.created_at) : '--'}</span>
               </div>
             )}
           </div>
