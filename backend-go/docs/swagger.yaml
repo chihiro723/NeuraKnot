@@ -141,6 +141,13 @@ definitions:
     required:
     - ai_agent_id
     type: object
+  backend-go_internal_handler_http_request.ResendConfirmationCodeRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
   backend-go_internal_handler_http_request.SendAgentIntroductionRequest:
     properties:
       ai_agent_id:
@@ -1266,6 +1273,34 @@ paths:
           schema:
             $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
       summary: トークンリフレッシュ
+      tags:
+      - Auth
+  /auth/resend-confirmation-code:
+    post:
+      consumes:
+      - application/json
+      description: ユーザー登録確認用のコードを再送信します
+      parameters:
+      - description: 再送信リクエスト
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/backend-go_internal_handler_http_request.ResendConfirmationCodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 再送信成功
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      summary: 確認コード再送信
       tags:
       - Auth
   /auth/signin:

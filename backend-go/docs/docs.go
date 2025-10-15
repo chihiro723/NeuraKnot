@@ -1248,6 +1248,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/auth/resend-confirmation-code": {
+            "post": {
+                "description": "ユーザー登録確認用のコードを再送信します",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "確認コード再送信",
+                "parameters": [
+                    {
+                        "description": "再送信リクエスト",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_request.ResendConfirmationCodeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "再送信成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/signin": {
             "post": {
                 "description": "ユーザー名とパスワードでログインします",
@@ -1834,6 +1877,17 @@ const docTemplate = `{
             ],
             "properties": {
                 "ai_agent_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_request.ResendConfirmationCodeRequest": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
                     "type": "string"
                 }
             }
