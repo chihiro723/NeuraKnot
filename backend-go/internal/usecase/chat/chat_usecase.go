@@ -23,6 +23,7 @@ type ChatUsecase struct {
 	toolUsageRepo      conversation.ToolUsageRepository
 	chatSessionRepo    conversation.ChatSessionRepository
 	aiAgentServiceRepo service.AIAgentServiceRepository
+	serviceConfigRepo  service.ServiceConfigRepository
 	aiClient           *external.AIClient
 }
 
@@ -34,6 +35,7 @@ func NewChatUsecase(
 	toolUsageRepo conversation.ToolUsageRepository,
 	chatSessionRepo conversation.ChatSessionRepository,
 	aiAgentServiceRepo service.AIAgentServiceRepository,
+	serviceConfigRepo service.ServiceConfigRepository,
 	aiClient *external.AIClient,
 ) *ChatUsecase {
 	return &ChatUsecase{
@@ -43,6 +45,7 @@ func NewChatUsecase(
 		toolUsageRepo:      toolUsageRepo,
 		chatSessionRepo:    chatSessionRepo,
 		aiAgentServiceRepo: aiAgentServiceRepo,
+		serviceConfigRepo:  serviceConfigRepo,
 		aiClient:           aiClient,
 	}
 }
@@ -175,11 +178,26 @@ func (uc *ChatUsecase) SendMessage(
 			services = make([]external.ServiceConfig, 0, len(agentServices))
 			for _, as := range agentServices {
 				if as.Enabled {
-					services = append(services, external.ServiceConfig{
-						ServiceClass:      as.ServiceClass,
-						ToolSelectionMode: as.ToolSelectionMode,
-						SelectedTools:     as.SelectedTools,
-					})
+					// ユーザーのサービス設定を取得して認証情報を含める
+					serviceConfig, _, _, _, _, err := uc.serviceConfigRepo.FindByUserAndClass(userID, as.ServiceClass)
+					if err == nil && serviceConfig != nil {
+						// APIキーを取得
+						var apiKey *string
+						if serviceConfig.Auth != nil {
+							if key, exists := serviceConfig.Auth["api_key"]; exists {
+								if keyStr, ok := key.(string); ok {
+									apiKey = &keyStr
+								}
+							}
+						}
+
+						services = append(services, external.ServiceConfig{
+							ServiceClass:      as.ServiceClass,
+							ToolSelectionMode: as.ToolSelectionMode,
+							SelectedTools:     as.SelectedTools,
+							APIKey:            apiKey,
+						})
+					}
 				}
 			}
 		}
@@ -465,11 +483,26 @@ func (uc *ChatUsecase) SendMessageStream(
 			services = make([]external.ServiceConfig, 0, len(agentServices))
 			for _, as := range agentServices {
 				if as.Enabled {
-					services = append(services, external.ServiceConfig{
-						ServiceClass:      as.ServiceClass,
-						ToolSelectionMode: as.ToolSelectionMode,
-						SelectedTools:     as.SelectedTools,
-					})
+					// ユーザーのサービス設定を取得して認証情報を含める
+					serviceConfig, _, _, _, _, err := uc.serviceConfigRepo.FindByUserAndClass(userID, as.ServiceClass)
+					if err == nil && serviceConfig != nil {
+						// APIキーを取得
+						var apiKey *string
+						if serviceConfig.Auth != nil {
+							if key, exists := serviceConfig.Auth["api_key"]; exists {
+								if keyStr, ok := key.(string); ok {
+									apiKey = &keyStr
+								}
+							}
+						}
+
+						services = append(services, external.ServiceConfig{
+							ServiceClass:      as.ServiceClass,
+							ToolSelectionMode: as.ToolSelectionMode,
+							SelectedTools:     as.SelectedTools,
+							APIKey:            apiKey,
+						})
+					}
 				}
 			}
 		}

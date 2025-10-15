@@ -302,6 +302,23 @@ func (u *ServiceUsecase) ExecuteTool(userID uuid.UUID, serviceClass, toolName st
 	// Python APIへリクエスト
 	url := fmt.Sprintf("%s/api/v1/services/%s/execute", u.pythonServiceURL, serviceClass)
 
+	// デバッグログ: 認証情報の内容を確認
+	u.logger.Info("Service config debug",
+		"service_class", serviceClass,
+		"config", serviceConfig.Config,
+		"auth", serviceConfig.Auth,
+		"auth_keys", func() []string {
+			if serviceConfig.Auth != nil {
+				keys := make([]string, 0, len(serviceConfig.Auth))
+				for k := range serviceConfig.Auth {
+					keys = append(keys, k)
+				}
+				return keys
+			}
+			return []string{}
+		}(),
+	)
+
 	requestBody := map[string]interface{}{
 		"tool_name": toolName,
 		"arguments": arguments,
