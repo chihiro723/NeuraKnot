@@ -38,7 +38,7 @@ export function getDevDelayTime(): number {
   const envDelay = process.env.NEXT_PUBLIC_DEV_DELAY_MS;
   if (envDelay) {
     const parsed = parseInt(envDelay, 10);
-    if (!isNaN(parsed)) {
+    if (!isNaN(parsed) && parsed >= 0) {
       return parsed;
     }
   }
@@ -46,9 +46,9 @@ export function getDevDelayTime(): number {
 }
 
 /**
- * カスタマイズ可能な開発遅延
+ * カスタム遅延時間で遅延する（環境変数で制御可能）
  */
-export async function devDelayCustom(): Promise<void> {
-  await devDelay(getDevDelayTime());
+export async function devDelayCustom(ms?: number): Promise<void> {
+  const delayTime = ms ?? getDevDelayTime();
+  return devDelay(delayTime);
 }
-

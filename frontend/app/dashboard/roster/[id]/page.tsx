@@ -23,7 +23,7 @@ interface FriendDetailPageProps {
  */
 async function FriendDetailData({ friendId }: { friendId: string }) {
   // スケルトンUI確認用の遅延（環境変数で制御）
-  await devDelayCustom();
+  // await devDelayCustom();
 
   // サーバーサイドでデータフェッチ
   const agentsResult = await listAIAgents();

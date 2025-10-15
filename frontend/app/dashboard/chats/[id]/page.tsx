@@ -11,6 +11,12 @@ import { ChatWindowClient } from "@/components/chat/ChatWindowClient";
 import { LoadingSpinner } from "@/components/ui/feedback/LoadingSpinner";
 import { devDelayCustom } from "@/lib/utils/dev-delay";
 
+interface UserProfile {
+  username: string;
+  display_name?: string;
+  avatar_url?: string;
+}
+
 /**
  * 個別チャット画面（サーバーコンポーネント）
  * URLパラメータからチャットIDを取得してSSRで表示
@@ -29,7 +35,7 @@ interface ChatDetailPageProps {
  */
 async function ChatWindowData({ chatId }: { chatId: string }) {
   // スケルトンUI確認用の遅延（環境変数で制御）
-  await devDelayCustom();
+  // await devDelayCustom();
 
   // サーバーサイドでデータフェッチ
   const [conversationsResult, agentsResult, profileResult] = await Promise.all([
@@ -96,7 +102,7 @@ async function ChatWindowData({ chatId }: { chatId: string }) {
 
   // メッセージとユーザープロフィールを取得
   let initialMessages = [];
-  let initialUserProfile = null;
+  let initialUserProfile: UserProfile | undefined = undefined;
 
   if (selectedConversation) {
     const messagesResult = await getMessages(selectedConversation.id, 50);
