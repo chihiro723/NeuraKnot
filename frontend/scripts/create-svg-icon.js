@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 const ASSETS_DIR = path.join(__dirname, '..', 'assets');
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 
-// BridgeSpeakのブランドカラー
+// NeuraKnotのブランドカラー
 const BRAND_COLOR = '#6366f1';
 const ACCENT_COLOR = '#8b5cf6';
 
