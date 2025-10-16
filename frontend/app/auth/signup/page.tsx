@@ -19,35 +19,15 @@ export default function SignUpPage() {
   }, [isAuthenticated, loading, router]);
 
   if (loading) {
-    return (
-      <div className="flex flex-col justify-center items-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <LoadingSpinner centerScreen />
-      </div>
-    );
+    return <LoadingSpinner centerScreen variant="auth" />;
   }
 
   return (
-    <div className="flex overflow-hidden relative justify-center items-center p-4 min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      {/* 背景パーティクルエフェクト */}
-      <div className="absolute inset-0 opacity-30 particle-bg" />
-
-      {/* 動的背景グラデーション */}
-      <div className="absolute inset-0 bg-gradient-to-br via-transparent from-emerald-500/5 to-cyan-500/5 morphing-bg" />
-
-      {/* フローティングエレメント */}
-      <div className="absolute top-20 left-20 w-32 h-32 rounded-full blur-3xl bg-emerald-500/10 floating-element" />
-      <div
-        className="absolute right-20 bottom-20 w-40 h-40 rounded-full blur-3xl bg-cyan-500/10 floating-element"
-        style={{ animationDelay: "2s" }}
-      />
-      <div
-        className="absolute left-10 top-1/2 w-24 h-24 rounded-full blur-2xl bg-blue-500/10 floating-element"
-        style={{ animationDelay: "4s" }}
-      />
-      <div
-        className="absolute top-1/3 right-1/4 w-20 h-20 rounded-full blur-2xl bg-purple-500/10 floating-element"
-        style={{ animationDelay: "6s" }}
-      />
+    <div className="flex overflow-hidden relative justify-center items-center p-4 min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
+      {/* 中央ハイライト効果 */}
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute top-1/2 left-1/2 w-96 h-96 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2 bg-emerald-400/30"></div>
+      </div>
 
       {/* 戻るボタン */}
       <Link

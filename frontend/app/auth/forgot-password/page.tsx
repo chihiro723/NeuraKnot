@@ -34,11 +34,11 @@ export default function ForgotPasswordPage() {
 
   if (success) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="space-y-8 w-full max-w-md">
+      <div className="flex justify-center items-center min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
+        <div className="space-y-8 w-full max-w-md p-8 rounded-2xl border shadow-2xl backdrop-blur-md bg-white/10 border-white/20">
           <div className="text-center">
-            <div className="mb-4 text-xl text-green-600">メール送信完了</div>
-            <p className="mb-4 text-gray-600">
+            <div className="mb-4 text-xl text-emerald-400">メール送信完了</div>
+            <p className="mb-4 text-white/70">
               {email} にパスワードリセット用のメールを送信しました。
               メール内のリンクをクリックして、新しいパスワードを設定してください。
             </p>
@@ -55,13 +55,17 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex justify-center items-center min-h-screen">
-      <div className="space-y-8 w-full max-w-md">
+    <div className="flex justify-center items-center min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
+      {/* 中央ハイライト効果 */}
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute top-1/2 left-1/2 w-96 h-96 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2 bg-emerald-400/30"></div>
+      </div>
+      <div className="relative z-10 space-y-8 w-full max-w-md p-8 rounded-2xl border shadow-2xl backdrop-blur-md bg-white/10 border-white/20">
         <div>
-          <h2 className="mt-6 text-3xl font-extrabold text-center text-gray-900">
+          <h2 className="mt-6 text-3xl font-extrabold text-center text-white">
             パスワードリセット
           </h2>
-          <p className="mt-2 text-sm text-center text-gray-600">
+          <p className="mt-2 text-sm text-center text-white/70">
             登録されているメールアドレスを入力してください。
             パスワードリセット用のメールを送信します。
           </p>
