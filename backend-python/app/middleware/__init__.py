@@ -1,2 +1,2 @@
-"""Middleware for BridgeSpeak AI Server"""
+"""Middleware for NeuraKnot AI Server"""
 

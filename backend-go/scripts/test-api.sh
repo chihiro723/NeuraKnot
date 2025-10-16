@@ -4,7 +4,7 @@
 
 BASE_URL="http://localhost:8080"
 
-echo "🚀 BridgeSpeak API 動作確認開始"
+echo "🚀 NeuraKnot API 動作確認開始"
 echo "=================================="
 
 # ヘルスチェック

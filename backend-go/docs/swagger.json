@@ -1,8 +1,8 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "BridgeSpeak AI分身チャットアプリケーションのAPI",
-        "title": "BridgeSpeak API",
+        "description": "NeuraKnot AI分身チャットアプリケーションのAPI",
+        "title": "NeuraKnot API",
         "termsOfService": "http://swagger.io/terms/",
         "contact": {
             "name": "API Support",

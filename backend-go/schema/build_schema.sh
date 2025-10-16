@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ===========================================
-# BridgeSpeak Schema Builder v1.0
+# NeuraKnot Schema Builder v1.0
 # 統合スキーマファイルを使用してデータベースを構築
 # ===========================================
 
@@ -64,7 +64,7 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         --help)
-            echo "BridgeSpeak Schema Builder"
+            echo "NeuraKnot Schema Builder"
             echo ""
             echo "Usage: $0 [OPTIONS]"
             echo ""
@@ -79,7 +79,7 @@ while [[ $# -gt 0 ]]; do
             echo "  DB_PORT          データベースポート (default: 5432)"
             echo "  DB_USER          データベースユーザー (default: postgres)"
             echo "  DB_PASSWORD      データベースパスワード (default: password)"
-            echo "  DB_NAME          データベース名 (default: bridgespeak)"
+            echo "  DB_NAME          データベース名 (default: neuraKnot)"
             exit 0
             ;;
         *)
@@ -102,7 +102,7 @@ if [[ "$INCLUDE_MOCK_DATA" == true && ! -f "$MOCK_DATA_FILE" ]]; then
 fi
 
 # 確認メッセージ
-log_info "BridgeSpeak データベーススキーマ構築を開始します"
+log_info "NeuraKnot データベーススキーマ構築を開始します"
 log_info "データベース: $DB_NAME"
 log_info "ホスト: $DB_HOST:$DB_PORT"
 log_info "ユーザー: $DB_USER"

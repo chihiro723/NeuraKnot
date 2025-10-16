@@ -1,6 +1,6 @@
 """
 FastAPIメインアプリケーション
-BridgeSpeak AI Server
+NeuraKnot AI Server
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

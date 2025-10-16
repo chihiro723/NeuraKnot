@@ -1,2 +1,2 @@
-"""Core modules for BridgeSpeak AI Server"""
+"""Core modules for NeuraKnot AI Server"""
 

@@ -476,12 +476,12 @@ info:
     email: support@swagger.io
     name: API Support
     url: http://www.swagger.io/support
-  description: BridgeSpeak AI分身チャットアプリケーションのAPI
+  description: NeuraKnot AI分身チャットアプリケーションのAPI
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
   termsOfService: http://swagger.io/terms/
-  title: BridgeSpeak API
+  title: NeuraKnot API
   version: "1.0"
 paths:
   /api/v1/ai-agents:

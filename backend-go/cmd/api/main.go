@@ -1,6 +1,6 @@
-// @title BridgeSpeak API
+// @title NeuraKnot API
 // @version 1.0
-// @description BridgeSpeak AI分身チャットアプリケーションのAPI
+// @description NeuraKnot AI分身チャットアプリケーションのAPI
 // @termsOfService http://swagger.io/terms/
 
 // @contact.name API Support

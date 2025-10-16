@@ -85,7 +85,7 @@ func Load() *Config {
 			Port:     getEnvAsInt("DB_PORT", 5432),
 			User:     getEnv("DB_USER", "postgres"),
 			Password: getEnv("DB_PASSWORD", "password"),
-			DBName:   getEnv("DB_NAME", "bridgespeak"),
+			DBName:   getEnv("DB_NAME", "neuraKnot"),
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
 		},
 		Cognito: CognitoConfig{

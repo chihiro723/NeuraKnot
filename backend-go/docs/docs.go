@@ -2397,8 +2397,8 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "localhost:8080",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
-	Title:            "BridgeSpeak API",
-	Description:      "BridgeSpeak AI分身チャットアプリケーションのAPI",
+	Title:            "NeuraKnot API",
+	Description:      "NeuraKnot AI分身チャットアプリケーションのAPI",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 }

@@ -1,11 +1,11 @@
 """
 カスタム例外定義
-BridgeSpeak固有のエラーハンドリング
+NeuraKnot固有のエラーハンドリング
 """
 from typing import Optional, Dict, Any
 
 
-class BridgeSpeakException(Exception):
+class NeuraKnotException(Exception):
     """基底カスタム例外"""
     
     def __init__(
@@ -26,14 +26,14 @@ class BridgeSpeakException(Exception):
 # バリデーションエラー (400)
 # ========================================
 
-class ValidationError(BridgeSpeakException):
+class ValidationError(NeuraKnotException):
     """バリデーションエラー"""
     
     def __init__(self, message: str, details: Optional[Dict] = None):
         super().__init__("VALIDATION_ERROR", message, details, 400)
 
 
-class InvalidCompletionMode(BridgeSpeakException):
+class InvalidCompletionMode(NeuraKnotException):
     """不正なcompletion_mode"""
     
     def __init__(self, mode: str):
@@ -45,7 +45,7 @@ class InvalidCompletionMode(BridgeSpeakException):
         )
 
 
-class InvalidModel(BridgeSpeakException):
+class InvalidModel(NeuraKnotException):
     """不正なモデル"""
     
     def __init__(self, provider: str, model: str, available_models: list):
@@ -61,7 +61,7 @@ class InvalidModel(BridgeSpeakException):
         )
 
 
-class InvalidProvider(BridgeSpeakException):
+class InvalidProvider(NeuraKnotException):
     """不正なプロバイダー"""
     
     def __init__(self, provider: str, available_providers: list):
@@ -80,7 +80,7 @@ class InvalidProvider(BridgeSpeakException):
 # ツール関連エラー (422)
 # ========================================
 
-class ToolsRequiredButNoneAvailable(BridgeSpeakException):
+class ToolsRequiredButNoneAvailable(NeuraKnotException):
     """ツール必須だが利用可能なツールなし"""
     
     def __init__(self):
@@ -91,7 +91,7 @@ class ToolsRequiredButNoneAvailable(BridgeSpeakException):
         )
 
 
-class ToolsRequiredButNotUsed(BridgeSpeakException):
+class ToolsRequiredButNotUsed(NeuraKnotException):
     """ツール必須だがAIが使用しなかった"""
     
     def __init__(self):
@@ -102,7 +102,7 @@ class ToolsRequiredButNotUsed(BridgeSpeakException):
         )
 
 
-class ToolsRequiredButAllDisallowed(BridgeSpeakException):
+class ToolsRequiredButAllDisallowed(NeuraKnotException):
     """ツール必須だが全て拒否された"""
     
     def __init__(self):
@@ -113,7 +113,7 @@ class ToolsRequiredButAllDisallowed(BridgeSpeakException):
         )
 
 
-class ServiceToolExecutionError(BridgeSpeakException):
+class ServiceToolExecutionError(NeuraKnotException):
     """サービスツール実行エラー"""
     
     def __init__(self, tool_name: str, error_message: str):
@@ -129,7 +129,7 @@ class ServiceToolExecutionError(BridgeSpeakException):
 # レート制限エラー (429)
 # ========================================
 
-class RateLimitExceeded(BridgeSpeakException):
+class RateLimitExceeded(NeuraKnotException):
     """レート制限超過"""
     
     def __init__(self, retry_after: int = 60):
@@ -145,7 +145,7 @@ class RateLimitExceeded(BridgeSpeakException):
 # サーバーエラー (500)
 # ========================================
 
-class InternalError(BridgeSpeakException):
+class InternalError(NeuraKnotException):
     """内部エラー"""
     
     def __init__(self, message: str = "内部エラーが発生しました", details: Optional[Dict] = None):
@@ -156,7 +156,7 @@ class InternalError(BridgeSpeakException):
 # 外部サービスエラー (503)
 # ========================================
 
-class ServiceConnectionError(BridgeSpeakException):
+class ServiceConnectionError(NeuraKnotException):
     """サービス接続エラー"""
     
     def __init__(self, service_name: str, details: Optional[Dict] = None):
@@ -168,7 +168,7 @@ class ServiceConnectionError(BridgeSpeakException):
         )
 
 
-class LLMAPIError(BridgeSpeakException):
+class LLMAPIError(NeuraKnotException):
     """LLM APIエラー"""
     
     def __init__(self, provider: str, error_message: str):
@@ -184,7 +184,7 @@ class LLMAPIError(BridgeSpeakException):
 # タイムアウトエラー (504)
 # ========================================
 
-class ServiceTimeoutError(BridgeSpeakException):
+class ServiceTimeoutError(NeuraKnotException):
     """サービスタイムアウト"""
     
     def __init__(self, service_name: str, timeout: float):
@@ -196,7 +196,7 @@ class ServiceTimeoutError(BridgeSpeakException):
         )
 
 
-class LLMAPITimeout(BridgeSpeakException):
+class LLMAPITimeout(NeuraKnotException):
     """LLM APIタイムアウト"""
     
     def __init__(self, provider: str, timeout: float):

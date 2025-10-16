@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     
     # API設定
     API_V1_PREFIX: str = "/api/v1"
-    PROJECT_NAME: str = "BridgeSpeak AI Server"
+    PROJECT_NAME: str = "NeuraKnot AI Server"
     VERSION: str = "1.0.0"
     HOST: str = "0.0.0.0"
     PORT: int = 8001
@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     # LangSmith設定
     LANGSMITH_TRACING_V2: bool = False
     LANGSMITH_API_KEY: str = ""
-    LANGSMITH_PROJECT: str = "bridgespeak"
+    LANGSMITH_PROJECT: str = "neuraKnot"
     LANGSMITH_ENDPOINT: str = "https://smith.langchain.com"
     
     # タイムアウト設定（秒）

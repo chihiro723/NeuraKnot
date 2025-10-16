@@ -1,2 +1,2 @@
-"""API endpoints for BridgeSpeak AI Server"""
+"""API endpoints for NeuraKnot AI Server"""
 

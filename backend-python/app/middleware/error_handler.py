@@ -4,7 +4,7 @@
 """
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
-from app.core.exceptions import BridgeSpeakException
+from app.core.exceptions import NeuraKnotException
 import logging
 import uuid
 
@@ -19,14 +19,14 @@ def add_exception_handlers(app: FastAPI):
         app: FastAPIアプリケーション
     """
     
-    @app.exception_handler(BridgeSpeakException)
-    async def bridgespeak_exception_handler(request: Request, exc: BridgeSpeakException):
+    @app.exception_handler(NeuraKnotException)
+    async def neuraKnot_exception_handler(request: Request, exc: NeuraKnotException):
         """
         カスタム例外ハンドラ
         
         Args:
             request: リクエスト
-            exc: BridgeSpeakException
+            exc: NeuraKnotException
             
         Returns:
             JSONResponse: エラーレスポンス
@@ -34,7 +34,7 @@ def add_exception_handlers(app: FastAPI):
         request_id = str(uuid.uuid4())
         
         logger.error(
-            f"BridgeSpeakException: {exc.code} - {exc.message}",
+            f"NeuraKnotException: {exc.code} - {exc.message}",
             extra={"request_id": request_id, "details": exc.details}
         )
         
