@@ -2,7 +2,7 @@
 
 ## 🎯 概要
 
-BridgeSpeak アプリケーションの AWS インフラストラクチャ構成について説明します。Terraform を使用して Infrastructure as Code で管理されています。
+NeuraKnot アプリケーションの AWS インフラストラクチャ構成について説明します。Terraform を使用して Infrastructure as Code で管理されています。
 
 ## 🏗️ アーキテクチャ概要
 
@@ -36,7 +36,7 @@ Internet
 
 ### VPC (Virtual Private Cloud)
 
-- **VPC**: `bridgespeak-{environment}-vpc`
+- **VPC**: `neuraKnot-{environment}-vpc`
 - **CIDR**: 10.0.0.0/16
 - **DNS サポート**: 有効
 - **DNS ホスト名**: 有効
@@ -45,17 +45,17 @@ Internet
 
 #### パブリックサブネット（ALB 用）
 
-| サブネット名                 | AZ              | CIDR        | 用途 |
-| ---------------------------- | --------------- | ----------- | ---- |
-| `bridgespeak-{env}-public-1` | ap-northeast-1a | 10.0.1.0/24 | ALB  |
-| `bridgespeak-{env}-public-2` | ap-northeast-1c | 10.0.2.0/24 | ALB  |
+| サブネット名               | AZ              | CIDR        | 用途 |
+| -------------------------- | --------------- | ----------- | ---- |
+| `neuraKnot-{env}-public-1` | ap-northeast-1a | 10.0.1.0/24 | ALB  |
+| `neuraKnot-{env}-public-2` | ap-northeast-1c | 10.0.2.0/24 | ALB  |
 
 #### プライベートサブネット（ECS・RDS 用）
 
-| サブネット名                  | AZ              | CIDR         | 用途     |
-| ----------------------------- | --------------- | ------------ | -------- |
-| `bridgespeak-{env}-private-1` | ap-northeast-1a | 10.0.10.0/24 | ECS・RDS |
-| `bridgespeak-{env}-private-2` | ap-northeast-1c | 10.0.20.0/24 | ECS・RDS |
+| サブネット名                | AZ              | CIDR         | 用途     |
+| --------------------------- | --------------- | ------------ | -------- |
+| `neuraKnot-{env}-private-1` | ap-northeast-1a | 10.0.10.0/24 | ECS・RDS |
+| `neuraKnot-{env}-private-2` | ap-northeast-1c | 10.0.20.0/24 | ECS・RDS |
 
 ### ルーティング
 
@@ -66,7 +66,7 @@ Internet
 
 ### AWS Cognito User Pool
 
-- **名前**: `bridgespeak-{environment}-user-pool`
+- **名前**: `neuraKnot-{environment}-user-pool`
 - **認証方式**: メールアドレス + ユーザー名
 - **パスワードポリシー**:
   - 最小長: 8 文字
@@ -110,7 +110,7 @@ Internet
 
 #### クラスター
 
-- **名前**: `bridgespeak-{environment}-cluster`
+- **名前**: `neuraKnot-{environment}-cluster`
 - **Container Insights**: 有効
 
 #### タスク定義
@@ -138,9 +138,9 @@ Internet
 
 #### リポジトリ
 
-- `bridgespeak-{environment}-backend-go`
-- `bridgespeak-{environment}-python-ai`
-- `bridgespeak-{environment}-nextjs-frontend`
+- `neuraKnot-{environment}-backend-go`
+- `neuraKnot-{environment}-python-ai`
+- `neuraKnot-{environment}-nextjs-frontend`
 
 #### ライフサイクルポリシー
 
@@ -151,14 +151,14 @@ Internet
 
 ### Application Load Balancer (ALB)
 
-- **名前**: `bridgespeak-{environment}-alb`
+- **名前**: `neuraKnot-{environment}-alb`
 - **タイプ**: Application Load Balancer
 - **スキーム**: Internet-facing
 - **削除保護**: prod 環境のみ有効
 
 ### ターゲットグループ
 
-- **Go Backend**: `bridgespeak-{environment}-backend-go-tg`
+- **Go Backend**: `neuraKnot-{environment}-backend-go-tg`
 - **ヘルスチェック**: `/health`エンドポイント
 - **プロトコル**: HTTP
 - **ポート**: 8080
@@ -215,13 +215,13 @@ Internet
 
 #### データベースパスワード
 
-- **シークレット名**: `bridgespeak-{environment}-db-password`
+- **シークレット名**: `neuraKnot-{environment}-db-password`
 - **回復期間**: 7 日
 - **用途**: RDS 接続パスワード
 
 #### OAuth 認証情報
 
-- **シークレット名**: `bridgespeak-{environment}-oauth-credentials`
+- **シークレット名**: `neuraKnot-{environment}-oauth-credentials`
 - **内容**: Google、LINE、X の認証情報
 - **回復期間**: 7 日
 
@@ -231,9 +231,9 @@ Internet
 
 #### ロググループ
 
-- `/ecs/bridgespeak-{environment}-backend-go`
-- `/ecs/bridgespeak-{environment}-python-ai`
-- `/ecs/bridgespeak-{environment}-nextjs-frontend`
+- `/ecs/neuraKnot-{environment}-backend-go`
+- `/ecs/neuraKnot-{environment}-python-ai`
+- `/ecs/neuraKnot-{environment}-nextjs-frontend`
 
 #### ログ保持期間
 
@@ -342,10 +342,10 @@ export ENVIRONMENT="dev"
 
 ```bash
 # ECS タスクのログ
-aws logs get-log-events --log-group-name "/ecs/bridgespeak-dev-backend-go" --log-stream-name "ecs/backend-go/..."
+aws logs get-log-events --log-group-name "/ecs/neuraKnot-dev-backend-go" --log-stream-name "ecs/backend-go/..."
 
 # RDS のログ
-aws rds describe-db-log-files --db-instance-identifier bridgespeak-dev-db
+aws rds describe-db-log-files --db-instance-identifier neuraKnot-dev-db
 ```
 
 ---

@@ -1,10 +1,10 @@
-# BridgeSpeak AI Server (backend-python)
+# NeuraKnot AI Server (backend-python)
 
 FastAPI + LangChain Agent + MCP ツール統合による AI 処理 API サーバー
 
 ## 概要
 
-BridgeSpeak AI Server は、LLM エージェントと MCP（Model Context Protocol）ツールを統合した AI 処理 API です。OpenAI、Anthropic、Google Gemini の 3 つの LLM プロバイダーに対応し、20 個以上の基本ツールとリモート MCP サーバーからの動的ツール読み込みをサポートします。
+NeuraKnot AI Server は、LLM エージェントと MCP（Model Context Protocol）ツールを統合した AI 処理 API です。OpenAI、Anthropic、Google Gemini の 3 つの LLM プロバイダーに対応し、20 個以上の基本ツールとリモート MCP サーバーからの動的ツール読み込みをサポートします。
 
 ## 主要機能
 
@@ -68,8 +68,8 @@ python -m app.main
 ### 4. Docker で起動
 
 ```bash
-docker build -t bridgespeak-ai .
-docker run -p 8001:8001 --env-file .env bridgespeak-ai
+docker build -t neuraKnot-ai .
+docker run -p 8001:8001 --env-file .env neuraKnot-ai
 ```
 
 ## API 仕様
@@ -193,7 +193,7 @@ data: {"type": "done", "metadata": {}}
 ```env
 LANGSMITH_TRACING_V2=true
 LANGSMITH_API_KEY=ls__...
-LANGSMITH_PROJECT=bridgespeak
+LANGSMITH_PROJECT=neuraKnot
 ```
 
 ## 開発

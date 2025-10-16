@@ -1,4 +1,4 @@
-# BridgeSpeak
+# NeuraKnot
 
 人間と AI エージェントが自然にコミュニケーションできるメッセージングアプリケーション。
 
@@ -30,7 +30,7 @@
 
 ## 概要
 
-BridgeSpeak は、AI エージェントとの対話を通じて様々なタスクを実行できるメッセージングアプリケーションです。複数の個性を持つ AI エージェントと、外部サービス連携による拡張可能なツールシステムを提供します。
+NeuraKnot は、AI エージェントとの対話を通じて様々なタスクを実行できるメッセージングアプリケーションです。複数の個性を持つ AI エージェントと、外部サービス連携による拡張可能なツールシステムを提供します。
 
 ## システムアーキテクチャ
 
@@ -94,7 +94,7 @@ Internet
 ### プロジェクト構成
 
 ```
-bridgespeak/
+neuraKnot/
 ├── frontend/                    # Next.js フロントエンド
 │   ├── app/                    # App Router
 │   ├── components/             # UIコンポーネント
@@ -177,7 +177,7 @@ AWS Cognito (DEV User Pool) - 認証専用
 - バックエンド: ECS Fargate
 - Python AI サーバー: ECS Fargate（内部通信のみ、ALB から直接アクセス不可）
 - データベース: RDS PostgreSQL（Multi-AZ）
-- Service Discovery: Cloud Map（`python-ai.bridgespeak.local`）
+- Service Discovery: Cloud Map（`python-ai.neuraKnot.local`）
 - ユーザー管理: AWS Cognito PROD User Pool
 - OAuth 対応: Google, Apple, LINE
 
@@ -383,7 +383,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 
 **開発環境（DEV User Pool）**
 
-- User Pool Name: `bridgespeak-dev-user-pool`
+- User Pool Name: `neuraKnot-dev-user-pool`
 - 認証方式: メール + パスワード
 - OAuth: 未対応
 - MFA: 無効
@@ -391,7 +391,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 
 **本番環境（PROD User Pool）**
 
-- User Pool Name: `bridgespeak-prod-user-pool`
+- User Pool Name: `neuraKnot-prod-user-pool`
 - 認証方式: メール + OAuth
 - OAuth プロバイダー: Google, Apple, LINE
 - MFA: オプションで有効化可能
@@ -494,7 +494,7 @@ feature/xxx → dev → main
 
 ```bash
 # Database
-DATABASE_URL=postgresql://user:pass@localhost:5432/bridgespeak_dev
+DATABASE_URL=postgresql://user:pass@localhost:5432/neuraKnot_dev
 
 # Auth (Cognito DEV User Pool)
 COGNITO_USER_POOL_ID=ap-northeast-1_DEV_xxxxx

@@ -1,10 +1,10 @@
-# BridgeSpeak Backend (Go)
+# NeuraKnot Backend (Go)
 
 クリーンアーキテクチャと DDD に基づいた REST API サーバー
 
 ## 🎯 概要
 
-BridgeSpeak の Go バックエンド API サーバーです。**クリーンアーキテクチャ**と**ドメイン駆動設計（DDD）**の原則に従って設計されています。
+NeuraKnot の Go バックエンド API サーバーです。**クリーンアーキテクチャ**と**ドメイン駆動設計（DDD）**の原則に従って設計されています。
 
 ## 🏗️ アーキテクチャ
 
@@ -295,13 +295,13 @@ CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/api cmd/api/main.
 
 ```bash
 # 開発用イメージ
-docker build -f docker/Dockerfile.dev -t bridgespeak-backend-go:dev .
+docker build -f docker/Dockerfile.dev -t neuraKnot-backend-go:dev .
 
 # 本番用イメージ
-docker build -f docker/Dockerfile.prod -t bridgespeak-backend-go:prod .
+docker build -f docker/Dockerfile.prod -t neuraKnot-backend-go:prod .
 
 # 実行
-docker run -p 8080:8080 --env-file .env.local bridgespeak-backend-go:dev
+docker run -p 8080:8080 --env-file .env.local neuraKnot-backend-go:dev
 ```
 
 ## 🎯 アーキテクチャのルール

@@ -1,4 +1,4 @@
-# BridgeSpeak データベース設計書
+# NeuraKnot データベース設計書
 
 ## 📋 目次
 
@@ -1573,7 +1573,7 @@ Backend-go
 # PostgreSQL接続（唯一のDBアクセス）
 POSTGRES_HOST=postgres
 POSTGRES_PORT=5432
-POSTGRES_DB=bridgespeak
+POSTGRES_DB=neuraKnot
 POSTGRES_USER=backend_go_user
 POSTGRES_PASSWORD=secure_password
 

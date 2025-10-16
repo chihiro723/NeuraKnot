@@ -2,7 +2,7 @@
 
 ## 概要
 
-このドキュメントでは、BridgeSpeak の認証システムのアーキテクチャと、Server Actions と API Routes の使い分けについて説明します。
+このドキュメントでは、NeuraKnot の認証システムのアーキテクチャと、Server Actions と API Routes の使い分けについて説明します。
 
 ## アーキテクチャの原則
 
@@ -461,4 +461,3 @@ const response = await fetch(`${BACKEND_GO_URL}/api/v1/...`, {
 ✅ **401 エラー時の自動リフレッシュ**
 
 この設計により、セキュアで保守性の高い認証システムを実現しています。
-

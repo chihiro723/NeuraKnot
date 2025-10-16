@@ -1,4 +1,4 @@
-# Swagger 完全ガイド - BridgeSpeak プロジェクト
+# Swagger 完全ガイド - NeuraKnot プロジェクト
 
 ## 📚 目次
 
@@ -502,4 +502,4 @@ Swagger を使用することで、以下のメリットを得られます：
 ---
 
 _最終更新: 2024 年 9 月 14 日_
-_作成者: BridgeSpeak 開発チーム_
+_作成者: NeuraKnot 開発チーム_

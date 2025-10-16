@@ -1,8 +1,8 @@
-# BridgeSpeak ドキュメント
+# NeuraKnot ドキュメント
 
 プロジェクトの技術ドキュメント集です。
 
-[← メインREADMEに戻る](../)
+[← メイン README に戻る](../)
 
 ## 目次
 
@@ -15,23 +15,27 @@
 ## プロジェクト全体
 
 ### [CONTRIBUTING.md](./CONTRIBUTING.md)
+
 開発ルール、ブランチ戦略、コミットメッセージ規約
 
 ### [DATABASE_DESIGN.md](./DATABASE_DESIGN.md)
+
 データベース設計書
 
-- ER図
+- ER 図
 - テーブル定義
 - インデックス戦略
-- Backend-goとBackend-pythonの統合パターン
+- Backend-go と Backend-python の統合パターン
 - セキュリティ・パフォーマンス考慮事項
 
 ## AWS インフラ
 
 ### [aws/README.md](./aws/README.md)
-AWSドキュメントのインデックス
+
+AWS ドキュメントのインデックス
 
 ### [aws/INFRASTRUCTURE.md](./aws/INFRASTRUCTURE.md)
+
 AWS インフラストラクチャ構成
 
 - ネットワーク設計（VPC、サブネット）
@@ -42,24 +46,27 @@ AWS インフラストラクチャ構成
 - コスト見積もり
 
 ### [aws/COGNITO_SETUP.md](./aws/COGNITO_SETUP.md)
+
 AWS Cognito 認証システム
 
-- User Pool設定（DEV/PROD分離）
-- OAuth認証（Google, Apple, LINE）
+- User Pool 設定（DEV/PROD 分離）
+- OAuth 認証（Google, Apple, LINE）
 - トークン設定
 
 ## バックエンド
 
 ### [backend/SWAGGER_GUIDE.md](./backend/SWAGGER_GUIDE.md)
-Swagger/OpenAPI設定ガイド
 
-- Swaggerアノテーションの書き方
+Swagger/OpenAPI 設定ガイド
+
+- Swagger アノテーションの書き方
 - ドキュメント生成方法
 - エンドポイント定義
 
 ## フロントエンド
 
 ### [frontend/GETTING_STARTED.md](./frontend/GETTING_STARTED.md)
+
 フロントエンド開発ガイド
 
 - セットアップ手順
@@ -67,6 +74,7 @@ Swagger/OpenAPI設定ガイド
 - ディレクトリ構成
 
 ### [frontend/ARCHITECTURE.md](./frontend/ARCHITECTURE.md)
+
 フロントエンドアーキテクチャ
 
 - コンポーネント設計
@@ -74,13 +82,15 @@ Swagger/OpenAPI設定ガイド
 - ディレクトリ構造
 
 ### [frontend/AUTH_ARCHITECTURE.md](./frontend/AUTH_ARCHITECTURE.md)
+
 認証アーキテクチャ
 
-- AWS Cognito連携
+- AWS Cognito 連携
 - JWT トークン管理
 - 認証フロー
 
 ### [frontend/ERROR_HANDLING_ARCHITECTURE.md](./frontend/ERROR_HANDLING_ARCHITECTURE.md)
+
 エラーハンドリング
 
 - エラー処理パターン
@@ -88,6 +98,7 @@ Swagger/OpenAPI設定ガイド
 - ユーザーフィードバック
 
 ### [frontend/ROUTING_BEST_PRACTICES.md](./frontend/ROUTING_BEST_PRACTICES.md)
+
 ルーティングベストプラクティス
 
 - App Router
@@ -95,6 +106,7 @@ Swagger/OpenAPI設定ガイド
 - ミドルウェア
 
 ### [frontend/SERVER_SIDE_FETCH.md](./frontend/SERVER_SIDE_FETCH.md)
+
 サーバーサイドフェッチ
 
 - Server Components
@@ -104,6 +116,7 @@ Swagger/OpenAPI設定ガイド
 ## 将来の機能
 
 ### [important/BILLING_SYSTEM_DESIGN.md](./important/BILLING_SYSTEM_DESIGN.md)
+
 課金システム設計（将来実装予定）
 
 - サブスクリプションモデル

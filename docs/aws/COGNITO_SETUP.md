@@ -2,7 +2,7 @@
 
 ## 概要
 
-BridgeSpeak アプリケーションの認証システムを AWS Cognito で構築しました。このドキュメントでは、セットアップとデプロイの手順を説明します。
+NeuraKnot アプリケーションの認証システムを AWS Cognito で構築しました。このドキュメントでは、セットアップとデプロイの手順を説明します。
 
 ## アーキテクチャ
 
@@ -124,8 +124,8 @@ aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS
 
 # イメージをビルド・プッシュ
 docker build -t backend-go .
-docker tag backend-go:latest $(aws sts get-caller-identity --query Account --output text).dkr.ecr.ap-northeast-1.amazonaws.com/bridgespeak-dev-backend-go:latest
-docker push $(aws sts get-caller-identity --query Account --output text).dkr.ecr.ap-northeast-1.amazonaws.com/bridgespeak-dev-backend-go:latest
+docker tag backend-go:latest $(aws sts get-caller-identity --query Account --output text).dkr.ecr.ap-northeast-1.amazonaws.com/neuraKnot-dev-backend-go:latest
+docker push $(aws sts get-caller-identity --query Account --output text).dkr.ecr.ap-northeast-1.amazonaws.com/neuraKnot-dev-backend-go:latest
 ```
 
 5. **Next.js フロントエンドをビルド**
@@ -251,10 +251,10 @@ CREATE TABLE users (
 
 ```bash
 # ECSタスクのログを確認
-aws logs describe-log-groups --log-group-name-prefix "/ecs/bridgespeak"
+aws logs describe-log-groups --log-group-name-prefix "/ecs/neuraKnot"
 
 # 特定のログストリームを確認
-aws logs get-log-events --log-group-name "/ecs/bridgespeak-dev-backend-go" --log-stream-name "ecs/backend-go/..."
+aws logs get-log-events --log-group-name "/ecs/neuraKnot-dev-backend-go" --log-stream-name "ecs/backend-go/..."
 ```
 
 ## 今後の拡張
