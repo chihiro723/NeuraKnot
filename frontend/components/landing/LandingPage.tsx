@@ -18,47 +18,10 @@ import type { AuthUser } from "@/lib/types/auth";
 import type { UserProfile } from "@/lib/auth/server";
 import { useCognitoAuth } from "@/lib/hooks/useCognitoAuth";
 
-// 定数定義
-const GRADIENT_THEMES = [
-  { name: "default", gradient: "from-slate-900 via-slate-800 to-slate-900" },
-  { name: "purple", gradient: "from-purple-900 via-slate-800 to-indigo-900" },
-  { name: "emerald", gradient: "from-emerald-900 via-slate-800 to-cyan-900" },
-  { name: "rose", gradient: "from-rose-900 via-slate-800 to-pink-900" },
-  { name: "amber", gradient: "from-amber-900 via-slate-800 to-orange-900" },
-];
-
-const ACCENT_COLORS = [
-  {
-    primary: "rgba(52, 211, 153, 0.2)",
-    secondary: "rgba(6, 182, 212, 0.2)",
-    tertiary: "rgba(52, 211, 153, 0.1)",
-  },
-  {
-    primary: "rgba(147, 51, 234, 0.2)",
-    secondary: "rgba(99, 102, 241, 0.2)",
-    tertiary: "rgba(139, 92, 246, 0.1)",
-  },
-  {
-    primary: "rgba(52, 211, 153, 0.3)",
-    secondary: "rgba(6, 182, 212, 0.3)",
-    tertiary: "rgba(52, 211, 153, 0.15)",
-  },
-  {
-    primary: "rgba(244, 63, 94, 0.2)",
-    secondary: "rgba(236, 72, 153, 0.2)",
-    tertiary: "rgba(251, 113, 133, 0.1)",
-  },
-  {
-    primary: "rgba(245, 158, 11, 0.2)",
-    secondary: "rgba(251, 146, 60, 0.2)",
-    tertiary: "rgba(251, 191, 36, 0.1)",
-  },
-];
-
 const NAV_LINKS = [
   { href: "#features", label: "機能", icon: Sparkles },
-  { href: "#", label: "料金", icon: MessageCircle },
-  { href: "#", label: "サポート", icon: User },
+  { href: "#pricing", label: "料金", icon: MessageCircle },
+  { href: "#support", label: "サポート", icon: User },
 ];
 
 const SOCIAL_LINKS = [
@@ -90,16 +53,16 @@ const SOCIAL_LINKS = [
 
 const STATS = [
   {
-    value: 98,
-    suffix: "%",
-    label: "時間短縮",
-    description: "日常タスクの自動化",
+    value: 20,
+    suffix: "+",
+    label: "基本サービス",
+    description: "日時・計算・テキスト処理",
   },
   {
-    value: 4000,
-    suffix: "+",
-    label: "サービス連携",
-    description: "対応プラットフォーム",
+    value: 3,
+    suffix: "",
+    label: "LLM対応",
+    description: "OpenAI・Anthropic・Google",
   },
   {
     value: 24,
@@ -111,14 +74,16 @@ const STATS = [
 ];
 
 const SERVICES = [
+  "OpenAI",
+  "Anthropic",
+  "Google",
+  "OpenWeather",
   "Slack",
-  "Gmail",
-  "Calendar",
-  "Drive",
   "Notion",
-  "GitHub",
-  "Figma",
-  "Zoom",
+  "BraveSearch",
+  "ExchangeRate",
+  "GoogleCalendar",
+  "IPApi",
 ];
 
 interface LandingPageProps {
@@ -136,10 +101,6 @@ export function LandingPage({
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isAutoScrolling, setIsAutoScrolling] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [backgroundGradient, setBackgroundGradient] = useState(0);
-  const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(
-    null
-  );
   const { signOut } = useCognitoAuth();
   const router = useRouter();
 
@@ -271,40 +232,6 @@ export function LandingPage({
     };
   }, [stopAutoScroll]);
 
-  // 時間経過による背景色の自動変更
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      setBackgroundGradient((prev) => (prev + 1) % 5);
-    }, 5000); // 5秒ごとに変更
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, []);
-
-  // スワイプで背景グラデーション変更
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    setTouchStart({ x: touch.clientX, y: touch.clientY });
-  }, []);
-
-  const handleTouchEnd = useCallback(
-    (e: React.TouchEvent) => {
-      if (!touchStart) return;
-
-      const touch = e.changedTouches[0];
-      const deltaX = touch.clientX - touchStart.x;
-
-      // 横スワイプで背景色変更
-      if (Math.abs(deltaX) > 50) {
-        setBackgroundGradient((prev) => (prev + 1) % 5);
-      }
-
-      setTouchStart(null);
-    },
-    [touchStart]
-  );
-
   // ログアウト処理
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -326,27 +253,7 @@ export function LandingPage({
   };
 
   return (
-    <div
-      className={`min-h-screen bg-gradient-to-b ${GRADIENT_THEMES[backgroundGradient].gradient} relative overflow-hidden transition-all duration-1000 ease-out`}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
-      {/* 動的背景装飾 */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div
-          className="absolute left-10 top-20 w-32 h-32 rounded-full blur-3xl transition-all duration-1000"
-          style={{ background: ACCENT_COLORS[backgroundGradient].primary }}
-        />
-        <div
-          className="absolute right-10 bottom-20 w-40 h-40 rounded-full blur-3xl transition-all duration-1000"
-          style={{ background: ACCENT_COLORS[backgroundGradient].secondary }}
-        />
-        <div
-          className="absolute top-1/2 left-1/2 w-96 h-96 rounded-full blur-3xl transition-all duration-1000 transform -translate-x-1/2 -translate-y-1/2"
-          style={{ background: ACCENT_COLORS[backgroundGradient].tertiary }}
-        />
-      </div>
-
+    <div className="overflow-hidden relative min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
       {/* ナビゲーション */}
       <nav className="fixed top-0 right-0 left-0 z-50 border-b backdrop-blur-md bg-slate-900/90 border-white/10">
         <div className="px-4 py-4 mx-auto max-w-7xl sm:px-6">
@@ -357,7 +264,7 @@ export function LandingPage({
                 <MessageCircle className="w-5 h-5 text-white sm:w-6 sm:h-6" />
               </div>
               <span className="text-lg font-bold text-white sm:text-xl">
-                BridgeSpeak
+                NeuraKnot
               </span>
             </Link>
 
@@ -493,7 +400,7 @@ export function LandingPage({
                   <MessageCircle className="w-5 h-5 text-white" />
                 </div>
                 <h2 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
-                  メニュー
+                  NeuraKnot
                 </h2>
               </div>
               <button
@@ -673,7 +580,7 @@ export function LandingPage({
               {/* コピーライト */}
               <div className="text-center">
                 <p className="mb-3 text-sm font-medium text-slate-400">
-                  © 2024 BridgeSpeak. All rights reserved.
+                  © 2024 NeuraKnot. All rights reserved.
                 </p>
                 <div className="flex justify-center space-x-6 text-xs">
                   <a
@@ -702,36 +609,33 @@ export function LandingPage({
       </div>
 
       {/* エレガントなヒーローセクション */}
-      <section className="flex overflow-hidden relative justify-center items-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        {/* 背景装飾 */}
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute left-10 top-20 w-32 h-32 rounded-full blur-3xl bg-emerald-500/20"></div>
-          <div className="absolute right-10 bottom-20 w-40 h-40 rounded-full blur-3xl bg-cyan-500/20"></div>
-          <div className="absolute top-1/2 left-1/2 w-96 h-96 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2 bg-emerald-400/10"></div>
+      <section className="flex overflow-hidden relative justify-center items-center min-h-screen">
+        {/* 中央ハイライト効果 */}
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-1/2 left-1/2 w-96 h-96 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2 bg-emerald-400/30"></div>
         </div>
-
         {/* メインコンテンツ */}
         <div className="relative px-6 pt-16 mx-auto max-w-5xl text-center">
           {/* バッジ */}
           <div className="inline-flex items-center px-6 py-3 mb-8 font-medium text-emerald-300 rounded-full border backdrop-blur-sm bg-white/5 border-emerald-500/30">
             <Sparkles className="mr-3 w-5 h-5" />
-            4,000以上のサービスと連携可能
+            AI統合チャット + 20種類のサービス連携
           </div>
 
           {/* メインタイトル */}
           <h1 className="mb-8 text-5xl font-bold leading-tight md:text-7xl">
-            <span className="text-white">あなたの</span>
+            <span className="text-white">AIに</span>
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
-              デジタル分身
+              命を吹き込む
             </span>
             <br />
-            <span className="text-white">が誕生する</span>
+            <span className="text-white">NeuraKnot</span>
           </h1>
 
           {/* サブタイトル */}
           <p className="mx-auto mb-12 max-w-3xl text-xl leading-relaxed md:text-2xl text-slate-300">
-            AI革命の扉が、今開かれる
+            あなただけのアシスタントが、人・AI・サービスを結ぶ
           </p>
 
           {/* CTAボタン */}
@@ -750,7 +654,7 @@ export function LandingPage({
                 href="/auth/signup"
                 className="px-10 py-5 text-lg font-bold text-white bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-500 rounded-2xl shadow-2xl transition-all duration-300 transform hover:from-emerald-600 hover:via-emerald-500 hover:to-cyan-600 hover:scale-105 hover:shadow-emerald-500/30"
               >
-                デジタル分身を今すぐ作成
+                無料で始める
               </Link>
             ) : (
               <div className="px-10 py-5 text-lg font-bold text-transparent bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-500 rounded-2xl animate-pulse">
@@ -963,14 +867,14 @@ export function LandingPage({
       </section>
 
       {/* 成果統計セクション */}
-      <section className="px-6 py-24 bg-gradient-to-b from-slate-800 to-slate-900">
+      <section className="px-6 py-24 -mt-1">
         <div className="mx-auto max-w-6xl">
           <div className="mb-20 text-center">
             <h2 className="mb-6 text-4xl font-bold text-white md:text-5xl">
-              <span className="text-emerald-400">数字</span>が証明する革命
+              <span className="text-emerald-400">NeuraKnot</span>が証明する革命
             </h2>
             <p className="mx-auto max-w-2xl text-xl text-slate-300">
-              世界中のユーザーが体験している、確かな成果
+              AIに命を吹き込む技術で実現する、確かな成果
             </p>
           </div>
 
@@ -997,17 +901,20 @@ export function LandingPage({
       </section>
 
       {/* 機能デモセクション */}
-      <section id="features" className="px-6 py-32 bg-slate-900">
+      <section id="features" className="px-6 py-32 -mt-1">
         <div className="mx-auto max-w-6xl">
           <div className="mb-24 text-center">
             <h2 className="mb-8 text-4xl font-bold text-white md:text-6xl">
-              <span className="text-emerald-400">AI</span>があなたの代わりに
+              <span className="text-emerald-400">NeuraKnot</span>でAIに
               <br className="hidden md:block" />
-              すべてを<span className="text-emerald-400">自動化</span>
+              <span className="text-emerald-400">命を吹き込む</span>
             </h2>
             <p className="mx-auto max-w-4xl text-2xl leading-relaxed text-slate-300">
-              一言で始まる、複数AI協調の
-              <span className="font-bold text-emerald-400">無限可能性</span>
+              マルチLLM対応（OpenAI・Anthropic・Google）と
+              <span className="font-bold text-emerald-400">
+                20種類のサービス
+              </span>
+              で 人間とAIの神経を結ぶ新しい絆を創造
             </p>
           </div>
 
@@ -1016,41 +923,49 @@ export function LandingPage({
             <div className="p-12 rounded-3xl border backdrop-blur-sm bg-white/5 border-white/10">
               <div className="mb-12 text-center">
                 <div className="flex justify-center items-center mx-auto mb-6 w-20 h-20 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-2xl">
-                  <span className="text-4xl">🎯</span>
+                  <Sparkles className="w-10 h-10 text-white" />
                 </div>
                 <h3 className="mb-4 text-3xl font-bold text-white">
-                  一言で始まる自動化
+                  AIに命を吹き込む技術
                 </h3>
                 <p className="text-xl text-slate-300">
-                  「明日のプレゼン準備して」→ 3分で完了
+                  LangChain Agent + MCP統合で自律的なタスク実行
                 </p>
               </div>
 
               <div className="grid gap-6 mb-8 md:grid-cols-4">
                 <div className="p-4 text-center rounded-xl border bg-emerald-500/10 border-emerald-500/30">
-                  <div className="mb-2 text-3xl">📊</div>
-                  <div className="font-medium text-emerald-400">データ収集</div>
+                  <div className="flex justify-center items-center mx-auto mb-2 w-12 h-12 rounded-lg bg-emerald-500/20">
+                    <MessageCircle className="w-6 h-6 text-emerald-400" />
+                  </div>
+                  <div className="font-medium text-emerald-400">マルチLLM</div>
                 </div>
                 <div className="p-4 text-center rounded-xl border bg-emerald-500/10 border-emerald-500/30">
-                  <div className="mb-2 text-3xl">🎨</div>
+                  <div className="flex justify-center items-center mx-auto mb-2 w-12 h-12 rounded-lg bg-emerald-500/20">
+                    <Sparkles className="w-6 h-6 text-emerald-400" />
+                  </div>
                   <div className="font-medium text-emerald-400">
-                    スライド作成
+                    20種サービス
                   </div>
                 </div>
                 <div className="p-4 text-center rounded-xl border bg-emerald-500/10 border-emerald-500/30">
-                  <div className="mb-2 text-3xl">📝</div>
-                  <div className="font-medium text-emerald-400">原稿準備</div>
+                  <div className="flex justify-center items-center mx-auto mb-2 w-12 h-12 rounded-lg bg-emerald-500/20">
+                    <User className="w-6 h-6 text-emerald-400" />
+                  </div>
+                  <div className="font-medium text-emerald-400">MCP統合</div>
                 </div>
                 <div className="p-4 text-center rounded-xl border bg-emerald-500/10 border-emerald-500/30">
-                  <div className="mb-2 text-3xl">✨</div>
-                  <div className="font-medium text-emerald-400">完璧仕上げ</div>
+                  <div className="flex justify-center items-center mx-auto mb-2 w-12 h-12 rounded-lg bg-emerald-500/20">
+                    <Play className="w-6 h-6 text-emerald-400" />
+                  </div>
+                  <div className="font-medium text-emerald-400">自律実行</div>
                 </div>
               </div>
 
               <div className="text-center">
                 <div className="inline-block px-6 py-3 rounded-full border bg-emerald-500/20 border-emerald-500/50">
                   <span className="font-bold text-emerald-300">
-                    🎉 完璧なプレゼンが完成！
+                    AIが自律的にタスクを実行！
                   </span>
                 </div>
               </div>
@@ -1060,7 +975,7 @@ export function LandingPage({
           {/* 連携サービス */}
           <div className="mb-24 text-center">
             <h3 className="mb-8 text-2xl font-bold text-white">
-              4,000以上のサービスと連携
+              マルチLLM対応 + 外部API連携
             </h3>
             <div className="flex flex-wrap gap-4 justify-center">
               {SERVICES.map((service) => (
@@ -1072,23 +987,185 @@ export function LandingPage({
                 </span>
               ))}
               <span className="px-6 py-3 font-medium text-emerald-400 rounded-full border bg-emerald-500/10 border-emerald-500/30">
-                +3,992 more
+                +MCP統合
               </span>
             </div>
           </div>
         </div>
       </section>
 
+      {/* 料金セクション */}
+      <section id="pricing" className="px-6 py-24 -mt-1">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-20 text-center">
+            <h2 className="mb-6 text-4xl font-bold text-white md:text-5xl">
+              <span className="text-emerald-400">NeuraKnot</span>の料金プラン
+            </h2>
+            <p className="mx-auto max-w-2xl text-xl text-slate-300">
+              あなたに最適なプランで、AIの力を最大限活用しましょう
+            </p>
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-3">
+            {/* ベーシックプラン */}
+            <div className="p-8 rounded-2xl border backdrop-blur-sm transition-all duration-300 group bg-white/5 border-white/10 hover:border-emerald-400/30 hover:bg-white/10">
+              <div className="mb-6 text-center">
+                <h3 className="mb-2 text-2xl font-bold text-white">
+                  ベーシック
+                </h3>
+                <div className="mb-4">
+                  <span className="text-4xl font-black text-emerald-400">
+                    無料
+                  </span>
+                </div>
+                <p className="text-slate-400">個人利用に最適</p>
+              </div>
+              <ul className="mb-8 space-y-4">
+                <li className="flex items-center text-slate-300">
+                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                  月100回のAIチャット
+                </li>
+                <li className="flex items-center text-slate-300">
+                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                  外部サービス20種類
+                </li>
+                <li className="flex items-center text-slate-300">
+                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                  1つのAIエージェント
+                </li>
+                <li className="flex items-center text-slate-300">
+                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                  メールサポート
+                </li>
+              </ul>
+              <div className="px-6 py-3 text-center rounded-lg text-slate-400 bg-slate-800/50">
+                近日追加予定
+              </div>
+            </div>
+
+            {/* プロプラン */}
+            <div className="relative p-8 bg-gradient-to-b rounded-2xl border backdrop-blur-sm transition-all duration-300 group from-emerald-500/10 to-cyan-500/10 border-emerald-400/30 hover:border-emerald-400/50 hover:bg-emerald-500/20">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                <span className="px-4 py-1 text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full">
+                  人気
+                </span>
+              </div>
+              <div className="mb-6 text-center">
+                <h3 className="mb-2 text-2xl font-bold text-white">プロ</h3>
+                <div className="mb-4">
+                  <span className="text-4xl font-black text-emerald-400">
+                    ¥980
+                  </span>
+                  <span className="text-slate-400">/月</span>
+                </div>
+                <p className="text-slate-400">ビジネス利用に最適</p>
+              </div>
+              <ul className="mb-8 space-y-4">
+                <li className="flex items-center text-slate-300">
+                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                  無制限のAIチャット
+                </li>
+                <li className="flex items-center text-slate-300">
+                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                  全サービス + 外部API連携
+                </li>
+                <li className="flex items-center text-slate-300">
+                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                  最大5つのAIエージェント
+                </li>
+                <li className="flex items-center text-slate-300">
+                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                  優先サポート
+                </li>
+                <li className="flex items-center text-slate-300">
+                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                  カスタムサービス作成
+                </li>
+              </ul>
+              <div className="px-6 py-3 text-center text-white bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-lg">
+                近日追加予定
+              </div>
+            </div>
+
+            {/* エンタープライズプラン */}
+            <div className="p-8 rounded-2xl border backdrop-blur-sm transition-all duration-300 group bg-white/5 border-white/10 hover:border-emerald-400/30 hover:bg-white/10">
+              <div className="mb-6 text-center">
+                <h3 className="mb-2 text-2xl font-bold text-white">マックス</h3>
+                <div className="mb-4">
+                  <span className="text-4xl font-black text-emerald-400">
+                    カスタム
+                  </span>
+                </div>
+                <p className="text-slate-400">最高の性能を追求</p>
+              </div>
+              <ul className="mb-8 space-y-4">
+                <li className="flex items-center text-slate-300">
+                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                  無制限のAIチャット
+                </li>
+                <li className="flex items-center text-slate-300">
+                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                  全機能 + カスタム開発
+                </li>
+                <li className="flex items-center text-slate-300">
+                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                  無制限のAIエージェント
+                </li>
+                <li className="flex items-center text-slate-300">
+                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                  専任サポート
+                </li>
+                <li className="flex items-center text-slate-300">
+                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                  SSO統合
+                </li>
+              </ul>
+              <div className="px-6 py-3 text-center rounded-lg text-slate-400 bg-slate-800/50">
+                近日追加予定
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* サポートセクション */}
+      <section id="support" className="px-6 py-24 -mt-1">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-20 text-center">
+            <h2 className="mb-6 text-4xl font-bold text-white md:text-5xl">
+              <span className="text-emerald-400">NeuraKnot</span>サポート
+            </h2>
+            <p className="mx-auto max-w-2xl text-xl text-slate-300">
+              いつでも安心してご利用いただけるよう、充実したサポート体制をご用意しています
+            </p>
+          </div>
+
+          <div className="text-center">
+            <div className="inline-block p-12 rounded-2xl border backdrop-blur-sm bg-white/5 border-white/10">
+              <div className="mb-6">
+                <div className="flex justify-center items-center mx-auto mb-4 w-20 h-20 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-2xl">
+                  <MessageCircle className="w-10 h-10 text-white" />
+                </div>
+                <h3 className="mb-2 text-2xl font-bold text-white">サポート</h3>
+                <p className="text-slate-400">
+                  いつでもお気軽にお問い合わせください
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* 最終CTAセクション */}
-      <section className="px-6 py-24 bg-gradient-to-b from-slate-900 to-slate-800">
+      <section className="px-6 py-24 -mt-1">
         <div className="mx-auto max-w-4xl text-center">
           <h2 className="mb-8 text-4xl font-bold text-white md:text-5xl">
-            あなたの<span className="text-emerald-400">デジタル分身</span>
-            を今すぐ作成
+            <span className="text-emerald-400">NeuraKnot</span>で
+            AIに命を吹き込もう
           </h2>
 
           <p className="mx-auto mb-12 max-w-2xl text-xl text-slate-300">
-            4,000以上のサービスと連携して、AI革命を今すぐ体験しよう
+            人間とAIの神経を結ぶ、新しい絆の始まりを体験しよう
           </p>
 
           <div className="flex flex-col gap-6 justify-center items-center mb-16 sm:flex-row">
@@ -1104,7 +1181,7 @@ export function LandingPage({
                 href="/auth/signup"
                 className="px-12 py-6 text-xl font-bold text-white bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-500 rounded-2xl shadow-2xl transition-all duration-300 transform hover:from-emerald-600 hover:via-emerald-500 hover:to-cyan-600 hover:scale-105 hover:shadow-emerald-500/30"
               >
-                デジタル分身を今すぐ作成
+                NeuraKnotでAIに命を吹き込む
               </Link>
             ) : (
               <div className="px-12 py-6 text-xl font-bold text-transparent bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-500 rounded-2xl animate-pulse">
@@ -1127,8 +1204,7 @@ export function LandingPage({
 
           <div className="p-8 rounded-2xl border backdrop-blur-sm bg-white/5 border-white/10">
             <p className="mb-3 text-lg text-slate-300">
-              ✅ 30日間無料トライアル　✅ いつでもキャンセル可能　✅
-              即座に利用開始
+              30日間無料トライアル　・　いつでもキャンセル可能　・　即座に利用開始
             </p>
             <p className="text-slate-400">
               数千人のユーザーが既に新しい働き方をスタートしています
@@ -1138,7 +1214,7 @@ export function LandingPage({
       </section>
 
       {/* フッター */}
-      <footer className="px-6 py-16 border-t border-slate-700/50 bg-slate-900">
+      <footer className="px-6 py-16 -mt-1">
         <div className="mx-auto max-w-6xl">
           <div className="grid gap-8 mb-12 md:grid-cols-4">
             {/* ブランド */}
@@ -1147,13 +1223,11 @@ export function LandingPage({
                 <div className="flex justify-center items-center w-10 h-10 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl">
                   <MessageCircle className="w-6 h-6 text-white" />
                 </div>
-                <span className="text-2xl font-bold text-white">
-                  BridgeSpeak
-                </span>
+                <span className="text-2xl font-bold text-white">NeuraKnot</span>
               </Link>
 
               <p className="mb-8 max-w-md leading-relaxed text-slate-400">
-                サービス統合により多数のツールと連携可能な、あなた専用のスーパーAIアシスタント。
+                AIに命を吹き込む技術で、人間とAIの神経を結ぶ新しい絆を創造するプラットフォーム。
               </p>
 
               <div className="flex space-x-4">
@@ -1253,7 +1327,7 @@ export function LandingPage({
 
           <div className="pt-8 text-center border-t border-slate-700/50">
             <p className="text-slate-500">
-              © 2024 BridgeSpeak. All rights reserved. |
+              © 2024 NeuraKnot. All rights reserved. |
               <a
                 href="#"
                 className="ml-2 transition-colors hover:text-emerald-400"

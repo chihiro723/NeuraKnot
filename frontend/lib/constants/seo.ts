@@ -1,17 +1,17 @@
 // SEO設定
 export const SEO_CONFIG = {
-  siteName: 'BridgeSpeak',
+  siteName: 'NeuraKnot',
   siteNameJa: 'ハイブリッドメッセージング',
   title: {
-    default: 'BridgeSpeak - ハイブリッドメッセージング',
-    template: '%s | BridgeSpeak'
+    default: 'NeuraKnot - ハイブリッドメッセージング',
+    template: '%s | NeuraKnot'
   },
   description: {
     default: 'LINEライクなUIで人間とエージェントとチャットできる革新的なメッセージングアプリ。あなたのデジタル分身が誕生する。',
     short: '人間とAIの新しいコミュニケーションプラットフォーム'
   },
   keywords: [
-    'BridgeSpeak',
+    'NeuraKnot',
     'ハイブリッドメッセージング',
     'AIチャット',
     'メッセージングアプリ',
@@ -22,9 +22,9 @@ export const SEO_CONFIG = {
     'AI agent',
     'messaging app'
   ],
-  url: process.env.NEXT_PUBLIC_SITE_URL || 'https://bridgespeak.com',
+  url: process.env.NEXT_PUBLIC_SITE_URL || 'https://neuraKnot.com',
   ogImage: '/og-image.png',
-  twitterHandle: '@bridgespeak',
+  twitterHandle: '@neuraKnot',
   locale: 'ja_JP',
   type: 'website',
   themeColor: '#6366f1',
@@ -36,7 +36,7 @@ export const SEO_CONFIG = {
 export const STRUCTURED_DATA = {
   '@context': 'https://schema.org',
   '@type': 'WebApplication',
-  name: 'BridgeSpeak',
+  name: 'NeuraKnot',
   applicationCategory: 'CommunicationApplication',
   operatingSystem: 'Web',
   offers: {
@@ -49,6 +49,6 @@ export const STRUCTURED_DATA = {
   inLanguage: 'ja',
   author: {
     '@type': 'Organization',
-    name: 'BridgeSpeak Team'
+    name: 'NeuraKnot Team'
   }
 }

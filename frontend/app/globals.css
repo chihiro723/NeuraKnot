@@ -365,6 +365,14 @@
   --markdown-link-hover-color: #1d4ed8; /* ホバー時の濃い青 */
   --markdown-link-visited-color: #7c3aed; /* 訪問済みリンクの紫 */
   
+  /* カスタムカラー定義 */
+  .bg-slate-850 {
+    background-color: rgb(20, 28, 42);
+  }
+  .via-slate-850 {
+    --tw-gradient-stops: var(--tw-gradient-from), rgb(20, 28, 42), var(--tw-gradient-to);
+  }
+
   /* コードブロックのスタイル */
   --markdown-code-bg: rgba(0, 0, 0, 0.1);
   --markdown-code-border: rgba(0, 0, 0, 0.1);

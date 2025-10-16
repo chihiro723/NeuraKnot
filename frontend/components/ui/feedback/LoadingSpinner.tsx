@@ -64,19 +64,34 @@ interface LoadingSpinnerProps {
   text?: string;
   /** 画面中央に配置するかどうか */
   centerScreen?: boolean;
+  /** 背景色のバリアント */
+  variant?: "default" | "auth" | "transparent";
 }
 
 export function LoadingSpinner({
   text,
   centerScreen = false,
+  variant = "default",
 }: LoadingSpinnerProps) {
+  // 背景色のバリアント設定
+  const getBackgroundClass = () => {
+    switch (variant) {
+      case "auth":
+        return "bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900";
+      case "transparent":
+        return "bg-transparent";
+      default:
+        return "bg-gray-50 dark:bg-gray-900";
+    }
+  };
+
   return (
     <div
       className={cn(
         "flex flex-col justify-center items-center",
         centerScreen
-          ? "fixed inset-0 z-50 bg-gray-50 dark:bg-gray-900"
-          : "flex-1 h-full min-h-screen bg-gray-50 dark:bg-gray-900"
+          ? `fixed inset-0 z-50 ${getBackgroundClass()}`
+          : `flex-1 h-full min-h-screen ${getBackgroundClass()}`
       )}
     >
       {/* メインスピナー */}
@@ -89,7 +104,14 @@ export function LoadingSpinner({
 
       {/* ローディングテキスト */}
       {text && (
-        <p className="mt-12 text-sm font-medium text-gray-500 dark:text-gray-400">
+        <p
+          className={cn(
+            "mt-12 text-sm font-medium",
+            variant === "auth"
+              ? "text-white/70"
+              : "text-gray-500 dark:text-gray-400"
+          )}
+        >
           {text}
         </p>
       )}
