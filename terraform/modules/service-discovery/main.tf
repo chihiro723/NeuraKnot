@@ -9,8 +9,8 @@ resource "aws_service_discovery_private_dns_namespace" "main" {
   })
 }
 
-# Service Discovery Service for Python AI
-resource "aws_service_discovery_service" "python_ai" {
+# Service Discovery Service for Backend Python
+resource "aws_service_discovery_service" "backend_python" {
   name = var.service_name
 
   dns_config {
@@ -24,14 +24,13 @@ resource "aws_service_discovery_service" "python_ai" {
     routing_policy = "MULTIVALUE"
   }
 
-  health_check_grace_period_seconds = 30
 
   tags = merge(var.tags, {
     Name = "${var.project_name}-${var.environment}-${var.service_name}"
   })
 }
 
-# Service Discovery Service for Go Backend (optional)
+# Service Discovery Service for Backend Go (optional)
 resource "aws_service_discovery_service" "go_backend" {
   count = var.enable_go_backend_service ? 1 : 0
 
@@ -48,7 +47,6 @@ resource "aws_service_discovery_service" "go_backend" {
     routing_policy = "MULTIVALUE"
   }
 
-  health_check_grace_period_seconds = 30
 
   tags = merge(var.tags, {
     Name = "${var.project_name}-${var.environment}-go-backend"

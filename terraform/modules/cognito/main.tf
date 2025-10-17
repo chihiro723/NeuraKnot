@@ -74,8 +74,6 @@ resource "aws_cognito_user_pool_client" "main" {
   # トークン生成設定
   generate_secret = true
 
-  # リフレッシュトークン設定
-  refresh_token_validity = var.token_validity_refresh
   token_validity_units {
     access_token  = "minutes"
     id_token      = "minutes"
