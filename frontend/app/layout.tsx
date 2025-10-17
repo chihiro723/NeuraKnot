@@ -30,7 +30,7 @@ export const metadata: Metadata = {
         url: SEO_CONFIG.ogImage,
         width: 1200,
         height: 630,
-        alt: "NeuraKnot - ハイブリッドメッセージング",
+        alt: "NeuraKnot",
       },
     ],
     locale: SEO_CONFIG.locale,

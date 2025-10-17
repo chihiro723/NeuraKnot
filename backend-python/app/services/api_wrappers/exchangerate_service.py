@@ -14,7 +14,7 @@ class ExchangeRateService(BaseService):
     """Exchange Rate API サービス（認証不要）"""
     
     SERVICE_NAME = "為替レート"
-    SERVICE_DESCRIPTION = "世界の通貨の為替レート、通貨変換を取得（認証不要の無料API）"
+    SERVICE_DESCRIPTION = "世界の通貨の為替レート、通貨変換を取得"
     SERVICE_ICON = "💱"
     SERVICE_TYPE = "api_wrapper"
     

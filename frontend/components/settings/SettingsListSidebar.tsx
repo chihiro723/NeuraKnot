@@ -149,20 +149,20 @@ export function SettingsListSidebar({ profile }: SettingsListSidebarProps) {
           </div>
         </div>
 
-        {/* ランディングページへ戻る */}
+        {/*Topページへ戻る */}
         <div className="p-6 bg-white rounded-xl border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700">
           <h3 className="flex items-center mb-2 font-medium text-gray-900 dark:text-white lg:text-sm">
             <Home className="mr-2 w-5 h-5" />
             ホーム
           </h3>
           <p className="mb-4 text-sm text-gray-600 dark:text-gray-400 lg:text-xs">
-            ランディングページに戻ってサービスの詳細を確認
+            Topページに戻ってサービスの詳細を確認
           </p>
           <a
             href="/"
             className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-lg transition-all duration-200 transform hover:from-emerald-600 hover:to-cyan-600 hover:scale-105"
           >
-            ランディングページへ
+            Topページへ
           </a>
         </div>
 

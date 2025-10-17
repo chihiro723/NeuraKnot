@@ -1856,6 +1856,10 @@ const docTemplate = `{
                 "streaming_enabled": {
                     "description": "nilの場合はtrueがデフォルト",
                     "type": "boolean"
+                },
+                "system_prompt": {
+                    "description": "カスタムシステムプロンプト",
+                    "type": "string"
                 }
             }
         },

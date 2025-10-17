@@ -123,6 +123,9 @@ definitions:
       streaming_enabled:
         description: nilの場合はtrueがデフォルト
         type: boolean
+      system_prompt:
+        description: カスタムシステムプロンプト
+        type: string
     required:
     - name
     - persona_type

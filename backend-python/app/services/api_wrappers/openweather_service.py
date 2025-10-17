@@ -14,7 +14,7 @@ class OpenWeatherService(BaseService):
     """OpenWeather API サービス（認証不要）"""
     
     SERVICE_NAME = "OpenWeather"
-    SERVICE_DESCRIPTION = "世界中の天気情報、予報を取得（認証不要の無料API）"
+    SERVICE_DESCRIPTION = "世界中の天気情報、予報を取得"
     SERVICE_ICON = "🌤️"
     SERVICE_TYPE = "api_wrapper"
     

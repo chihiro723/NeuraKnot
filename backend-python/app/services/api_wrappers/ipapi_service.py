@@ -14,7 +14,7 @@ class IPApiService(BaseService):
     """IP API サービス（認証不要）"""
     
     SERVICE_NAME = "IP情報"
-    SERVICE_DESCRIPTION = "IPアドレスの位置情報、ISP情報を取得（認証不要の無料API）"
+    SERVICE_DESCRIPTION = "IPアドレスの位置情報、ISP情報を取得"
     SERVICE_ICON = "🌐"
     SERVICE_TYPE = "api_wrapper"
     
