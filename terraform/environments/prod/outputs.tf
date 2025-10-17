@@ -106,28 +106,24 @@ output "ecs_cluster_name" {
 }
 
 output "backend_go_service_name" {
-  description = "Name of the backend Go service"
+  description = "Name of the Backend Go service"
   value       = module.ecs.backend_go_service_name
 }
 
-output "python_ai_service_name" {
-  description = "Name of the Python AI service"
-  value       = module.ecs.python_ai_service_name
+output "backend_python_service_name" {
+  description = "Name of the Backend Python service"
+  value       = module.ecs.backend_python_service_name
 }
 
-output "frontend_service_name" {
-  description = "Name of the frontend service"
-  value       = module.ecs.frontend_service_name
-}
 
 # Service Discovery Outputs
-output "python_ai_service_discovery_name" {
-  description = "Name of the Python AI service discovery service"
-  value       = module.service_discovery.python_ai_service_name
+output "backend_python_service_discovery_name" {
+  description = "Name of the Backend Python service discovery service"
+  value       = module.service_discovery.backend_python_service_name
 }
 
-output "python_ai_service_discovery_namespace" {
-  description = "Namespace of the Python AI service discovery service"
+output "backend_python_service_discovery_namespace" {
+  description = "Namespace of the Backend Python service discovery service"
   value       = module.service_discovery.namespace_name
 }
 

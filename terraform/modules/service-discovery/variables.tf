@@ -17,11 +17,11 @@ variable "vpc_id" {
 variable "service_name" {
   description = "Name of the service discovery service"
   type        = string
-  default     = "python-ai"
+  default     = "backend-python"
 }
 
 variable "enable_go_backend_service" {
-  description = "Enable service discovery for Go Backend"
+  description = "Enable service discovery for Backend Go"
   type        = bool
   default     = false
 }

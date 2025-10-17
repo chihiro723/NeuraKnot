@@ -12,7 +12,7 @@ variable "project_name" {
 variable "repositories" {
   description = "List of ECR repository names"
   type        = list(string)
-  default     = ["backend-go", "python-ai", "nextjs-frontend"]
+  default     = ["backend-go", "backend-python", "frontend"]
 }
 
 variable "enable_cross_account_access" {
