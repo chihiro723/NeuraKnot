@@ -32,7 +32,7 @@ NeuraKnot は AWS 上で動作するマイクロサービスアーキテクチ�
 
 - **フロントエンド**: Vercel（Next.js）
 - **バックエンド API**: Go (ECS Fargate)
-- **AI サーバー**: Python FastAPI (ECS Fargate - 内部通信のみ)
+- **AI サーバー**: Backend Python FastAPI (ECS Fargate - 内部通信のみ)
 - **データベース**: PostgreSQL (RDS Multi-AZ)
 - **認証**: AWS Cognito (DEV/PROD User Pool 分離)
 - **ロードバランサー**: Application Load Balancer
@@ -77,7 +77,7 @@ terraform apply
 - ECS CPU 使用率 > 80%
 - RDS 接続数 > 80%
 - ALB 5xx エラー > 10 件/分
-- Python AI 接続エラー > 10 件/5 分
+- Backend Python 接続エラー > 10 件/5 分
 
 ### バックアップ
 
@@ -90,8 +90,8 @@ terraform apply
 ### ネットワークセキュリティ
 
 - **ALB**: インターネット公開（HTTPS/HTTP）
-- **Go Backend**: ALB からのみアクセス可
-- **Python AI**: Go Backend からのみアクセス可（内部通信）
+- **Backend Go**: ALB からのみアクセス可
+- **Backend Python**: Backend Go からのみアクセス可（内部通信）
 - **RDS**: ECS からのみアクセス可
 
 ### 機密情報管理

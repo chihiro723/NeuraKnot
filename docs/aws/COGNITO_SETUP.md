@@ -16,7 +16,7 @@ NeuraKnot アプリケーションの認証システムを AWS Cognito で構築
 
 - **AWS Cognito User Pool**: ユーザー認証・管理
 - **AWS Cognito Identity Providers**: OAuth 認証
-- **Go Backend API**: JWT 検証・ユーザー管理
+- **Backend Go**: JWT 検証・ユーザー管理
 - **Next.js Frontend**: 認証 UI・状態管理
 - **PostgreSQL**: ユーザー情報の永続化
 

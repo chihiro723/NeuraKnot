@@ -26,7 +26,7 @@ Internet
 
 - **フロントエンド**: Next.js (Vercel または ECS)
 - **バックエンド API**: Go (ECS Fargate)
-- **AI サーバー**: Python FastAPI (ECS Fargate)
+- **AI サーバー**: Backend Python FastAPI (ECS Fargate)
 - **データベース**: PostgreSQL (RDS)
 - **認証**: AWS Cognito
 - **ロードバランサー**: Application Load Balancer
@@ -115,11 +115,11 @@ Internet
 
 #### タスク定義
 
-- **Go Backend**:
+- **Backend Go**:
   - CPU: 256
   - メモリ: 512MB
   - ポート: 8080
-- **Python AI Server**:
+- **Backend Python**:
   - CPU: 512
   - メモリ: 1024MB
   - ポート: 8000
@@ -139,7 +139,7 @@ Internet
 #### リポジトリ
 
 - `neuraKnot-{environment}-backend-go`
-- `neuraKnot-{environment}-python-ai`
+- `neuraKnot-{environment}-backend-python`
 - `neuraKnot-{environment}-nextjs-frontend`
 
 #### ライフサイクルポリシー
@@ -158,7 +158,7 @@ Internet
 
 ### ターゲットグループ
 
-- **Go Backend**: `neuraKnot-{environment}-backend-go-tg`
+- **Backend Go**: `neuraKnot-{environment}-backend-go-tg`
 - **ヘルスチェック**: `/health`エンドポイント
 - **プロトコル**: HTTP
 - **ポート**: 8080
@@ -232,7 +232,7 @@ Internet
 #### ロググループ
 
 - `/ecs/neuraKnot-{environment}-backend-go`
-- `/ecs/neuraKnot-{environment}-python-ai`
+- `/ecs/neuraKnot-{environment}-backend-python`
 - `/ecs/neuraKnot-{environment}-nextjs-frontend`
 
 #### ログ保持期間
