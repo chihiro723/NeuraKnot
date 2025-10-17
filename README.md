@@ -23,6 +23,7 @@
   - [開発ルール](#開発ルール)
 - [API 仕様](#api仕様)
 - [認証](#認証)
+- [インフラストラクチャ](#インフラストラクチャ)
 - [ドキュメント](#ドキュメント)
 - [デプロイ](#デプロイ)
 - [トラブルシューティング](#トラブルシューティング)
@@ -40,14 +41,17 @@ NeuraKnot は、AI エージェントとの対話を通じて様々なタスク�
 Internet
     |
     v
-[Next.js Frontend]
+[Vercel - Next.js Frontend]
     | HTTPS
     v
-[Go API Server] <--> [Python AI Server]
-    |                      |
-    v                      v
-[PostgreSQL]          [External APIs]
-[Redis]               (OpenWeather, Slack, Notion, etc.)
+[Application Load Balancer]
+    |
+    v
+[ECS Fargate - Backend Go] <--(内部通信)--> [ECS Fargate - Backend Python]
+    |                                           |
+    v                                           v
+[RDS PostgreSQL]                          [External APIs]
+[Redis]                                   (OpenWeather, Slack, Notion, etc.)
     |
     v
 [AWS Cognito]
@@ -58,14 +62,14 @@ Internet
 
 **フロントエンド**
 
-- Next.js 15 (App Router)
+- Next.js 15 (App Router) - Vercel でホスティング
 - TypeScript
 - Tailwind CSS
 
 **バックエンド**
 
 - Go 1.25 - REST API (クリーンアーキテクチャ / DDD)
-- Python 3.11 - AI 処理 (FastAPI + LangChain)
+- Backend Python 3.11 - AI 処理 (FastAPI + LangChain)
 
 **AI / LLM**
 
@@ -87,9 +91,10 @@ Internet
 **インフラ**
 
 - Docker / Docker Compose (開発環境)
-- AWS ECS Fargate (本番環境)
+- AWS ECS Fargate (バックエンド API)
+- Vercel (フロントエンド)
 - AWS RDS (PostgreSQL)
-- Terraform (IaC)
+- Terraform (IaC) - [詳細はこちら](./terraform/README.md)
 
 ### プロジェクト構成
 
@@ -100,7 +105,7 @@ neuraKnot/
 │   ├── components/             # UIコンポーネント
 │   └── lib/                    # ユーティリティ・型定義
 │
-├── backend-go/                 # Go API サーバー
+├── backend-go/                 # Backend Go サーバー
 │   ├── cmd/api/                # エントリーポイント
 │   ├── internal/
 │   │   ├── domain/            # ドメイン層
@@ -110,7 +115,7 @@ neuraKnot/
 │   ├── migrations/            # DBマイグレーション
 │   └── docs/                  # Swagger ドキュメント
 │
-├── backend-python/             # Python AI サーバー
+├── backend-python/             # Backend Python サーバー
 │   └── app/
 │       ├── api/v1/            # エンドポイント
 │       ├── services/          # サービス・ツール
@@ -121,6 +126,21 @@ neuraKnot/
 │
 ├── docker-compose/
 │   └── dev.yml                # 開発環境
+│
+├── terraform/                 # インフラストラクチャ as Code
+│   ├── modules/              # 再利用可能なモジュール
+│   │   ├── cognito/          # AWS Cognito
+│   │   ├── vpc/              # VPC・ネットワーク
+│   │   ├── ecr/              # ECR リポジトリ
+│   │   ├── ecs/              # ECS クラスター（バックエンドのみ）
+│   │   ├── rds/              # RDS PostgreSQL
+│   │   ├── alb/              # Application Load Balancer
+│   │   ├── service-discovery/ # Cloud Map
+│   │   ├── secrets/          # Secrets Manager
+│   │   └── iam/              # IAM ロール・ポリシー
+│   └── environments/
+│       ├── dev/              # 開発環境（Cognito のみ）
+│       └── prod/             # 本番環境（バックエンドAPI）
 │
 └── docs/                      # プロジェクトドキュメント
     ├── aws/                   # AWS関連
@@ -137,8 +157,8 @@ neuraKnot/
 ```
 開発者PC（ローカル）
 ├── Next.js (localhost:3000)
-├── Go Backend (localhost:8080)
-├── Python AI Server (localhost:8001)
+├── Backend Go (localhost:8080)
+├── Backend Python (localhost:8001)
 ├── PostgreSQL (Docker/localhost:5432)
 └── Redis (Docker/localhost:6379)
 
@@ -152,18 +172,18 @@ AWS Cognito (DEV User Pool) - 認証専用
 - 認証方式: メール + パスワード（基本のみ）
 - OAuth: 未対応（開発用のため）
 
-### 本番環境（AWS）
+### 本番環境（AWS + Vercel）
 
-本番環境では、AWS フルマネージドサービスを使用します。
+本番環境では、フロントエンドを Vercel、バックエンド API を AWS で管理します。
 
 ```
-[Vercel - Next.js]
+[Vercel - Next.js Frontend]
         |
         v HTTPS
 [Application Load Balancer]
         |
         v
-[ECS Fargate - Go Backend] <--(内部通信)--> [ECS Fargate - Python AI]
+[ECS Fargate - Backend Go] <--(内部通信)--> [ECS Fargate - Backend Python]
         |
         v
 [RDS PostgreSQL]
@@ -173,11 +193,11 @@ AWS Cognito (DEV User Pool) - 認証専用
 
 **特徴:**
 
-- フロントエンド: Vercel（または ECS Fargate）
-- バックエンド: ECS Fargate
-- Python AI サーバー: ECS Fargate（内部通信のみ、ALB から直接アクセス不可）
+- フロントエンド: Vercel（Next.js）
+- バックエンド API: AWS ECS Fargate
+- Backend Python サーバー: ECS Fargate（内部通信のみ、ALB から直接アクセス不可）
 - データベース: RDS PostgreSQL（Multi-AZ）
-- Service Discovery: Cloud Map（`python-ai.neuraKnot.local`）
+- Service Discovery: Cloud Map（`backend-python.neuraKnot.local`）
 - ユーザー管理: AWS Cognito PROD User Pool
 - OAuth 対応: Google, Apple, LINE
 
@@ -223,14 +243,14 @@ docker-compose -f docker-compose/dev.yml logs -f
 
 ### 動作確認
 
-| サービス         | URL                                      | 説明             |
-| ---------------- | ---------------------------------------- | ---------------- |
-| フロントエンド   | http://localhost:3000                    | Next.js Web UI   |
-| Go API           | http://localhost:8080                    | REST API         |
-| Swagger UI       | http://localhost:8080/swagger/index.html | API ドキュメント |
-| Python AI Server | http://localhost:8001                    | AI 処理サーバー  |
-| PostgreSQL       | localhost:5432                           | データベース     |
-| Redis            | localhost:6379                           | キャッシュ       |
+| サービス       | URL                                      | 説明             |
+| -------------- | ---------------------------------------- | ---------------- |
+| フロントエンド | http://localhost:3000                    | Next.js Web UI   |
+| Backend Go     | http://localhost:8080                    | REST API         |
+| Swagger UI     | http://localhost:8080/swagger/index.html | API ドキュメント |
+| Backend Python | http://localhost:8001                    | AI 処理サーバー  |
+| PostgreSQL     | localhost:5432                           | データベース     |
+| Redis          | localhost:6379                           | キャッシュ       |
 
 ```bash
 # ヘルスチェック
@@ -275,7 +295,7 @@ npm run dev
 # http://localhost:3000
 ```
 
-**Go API**
+**Backend Go**
 
 ```bash
 cd backend-go
@@ -287,7 +307,7 @@ go run cmd/api/main.go
 # http://localhost:8080
 ```
 
-**Python AI Server**
+**Backend Python**
 
 ```bash
 cd backend-python
@@ -311,7 +331,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 
 ## API 仕様
 
-### Go API (REST)
+### Backend Go (REST)
 
 **Swagger UI**: http://localhost:8080/swagger/index.html
 
@@ -342,7 +362,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 
 - `GET /health` - ヘルスチェック
 
-### Python AI API
+### Backend Python API
 
 **エンドポイント**
 
@@ -409,6 +429,84 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 - DEV 環境で Cognito 統合テストが可能
 - 本番データの保護
 
+## インフラストラクチャ
+
+NeuraKnot のインフラストラクチャは **Terraform** を使用して Infrastructure as Code (IaC) として管理されています。
+
+### 🏗️ アーキテクチャ概要
+
+**開発環境（Dev）**
+
+- **Cognito User Pool**: 認証のみ
+- **コスト**: $0（無料枠内）
+- **用途**: ローカル開発・テスト
+
+**本番環境（Prod）**
+
+- **VPC**: 10.0.0.0/16（Multi-AZ）
+- **ECS Fargate**: Backend Go + Backend Python（API サーバーのみ）
+- **Vercel**: Next.js Frontend（フロントエンド）
+- **RDS PostgreSQL**: Multi-AZ、暗号化有効
+- **ALB**: Application Load Balancer（API 用）
+- **Cognito**: OAuth 対応（Google, LINE, Apple）
+- **Service Discovery**: Backend Python 用内部通信
+- **Secrets Manager**: 機密情報管理
+
+### 📋 モジュール構成
+
+| モジュール            | 用途                         | 主要リソース                                                      |
+| --------------------- | ---------------------------- | ----------------------------------------------------------------- |
+| **Cognito**           | ユーザー認証・管理           | User Pool, User Pool Client, OAuth Providers                      |
+| **VPC**               | ネットワーク基盤             | VPC, Subnets, Internet Gateway, NAT Gateway                       |
+| **ECR**               | コンテナイメージ管理         | ECR Repositories (backend-go, backend-python), Lifecycle Policies |
+| **ECS**               | コンテナオーケストレーション | ECS Cluster, Task Definition, Service (バックエンド API のみ)     |
+| **RDS**               | データベース                 | PostgreSQL 15, Multi-AZ, Encryption                               |
+| **ALB**               | ロードバランシング           | Application Load Balancer, Target Groups                          |
+| **Service Discovery** | 内部サービス通信             | Cloud Map, Private DNS Namespace                                  |
+| **Secrets Manager**   | 機密情報管理                 | Secrets, Secret Versions                                          |
+| **IAM**               | アクセス制御                 | Roles, Policies, Policy Attachments                               |
+
+### 🚀 クイックスタート
+
+**Dev 環境のデプロイ（Cognito のみ）**
+
+```bash
+cd terraform/environments/dev
+terraform init
+terraform plan
+terraform apply
+```
+
+**Prod 環境のデプロイ（フルスタック）**
+
+```bash
+cd terraform/environments/prod
+terraform init
+terraform plan
+terraform apply
+```
+
+### 📊 コスト見積もり
+
+- **Dev 環境**: $0/月（Cognito 無料枠内）
+- **Prod 環境**: $100-130/月（AWS）+ Vercel
+  - RDS (db.t3.medium): $30-40
+  - ECS Fargate (2 タスク): $20-30
+  - ALB: $20
+  - NAT Gateway (2 つ): $45
+  - その他: $5-15
+  - Vercel: 無料枠または $20/月（Pro プラン）
+
+### 🔒 セキュリティ
+
+- **ネットワークセキュリティ**: ALB → ECS → RDS の段階的アクセス制御
+- **機密情報管理**: Secrets Manager による暗号化された機密情報管理
+- **暗号化**: RDS、EBS、Secrets Manager で暗号化有効
+
+### 📚 詳細ドキュメント
+
+**Terraform の詳細な使用方法、設定、トラブルシューティングについては、[terraform/README.md](./terraform/README.md) を参照してください。**
+
 ## ドキュメント
 
 詳細なドキュメントは[docs/](./docs/)ディレクトリを参照してください。
@@ -419,8 +517,8 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 
 - 📋 [開発ルール・貢献ガイド](./docs/CONTRIBUTING.md) - コミットメッセージ、プルリクエスト、コードレビューのルール
 - [フロントエンド開発](./docs/frontend/GETTING_STARTED.md)
-- [Go Backend 開発](./backend-go/README.md)
-- [Python AI Server 開発](./backend-python/README.md)
+- [Backend Go 開発](./backend-go/README.md)
+- [Backend Python 開発](./backend-python/README.md)
 
 **アーキテクチャ**
 
@@ -431,6 +529,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 
 **AWS インフラ**
 
+- [Terraform インフラ管理](./terraform/README.md) - **Infrastructure as Code**
 - [AWS インフラ構築](./docs/aws/INFRASTRUCTURE.md)
 - [AWS Cognito 設定](./docs/aws/COGNITO_SETUP.md)
 - [AWS ドキュメント一覧](./docs/aws/)
@@ -485,8 +584,8 @@ feature/xxx → dev → main
 6. レビュー & 承認
 7. `main`にマージ
 8. 自動デプロイ
-   - Vercel（Next.js）
-   - AWS ECS（Go/Python）
+   - Vercel（Next.js Frontend）
+   - AWS ECS（Backend Go/Python API）
 
 ### 環境変数管理
 
@@ -502,13 +601,13 @@ COGNITO_CLIENT_ID=xxxxx_dev
 
 # API URLs
 NEXT_PUBLIC_API_URL=http://localhost:8080
-GO_PYTHON_AI_URL=http://localhost:8001
+GO_BACKEND_PYTHON_URL=http://localhost:8001
 ```
 
 **本番環境（Vercel/ECS）**
 
-- Vercel: 環境変数設定画面で管理
-- ECS: AWS Secrets Manager から取得
+- Vercel: 環境変数設定画面で管理（フロントエンド）
+- ECS: AWS Secrets Manager から取得（バックエンド API）
 
 ## トラブルシューティング
 
@@ -554,7 +653,7 @@ docker-compose -f docker-compose/dev.yml restart backend-go
 docker-compose -f docker-compose/dev.yml logs backend-go
 ```
 
-### Python AI サーバーが起動しない
+### Backend Python サーバーが起動しない
 
 ```bash
 # ログ確認

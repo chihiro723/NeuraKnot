@@ -13,7 +13,7 @@ terraform/
 │   ├── ecs/                          # ECS クラスター・サービス・タスク定義
 │   ├── rds/                          # RDS PostgreSQL
 │   ├── alb/                          # Application Load Balancer
-│   ├── service-discovery/            # Cloud Map（Python AI 用）
+│   ├── service-discovery/            # Cloud Map（Backend Python 用）
 │   ├── secrets/                      # Secrets Manager
 │   └── iam/                          # IAM ロール・ポリシー
 ├── environments/
@@ -72,11 +72,12 @@ terraform apply
 ### Prod 環境
 
 - **VPC**: 10.0.0.0/16（Multi-AZ）
-- **ECS Fargate**: Go Backend + Python AI + Next.js Frontend
+- **ECS Fargate**: Backend Go + Backend Python（API サーバーのみ）
+- **Vercel**: Next.js Frontend（フロントエンド）
 - **RDS PostgreSQL**: Multi-AZ、暗号化有効
-- **ALB**: Application Load Balancer
+- **ALB**: Application Load Balancer（API 用）
 - **Cognito**: OAuth 対応（Google, LINE, Apple）
-- **Service Discovery**: Python AI 用内部通信
+- **Service Discovery**: Backend Python 用内部通信
 - **Secrets Manager**: 機密情報管理
 
 ## 📋 モジュール一覧
@@ -109,18 +110,18 @@ terraform apply
 
 **主要リソース**:
 
-- `aws_ecr_repository` - backend-go, python-ai, nextjs-frontend
+- `aws_ecr_repository` - backend-go, backend-python
 - `aws_ecr_lifecycle_policy` - イメージライフサイクル
 
 ### 4. ECS モジュール
 
-**用途**: コンテナオーケストレーション
+**用途**: コンテナオーケストレーション（バックエンド API のみ）
 
 **主要リソース**:
 
 - `aws_ecs_cluster` - ECS クラスター
-- `aws_ecs_task_definition` - タスク定義
-- `aws_ecs_service` - ECS サービス
+- `aws_ecs_task_definition` - タスク定義（backend-go, backend-python）
+- `aws_ecs_service` - ECS サービス（backend-go, backend-python）
 - `aws_cloudwatch_log_group` - CloudWatch ログ
 
 ### 5. RDS モジュール
@@ -135,12 +136,12 @@ terraform apply
 
 ### 6. ALB モジュール
 
-**用途**: ロードバランシング
+**用途**: ロードバランシング（API 用）
 
 **主要リソース**:
 
 - `aws_lb` - Application Load Balancer
-- `aws_lb_target_group` - ターゲットグループ
+- `aws_lb_target_group` - ターゲットグループ（backend-go）
 - `aws_lb_listener` - HTTP/HTTPS リスナー
 
 ### 7. Service Discovery モジュール
@@ -150,7 +151,7 @@ terraform apply
 **主要リソース**:
 
 - `aws_service_discovery_private_dns_namespace` - プライベート DNS ネームスペース
-- `aws_service_discovery_service` - Python AI 用サービス
+- `aws_service_discovery_service` - Backend Python 用サービス
 
 ### 8. Secrets Manager モジュール
 
@@ -264,19 +265,20 @@ terraform destroy
 
 ### Prod 環境
 
-- **月額**: $130-165
+- **月額**: $100-130
   - RDS (db.t3.medium): $30-40
   - ECS Fargate (2 タスク): $20-30
   - ALB: $20
   - NAT Gateway (2 つ): $45
-  - その他: $15-30
+  - その他: $5-15
+- **Vercel**: 無料枠または $20/月（Pro プラン）
 
 ## 🔒 セキュリティ
 
 ### ネットワークセキュリティ
 
 - ALB: 0.0.0.0/0 からの HTTP/HTTPS を許可
-- ECS: ALB からのみ許可（Go Backend）、Go Backend からのみ許可（Python AI）
+- ECS: ALB からのみ許可（Backend Go）、Backend Go からのみ許可（Backend Python）
 - RDS: ECS からのみ許可
 
 ### 機密情報管理
