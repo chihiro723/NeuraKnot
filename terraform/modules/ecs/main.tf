@@ -8,25 +8,15 @@ resource "aws_cloudwatch_log_group" "backend_go" {
   })
 }
 
-resource "aws_cloudwatch_log_group" "python_ai" {
-  name              = "/ecs/${var.project_name}-${var.environment}-python-ai"
+resource "aws_cloudwatch_log_group" "backend_python" {
+  name              = "/ecs/${var.project_name}-${var.environment}-backend-python"
   retention_in_days = var.log_retention_in_days
 
   tags = merge(var.tags, {
-    Name = "${var.project_name}-${var.environment}-python-ai-logs"
+    Name = "${var.project_name}-${var.environment}-backend-python-logs"
   })
 }
 
-resource "aws_cloudwatch_log_group" "frontend" {
-  count = var.enable_frontend ? 1 : 0
-
-  name              = "/ecs/${var.project_name}-${var.environment}-frontend"
-  retention_in_days = var.log_retention_in_days
-
-  tags = merge(var.tags, {
-    Name = "${var.project_name}-${var.environment}-frontend-logs"
-  })
-}
 
 # Security Group for ECS
 resource "aws_security_group" "ecs" {
@@ -42,21 +32,13 @@ resource "aws_security_group" "ecs" {
   }
 
   ingress {
-    from_port       = var.python_ai_port
-    to_port         = var.python_ai_port
+    from_port       = var.backend_python_port
+    to_port         = var.backend_python_port
     protocol        = "tcp"
     security_groups = [aws_security_group.ecs.id]
-    description     = "Python AI from Backend Go"
+    description     = "Backend Python from Backend Go"
   }
 
-  ingress {
-    from_port       = var.frontend_port
-    to_port         = var.frontend_port
-    protocol        = "tcp"
-    security_groups = [var.alb_security_group_id]
-    description     = "Frontend from ALB"
-    count           = var.enable_frontend ? 1 : 0
-  }
 
   egress {
     from_port   = 0
@@ -166,7 +148,7 @@ resource "aws_ecs_task_definition" "backend_go" {
         },
         {
           name  = "AI_SERVICE_URL"
-          value = "http://${var.python_ai_service_discovery_name}.${var.python_ai_service_discovery_namespace}:${var.python_ai_port}"
+          value = "http://${var.backend_python_service_discovery_name}.${var.backend_python_service_discovery_namespace}:${var.backend_python_port}"
         },
         {
           name  = "AI_SERVICE_TIMEOUT"
@@ -199,24 +181,24 @@ resource "aws_ecs_task_definition" "backend_go" {
   })
 }
 
-# ECS Task Definition for Python AI
-resource "aws_ecs_task_definition" "python_ai" {
-  family                   = "${var.project_name}-${var.environment}-python-ai"
+# ECS Task Definition for Backend Python
+resource "aws_ecs_task_definition" "backend_python" {
+  family                   = "${var.project_name}-${var.environment}-backend-python"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = var.python_ai_cpu
-  memory                   = var.python_ai_memory
+  cpu                      = var.backend_python_cpu
+  memory                   = var.backend_python_memory
   execution_role_arn       = var.ecs_task_execution_role_arn
   task_role_arn            = var.ecs_task_role_arn
 
   container_definitions = jsonencode([
     {
-      name  = "python-ai"
-      image = var.python_ai_image
+      name  = "backend-python"
+      image = var.backend_python_image
       portMappings = [
         {
-          containerPort = var.python_ai_port
-          hostPort      = var.python_ai_port
+          containerPort = var.backend_python_port
+          hostPort      = var.backend_python_port
           protocol      = "tcp"
         }
       ]
@@ -227,7 +209,7 @@ resource "aws_ecs_task_definition" "python_ai" {
         },
         {
           name  = "PORT"
-          value = tostring(var.python_ai_port)
+          value = tostring(var.backend_python_port)
         },
         {
           name  = "API_V1_PREFIX"
@@ -235,7 +217,7 @@ resource "aws_ecs_task_definition" "python_ai" {
         },
         {
           name  = "PROJECT_NAME"
-          value = "NeuraKnot AI Server"
+          value = "NeuraKnot Backend Python"
         },
         {
           name  = "VERSION"
@@ -262,7 +244,7 @@ resource "aws_ecs_task_definition" "python_ai" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.python_ai.name
+          "awslogs-group"         = aws_cloudwatch_log_group.backend_python.name
           "awslogs-region"        = var.aws_region
           "awslogs-stream-prefix" = "ecs"
         }
@@ -272,59 +254,10 @@ resource "aws_ecs_task_definition" "python_ai" {
   ])
 
   tags = merge(var.tags, {
-    Name = "${var.project_name}-${var.environment}-python-ai"
+    Name = "${var.project_name}-${var.environment}-backend-python"
   })
 }
 
-# ECS Task Definition for Frontend (optional)
-resource "aws_ecs_task_definition" "frontend" {
-  count = var.enable_frontend ? 1 : 0
-
-  family                   = "${var.project_name}-${var.environment}-frontend"
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  cpu                      = var.frontend_cpu
-  memory                   = var.frontend_memory
-  execution_role_arn       = var.ecs_task_execution_role_arn
-  task_role_arn            = var.ecs_task_role_arn
-
-  container_definitions = jsonencode([
-    {
-      name  = "frontend"
-      image = var.frontend_image
-      portMappings = [
-        {
-          containerPort = var.frontend_port
-          hostPort      = var.frontend_port
-          protocol      = "tcp"
-        }
-      ]
-      environment = [
-        {
-          name  = "PORT"
-          value = tostring(var.frontend_port)
-        },
-        {
-          name  = "NODE_ENV"
-          value = var.environment == "prod" ? "production" : "development"
-        }
-      ]
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.frontend[0].name
-          "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = "ecs"
-        }
-      }
-      essential = true
-    }
-  ])
-
-  tags = merge(var.tags, {
-    Name = "${var.project_name}-${var.environment}-frontend"
-  })
-}
 
 # ECS Service for Backend Go
 resource "aws_ecs_service" "backend_go" {
@@ -347,7 +280,7 @@ resource "aws_ecs_service" "backend_go" {
   }
 
   service_registries {
-    registry_arn = var.python_ai_service_discovery_arn
+    registry_arn = var.backend_python_service_discovery_arn
   }
 
   depends_on = [aws_ecs_task_definition.backend_go]
@@ -357,12 +290,12 @@ resource "aws_ecs_service" "backend_go" {
   })
 }
 
-# ECS Service for Python AI
-resource "aws_ecs_service" "python_ai" {
-  name            = "${var.project_name}-${var.environment}-python-ai"
+# ECS Service for Backend Python
+resource "aws_ecs_service" "backend_python" {
+  name            = "${var.project_name}-${var.environment}-backend-python"
   cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.python_ai.arn
-  desired_count   = var.python_ai_desired_count
+  task_definition = aws_ecs_task_definition.backend_python.arn
+  desired_count   = var.backend_python_desired_count
   launch_type     = "FARGATE"
 
   network_configuration {
@@ -372,41 +305,13 @@ resource "aws_ecs_service" "python_ai" {
   }
 
   service_registries {
-    registry_arn = var.python_ai_service_discovery_arn
+    registry_arn = var.backend_python_service_discovery_arn
   }
 
-  depends_on = [aws_ecs_task_definition.python_ai]
+  depends_on = [aws_ecs_task_definition.backend_python]
 
   tags = merge(var.tags, {
-    Name = "${var.project_name}-${var.environment}-python-ai"
+    Name = "${var.project_name}-${var.environment}-backend-python"
   })
 }
 
-# ECS Service for Frontend (optional)
-resource "aws_ecs_service" "frontend" {
-  count = var.enable_frontend ? 1 : 0
-
-  name            = "${var.project_name}-${var.environment}-frontend"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.frontend[0].arn
-  desired_count   = var.frontend_desired_count
-  launch_type     = "FARGATE"
-
-  network_configuration {
-    subnets          = var.private_subnet_ids
-    security_groups  = [aws_security_group.ecs.id]
-    assign_public_ip = false
-  }
-
-  load_balancer {
-    target_group_arn = var.frontend_target_group_arn
-    container_name   = "frontend"
-    container_port   = var.frontend_port
-  }
-
-  depends_on = [aws_ecs_task_definition.frontend]
-
-  tags = merge(var.tags, {
-    Name = "${var.project_name}-${var.environment}-frontend"
-  })
-}

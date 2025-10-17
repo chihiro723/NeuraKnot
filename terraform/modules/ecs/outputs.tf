@@ -14,66 +14,44 @@ output "cluster_arn" {
 }
 
 output "backend_go_service_name" {
-  description = "Name of the backend Go service"
+  description = "Name of the Backend Go service"
   value       = aws_ecs_service.backend_go.name
 }
 
 output "backend_go_service_arn" {
-  description = "ARN of the backend Go service"
+  description = "ARN of the Backend Go service"
   value       = aws_ecs_service.backend_go.id
 }
 
-output "python_ai_service_name" {
-  description = "Name of the Python AI service"
-  value       = aws_ecs_service.python_ai.name
+output "backend_python_service_name" {
+  description = "Name of the Backend Python service"
+  value       = aws_ecs_service.backend_python.name
 }
 
-output "python_ai_service_arn" {
-  description = "ARN of the Python AI service"
-  value       = aws_ecs_service.python_ai.id
+output "backend_python_service_arn" {
+  description = "ARN of the Backend Python service"
+  value       = aws_ecs_service.backend_python.id
 }
 
-output "frontend_service_name" {
-  description = "Name of the frontend service"
-  value       = var.enable_frontend ? aws_ecs_service.frontend[0].name : null
-}
 
-output "frontend_service_arn" {
-  description = "ARN of the frontend service"
-  value       = var.enable_frontend ? aws_ecs_service.frontend[0].id : null
-}
-
-output "ecs_security_group_id" {
-  description = "Security group ID of ECS tasks"
-  value       = aws_security_group.ecs.id
-}
 
 output "backend_go_task_definition_arn" {
-  description = "ARN of the backend Go task definition"
+  description = "ARN of the Backend Go task definition"
   value       = aws_ecs_task_definition.backend_go.arn
 }
 
-output "python_ai_task_definition_arn" {
-  description = "ARN of the Python AI task definition"
-  value       = aws_ecs_task_definition.python_ai.arn
+output "backend_python_task_definition_arn" {
+  description = "ARN of the Backend Python task definition"
+  value       = aws_ecs_task_definition.backend_python.arn
 }
 
-output "frontend_task_definition_arn" {
-  description = "ARN of the frontend task definition"
-  value       = var.enable_frontend ? aws_ecs_task_definition.frontend[0].arn : null
-}
 
 output "backend_go_log_group_name" {
-  description = "Name of the backend Go log group"
+  description = "Name of the Backend Go log group"
   value       = aws_cloudwatch_log_group.backend_go.name
 }
 
-output "python_ai_log_group_name" {
-  description = "Name of the Python AI log group"
-  value       = aws_cloudwatch_log_group.python_ai.name
-}
-
-output "frontend_log_group_name" {
-  description = "Name of the frontend log group"
-  value       = var.enable_frontend ? aws_cloudwatch_log_group.frontend[0].name : null
+output "backend_python_log_group_name" {
+  description = "Name of the Backend Python log group"
+  value       = aws_cloudwatch_log_group.backend_python.name
 }

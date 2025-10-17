@@ -35,29 +35,24 @@ variable "ecs_task_role_arn" {
 }
 
 variable "backend_go_target_group_arn" {
-  description = "ARN of backend Go target group"
+  description = "ARN of Backend Go target group"
   type        = string
 }
 
-variable "frontend_target_group_arn" {
-  description = "ARN of frontend target group"
-  type        = string
-  default     = ""
-}
 
-variable "python_ai_service_discovery_arn" {
-  description = "ARN of Python AI service discovery service"
+variable "backend_python_service_discovery_arn" {
+  description = "ARN of Backend Python service discovery service"
   type        = string
 }
 
-variable "python_ai_service_discovery_name" {
-  description = "Name of Python AI service discovery service"
+variable "backend_python_service_discovery_name" {
+  description = "Name of Backend Python service discovery service"
   type        = string
-  default     = "python-ai"
+  default     = "backend-python"
 }
 
-variable "python_ai_service_discovery_namespace" {
-  description = "Namespace of Python AI service discovery service"
+variable "backend_python_service_discovery_namespace" {
+  description = "Namespace of Backend Python service discovery service"
   type        = string
   default     = "neuraKnot-prod.local"
 }
@@ -112,34 +107,21 @@ variable "backend_go_image" {
   type        = string
 }
 
-variable "python_ai_image" {
-  description = "Python AI container image"
+variable "backend_python_image" {
+  description = "Backend Python container image"
   type        = string
 }
 
-variable "frontend_image" {
-  description = "Frontend container image"
-  type        = string
-  default     = ""
-}
-
-# Container ports
 variable "backend_go_port" {
   description = "Backend Go container port"
   type        = number
   default     = 8080
 }
 
-variable "python_ai_port" {
-  description = "Python AI container port"
+variable "backend_python_port" {
+  description = "Backend Python container port"
   type        = number
   default     = 8001
-}
-
-variable "frontend_port" {
-  description = "Frontend container port"
-  type        = number
-  default     = 3000
 }
 
 # Container resources
@@ -155,58 +137,33 @@ variable "backend_go_memory" {
   default     = 512
 }
 
-variable "python_ai_cpu" {
-  description = "Python AI CPU units"
+variable "backend_python_cpu" {
+  description = "Backend Python CPU units"
   type        = number
   default     = 512
 }
 
-variable "python_ai_memory" {
-  description = "Python AI memory in MB"
+variable "backend_python_memory" {
+  description = "Backend Python memory in MB"
   type        = number
   default     = 1024
 }
 
-variable "frontend_cpu" {
-  description = "Frontend CPU units"
-  type        = number
-  default     = 256
-}
-
-variable "frontend_memory" {
-  description = "Frontend memory in MB"
-  type        = number
-  default     = 512
-}
-
 # Service desired counts
 variable "backend_go_desired_count" {
-  description = "Desired count for backend Go service"
+  description = "Desired count for Backend Go service"
   type        = number
-  default     = 1
+  default     = 2
 }
 
-variable "python_ai_desired_count" {
-  description = "Desired count for Python AI service"
+variable "backend_python_desired_count" {
+  description = "Desired count for Backend Python service"
   type        = number
   default     = 1
-}
-
-variable "frontend_desired_count" {
-  description = "Desired count for frontend service"
-  type        = number
-  default     = 1
-}
-
-# Frontend configuration
-variable "enable_frontend" {
-  description = "Enable frontend service"
-  type        = bool
-  default     = false
 }
 
 variable "allowed_origins" {
-  description = "Allowed CORS origins for Python AI"
+  description = "Allowed CORS origins for Backend Python"
   type        = list(string)
   default     = ["http://localhost:8080", "http://localhost:3000"]
 }
@@ -215,13 +172,7 @@ variable "allowed_origins" {
 variable "log_retention_in_days" {
   description = "CloudWatch log retention in days"
   type        = number
-  default     = 30
-}
-
-variable "log_level" {
-  description = "Log level for applications"
-  type        = string
-  default     = "info"
+  default     = 7
 }
 
 variable "aws_region" {
@@ -234,4 +185,10 @@ variable "tags" {
   description = "Tags to apply to resources"
   type        = map(string)
   default     = {}
+}
+
+variable "log_level" {
+  description = "Log level for applications"
+  type        = string
+  default     = "info"
 }
