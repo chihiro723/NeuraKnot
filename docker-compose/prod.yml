@@ -20,7 +20,7 @@ services:
       - app-network
     restart: unless-stopped
 
-  # Go API Server (本番用)
+  # Backend Go (本番用)
   backend-go:
     build:
       context: ../backend-go
@@ -47,7 +47,7 @@ services:
       - app-network
     restart: unless-stopped
 
-  # Python AI Server (本番用)
+  # Backend Python (本番用)
   backend-python:
     build:
       context: ../backend-python

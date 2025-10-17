@@ -23,7 +23,7 @@ services:
       - app-network
     restart: unless-stopped
 
-  # Go API Server (開発用 - ホットリロード)
+  # Backend Go (開発用 - ホットリロード)
   backend-go:
     build:
       context: ../backend-go
@@ -49,7 +49,7 @@ services:
       - app-network
     restart: unless-stopped
 
-  # Python AI Server (開発用 - ホットリロード)
+  # Backend Python (開発用 - ホットリロード)
   backend-python:
     build:
       context: ../backend-python
