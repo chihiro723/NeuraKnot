@@ -715,6 +715,7 @@ func (uc *ChatUsecase) UpdateToolPositions(
 }
 
 // SendAgentIntroduction はAIエージェントが自己紹介メッセージを送信
+// messageContentはサービス・ツール情報などのヒント（AI生成のプロンプトに使用）
 func (uc *ChatUsecase) SendAgentIntroduction(
 	ctx context.Context,
 	userID, conversationID uuid.UUID,
@@ -731,12 +732,84 @@ func (uc *ChatUsecase) SendAgentIntroduction(
 		return nil, fmt.Errorf("unauthorized: user does not own this conversation")
 	}
 
-	// 2. AIメッセージを直接保存（ユーザーメッセージは作成しない）
+	// 2. エージェントを取得
+	agent, err := uc.aiRepo.FindByID(ctx, conv.AIAgentID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AI agent: %w", err)
+	}
+
+	// 3. エージェントのサービス設定を取得
+	var services []external.ServiceConfig
+	if uc.aiAgentServiceRepo != nil {
+		agentServices, err := uc.aiAgentServiceRepo.FindByAgentID(conv.AIAgentID)
+		if err == nil && len(agentServices) > 0 {
+			services = make([]external.ServiceConfig, 0, len(agentServices))
+			for _, as := range agentServices {
+				if as.Enabled {
+					// ユーザーのサービス設定を取得して認証情報を含める
+					serviceConfig, _, _, _, _, err := uc.serviceConfigRepo.FindByUserAndClass(userID, as.ServiceClass)
+					if err == nil && serviceConfig != nil {
+						// APIキーを取得
+						var apiKey *string
+						if serviceConfig.Auth != nil {
+							if key, exists := serviceConfig.Auth["api_key"]; exists {
+								if keyStr, ok := key.(string); ok {
+									apiKey = &keyStr
+								}
+							}
+						}
+
+						services = append(services, external.ServiceConfig{
+							ServiceClass:      as.ServiceClass,
+							ToolSelectionMode: as.ToolSelectionMode,
+							SelectedTools:     as.SelectedTools,
+							APIKey:            apiKey,
+						})
+					}
+				}
+			}
+		}
+	}
+
+	// 4. 自己紹介を促すプロンプトを作成
+	introPrompt := fmt.Sprintf(
+		"あなたは今、新しくユーザーと友達になりました。簡潔に自己紹介をしてください。\n"+
+			"あなたの名前は「%s」です。\n"+
+			"%s\n"+
+			"ユーザーに対して温かく、自然な挨拶をしてください。200文字以内で簡潔にお願いします。",
+		agent.Name,
+		messageContent,
+	)
+
+	// 5. AIクライアントでエージェントのペルソナを反映した自己紹介を生成
+	systemPrompt := agent.GetSystemPrompt()
+	aiReq := external.ChatRequest{
+		UserID:              userID.String(),
+		ConversationID:      conversationID.String(),
+		Message:             introPrompt,
+		ConversationHistory: []external.ConversationMessage{}, // 会話履歴なし
+		AgentConfig: external.AgentConfig{
+			Provider:           agent.Provider.String(),
+			Model:              agent.Model,
+			Temperature:        agent.Temperature,
+			MaxTokens:          agent.MaxTokens,
+			Persona:            agent.PersonaType.String(),
+			CustomSystemPrompt: &systemPrompt,
+		},
+		Services: services,
+	}
+
+	aiResp, err := uc.aiClient.Chat(ctx, aiReq)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate AI introduction: %w", err)
+	}
+
+	// 6. AIメッセージを保存
 	aiMessage, err := conversation.NewMessage(
 		conversationID,
 		conversation.SenderTypeAI,
 		conv.AIAgentID,
-		messageContent,
+		aiResp.Message,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AI message: %w", err)
@@ -746,15 +819,10 @@ func (uc *ChatUsecase) SendAgentIntroduction(
 		return nil, fmt.Errorf("failed to save AI message: %w", err)
 	}
 
-	// 3. 会話とAgentの統計を更新
+	// 7. 会話とAgentの統計を更新
 	conv.IncrementMessageCount()
 	if err := uc.convRepo.Update(ctx, conv); err != nil {
 		return nil, fmt.Errorf("failed to update conversation: %w", err)
-	}
-
-	agent, err := uc.aiRepo.FindByID(ctx, conv.AIAgentID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get AI agent: %w", err)
 	}
 
 	agent.IncrementMessageCount()
@@ -762,20 +830,69 @@ func (uc *ChatUsecase) SendAgentIntroduction(
 		return nil, fmt.Errorf("failed to update agent: %w", err)
 	}
 
-	// 4. 空のメタデータを返す（ツール使用なし）
-	metadata := external.AIMetadata{
-		Model:             agent.Model,
-		Provider:          agent.Provider.String(),
-		TokensUsed:        external.TokenUsage{},
-		ProcessingTimeMs:  0,
-		ToolsAvailable:    0,
-		BasicToolsCount:   0,
-		ServiceToolsCount: 0,
+	// 8. ChatSessionを保存（トークン使用量を記録）
+	chatSession := conversation.NewChatSession(
+		userID,
+		conversationID,
+		conv.AIAgentID,
+		&aiMessage.ID,
+		agent.Provider.String(),
+		agent.Model,
+		agent.PersonaType.String(),
+		agent.Temperature,
+		aiResp.Metadata.TokensUsed.Prompt,
+		aiResp.Metadata.TokensUsed.Completion,
+		aiResp.Metadata.TokensUsed.Total,
+		aiResp.Metadata.ProcessingTimeMs,
+		len(aiResp.ToolCalls),
+	)
+
+	if err := uc.chatSessionRepo.Save(ctx, chatSession); err != nil {
+		// ChatSession保存失敗してもユーザーへのレスポンスは正常に返す（ログに記録）
+		log.Printf("ERROR: Failed to save chat session for introduction: %v", err)
+	}
+
+	// 9. ツール使用履歴を保存（もしツールが使われていた場合）
+	for _, toolCall := range aiResp.ToolCalls {
+		// ToolCallのInputをJSON化
+		inputJSON, err := json.Marshal(toolCall.Input)
+		if err != nil {
+			log.Printf("ERROR: Failed to marshal tool input for introduction: %v", err)
+			continue
+		}
+
+		toolUsage, err := conversation.NewToolUsage(
+			aiMessage.ID,
+			toolCall.ToolName,
+			"service", // ツールカテゴリ（サービスツール）
+			inputJSON,
+		)
+		if err != nil {
+			log.Printf("ERROR: Failed to create tool usage for introduction: %v", err)
+			continue
+		}
+
+		// 出力データを設定
+		toolUsage.SetOutput(toolCall.Output)
+
+		// 実行時間を設定
+		if toolCall.ExecutionTimeMs > 0 {
+			toolUsage.SetExecutionTime(toolCall.ExecutionTimeMs)
+		}
+
+		// 挿入位置を設定
+		if toolCall.InsertPosition != nil {
+			toolUsage.SetInsertPosition(*toolCall.InsertPosition)
+		}
+
+		if err := uc.toolUsageRepo.Save(toolUsage); err != nil {
+			log.Printf("ERROR: Failed to save tool usage for introduction: %v", err)
+		}
 	}
 
 	return &ChatResult{
 		UserMessage: nil, // ユーザーメッセージはなし
 		AIMessage:   aiMessage,
-		Metadata:    metadata,
+		Metadata:    aiResp.Metadata,
 	}, nil
 }
