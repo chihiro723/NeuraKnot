@@ -1,6 +1,6 @@
 # S3 Backend Configuration
 # This file is used to configure the S3 backend for storing Terraform state
-# 
+#
 # To use this backend, run:
 # terraform init -backend-config="bucket=your-terraform-state-bucket" \
 #                -backend-config="key=dev/terraform.tfstate" \
