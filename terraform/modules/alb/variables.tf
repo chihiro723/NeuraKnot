@@ -20,34 +20,17 @@ variable "public_subnet_ids" {
 }
 
 variable "health_check_path" {
-  description = "Health check path for backend Go service"
+  description = "Health check path for Backend Go service"
   type        = string
   default     = "/health"
 }
 
 variable "backend_go_port" {
-  description = "Port for backend Go service"
+  description = "Port for Backend Go service"
   type        = number
   default     = 8080
 }
 
-variable "enable_frontend_target_group" {
-  description = "Enable target group for Next.js frontend"
-  type        = bool
-  default     = false
-}
-
-variable "frontend_port" {
-  description = "Port for frontend service"
-  type        = number
-  default     = 3000
-}
-
-variable "frontend_health_check_path" {
-  description = "Health check path for frontend service"
-  type        = string
-  default     = "/"
-}
 
 variable "ssl_certificate_arn" {
   description = "ARN of SSL certificate for HTTPS listener"

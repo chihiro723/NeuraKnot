@@ -19,29 +19,16 @@ output "alb_arn_suffix" {
 }
 
 output "backend_go_target_group_arn" {
-  description = "ARN of the backend Go target group"
+  description = "ARN of the Backend Go target group"
   value       = aws_lb_target_group.backend_go.arn
 }
 
 output "backend_go_target_group_name" {
-  description = "Name of the backend Go target group"
+  description = "Name of the Backend Go target group"
   value       = aws_lb_target_group.backend_go.name
 }
 
-output "frontend_target_group_arn" {
-  description = "ARN of the frontend target group"
-  value       = var.enable_frontend_target_group ? aws_lb_target_group.frontend[0].arn : null
-}
 
-output "frontend_target_group_name" {
-  description = "Name of the frontend target group"
-  value       = var.enable_frontend_target_group ? aws_lb_target_group.frontend[0].name : null
-}
-
-output "alb_security_group_id" {
-  description = "Security group ID of the ALB"
-  value       = aws_security_group.alb.id
-}
 
 output "http_listener_arn" {
   description = "ARN of the HTTP listener"
