@@ -14,6 +14,7 @@ type CreateAgentRequest struct {
 	Provider         string                 `json:"provider"`
 	Model            string                 `json:"model"`
 	Description      *string                `json:"description"`
+	SystemPrompt     *string                `json:"system_prompt"`      // カスタムシステムプロンプト
 	StreamingEnabled *bool                  `json:"streaming_enabled"`  // nilの場合はtrueがデフォルト
 	Services         []ServiceConfigRequest `json:"services,omitempty"` // サービス設定
 }
