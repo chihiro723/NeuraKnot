@@ -1,2 +1,2 @@
-"""Core modules for NeuraKnot AI Server"""
+"""Core modules for NeuraKnot Backend Python"""
 

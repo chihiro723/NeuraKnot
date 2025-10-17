@@ -1,10 +1,10 @@
-# NeuraKnot AI Server (backend-python)
+# NeuraKnot Backend Python
 
 FastAPI + LangChain Agent + MCP ツール統合による AI 処理 API サーバー
 
 ## 概要
 
-NeuraKnot AI Server は、LLM エージェントと MCP（Model Context Protocol）ツールを統合した AI 処理 API です。OpenAI、Anthropic、Google Gemini の 3 つの LLM プロバイダーに対応し、20 個以上の基本ツールとリモート MCP サーバーからの動的ツール読み込みをサポートします。
+NeuraKnot Backend Python は、LLM エージェントと MCP（Model Context Protocol）ツールを統合した AI 処理 API です。OpenAI、Anthropic、Google Gemini の 3 つの LLM プロバイダーに対応し、20 個以上の基本ツールとリモート MCP サーバーからの動的ツール読み込みをサポートします。
 
 ## 主要機能
 

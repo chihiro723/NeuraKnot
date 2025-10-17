@@ -1,6 +1,6 @@
 """
 FastAPIメインアプリケーション
-NeuraKnot AI Server
+NeuraKnot Backend Python
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware

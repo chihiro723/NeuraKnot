@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     
     # API設定
     API_V1_PREFIX: str = "/api/v1"
-    PROJECT_NAME: str = "NeuraKnot AI Server"
+    PROJECT_NAME: str = "NeuraKnot Backend Python"
     VERSION: str = "1.0.0"
     HOST: str = "0.0.0.0"
     PORT: int = 8001

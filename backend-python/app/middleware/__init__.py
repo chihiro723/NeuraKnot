@@ -1,2 +1,2 @@
-"""Middleware for NeuraKnot AI Server"""
+"""Middleware for NeuraKnot Backend Python"""
 
