@@ -83,6 +83,7 @@ func (h *AIAgentHandler) CreateAgent(c *gin.Context) {
 		req.Provider,
 		req.Model,
 		req.Description,
+		req.SystemPrompt,
 		streamingEnabled,
 	)
 	if err != nil {

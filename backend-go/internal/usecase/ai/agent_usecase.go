@@ -30,6 +30,7 @@ func (uc *AgentUsecase) CreateAgent(
 	provider string,
 	model string,
 	description *string,
+	systemPrompt *string,
 	streamingEnabled bool,
 ) (*ai.Agent, error) {
 	// PersonaTypeをパース
@@ -64,6 +65,11 @@ func (uc *AgentUsecase) CreateAgent(
 	// 説明を設定
 	if description != nil && *description != "" {
 		agent.SetDescription(*description)
+	}
+
+	// システムプロンプトを設定
+	if systemPrompt != nil && *systemPrompt != "" {
+		agent.SetSystemPrompt(*systemPrompt)
 	}
 
 	// StreamingEnabledを設定
