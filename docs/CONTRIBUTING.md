@@ -83,7 +83,7 @@ chore(backend-python): 依存関係を更新
 
 - `frontend` - フロントエンド（Next.js、React）
 - `backend-go` - Go バックエンド
-- `backend-python` - Python AI サーバー
+- `backend-python` - Backend Python サーバー
 - `database` - データベース関連
 - `auth` - 認証・認可関連
 - `api` - API 関連

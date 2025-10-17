@@ -79,7 +79,7 @@ graph TD
 `cmd/main.go`の先頭で API 全体の情報を定義：
 
 ```go
-// @title Go Backend API
+// @title Backend Backent Go
 // @version 1.0
 // @description DDDアーキテクチャを使用したGoバックエンドAPI
 // @termsOfService http://swagger.io/terms/
@@ -150,7 +150,7 @@ type TextResponse struct {
 
 | アノテーション | 説明             | 例                                            |
 | -------------- | ---------------- | --------------------------------------------- |
-| `@title`       | API のタイトル   | `@title Go Backend API`                       |
+| `@title`       | API のタイトル   | `@title Backend Go`                           |
 | `@version`     | API のバージョン | `@version 1.0`                                |
 | `@description` | API の説明       | `@description DDDアーキテクチャを使用した...` |
 | `@host`        | ホスト名         | `@host localhost:8080`                        |

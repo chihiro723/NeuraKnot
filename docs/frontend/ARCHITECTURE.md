@@ -96,7 +96,7 @@ interface ButtonProps {
 - ユーザー情報
 - テーマ設定
 
-### 3. サーバー状態 (AWS Cognito + Go API)
+### 3. サーバー状態 (AWS Cognito + Backend Go)
 
 - データベースからの取得データ
 - リアルタイム更新
@@ -113,7 +113,7 @@ User Action → Component → Custom Hook → API/Database → State Update → 
 1. ユーザーがメッセージを入力
 2. `ChatWindow`コンポーネントがイベントを受信
 3. `useMessages`フックが API 呼び出し
-4. Go API 経由で PostgreSQL にデータを保存
+4. Backend Go 経由で PostgreSQL にデータを保存
 5. リアルタイム更新で UI が再描画
 
 ## 型システム
