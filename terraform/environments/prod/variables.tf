@@ -45,7 +45,7 @@ variable "private_subnet_cidrs" {
 variable "ecr_repositories" {
   description = "List of ECR repository names"
   type        = list(string)
-  default     = ["backend-go", "python-ai", "nextjs-frontend"]
+  default     = ["backend-go", "backend-python"]
 }
 
 # Cognito Configuration
@@ -205,17 +205,12 @@ variable "backend_go_image" {
   default     = ""
 }
 
-variable "python_ai_image" {
-  description = "Python AI container image"
+variable "backend_python_image" {
+  description = "Backend Python container image"
   type        = string
   default     = ""
 }
 
-variable "frontend_image" {
-  description = "Frontend container image"
-  type        = string
-  default     = ""
-}
 
 variable "backend_go_cpu" {
   description = "Backend Go CPU units"
@@ -229,75 +224,63 @@ variable "backend_go_memory" {
   default     = 512
 }
 
-variable "python_ai_cpu" {
-  description = "Python AI CPU units"
+variable "backend_python_cpu" {
+  description = "Backend Python CPU units"
   type        = number
   default     = 512
 }
 
-variable "python_ai_memory" {
-  description = "Python AI memory in MB"
+variable "backend_python_memory" {
+  description = "Backend Python memory in MB"
   type        = number
   default     = 1024
 }
 
-variable "frontend_cpu" {
-  description = "Frontend CPU units"
-  type        = number
-  default     = 256
-}
-
-variable "frontend_memory" {
-  description = "Frontend memory in MB"
-  type        = number
-  default     = 512
-}
-
 variable "backend_go_desired_count" {
-  description = "Desired count for backend Go service"
+  description = "Desired count for Backend Go service"
   type        = number
   default     = 2
 }
 
-variable "python_ai_desired_count" {
-  description = "Desired count for Python AI service"
+variable "backend_python_desired_count" {
+  description = "Desired count for Backend Python service"
   type        = number
-  default     = 2
-}
-
-variable "frontend_desired_count" {
-  description = "Desired count for frontend service"
-  type        = number
-  default     = 2
-}
-
-variable "enable_frontend" {
-  description = "Enable frontend service"
-  type        = bool
-  default     = false
+  default     = 1
 }
 
 variable "allowed_origins" {
-  description = "Allowed CORS origins for Python AI"
+  description = "Allowed CORS origins for Backend Python"
   type        = list(string)
-  default     = []
-}
-
-variable "python_ai_service_name" {
-  description = "Name of the Python AI service discovery service"
-  type        = string
-  default     = "python-ai"
+  default     = ["http://localhost:8080", "http://localhost:3000"]
 }
 
 # Logging Configuration
 variable "log_retention_in_days" {
   description = "CloudWatch log retention in days"
   type        = number
-  default     = 90
+  default     = 7
 }
 
 variable "log_level" {
   description = "Log level for applications"
   type        = string
   default     = "info"
+}
+
+variable "oauth_credentials" {
+  description = "OAuth credentials for external providers"
+  type = map(object({
+    client_id     = string
+    client_secret = string
+    team_id       = optional(string) # For Apple
+    key_id        = optional(string) # For Apple
+  }))
+  default = {}
+  sensitive = true
+}
+
+variable "backend_python_service_name" {
+  description = "Name of the Backend Python service"
+  type        = string
+  default     = "backend-python"
 }

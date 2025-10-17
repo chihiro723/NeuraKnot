@@ -116,7 +116,7 @@ module "iam" {
 
   secrets_manager_arns     = module.secrets.all_secret_arns
   cognito_user_pool_arn    = module.cognito.user_pool_arn
-  service_discovery_arn    = module.service_discovery.python_ai_service_arn
+  service_discovery_arn    = module.service_discovery.backend_python_service_arn
   enable_rds_enhanced_monitoring = var.enable_rds_enhanced_monitoring
 
   tags = {
@@ -133,7 +133,7 @@ module "service_discovery" {
   environment  = var.environment
   project_name = var.project_name
   vpc_id       = module.vpc.vpc_id
-  service_name = var.python_ai_service_name
+  service_name = var.backend_python_service_name
 
   tags = {
     Environment = var.environment
@@ -183,7 +183,6 @@ module "alb" {
   health_check_path  = var.alb_health_check_path
   enable_deletion_protection = var.alb_enable_deletion_protection
   ssl_certificate_arn = var.ssl_certificate_arn
-  enable_frontend_target_group = var.enable_frontend
 
   tags = {
     Environment = var.environment
@@ -207,11 +206,10 @@ module "ecs" {
   ecs_task_role_arn           = module.iam.ecs_task_role_arn
 
   backend_go_target_group_arn = module.alb.backend_go_target_group_arn
-  frontend_target_group_arn   = var.enable_frontend ? module.alb.frontend_target_group_arn : ""
 
-  python_ai_service_discovery_arn    = module.service_discovery.python_ai_service_arn
-  python_ai_service_discovery_name   = module.service_discovery.python_ai_service_name
-  python_ai_service_discovery_namespace = module.service_discovery.namespace_name
+  backend_python_service_discovery_arn    = module.service_discovery.backend_python_service_arn
+  backend_python_service_discovery_name   = module.service_discovery.backend_python_service_name
+  backend_python_service_discovery_namespace = module.service_discovery.namespace_name
 
   secrets_manager_arns = module.secrets.all_secret_arns
 
@@ -228,34 +226,17 @@ module "ecs" {
 
   # Container images
   backend_go_image = var.backend_go_image
-  python_ai_image  = var.python_ai_image
-  frontend_image   = var.frontend_image
-
+  backend_python_image  = var.backend_python_image
   # Container configuration
   backend_go_cpu    = var.backend_go_cpu
   backend_go_memory = var.backend_go_memory
-  python_ai_cpu     = var.python_ai_cpu
-  python_ai_memory  = var.python_ai_memory
-  frontend_cpu      = var.frontend_cpu
-  frontend_memory   = var.frontend_memory
-
+  backend_python_cpu     = var.backend_python_cpu
+  backend_python_memory  = var.backend_python_memory
   # Service configuration
   backend_go_desired_count = var.backend_go_desired_count
-  python_ai_desired_count  = var.python_ai_desired_count
-  frontend_desired_count   = var.frontend_desired_count
-
-  # Frontend configuration
-  enable_frontend   = var.enable_frontend
-  allowed_origins   = var.allowed_origins
+  backend_python_desired_count  = var.backend_python_desired_count
 
   # Logging configuration
   log_retention_in_days = var.log_retention_in_days
-  log_level            = var.log_level
   aws_region          = var.aws_region
-
-  tags = {
-    Environment = var.environment
-    Project     = var.project_name
-    ManagedBy   = "Terraform"
-  }
 }
