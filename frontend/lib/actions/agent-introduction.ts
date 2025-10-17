@@ -5,7 +5,7 @@ import { cookies } from 'next/headers'
 const BACKEND_GO_URL = process.env.BACKEND_GO_URL || 'http://localhost:8080'
 
 /**
- * AIエージェントの自己紹介メッセージを生成
+ * AIエージェントの自己紹介メッセージを生成（AI生成版）
  * エージェント作成後にバックグラウンドで実行される
  */
 export async function generateAgentIntroduction(
@@ -26,14 +26,12 @@ export async function generateAgentIntroduction(
 
   while (retryCount < maxRetries) {
     try {
-      // 1. サービス・ツール情報を整形
+      // 1. サービス・ツール情報を整形してプロンプトヒントを作成
       const toolsInfo = formatToolsForIntroduction(selectedServices)
+      const promptHint = createPromptHint(agentData, toolsInfo)
       
-      // 2. 友達感のある自己紹介メッセージを作成
-      const introMessage = createFriendlyIntroMessage(agentData, toolsInfo)
-      
-      // 3. AIエージェントが自己紹介メッセージを送信
-      const result = await sendAgentIntroduction(agentId, introMessage)
+      // 2. AIエージェントが自己紹介メッセージを送信（AI生成）
+      const result = await sendAgentIntroduction(agentId, promptHint)
       
       if (!result.success) {
         // 認証エラーの場合はリトライしない
@@ -146,9 +144,10 @@ function getServiceDisplayName(serviceClass: string): string {
 }
 
 /**
- * 友達感のある自己紹介メッセージを作成
+ * AI生成のためのプロンプトヒントを作成
+ * バックエンドのAIがこの情報を使って自己紹介を生成する
  */
-function createFriendlyIntroMessage(
+function createPromptHint(
   agentData: {
     name: string
     persona_type: string
@@ -156,40 +155,15 @@ function createFriendlyIntroMessage(
   }, 
   toolsInfo: string
 ): string {
-  // ペルソナタイプに応じた挨拶を生成
-  const personaGreetings: Record<string, string> = {
-    'assistant': 'こんにちは！',
-    'creative': 'やあ！',
-    'analytical': 'こんにちは。',
-    'concise': 'こんにちは。',
-    'support': 'こんにちは！',
-    'friendly': 'やあ！',
-    'business': 'こんにちは。',
-    'casual': 'やあ！',
-    'humor': 'やあ！'
-  }
-
-  const greeting = personaGreetings[agentData.persona_type] || 'こんにちは！'
+  // エージェントの説明文を含める
+  const descriptionPart = agentData.description 
+    ? `\nあなたについて: ${agentData.description}` 
+    : ''
   
-  // ペルソナタイプに応じた自己紹介文を生成
-  const personaIntros: Record<string, string> = {
-    'assistant': `${agentData.name}です。よろしくお願いします！`,
-    'creative': `${agentData.name}だよ！一緒に楽しいことを考えよう！`,
-    'analytical': `${agentData.name}です。論理的にサポートします。`,
-    'concise': `${agentData.name}です。`,
-    'support': `${agentData.name}です。何でもお手伝いします！`,
-    'friendly': `${agentData.name}だよ！よろしくね！`,
-    'business': `${agentData.name}です。ビジネスをサポートします。`,
-    'casual': `${agentData.name}だよ！気軽に話しかけてね！`,
-    'humor': `${agentData.name}だよ！一緒に笑いながら楽しくやろう！`
-  }
+  // 機能説明を含める
+  const capabilityPart = toolsInfo !== '基本的な会話や質問への回答' 
+    ? `\n使える機能: ${toolsInfo}` 
+    : '\n使える機能: 基本的な会話や質問への回答'
 
-  const intro = personaIntros[agentData.persona_type] || `${agentData.name}です。よろしくお願いします！`
-  
-  // 機能説明を追加
-  const capabilityText = toolsInfo !== '基本的な会話や質問への回答' 
-    ? ` ${toolsInfo}など、色々サポートできるよ！` 
-    : ' 基本的な会話や質問への回答ができるよ！'
-
-  return `${greeting}${intro}${capabilityText}`
+  return `${descriptionPart}${capabilityPart}`
 }
