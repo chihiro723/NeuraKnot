@@ -584,3 +584,55 @@
   margin-right: 0.5rem;
   accent-color: var(--markdown-link-color);
 }
+/* ===========================================
+   チャットメッセージの幅制限（画面はみ出し防止）
+   =========================================== */
+.markdown-chat {
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+.markdown-chat * {
+  max-width: 100%;
+}
+
+/* コードブロックとテーブルのオーバーフロー処理 */
+.markdown-chat pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.markdown-chat table {
+  max-width: 100%;
+  overflow-x: auto;
+  display: block;
+}
+
+.markdown-chat img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* 長いURL、コード、テキストの強制改行 */
+.markdown-chat p,
+.markdown-chat li,
+.markdown-chat td,
+.markdown-chat th {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* URLの強制改行 */
+.markdown-chat a {
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
+/* インラインコードの強制改行 */
+.markdown-chat code {
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
