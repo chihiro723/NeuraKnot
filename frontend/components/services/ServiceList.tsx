@@ -6,7 +6,6 @@ import { ServiceDetailModal } from "./ServiceDetailModal";
 import { LoadingSpinner } from "@/components/ui/feedback/LoadingSpinner";
 import {
   getUserServicesWithDetails,
-  getServiceTools,
   toggleServiceEnabled,
   deleteServiceConfig,
 } from "@/lib/actions/services";
@@ -17,15 +16,11 @@ import type {
   UserServiceWithDetails,
 } from "@/lib/types/service";
 
-interface ServiceListProps {
-  highlightedServiceId?: string;
-}
-
 /**
  * サービス一覧コンポーネント
  * ユーザーが登録したサービスをカードグリッドで表示
  */
-export function ServiceList({ highlightedServiceId }: ServiceListProps) {
+export function ServiceList() {
   const [userServices, setUserServices] = useState<UserServiceWithDetails[]>(
     []
   );
@@ -37,25 +32,11 @@ export function ServiceList({ highlightedServiceId }: ServiceListProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>("");
-  const [currentHighlight, setCurrentHighlight] = useState<string | undefined>(
-    highlightedServiceId
-  );
 
   // サービス一覧を読み込み
   useEffect(() => {
     loadServices();
   }, []);
-
-  // ハイライトを3秒後に消す
-  useEffect(() => {
-    if (highlightedServiceId) {
-      setCurrentHighlight(highlightedServiceId);
-      const timer = setTimeout(() => {
-        setCurrentHighlight(undefined);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [highlightedServiceId]);
 
   const loadServices = async () => {
     try {
@@ -153,10 +134,6 @@ export function ServiceList({ highlightedServiceId }: ServiceListProps) {
             isConfigured={true}
             isUnlocked={userService.config.is_enabled}
             isEnabled={userService.config.is_enabled}
-            isHighlighted={
-              currentHighlight === userService.config.id ||
-              currentHighlight === userService.service.class_name
-            }
           />
         ))}
       </div>
@@ -171,10 +148,6 @@ export function ServiceList({ highlightedServiceId }: ServiceListProps) {
           onClose={() => setIsModalOpen(false)}
           onToggleEnabled={handleToggleEnabled}
           onDelete={handleDelete}
-          isHighlighted={
-            currentHighlight === selectedService.config.id ||
-            currentHighlight === selectedService.service.class_name
-          }
         />
       )}
     </>

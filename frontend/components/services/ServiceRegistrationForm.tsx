@@ -98,8 +98,8 @@ export function ServiceRegistrationForm({
     if (onSuccess) {
       onSuccess(config);
     } else {
-      // マイサービス管理に遷移してハイライト表示
-      router.push(`/dashboard/services/my-services?highlight=${config.id}`);
+      // マイサービス管理に遷移
+      router.push(`/dashboard/services/my-services`);
     }
   };
 

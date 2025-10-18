@@ -21,7 +21,6 @@ interface ServiceDetailModalProps {
   onClose: () => void;
   onToggleEnabled?: (id: string, enabled: boolean) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
-  isHighlighted?: boolean;
 }
 
 /**
@@ -36,7 +35,6 @@ export function ServiceDetailModal({
   onClose,
   onToggleEnabled,
   onDelete,
-  isHighlighted = false,
 }: ServiceDetailModalProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
@@ -101,10 +99,7 @@ export function ServiceDetailModal({
       onClick={onClose}
     >
       <div
-        className={cn(
-          "relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-2xl bg-white dark:bg-gray-800 shadow-2xl",
-          isHighlighted && "ring-2 ring-green-500 ring-offset-2"
-        )}
+        className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-2xl bg-white dark:bg-gray-800 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ヘッダー */}

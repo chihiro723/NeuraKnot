@@ -9,7 +9,6 @@ interface ServiceCardProps {
   service: Service;
   onClick: () => void;
   isConfigured?: boolean;
-  isHighlighted?: boolean;
   isDisabled?: boolean;
   requiresAuth?: boolean;
   isUnlocked?: boolean;
@@ -24,7 +23,6 @@ export function ServiceCard({
   service,
   onClick,
   isConfigured = false,
-  isHighlighted = false,
   isDisabled = false,
   requiresAuth = false,
   isUnlocked = false,
@@ -55,8 +53,6 @@ export function ServiceCard({
           ? "bg-gradient-to-br from-yellow-50 via-amber-50 to-orange-50 dark:from-yellow-900/20 dark:via-amber-900/20 dark:to-orange-900/20 border-yellow-300 dark:border-yellow-600 shadow-lg shadow-yellow-500/20 hover:shadow-yellow-500/30"
           : isDisabled
           ? "opacity-50 cursor-not-allowed border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
-          : isHighlighted
-          ? "border-green-500 shadow-lg shadow-green-500/30 animate-pulse bg-white dark:bg-gray-800"
           : !isEnabled
           ? "border-gray-200 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-500 bg-white dark:bg-gray-800"
           : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600 bg-white dark:bg-gray-800",
@@ -152,11 +148,6 @@ export function ServiceCard({
       >
         {service.description}
       </p>
-
-      {/* ハイライトインジケーター */}
-      {isHighlighted && !isUnlocked && isEnabled && (
-        <div className="absolute top-2 right-2 w-3 h-3 bg-green-500 rounded-full animate-ping" />
-      )}
 
       {/* 無効バッジ - 右上角 */}
       {!isEnabled && (
