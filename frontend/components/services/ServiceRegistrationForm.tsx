@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ClipboardList, ArrowLeft } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/feedback/LoadingSpinner";
+import { useIsMobile } from "@/lib/hooks/useResponsive";
 import {
   listServices,
   getUserServicesWithDetails,
@@ -33,6 +34,7 @@ export function ServiceRegistrationForm({
   availableServices,
 }: ServiceRegistrationFormProps = {}) {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [services, setServices] = useState<Service[]>([]);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -113,10 +115,18 @@ export function ServiceRegistrationForm({
     return registeredServiceNames.includes(service.class_name);
   };
 
+  const handleBack = () => {
+    if (onCancel) {
+      onCancel();
+    } else {
+      router.push("/dashboard/services");
+    }
+  };
+
   return (
     <div className="flex flex-col h-full">
       {/* ヘッダー */}
-      <div className="flex justify-between items-center px-6 h-16 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
+      <div className="flex justify-between items-center h-16 px-4 bg-white border-b border-gray-200 md:h-16 md:px-6 dark:bg-gray-900 dark:border-gray-700">
         <div className="flex items-center space-x-3">
           <div className="flex justify-center items-center w-10 h-10 bg-green-100 rounded-lg dark:bg-green-500/20">
             <ClipboardList className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -130,10 +140,12 @@ export function ServiceRegistrationForm({
             </p>
           </div>
         </div>
-        {onCancel && (
+        {/* 戻るボタン（モバイルのみ、右側に配置） */}
+        {isMobile && (
           <button
-            onClick={onCancel}
-            className="p-2 text-gray-400 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+            onClick={handleBack}
+            className="flex items-center justify-center p-2 text-gray-600 bg-gray-50/80 transition-all duration-200 dark:text-gray-300 dark:bg-gray-800/50 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-gray-700 rounded-lg"
+            title="戻る"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -141,39 +153,41 @@ export function ServiceRegistrationForm({
       </div>
 
       {/* サービスカードグリッド */}
-      {isLoading ? (
-        <div className="flex flex-col flex-1 justify-center items-center">
-          <LoadingSpinner />
-        </div>
-      ) : (
-        <div className="overflow-y-auto flex-1 p-6">
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {services.map((service) => {
-              const isRegistered = isServiceRegistered(service);
-              const needsAuth =
-                service.auth_schema &&
-                Object.keys(service.auth_schema.properties || {}).length > 0;
-
-              return (
-                <ServiceCard
-                  key={service.class_name}
-                  service={service}
-                  onClick={() => {
-                    if (!isRegistered) {
-                      handleServiceClick(service);
-                    }
-                  }}
-                  isConfigured={isRegistered}
-                  isDisabled={isRegistered}
-                  requiresAuth={needsAuth}
-                  isUnlocked={isRegistered}
-                  isEnabled={true}
-                />
-              );
-            })}
+      <div className="flex flex-col flex-1 overflow-hidden bg-gray-50 dark:bg-gray-900">
+        {isLoading ? (
+          <div className="flex flex-1 justify-center items-center">
+            <LoadingSpinner />
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="overflow-y-auto flex-1 p-4 md:p-6">
+            <div className="grid grid-cols-3 gap-3 md:gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {services.map((service) => {
+                const isRegistered = isServiceRegistered(service);
+                const needsAuth =
+                  service.auth_schema &&
+                  Object.keys(service.auth_schema.properties || {}).length > 0;
+
+                return (
+                  <ServiceCard
+                    key={service.class_name}
+                    service={service}
+                    onClick={() => {
+                      if (!isRegistered) {
+                        handleServiceClick(service);
+                      }
+                    }}
+                    isConfigured={isRegistered}
+                    isDisabled={isRegistered}
+                    requiresAuth={needsAuth}
+                    isUnlocked={isRegistered}
+                    isEnabled={true}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* 登録モーダル */}
       <ServiceRegistrationModal
