@@ -7,11 +7,13 @@ import { LoadingSpinner } from "@/components/ui/feedback/LoadingSpinner";
 import {
   listServices,
   getUserServicesWithDetails,
+  getServiceTools,
 } from "@/lib/actions/services";
 import type {
   Service,
   ServiceConfig,
   UserServiceWithDetails,
+  Tool,
 } from "@/lib/types/service";
 import { ServiceCard } from "./ServiceCard";
 import { ServiceRegistrationModal } from "./ServiceRegistrationModal";
@@ -38,6 +40,7 @@ export function ServiceRegistrationForm({
     []
   );
   const [isLoading, setIsLoading] = useState(true);
+  const [serviceTools, setServiceTools] = useState<Record<string, Tool[]>>({});
 
   // サービス一覧とユーザーサービスを取得
   useEffect(() => {
@@ -52,10 +55,27 @@ export function ServiceRegistrationForm({
         // ユーザーが既に登録しているサービスを取得
         const userServicesData = await getUserServicesWithDetails();
         setUserServices((userServicesData || []) as UserServiceWithDetails[]);
+
+        // 各サービスのツール一覧を事前に取得
+        const toolsMap: Record<string, Tool[]> = {};
+        for (const service of servicesData || []) {
+          try {
+            const tools = await getServiceTools(service.class_name);
+            toolsMap[service.class_name] = tools || [];
+          } catch (err) {
+            console.error(
+              `Failed to load tools for ${service.class_name}:`,
+              err
+            );
+            toolsMap[service.class_name] = [];
+          }
+        }
+        setServiceTools(toolsMap);
       } catch (err) {
         console.error("Failed to load services:", err);
         setServices([]);
         setUserServices([]);
+        setServiceTools({});
       } finally {
         setIsLoading(false);
       }
@@ -122,11 +142,11 @@ export function ServiceRegistrationForm({
 
       {/* サービスカードグリッド */}
       {isLoading ? (
-        <div className="flex flex-col flex-1 justify-center items-center bg-white dark:bg-gray-900">
+        <div className="flex flex-col flex-1 justify-center items-center">
           <LoadingSpinner />
         </div>
       ) : (
-        <div className="overflow-y-auto flex-1 p-6 bg-white dark:bg-gray-900">
+        <div className="overflow-y-auto flex-1 p-6">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {services.map((service) => {
               const isRegistered = isServiceRegistered(service);
@@ -158,6 +178,9 @@ export function ServiceRegistrationForm({
       {/* 登録モーダル */}
       <ServiceRegistrationModal
         service={selectedService}
+        tools={
+          selectedService ? serviceTools[selectedService.class_name] || [] : []
+        }
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
