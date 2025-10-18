@@ -2,13 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import {
-  Settings,
-  Plus,
-  Code,
-  ChevronRight,
-  ClipboardList,
-} from "lucide-react";
+import { Server, Plus, Code, ChevronRight, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 /**
@@ -20,8 +14,8 @@ export function ServiceListSidebar() {
   const menuItems = [
     {
       href: "/dashboard/services/my-services",
-      icon: Settings,
-      title: "マイサービス管理",
+      icon: Server,
+      title: "マイサービス",
       description: "登録済みサービス一覧",
       comingSoon: false,
     },
