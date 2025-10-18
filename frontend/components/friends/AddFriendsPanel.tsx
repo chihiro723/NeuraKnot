@@ -103,14 +103,14 @@ export function AddFriendsPanel({ user }: AddFriendsPanelProps) {
         ) : (
           <div className="flex flex-col h-full">
             {/* ヘッダー */}
-            <div className="p-4 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
+            <div className="flex items-center px-4 h-16 bg-white border-b border-gray-200 sm:h-16 sm:px-6 dark:bg-gray-900 dark:border-gray-700">
               <h1 className="text-xl font-bold text-gray-900 dark:text-white">
                 追加
               </h1>
             </div>
 
             {/* 選択カード */}
-            <div className="flex overflow-y-auto flex-1 justify-center items-start p-4 pb-8">
+            <div className="flex overflow-y-auto flex-1 justify-center items-start p-4 pb-8 sm:p-6">
               <div className="space-y-4 w-full">
                 {addTypes.map((type) => {
                   const Icon = type.icon;
@@ -122,7 +122,7 @@ export function AddFriendsPanel({ user }: AddFriendsPanelProps) {
                       }
                       disabled={type.comingSoon}
                       className={cn(
-                        "relative w-full bg-white dark:bg-gray-800 rounded-xl border p-6 shadow-sm hover:shadow-md transition-all duration-200 text-left block min-h-[104px]",
+                        "relative w-full bg-white dark:bg-gray-800 rounded-xl border p-4 sm:p-6 shadow-sm hover:shadow-md transition-all duration-200 text-left block min-h-[104px]",
                         type.comingSoon
                           ? "opacity-60 cursor-not-allowed border-gray-300 dark:border-gray-700"
                           : "border-gray-300 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600"
@@ -226,7 +226,7 @@ export function AddFriendsRightPanel({
   return (
     <>
       {/* ヘッダー */}
-      <div className="flex justify-between items-center px-6 h-16 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
+      <div className="flex justify-between items-center px-4 h-16 bg-white border-b border-gray-200 sm:h-16 sm:px-6 dark:bg-gray-900 dark:border-gray-700">
         <div className="flex items-center space-x-3">
           <div className="flex justify-center items-center w-10 h-10 bg-green-100 rounded-lg dark:bg-green-500/20">
             <UserPlus className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -244,7 +244,7 @@ export function AddFriendsRightPanel({
 
       {/* メインコンテンツエリア */}
       <div className="flex flex-1 justify-center items-center bg-gray-50 dark:bg-gray-900">
-        <div className="p-8 text-center">
+        <div className="p-4 text-center sm:p-8">
           <div className="flex justify-center items-center mx-auto mb-4 w-16 h-16 bg-green-100 rounded-2xl shadow-lg dark:bg-green-500/20 shadow-green-500/20">
             <UserPlus className="w-8 h-8 text-green-600 drop-shadow-[0_0_8px_rgba(34,197,94,0.5)] dark:text-green-400" />
           </div>
@@ -534,16 +534,8 @@ export function AIAgentCreationPanel({
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
       {/* ヘッダー */}
-      <div className="flex items-center px-6 h-16 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
+      <div className="flex justify-between items-center px-4 h-16 bg-white border-b border-gray-200 sm:h-16 sm:px-6 dark:bg-gray-900 dark:border-gray-700">
         <div className="flex items-center space-x-3">
-          {!isDesktop && (
-            <button
-              onClick={onBack}
-              className="p-2 -ml-2 text-gray-400 rounded-lg transition-all dark:text-gray-500 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              <ArrowRight className="w-5 h-5 rotate-180" />
-            </button>
-          )}
           <div className="flex justify-center items-center w-10 h-10 bg-green-100 rounded-lg dark:bg-green-500/20">
             <Bot className="w-5 h-5 text-green-600 drop-shadow-[0_0_8px_rgba(34,197,94,0.5)] dark:text-green-400" />
           </div>
@@ -556,13 +548,23 @@ export function AIAgentCreationPanel({
             </p>
           </div>
         </div>
+        {/* 戻るボタン（モバイルのみ、右側に配置） */}
+        {!isDesktop && (
+          <button
+            onClick={onBack}
+            className="flex justify-center items-center p-2 text-gray-600 rounded-lg transition-all duration-200 bg-gray-50/80 dark:text-gray-300 dark:bg-gray-800/50 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-gray-700"
+            title="戻る"
+          >
+            <ArrowRight className="w-5 h-5 rotate-180" />
+          </button>
+        )}
       </div>
 
       {/* フォーム */}
       <div className="overflow-y-auto flex-1">
         <form
           onSubmit={handleSubmit}
-          className="p-8 mx-auto space-y-10 max-w-2xl"
+          className="p-4 mx-auto space-y-8 max-w-2xl sm:p-8 sm:space-y-10"
         >
           {/* セクション1: 基本情報 */}
           <div className="space-y-6">
@@ -1143,16 +1145,8 @@ export function UserFriendAddPanel({
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
       {/* ヘッダー */}
-      <div className="flex items-center px-6 h-16 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
+      <div className="flex justify-between items-center px-4 h-16 bg-white border-b border-gray-200 sm:h-16 sm:px-6 dark:bg-gray-900 dark:border-gray-700">
         <div className="flex items-center space-x-3">
-          {!isDesktop && (
-            <button
-              onClick={onBack}
-              className="p-2 -ml-2 text-gray-400 rounded-lg transition-all dark:text-gray-500 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              <ArrowRight className="w-5 h-5 rotate-180" />
-            </button>
-          )}
           <div className="flex justify-center items-center w-10 h-10 bg-gray-100 rounded-lg dark:bg-gray-800">
             <User className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </div>
@@ -1165,11 +1159,21 @@ export function UserFriendAddPanel({
             </p>
           </div>
         </div>
+        {/* 戻るボタン（モバイルのみ、右側に配置） */}
+        {!isDesktop && (
+          <button
+            onClick={onBack}
+            className="flex justify-center items-center p-2 text-gray-600 rounded-lg transition-all duration-200 bg-gray-50/80 dark:text-gray-300 dark:bg-gray-800/50 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-gray-700"
+            title="戻る"
+          >
+            <ArrowRight className="w-5 h-5 rotate-180" />
+          </button>
+        )}
       </div>
 
       {/* コンテンツ */}
       <div className="overflow-y-auto flex-1">
-        <div className="p-8 mx-auto space-y-10 max-w-2xl">
+        <div className="p-4 mx-auto space-y-8 max-w-2xl sm:p-8 sm:space-y-10">
           {/* 検索セクション */}
           <div className="space-y-4">
             <div className="pb-3 border-b border-gray-200 dark:border-gray-800">
@@ -1335,16 +1339,8 @@ export function GroupCreationPanel({
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
       {/* ヘッダー */}
-      <div className="flex items-center px-6 h-16 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
+      <div className="flex justify-between items-center px-4 h-16 bg-white border-b border-gray-200 sm:h-16 sm:px-6 dark:bg-gray-900 dark:border-gray-700">
         <div className="flex items-center space-x-3">
-          {!isDesktop && (
-            <button
-              onClick={onBack}
-              className="p-2 -ml-2 text-gray-400 rounded-lg transition-all dark:text-gray-500 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              <ArrowRight className="w-5 h-5 rotate-180" />
-            </button>
-          )}
           <div className="flex justify-center items-center w-10 h-10 bg-gray-100 rounded-lg dark:bg-gray-800">
             <Handshake className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           </div>
@@ -1357,13 +1353,23 @@ export function GroupCreationPanel({
             </p>
           </div>
         </div>
+        {/* 戻るボタン（モバイルのみ、右側に配置） */}
+        {!isDesktop && (
+          <button
+            onClick={onBack}
+            className="flex justify-center items-center p-2 text-gray-600 rounded-lg transition-all duration-200 bg-gray-50/80 dark:text-gray-300 dark:bg-gray-800/50 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-gray-700"
+            title="戻る"
+          >
+            <ArrowRight className="w-5 h-5 rotate-180" />
+          </button>
+        )}
       </div>
 
       {/* フォーム */}
       <div className="overflow-y-auto flex-1">
         <form
           onSubmit={handleSubmit}
-          className="p-8 mx-auto space-y-10 max-w-2xl"
+          className="p-4 mx-auto space-y-8 max-w-2xl sm:p-8 sm:space-y-10"
         >
           {/* グループ名入力 */}
           <div className="space-y-6">
