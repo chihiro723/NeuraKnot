@@ -255,5 +255,27 @@ export async function toggleServiceEnabled(
   })
 }
 
+/**
+ * サービスの認証情報を検証
+ */
+export async function validateServiceAuth(
+  serviceClass: string,
+  auth: Record<string, any>
+): Promise<{ valid: boolean; error?: string }> {
+  const headers = await getHeaders()
+  
+  const response = await fetch(`${BACKEND_GO_URL}/api/v1/services/validate`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ service_class: serviceClass, auth }),
+  })
+  
+  if (!response.ok) {
+    throw new Error('検証リクエストに失敗しました')
+  }
+  
+  return response.json()
+}
+
 
 

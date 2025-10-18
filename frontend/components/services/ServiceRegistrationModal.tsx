@@ -4,7 +4,7 @@ import { useState } from "react";
 import { X, Plus, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { getServiceIcon, getServiceGradient } from "@/lib/utils/serviceIcons";
-import { registerService } from "@/lib/actions/services";
+import { registerService, validateServiceAuth } from "@/lib/actions/services";
 import type { Service, ServiceConfig, Tool } from "@/lib/types/service";
 
 interface ServiceRegistrationModalProps {
@@ -40,9 +40,19 @@ export function ServiceRegistrationModal({
   const gradientClass = getServiceGradient(service.name);
 
   // 認証が必要かチェック
-  const requiresAuth =
+  const requiresAuth = Boolean(
     service.auth_schema &&
-    Object.keys(service.auth_schema.properties || {}).length > 0;
+      service.auth_schema.properties &&
+      Object.keys(service.auth_schema.properties).length > 0
+  );
+
+  // デバッグ用ログ
+  console.log("Service auth check:", {
+    serviceName: service.name,
+    hasAuthSchema: !!service.auth_schema,
+    authProperties: service.auth_schema?.properties,
+    requiresAuth,
+  });
 
   // ツールをカテゴリ別にグループ化
   const groupedTools = tools.reduce((acc, tool) => {
@@ -70,6 +80,45 @@ export function ServiceRegistrationModal({
     setIsSubmitting(true);
 
     try {
+      // 認証が必要な場合は検証を実行
+      if (requiresAuth) {
+        console.log(
+          "Validating auth for service:",
+          service.class_name,
+          "with data:",
+          authData
+        );
+
+        // 認証情報が入力されているかチェック
+        const hasAuthData = Object.values(authData).some(
+          (value) => value && value.trim() !== ""
+        );
+        if (!hasAuthData) {
+          console.log("No auth data provided");
+          setError("認証情報を入力してください");
+          setIsSubmitting(false);
+          return;
+        }
+
+        console.log("Calling validateServiceAuth...");
+        const validation = await validateServiceAuth(
+          service.class_name,
+          authData
+        );
+
+        console.log("Validation result:", validation);
+
+        if (!validation.valid) {
+          setError(validation.error || "認証情報が正しくありません");
+          setIsSubmitting(false);
+          return;
+        }
+
+        console.log("Auth validation successful");
+      } else {
+        console.log("No auth required for service:", service.class_name);
+      }
+
       const config = await registerService(
         service.class_name,
         undefined,
@@ -330,7 +379,7 @@ export function ServiceRegistrationModal({
             {isSubmitting ? (
               <>
                 <div className="w-4 h-4 rounded-full border-2 border-white animate-spin border-t-transparent" />
-                <span>登録中...</span>
+                <span>接続確認中...</span>
               </>
             ) : (
               <>
