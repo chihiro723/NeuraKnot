@@ -103,10 +103,10 @@ export function ToolUsageIndicator({
             {/* 詳細（展開時） - アニメーション付き */}
             <div
               className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                isExpanded ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+                isExpanded ? "max-h-screen opacity-100" : "max-h-0 opacity-0"
               }`}
             >
-              <div className="px-3 pb-2.5 pt-2.5 space-y-2 border-t border-current/10 bg-white/30 dark:bg-gray-900/30">
+              <div className="px-3 pb-2.5 pt-2.5 space-y-2 border-t border-current/10 bg-white/30 dark:bg-gray-900/30 max-h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
                 {/* 入力 */}
                 {tool.input && (
                   <div className="space-y-1">
@@ -114,7 +114,7 @@ export function ToolUsageIndicator({
                       入力
                     </span>
                     <div className="p-2 text-xs text-gray-700 bg-gray-50 rounded border border-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:border-gray-700">
-                      <pre className="font-mono leading-relaxed whitespace-pre-wrap break-words">
+                      <pre className="font-mono leading-relaxed whitespace-pre-wrap break-words overflow-x-auto">
                         {typeof tool.input === "string"
                           ? tool.input
                           : JSON.stringify(tool.input, null, 2)}
@@ -130,8 +130,10 @@ export function ToolUsageIndicator({
                       結果
                     </span>
                     <div className="p-2 text-xs text-gray-700 bg-gray-50 rounded border border-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:border-gray-700">
-                      <pre className="font-mono leading-relaxed whitespace-pre-wrap break-words">
-                        {tool.output}
+                      <pre className="font-mono leading-relaxed whitespace-pre-wrap break-words overflow-x-auto max-w-none">
+                        {typeof tool.output === "string"
+                          ? tool.output
+                          : JSON.stringify(tool.output, null, 2)}
                       </pre>
                     </div>
                   </div>
@@ -144,7 +146,7 @@ export function ToolUsageIndicator({
                       エラー
                     </span>
                     <div className="p-2 text-xs text-red-800 bg-red-50 rounded border border-red-300 dark:text-red-200 dark:bg-red-900/30 dark:border-red-700">
-                      <pre className="font-mono leading-relaxed whitespace-pre-wrap break-words">
+                      <pre className="font-mono leading-relaxed whitespace-pre-wrap break-words overflow-x-auto">
                         {tool.error}
                       </pre>
                     </div>
