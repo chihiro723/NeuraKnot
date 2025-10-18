@@ -73,7 +73,7 @@ export function StreamingMessage({
       return (
         <>
           {content && (
-            <div className="max-w-none text-sm leading-relaxed break-words lg:text-base overflow-wrap-anywhere markdown-chat">
+            <div className="max-w-full text-sm leading-relaxed break-words lg:text-base overflow-wrap-anywhere word-break-break-word markdown-chat">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {content}
               </ReactMarkdown>
@@ -98,7 +98,7 @@ export function StreamingMessage({
       return (
         <>
           {content && (
-            <div className="max-w-none text-sm leading-relaxed break-words lg:text-base overflow-wrap-anywhere markdown-chat">
+            <div className="max-w-full text-sm leading-relaxed break-words lg:text-base overflow-wrap-anywhere word-break-break-word markdown-chat">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {content}
               </ReactMarkdown>
@@ -123,7 +123,7 @@ export function StreamingMessage({
           segments.push(
             <div
               key={`text-${index}`}
-              className="max-w-none text-sm leading-relaxed break-words lg:text-base overflow-wrap-anywhere markdown-chat"
+              className="max-w-full text-sm leading-relaxed break-words lg:text-base overflow-wrap-anywhere word-break-break-word markdown-chat"
             >
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {textSegment}
@@ -148,7 +148,7 @@ export function StreamingMessage({
         segments.push(
           <div
             key="text-final"
-            className="max-w-none text-sm leading-relaxed break-words lg:text-base overflow-wrap-anywhere markdown-chat"
+            className="max-w-full text-sm leading-relaxed break-words lg:text-base overflow-wrap-anywhere word-break-break-word markdown-chat"
           >
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {remainingText}
@@ -162,15 +162,15 @@ export function StreamingMessage({
   };
 
   return (
-    <div className="flex justify-start px-2">
-      <div className="flex items-start space-x-3 max-w-[85%] lg:max-w-[75%]">
+    <div className="flex overflow-hidden justify-start px-2 w-full">
+      <div className="flex items-start space-x-2 md:space-x-3 max-w-[95%] md:max-w-[85%] lg:max-w-[75%]">
         {/* アイコン（クリック可能） */}
         <button
           onClick={handleAvatarClick}
           disabled={!agentId}
-          className={`flex overflow-hidden flex-shrink-0 justify-center items-center w-10 h-10 bg-green-500 rounded-full transition-all duration-200 ${
+          className={`flex overflow-hidden flex-shrink-0 justify-center items-center w-8 h-8 md:w-10 md:h-10 bg-green-500 rounded-full transition-all duration-200 ${
             agentId
-              ? "hover:bg-green-600 hover:scale-105 cursor-pointer shadow-md hover:shadow-lg"
+              ? "shadow-md cursor-pointer hover:bg-green-600 hover:scale-105 hover:shadow-lg"
               : "cursor-default"
           }`}
           title={agentId ? "エージェントの詳細を表示" : ""}
@@ -182,23 +182,26 @@ export function StreamingMessage({
               className="object-cover w-full h-full"
             />
           ) : (
-            <span className="text-sm font-medium text-white">
+            <span className="text-xs font-medium text-white md:text-sm">
               {name.charAt(0)}
             </span>
           )}
         </button>
 
         {/* 右側のコンテンツ */}
-        <div className="flex overflow-hidden flex-col space-y-1 min-w-0">
+        <div className="flex overflow-hidden flex-col space-y-1 min-w-0 max-w-full">
           {/* 名前 */}
-          <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+          <span className="text-xs font-medium text-gray-600 md:text-sm dark:text-gray-400">
             {name}
           </span>
 
-          <div className="flex flex-col space-y-2 min-w-0">
-            <div className="flex space-x-2 min-w-0">
+          <div className="flex flex-col space-y-2 min-w-0 max-w-full">
+            <div className="flex space-x-2 min-w-0 max-w-full">
               {/* メッセージバブル */}
-              <div className="px-4 py-3 text-gray-900 bg-white rounded-2xl rounded-tl-sm border border-gray-200 shadow-sm dark:text-gray-100 dark:bg-gray-800 dark:border-gray-700">
+              <div
+                className="overflow-hidden px-3 py-2 min-w-0 max-w-full text-gray-900 break-words bg-white rounded-2xl rounded-tl-sm border border-gray-200 shadow-sm md:px-4 md:py-3 dark:text-gray-100 dark:bg-gray-800 dark:border-gray-700"
+                style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}
+              >
                 {/* メッセージとツールを時系列順に表示 */}
                 {renderContentWithTools()}
               </div>
@@ -217,12 +220,12 @@ export function StreamingMessage({
                   title={showCursor ? "生成中..." : "コピー"}
                 >
                   {copied ? (
-                    <Check className="w-4 h-4" />
+                    <Check className="w-3 h-3 md:w-4 md:h-4" />
                   ) : (
-                    <Copy className="w-4 h-4" />
+                    <Copy className="w-3 h-3 md:w-4 md:h-4" />
                   )}
                 </button>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
+                <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
                   {isClient ? formatTime() : "--:--"}
                 </span>
               </div>

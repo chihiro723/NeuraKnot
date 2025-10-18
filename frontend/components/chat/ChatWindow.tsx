@@ -596,9 +596,9 @@ export function ChatWindow({
       {/* メッセージエリア */}
       <div
         ref={messagesContainerRef}
-        className="overflow-y-auto overflow-x-hidden flex-1 pt-4 px-4 pb-0 bg-gray-50 dark:bg-gray-900 lg:pt-6 lg:px-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        className="overflow-y-auto overflow-x-hidden flex-1 pt-4 px-3 pb-0 md:px-4 w-full bg-gray-50 dark:bg-gray-900 lg:pt-6 lg:px-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
           {messages.map((message) => (
             <div
               key={message.id}
@@ -608,17 +608,17 @@ export function ChatWindow({
               }`}
             >
               <div
-                className={`flex items-end space-x-3 ${
+                className={`flex items-end space-x-2 md:space-x-3 ${
                   message.sender_type === "user"
-                    ? "flex-row-reverse space-x-reverse max-w-[85%] lg:max-w-[75%]"
-                    : ""
+                    ? "flex-row-reverse space-x-reverse max-w-[95%] md:max-w-[90%]"
+                    : "max-w-[95%] md:max-w-[90%] overflow-hidden"
                 }`}
               >
                 {message.sender_type === "user" ? (
                   /* 自分のメッセージ（右側） */
                   <div className="flex flex-row-reverse flex-1 items-start space-x-3 space-x-reverse min-w-0">
                     {/* 自分のアイコン */}
-                    <div className="flex overflow-hidden flex-shrink-0 justify-center items-center w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full shadow-md shadow-green-500/40">
+                    <div className="flex overflow-hidden flex-shrink-0 justify-center items-center w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full shadow-md shadow-green-500/40">
                       {currentUser?.avatar_url ? (
                         <img
                           src={currentUser.avatar_url}
@@ -626,7 +626,7 @@ export function ChatWindow({
                           className="object-cover w-full h-full"
                         />
                       ) : (
-                        <span className="text-sm font-medium text-white">
+                        <span className="text-xs md:text-sm font-medium text-white">
                           {(
                             currentUser?.display_name ||
                             currentUser?.username ||
@@ -637,28 +637,28 @@ export function ChatWindow({
                     </div>
 
                     {/* 右側のコンテンツ */}
-                    <div className="flex overflow-hidden flex-col flex-1 items-end space-y-1 min-w-0">
+                    <div className="flex overflow-hidden flex-col flex-1 items-end space-y-1 min-w-0 max-w-full">
                       {/* 名前 */}
-                      <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      <span className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400">
                         {currentUser?.display_name ||
                           currentUser?.username ||
                           "あなた"}
                       </span>
 
-                      <div className="flex space-x-2 min-w-0">
+                      <div className="flex space-x-2 min-w-0 max-w-full">
                         {/* タイムスタンプ（吹き出しの左側、下） */}
-                        <span className="flex-shrink-0 self-end pb-1 text-xs text-gray-500 dark:text-gray-400">
+                        <span className="flex-shrink-0 self-end pb-1 text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
                           {isClient ? formatTime(message.created_at) : "--:--"}
                         </span>
 
                         {/* メッセージバブル */}
                         <div
                           className={cn(
-                            "px-4 py-3 min-w-0 rounded-2xl rounded-tr-sm shadow-sm",
+                            "px-3 py-2 md:px-4 md:py-3 min-w-0 max-w-full overflow-hidden break-words rounded-2xl rounded-tr-sm shadow-sm",
                             "text-white bg-gradient-to-br from-green-500 to-emerald-600 shadow-green-500/30"
                           )}
                         >
-                          <div className="max-w-none text-sm leading-relaxed break-words lg:text-base overflow-wrap-anywhere markdown-chat">
+                          <div className="text-sm leading-relaxed break-words lg:text-base overflow-wrap-anywhere word-break-break-word markdown-chat max-w-full">
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                               {message.content}
                             </ReactMarkdown>
@@ -715,14 +715,14 @@ export function ChatWindow({
               <div className="flex items-start space-x-3">
                 {/* アイコン */}
                 <div className="flex overflow-hidden flex-shrink-0 justify-center items-center w-10 h-10 bg-green-500 rounded-full">
-                  <span className="text-sm font-medium text-white">
+                  <span className="text-xs md:text-sm font-medium text-white">
                     {selectedChat.name.charAt(0)}
                   </span>
                 </div>
 
                 {/* 名前とバブル */}
                 <div className="flex flex-col space-y-1">
-                  <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  <span className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400">
                     {selectedChat.name}
                   </span>
 
@@ -751,7 +751,7 @@ export function ChatWindow({
       </div>
 
       {/* 入力エリア */}
-      <div className="flex-shrink-0 px-4 pt-0 pb-4 bg-gray-50 dark:bg-gray-900">
+      <div className="flex-shrink-0 px-3 md:px-4 pt-0 pb-3 md:pb-4 bg-gray-50 dark:bg-gray-900">
         <div className="relative w-full">
           {/* 統合されたモダンな入力コンテナ */}
           <div
