@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"backend-go/internal/crypto"
@@ -343,4 +344,172 @@ func (u *ServiceUsecase) ExecuteTool(userID uuid.UUID, serviceClass, toolName st
 	}
 
 	return result, nil
+}
+
+// ValidateServiceAuth サービスの認証情報を検証
+func (u *ServiceUsecase) ValidateServiceAuth(serviceClass string, auth map[string]interface{}) error {
+	u.logger.Info("Starting service auth validation", "service_class", serviceClass, "auth_keys", getAuthKeys(auth))
+
+	// Built-inサービス（認証不要）の場合は検証をスキップ
+	if u.isBuiltInService(serviceClass) {
+		u.logger.Info("Skipping validation for built-in service", "service_class", serviceClass)
+		return nil
+	}
+
+	// 検証用ツールとパラメータを選択
+	toolName, arguments := u.getValidationToolAndArgs(serviceClass)
+	if toolName == "" {
+		return fmt.Errorf("サービス '%s' の検証ツールが見つかりません", serviceClass)
+	}
+	u.logger.Info("Selected validation tool", "tool_name", toolName, "arguments", arguments)
+
+	// Python APIへリクエスト
+	url := fmt.Sprintf("%s/api/v1/services/%s/execute", u.pythonServiceURL, serviceClass)
+	u.logger.Info("Calling Python API", "url", url)
+
+	requestBody := map[string]interface{}{
+		"tool_name": toolName,
+		"arguments": arguments,
+		"config":    map[string]interface{}{},
+		"auth":      auth,
+	}
+
+	jsonBody, err := json.Marshal(requestBody)
+	if err != nil {
+		return fmt.Errorf("リクエストのシリアライズに失敗しました: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return fmt.Errorf("リクエストの作成に失敗しました: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := u.httpClient.Do(req)
+	if err != nil {
+		u.logger.Error("Failed to validate service auth via Python API", "error", err, "service_class", serviceClass)
+		return fmt.Errorf("接続の確認に失敗しました: %w", err)
+	}
+	defer resp.Body.Close()
+
+	u.logger.Info("Python API response received", "status_code", resp.StatusCode)
+
+	// ステータスコードで認証の成否を判定
+	switch resp.StatusCode {
+	case http.StatusOK:
+		// レスポンスボディを確認してエラーメッセージがないかチェック
+		body, _ := io.ReadAll(resp.Body)
+		var result map[string]interface{}
+		if err := json.Unmarshal(body, &result); err != nil {
+			u.logger.Error("Failed to parse Python API response", "error", err, "body", string(body))
+			return fmt.Errorf("レスポンスの解析に失敗しました")
+		}
+
+		u.logger.Info("Python API response parsed", "success", result["success"], "result", result["result"])
+
+		// successフィールドをチェック
+		if success, ok := result["success"].(bool); ok {
+			if !success {
+				// エラーメッセージを取得
+				if errorMsg, ok := result["error"].(string); ok && errorMsg != "" {
+					return fmt.Errorf("認証情報が正しくありません: %s", errorMsg)
+				}
+				// resultフィールドにエラーメッセージがある場合
+				if resultMsg, ok := result["result"].(string); ok && resultMsg != "" {
+					return fmt.Errorf("認証情報が正しくありません: %s", resultMsg)
+				}
+				return fmt.Errorf("認証情報が正しくありません")
+			}
+		} else {
+			u.logger.Error("Invalid response format from Python API", "response", result)
+			return fmt.Errorf("無効なレスポンス形式です")
+		}
+
+		// successがtrueでも、resultフィールドにエラーメッセージが含まれている場合は失敗とする
+		if resultMsg, ok := result["result"].(string); ok && resultMsg != "" {
+			// エラーメッセージのパターンをチェック
+			if strings.Contains(resultMsg, "エラー:") ||
+				strings.Contains(resultMsg, "error") ||
+				strings.Contains(resultMsg, "無効") ||
+				strings.Contains(resultMsg, "invalid") ||
+				strings.Contains(resultMsg, "unauthorized") ||
+				strings.Contains(resultMsg, "forbidden") {
+				u.logger.Info("Auth validation failed due to error in result", "result", resultMsg)
+				return fmt.Errorf("認証情報が正しくありません: %s", resultMsg)
+			}
+		}
+
+		u.logger.Info("Service auth validation successful", "service_class", serviceClass)
+		return nil // 認証成功
+	case http.StatusUnauthorized, http.StatusForbidden:
+		return fmt.Errorf("認証情報が正しくありません。APIキーを確認してください")
+	case http.StatusNotFound:
+		return fmt.Errorf("サービスが見つかりません")
+	case http.StatusTooManyRequests:
+		return fmt.Errorf("レート制限を超えました。しばらく待ってから再試行してください")
+	default:
+		body, _ := io.ReadAll(resp.Body)
+		u.logger.Error("Python API returned error during validation", "status", resp.StatusCode, "body", string(body))
+		return fmt.Errorf("接続の確認に失敗しました（ステータス: %d）", resp.StatusCode)
+	}
+}
+
+// getAuthKeys 認証情報のキー一覧を取得（ログ用）
+func getAuthKeys(auth map[string]interface{}) []string {
+	keys := make([]string, 0, len(auth))
+	for key := range auth {
+		keys = append(keys, key)
+	}
+	return keys
+}
+
+// isBuiltInService サービスがBuilt-inサービスかどうかを判定
+func (u *ServiceUsecase) isBuiltInService(serviceClass string) bool {
+	builtInServices := map[string]bool{
+		"DateTimeService":    true,
+		"CalculationService": true,
+		"TextService":        true,
+		"DataService":        true,
+		"UtilityService":     true,
+	}
+	return builtInServices[serviceClass]
+}
+
+// getValidationToolAndArgs サービスごとに適切な検証用ツールとパラメータを選択
+func (u *ServiceUsecase) getValidationToolAndArgs(serviceClass string) (string, map[string]interface{}) {
+	switch serviceClass {
+	// API Wrapper サービス（認証が必要）
+	case "SlackService":
+		return "list_channels", map[string]interface{}{"limit": 1}
+	case "NotionService":
+		return "search_pages", map[string]interface{}{"query": "", "page_size": 1}
+	case "BraveSearchService":
+		return "web_search", map[string]interface{}{"query": "test", "count": 1}
+	case "GoogleCalendarService":
+		return "list_calendars", map[string]interface{}{}
+	case "OpenWeatherService":
+		return "get_current_weather", map[string]interface{}{"city": "Tokyo"}
+	case "ExchangeRateService":
+		return "get_exchange_rate", map[string]interface{}{"from": "USD", "to": "JPY"}
+	case "IPApiService":
+		return "get_ip_info", map[string]interface{}{"ip": "8.8.8.8"}
+
+	// Built-in サービス（認証不要）
+	case "DateTimeService":
+		return "get_current_time", map[string]interface{}{}
+	case "CalculationService":
+		return "add", map[string]interface{}{"a": 1, "b": 1}
+	case "TextService":
+		return "count_words", map[string]interface{}{"text": "test"}
+	case "DataService":
+		return "generate_uuid", map[string]interface{}{}
+	case "UtilityService":
+		return "generate_password", map[string]interface{}{"length": 8}
+
+	default:
+		// 未知のサービスはエラーを返す
+		u.logger.Error("Unknown service class for validation", "service_class", serviceClass)
+		return "", map[string]interface{}{}
+	}
 }

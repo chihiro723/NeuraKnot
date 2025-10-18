@@ -42,14 +42,8 @@ type UpdateServiceConfigInput struct {
 	IsEnabled *bool                  `json:"is_enabled"`
 }
 
-
-
-
-
-
-
-
-
-
-
-
+// ValidateServiceAuthInput サービス認証情報検証時の入力
+type ValidateServiceAuthInput struct {
+	ServiceClass string                 `json:"service_class" binding:"required"`
+	Auth         map[string]interface{} `json:"auth" binding:"required"`
+}

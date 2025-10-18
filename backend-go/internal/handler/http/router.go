@@ -170,6 +170,7 @@ func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *A
 			{
 				services.GET("", serviceHandler.ListServices)
 				services.GET("/:service_class/tools", serviceHandler.GetServiceTools)
+				services.POST("/validate", serviceHandler.ValidateServiceAuth)
 
 				// サービス設定のCRUD
 				services.POST("/config", serviceHandler.CreateServiceConfig)

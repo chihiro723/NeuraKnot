@@ -221,3 +221,30 @@ func (h *ServiceHandler) DeleteServiceConfig(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+// ValidateServiceAuth サービスの認証情報を検証
+// @Summary サービス認証情報検証
+// @Description サービスの認証情報が正しいか検証
+// @Tags Services
+// @Accept json
+// @Produce json
+// @Param input body service.ValidateServiceAuthInput true "検証情報"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/services/validate [post]
+func (h *ServiceHandler) ValidateServiceAuth(c *gin.Context) {
+	var input service.ValidateServiceAuthInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "入力が不正です", "details": err.Error()})
+		return
+	}
+
+	if err := h.serviceUsecase.ValidateServiceAuth(input.ServiceClass, input.Auth); err != nil {
+		c.JSON(http.StatusOK, gin.H{
+			"valid": false,
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"valid": true})
+}
