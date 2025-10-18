@@ -140,7 +140,7 @@ func (s *Service) SignIn(ctx context.Context, email, password string) (*user.Aut
 	// 認証サービスでログイン
 	authResult, err := s.authService.SignIn(ctx, email, password)
 	if err != nil {
-		return nil, fmt.Errorf("signin failed: %w", err)
+		return nil, err
 	}
 
 	// メールアドレスでデータベースから既存ユーザーを取得
