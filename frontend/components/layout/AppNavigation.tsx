@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NAVIGATION_TABS } from "@/lib/constants/navigation";
 import { cn } from "@/lib/utils/cn";
+import { useIsMobile } from "@/lib/hooks/useResponsive";
 import type { Profile } from "@/lib/types";
 import type { AuthUser } from "@/lib/types/auth";
 
@@ -14,11 +15,48 @@ interface AppNavigationProps {
 }
 
 /**
- * アプリケーション左側の縦型ナビゲーション - モダンでスタイリッシュなデザイン
+ * アプリケーションナビゲーション
+ * デスクトップ: 左側の縦型ナビゲーション
+ * モバイル: 下部の横型ナビゲーション
  */
 export function AppNavigation({ profile }: AppNavigationProps) {
   const pathname = usePathname();
+  const isMobile = useIsMobile();
 
+  // モバイル版: 下部横型ナビゲーション
+  if (isMobile) {
+    return (
+      <div className="fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around h-16 bg-white border-t border-gray-200 dark:bg-gray-900 dark:border-gray-700 safe-area-inset-bottom">
+        {NAVIGATION_TABS.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = pathname.startsWith(tab.path);
+
+          return (
+            <Link
+              key={tab.id}
+              href={tab.path}
+              className={cn(
+                "flex flex-col items-center justify-center flex-1 h-full transition-colors duration-200 relative",
+                isActive
+                  ? "text-green-500 dark:text-green-400"
+                  : "text-gray-400 dark:text-gray-500"
+              )}
+            >
+              {/* アクティブインジケーター（上部のバー） */}
+              {isActive && (
+                <div className="absolute top-0 left-0 right-0 h-0.5 bg-green-500 dark:bg-green-400" />
+              )}
+
+              <Icon className="w-6 h-6" />
+              <span className="mt-1 text-xs font-medium">{tab.label}</span>
+            </Link>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // デスクトップ版: 左側縦型ナビゲーション（既存）
   return (
     <div className="flex relative flex-col w-20 h-screen bg-gradient-to-br from-black via-gray-950 to-black border-r border-gray-800/80 shadow-[0_0_20px_rgba(0,0,0,0.4),inset_0_0_15px_rgba(0,0,0,0.2)] z-20">
       {/* 左側のハイライト（立体感） */}
