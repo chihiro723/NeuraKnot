@@ -72,6 +72,17 @@ definitions:
       is_enabled:
         type: boolean
     type: object
+  backend-go_internal_domain_service.ValidateServiceAuthInput:
+    properties:
+      auth:
+        additionalProperties: true
+        type: object
+      service_class:
+        type: string
+    required:
+    - auth
+    - service_class
+    type: object
   backend-go_internal_handler_http_request.ChangeEmailRequest:
     properties:
       email:
@@ -1171,6 +1182,29 @@ paths:
           schema:
             $ref: '#/definitions/backend-go_internal_domain_service.ServiceConfig'
       summary: サービス設定更新
+      tags:
+      - Services
+  /api/v1/services/validate:
+    post:
+      consumes:
+      - application/json
+      description: サービスの認証情報が正しいか検証
+      parameters:
+      - description: 検証情報
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/backend-go_internal_domain_service.ValidateServiceAuthInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: サービス認証情報検証
       tags:
       - Services
   /auth/confirm-forgot-password:

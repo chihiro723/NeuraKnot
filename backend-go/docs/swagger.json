@@ -1044,6 +1044,41 @@
                 }
             }
         },
+        "/api/v1/services/validate": {
+            "post": {
+                "description": "サービスの認証情報が正しいか検証",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Services"
+                ],
+                "summary": "サービス認証情報検証",
+                "parameters": [
+                    {
+                        "description": "検証情報",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_domain_service.ValidateServiceAuthInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/services/{service_class}/tools": {
             "get": {
                 "description": "指定したサービスのツール一覧を取得",
@@ -1768,6 +1803,22 @@
                 },
                 "is_enabled": {
                     "type": "boolean"
+                }
+            }
+        },
+        "backend-go_internal_domain_service.ValidateServiceAuthInput": {
+            "type": "object",
+            "required": [
+                "auth",
+                "service_class"
+            ],
+            "properties": {
+                "auth": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "service_class": {
+                    "type": "string"
                 }
             }
         },
