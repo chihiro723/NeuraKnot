@@ -62,7 +62,7 @@ export function VerifyCodeInput({
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2 justify-center sm:gap-3">
+      <div className="flex gap-2 justify-center md:gap-3">
         {code.map((digit, index) => (
           <input
             key={index}
@@ -77,7 +77,7 @@ export function VerifyCodeInput({
             onPaste={handlePaste}
             disabled={disabled}
             className={`
-              w-12 h-14 sm:w-14 sm:h-16
+              w-12 h-16 md:w-14 md:h-16
               text-2xl text-center font-semibold
               bg-white/10 backdrop-blur-sm
               border-2 ${

@@ -256,14 +256,14 @@ export function LandingPage({
     <div className="overflow-hidden relative min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
       {/* ナビゲーション */}
       <nav className="fixed top-0 right-0 left-0 z-50 border-b backdrop-blur-md bg-slate-900/90 border-white/10">
-        <div className="px-4 py-4 mx-auto max-w-7xl sm:px-6">
+        <div className="px-4 py-4 mx-auto max-w-7xl md:px-6">
           <div className="flex justify-between items-center">
             {/* ロゴ */}
             <Link href="/" className="flex z-20 items-center space-x-3">
-              <div className="flex justify-center items-center w-8 h-8 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl sm:w-10 sm:h-10">
-                <MessageCircle className="w-5 h-5 text-white sm:w-6 sm:h-6" />
+              <div className="flex justify-center items-center w-8 h-8 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl md:w-10 md:h-10">
+                <MessageCircle className="w-5 h-5 text-white md:w-6 md:h-6" />
               </div>
-              <span className="text-lg font-bold text-white sm:text-xl">
+              <span className="text-lg font-bold text-white md:text-xl">
                 NeuraKnot
               </span>
             </Link>
@@ -639,7 +639,7 @@ export function LandingPage({
           </p>
 
           {/* CTAボタン */}
-          <div className="flex flex-col gap-6 justify-center items-center mb-20 sm:flex-row">
+          <div className="flex flex-col gap-6 justify-center items-center mb-20 md:flex-row">
             {!isLoading && user ? (
               <div className="text-center">
                 <Link
@@ -1168,7 +1168,7 @@ export function LandingPage({
             人間とAIの神経を結ぶ、新しい絆の始まりを体験しよう
           </p>
 
-          <div className="flex flex-col gap-6 justify-center items-center mb-16 sm:flex-row">
+          <div className="flex flex-col gap-6 justify-center items-center mb-16 md:flex-row">
             {!isLoading && user ? (
               <Link
                 href="/dashboard"
