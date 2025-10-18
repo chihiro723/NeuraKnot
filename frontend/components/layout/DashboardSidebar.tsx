@@ -90,11 +90,11 @@ export function DashboardSidebar({
       {/* ヘッダー */}
       <div className="flex justify-between items-center px-4 h-16 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
         <div className="flex flex-col">
-          <span className="font-semibold text-gray-900 dark:text-white">
-            {title}
+          <span className="text-base font-bold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-500">
+            NeuraKnot
           </span>
           <span className="text-xs text-gray-500 dark:text-gray-400">
-            {profile.display_name}
+            {title}
           </span>
         </div>
       </div>
@@ -106,14 +106,14 @@ export function DashboardSidebar({
       <div
         onMouseDown={startResizing}
         className={cn(
-          "absolute top-0 right-0 w-1 h-full cursor-col-resize transition-all duration-200 z-50",
+          "absolute top-0 right-0 w-1 h-full cursor-col-resize transition-all duration-200 z-[100]",
           isResizing
-            ? "bg-green-500 w-1"
+            ? "bg-green-500"
             : "bg-gray-300 dark:bg-gray-600 opacity-0 hover:opacity-100 hover:w-1.5"
         )}
       >
         {/* ドラッグ可能エリアを拡大（UX向上） */}
-        <div className="absolute inset-y-0 -right-2 -left-2 w-5" />
+        <div className="absolute inset-y-0 -right-2 -left-2 w-5 z-[100]" />
       </div>
     </div>
   );

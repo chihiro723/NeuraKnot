@@ -20,7 +20,7 @@ export function AppNavigation({ profile }: AppNavigationProps) {
   const pathname = usePathname();
 
   return (
-    <div className="flex relative flex-col w-20 h-screen bg-gradient-to-br from-black via-gray-950 to-black border-r border-gray-800/80 shadow-[0_0_50px_rgba(0,0,0,0.8),inset_0_0_30px_rgba(0,0,0,0.5)]">
+    <div className="flex relative flex-col w-20 h-screen bg-gradient-to-br from-black via-gray-950 to-black border-r border-gray-800/80 shadow-[0_0_20px_rgba(0,0,0,0.4),inset_0_0_15px_rgba(0,0,0,0.2)] z-20">
       {/* 左側のハイライト（立体感） */}
       <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-transparent to-transparent pointer-events-none via-gray-700/30" />
 
@@ -56,7 +56,7 @@ export function AppNavigation({ profile }: AppNavigationProps) {
               {/* アクティブインジケーター（左側のバー） */}
               <div
                 className={cn(
-                  "absolute -left-5 top-1/2 w-1 h-8 bg-gradient-to-b from-green-400 to-emerald-500 rounded-r-full shadow-lg transition-all duration-300 -translate-y-1/2 shadow-green-500/50",
+                  "absolute -left-5 top-1/2 z-10 w-1 h-8 bg-gradient-to-b from-green-400 to-emerald-500 rounded-r-full shadow-lg transition-all duration-300 -translate-y-1/2 shadow-green-500/50",
                   isActive ? "opacity-100 scale-100" : "opacity-0 scale-75"
                 )}
               />
