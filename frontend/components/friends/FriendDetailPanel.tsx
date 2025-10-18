@@ -12,9 +12,11 @@ import {
   AlertCircle,
   Code,
   Zap,
+  ArrowLeft,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useIsMobile } from "@/lib/hooks/useResponsive";
 import { getAgent, getAgentServices } from "@/lib/actions/ai-agent";
 import { listServices, getServiceTools } from "@/lib/actions/services";
 import type { SelectedFriend } from "@/lib/types";
@@ -38,6 +40,7 @@ interface ServiceWithTools {
  */
 export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [agent, setAgent] = useState<AIAgent | null>(null);
   const [services, setServices] = useState<ServiceWithTools[]>([]);
   const [loading, setLoading] = useState(false);
@@ -115,6 +118,10 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
 
     fetchData();
   }, [friend.id, friend.type]);
+
+  const handleBack = () => {
+    router.push("/dashboard/roster");
+  };
 
   const handleStartChat = () => {
     // グループの場合は会話開始できないようにするか、別の処理を行う
@@ -258,7 +265,7 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
   return (
     <>
       {/* ヘッダー */}
-      <div className="flex justify-between items-center px-6 h-16 bg-white border-b border-gray-200 dark:bg-gray-900 dark:border-gray-700">
+      <div className="flex justify-between items-center px-4 h-16 bg-white border-b border-gray-200 md:h-16 md:px-6 dark:bg-gray-900 dark:border-gray-700">
         <div className="flex items-center space-x-3">
           <div className="flex justify-center items-center w-10 h-10 bg-green-100 rounded-lg dark:bg-green-500/20">
             {friend.type === "ai" ? (
@@ -277,19 +284,23 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
             </p>
           </div>
         </div>
+        {/* 戻るボタン（モバイルのみ、右側に配置） */}
+        {isMobile && (
+          <button
+            onClick={handleBack}
+            className="flex justify-center items-center p-2 text-gray-600 rounded-lg transition-all duration-200 bg-gray-50/80 dark:text-gray-300 dark:bg-gray-800/50 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-gray-700"
+            title="戻る"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       {/* メインコンテンツ */}
       <div className="overflow-y-auto flex-1 bg-gray-50 dark:bg-gray-900">
-        <div className="p-8 mx-auto space-y-10 max-w-2xl">
+        <div className="p-4 mx-auto space-y-8 max-w-2xl md:p-8 md:space-y-10">
           {/* プロフィール情報 */}
           <div className="space-y-6">
-            <div className="pb-3 border-b border-gray-200 dark:border-gray-800">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                基本情報
-              </h2>
-            </div>
-
             <div className="flex items-center space-x-6">
               <div className="relative">
                 <div className="flex overflow-hidden justify-center items-center w-20 h-20 bg-gray-100 rounded-full dark:bg-gray-800">
@@ -426,7 +437,10 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
             {friend.created_at && (
               <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
                 <Calendar className="w-4 h-4" />
-                <span>友だちになった日: {isClient ? formatDate(friend.created_at) : '--'}</span>
+                <span>
+                  友だちになった日:{" "}
+                  {isClient ? formatDate(friend.created_at) : "--"}
+                </span>
               </div>
             )}
           </div>
