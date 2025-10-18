@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { X, Plus, Check } from "lucide-react";
+import { X, Plus, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { getServiceIcon, getServiceGradient } from "@/lib/utils/serviceIcons";
 import { registerService } from "@/lib/actions/services";
-import type { Service, ServiceConfig } from "@/lib/types/service";
+import type { Service, ServiceConfig, Tool } from "@/lib/types/service";
 
 interface ServiceRegistrationModalProps {
   service: Service | null;
+  tools: Tool[];
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: (config: ServiceConfig) => void;
@@ -20,6 +21,7 @@ interface ServiceRegistrationModalProps {
  */
 export function ServiceRegistrationModal({
   service,
+  tools,
   isOpen,
   onClose,
   onSuccess,
@@ -27,6 +29,9 @@ export function ServiceRegistrationModal({
   const [authData, setAuthData] = useState<Record<string, string>>({});
   const [error, setError] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    new Set()
+  );
 
   if (!isOpen || !service) return null;
 
@@ -38,6 +43,26 @@ export function ServiceRegistrationModal({
   const requiresAuth =
     service.auth_schema &&
     Object.keys(service.auth_schema.properties || {}).length > 0;
+
+  // ツールをカテゴリ別にグループ化
+  const groupedTools = tools.reduce((acc, tool) => {
+    const category = tool.category || "その他";
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(tool);
+    return acc;
+  }, {} as Record<string, Tool[]>);
+
+  const toggleCategory = (category: string) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(category)) {
+      newExpanded.delete(category);
+    } else {
+      newExpanded.add(category);
+    }
+    setExpandedCategories(newExpanded);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,7 +101,7 @@ export function ServiceRegistrationModal({
           <div className="flex items-center space-x-4">
             <div
               className={cn(
-                "flex justify-center items-center w-12 h-12 rounded-xl shadow-lg bg-gradient-to-br",
+                "flex justify-center items-center w-12 h-12 bg-gradient-to-br rounded-xl shadow-lg",
                 gradientClass
               )}
             >
@@ -104,10 +129,10 @@ export function ServiceRegistrationModal({
         </div>
 
         {/* コンテンツ */}
-        <div className="overflow-y-auto max-h-[calc(90vh-200px)] p-6">
+        <div className="overflow-y-auto max-h-[calc(90vh-200px)] p-6 space-y-6">
           {/* 説明 */}
           {service.description && (
-            <div className="mb-6">
+            <div>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 {service.description}
               </p>
@@ -115,7 +140,7 @@ export function ServiceRegistrationModal({
           )}
 
           {/* 詳細情報 */}
-          <div className="p-4 mb-6 space-y-2 bg-gray-50 rounded-lg dark:bg-gray-900">
+          <div className="p-4 space-y-2 bg-gray-50 rounded-lg dark:bg-gray-900">
             <div className="flex justify-between text-sm">
               <span className="font-medium text-gray-700 dark:text-gray-300">
                 クラス名
@@ -136,6 +161,90 @@ export function ServiceRegistrationModal({
                   : "カスタム"}
               </span>
             </div>
+            <div className="flex justify-between text-sm">
+              <span className="font-medium text-gray-700 dark:text-gray-300">
+                ツール数
+              </span>
+              <span className="text-gray-600 dark:text-gray-400">
+                {tools.length}個
+              </span>
+            </div>
+          </div>
+
+          {/* ツール一覧 */}
+          <div>
+            <h3 className="mb-3 text-lg font-semibold text-gray-900 dark:text-white">
+              ツール一覧
+            </h3>
+            {tools.length === 0 ? (
+              <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+                ツールが登録されていません
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {Object.entries(groupedTools).map(
+                  ([category, categoryTools]) => (
+                    <div
+                      key={category}
+                      className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"
+                    >
+                      {/* カテゴリヘッダー */}
+                      <button
+                        onClick={() => toggleCategory(category)}
+                        className="flex justify-between items-center px-4 py-3 w-full bg-gray-50 transition-colors dark:bg-gray-900 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            {category}
+                          </span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            ({categoryTools.length}個)
+                          </span>
+                        </div>
+                        {expandedCategories.has(category) ? (
+                          <ChevronUp className="w-4 h-4 text-gray-500" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4 text-gray-500" />
+                        )}
+                      </button>
+
+                      {/* ツールリスト */}
+                      {expandedCategories.has(category) && (
+                        <div className="p-3 space-y-2 bg-white dark:bg-gray-800">
+                          {categoryTools.map((tool) => (
+                            <div
+                              key={tool.name}
+                              className="p-3 bg-gray-50 rounded-lg dark:bg-gray-900"
+                            >
+                              <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                {tool.name}
+                              </div>
+                              {tool.description && (
+                                <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                                  {tool.description}
+                                </div>
+                              )}
+                              {tool.tags && tool.tags.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {tool.tags.map((tag) => (
+                                    <span
+                                      key={tag}
+                                      className="px-1.5 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded"
+                                    >
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                )}
+              </div>
+            )}
           </div>
 
           {/* 認証情報入力フォーム */}
@@ -213,8 +322,8 @@ export function ServiceRegistrationModal({
             onClick={handleSubmit}
             disabled={isSubmitting}
             className={cn(
-              "flex items-center space-x-2 px-6 py-2 rounded-lg transition-colors",
-              "bg-green-600 text-white hover:bg-green-700",
+              "flex items-center px-6 py-2 space-x-2 rounded-lg transition-colors",
+              "text-white bg-green-600 hover:bg-green-700",
               "disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
             )}
           >
