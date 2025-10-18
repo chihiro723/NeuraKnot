@@ -250,7 +250,7 @@ async def chat_stream(request: ChatRequest):
                                 "type": "tool_end",
                                 "tool_id": tool_name,
                                 "status": "completed",
-                                "output": str(tool_output)[:500],
+                                "output": str(tool_output),  # 制限を削除して完全なデータを送信
                                 "error": None,
                                 "execution_time_ms": execution_time_ms
                             })

@@ -140,7 +140,7 @@ class SSEStreamingCallback(AsyncCallbackHandler):
             "tool_name": tool_name,
             "status": "completed",
             "input": kwargs.get("input", {}),
-            "output": output_str[:500],
+            "output": output_str,  # 制限を削除して完全なデータを保存
             "error": None,
             "execution_time_ms": execution_time_ms,
             "insert_position": insert_position
@@ -151,7 +151,7 @@ class SSEStreamingCallback(AsyncCallbackHandler):
             "type": "tool_end",
             "tool_id": tool_name,
             "status": "completed",
-            "output": output_str[:500],  # 最初の500文字
+            "output": output_str,  # 制限を削除して完全なデータを送信
             "error": None,
             "execution_time_ms": execution_time_ms
         }
