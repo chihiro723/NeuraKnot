@@ -3,6 +3,7 @@ package middleware
 import (
 	"backend-go/internal/domain/user"
 	"backend-go/internal/handler/http/response"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -39,6 +40,7 @@ func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 		// トークンを検証
 		authResult, err := m.authService.ValidateToken(c.Request.Context(), token)
 		if err != nil {
+			log.Printf("[AUTH ERROR] Token validation failed: %v", err)
 			c.JSON(http.StatusUnauthorized, response.NewUnauthorizedErrorResponse("Invalid token"))
 			c.Abort()
 			return

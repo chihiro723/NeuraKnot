@@ -44,11 +44,16 @@ func NewCognitoService(cfg *config.Config, userRepository user.UserRepository) (
 	client := cognitoidentityprovider.NewFromConfig(awsCfg)
 	jwksURL := fmt.Sprintf("https://cognito-idp.%s.amazonaws.com/%s/.well-known/jwks.json", cfg.Cognito.Region, cfg.Cognito.UserPoolID)
 
+	fmt.Printf("[COGNITO INIT] Region: %s, UserPoolID: %s, ClientID: %s\n", cfg.Cognito.Region, cfg.Cognito.UserPoolID, cfg.Cognito.ClientID)
+	fmt.Printf("[COGNITO INIT] JWKS URL: %s\n", jwksURL)
+
 	// JWKSを取得
 	jwks, err := jwk.Fetch(context.TODO(), jwksURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch JWKS: %w", err)
 	}
+
+	fmt.Printf("[COGNITO INIT] JWKS fetched successfully\n")
 
 	return &CognitoService{
 		region:         cfg.Cognito.Region,
