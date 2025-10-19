@@ -20,8 +20,10 @@
 - [開発](#開発)
   - [Docker Compose コマンド](#docker-composeコマンド)
   - [個別開発](#個別開発)
+  - [開発用スクリプト（dev.sh）](#開発用スクリプトdevsh)
   - [開発ルール](#開発ルール)
 - [API 仕様](#api仕様)
+- [データベース設計](#データベース設計)
 - [認証](#認証)
 - [インフラストラクチャ](#インフラストラクチャ)
 - [ドキュメント](#ドキュメント)
@@ -80,7 +82,9 @@ Internet
 
 **データストア**
 
-- PostgreSQL 15 - アプリケーションデータ
+- PostgreSQL 15 - アプリケーションデータ（Backend-go のみアクセス）
+  - 8 テーブル構成 - 詳細は [データベース設計](#データベース設計) セクション参照
+  - 完全なドキュメント: [データベース設計書](./docs/DATABASE_DESIGN_CURRENT.md)
 - Redis 7 - キャッシュ・セッション
 
 **認証**
@@ -318,6 +322,48 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 # http://localhost:8001
 ```
 
+### 開発用スクリプト（dev.sh）
+
+開発を効率化するための便利なスクリプトを用意しています：
+
+```bash
+# 基本的な使い方
+./dev.sh [command] [service]
+
+# よく使うコマンド
+./dev.sh start           # 開発環境を起動（DB自動構築）
+./dev.sh stop            # 開発環境を停止
+./dev.sh restart         # 開発環境を再起動
+./dev.sh logs            # ログをリアルタイム表示
+./dev.sh logs backend-go # 特定サービスのログのみ表示
+./dev.sh status          # サービス状態とリソース使用状況
+./dev.sh urls            # アクセスURL一覧を表示
+
+# ビルド関連
+./dev.sh build           # 再ビルドして起動（キャッシュ使用）
+./dev.sh rebuild         # 完全再ビルド（キャッシュ無視）
+./dev.sh build frontend  # 特定サービスのみ再ビルド
+
+# データベース関連
+./dev.sh schema          # スキーマを完全再構築（モックデータ含む）
+
+# 環境変数確認
+./dev.sh env backend-go  # Backend Goの環境変数を表示
+./dev.sh env frontend    # フロントエンドの環境変数を表示
+
+# クリーンアップ
+./dev.sh clean           # 全コンテナとボリュームを削除
+```
+
+**主な機能:**
+
+- ✅ カラフルなログ出力で視認性向上
+- ✅ サービス個別の起動・停止・再起動に対応
+- ✅ 自動データベーススキーマ構築
+- ✅ アクセスURL一覧表示
+- ✅ リソース使用状況の確認
+- ✅ 機密情報をマスクした環境変数表示
+
 ### 開発ルール
 
 開発に参加する前に、必ず[開発ルール・貢献ガイド](./docs/CONTRIBUTING.md)を確認してください。
@@ -396,6 +442,80 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 - ExchangeRateService - 為替レート
 - GoogleCalendarService - カレンダー連携
 - IPApiService - IP 位置情報
+
+## データベース設計
+
+### テーブル構成（8テーブル）
+
+NeuraKnot は PostgreSQL 15 を使用し、**Backend-go のみ**がデータベースにアクセスします。
+
+#### 1. ユーザー管理
+
+| テーブル名 | 用途 | 主要カラム |
+|-----------|------|-----------|
+| **users** | ユーザー情報（AWS Cognito連携） | cognito_user_id, email, display_name, status |
+
+#### 2. AI エージェント
+
+| テーブル名 | 用途 | 主要カラム |
+|-----------|------|-----------|
+| **ai_agents** | AI エージェント設定とペルソナ | name, persona_type, provider, model, temperature, streaming_enabled |
+
+**サポートするLLMモデル**:
+- OpenAI: gpt-4o, gpt-4o-mini, gpt-4-turbo, gpt-4, gpt-3.5-turbo
+- Anthropic: claude-3-5-sonnet-20241022, claude-3.5-sonnet, claude-3-opus-20240229
+- Google: gemini-pro, gemini-1.5-pro, gemini-1.5-flash
+
+#### 3. 会話・メッセージ
+
+| テーブル名 | 用途 | 主要カラム |
+|-----------|------|-----------|
+| **conversations** | ユーザーとAI Agent間の1対1会話 | user_id, ai_agent_id, message_count, last_message_at |
+| **messages** | チャットメッセージ | conversation_id, sender_type, sender_id, content, ai_session_id |
+
+#### 4. AI 処理履歴
+
+| テーブル名 | 用途 | 主要カラム |
+|-----------|------|-----------|
+| **ai_chat_sessions** | AI処理セッション履歴（分析・デバッグ用） | provider, model, tokens_total, processing_time_ms, status |
+| **ai_tool_usage** | AIツール使用履歴 | tool_name, input_data, output_data, status, execution_time_ms |
+
+**現在の統計（開発環境）**:
+- 平均トークン使用量: 2,690 トークン
+- 平均処理時間: 5.8秒
+- ツール成功率: 100%
+
+#### 5. サービス連携
+
+| テーブル名 | 用途 | 主要カラム |
+|-----------|------|-----------|
+| **user_service_configs** | ユーザーのサービス設定（暗号化） | service_class, encrypted_config, encrypted_auth, is_enabled |
+| **ai_agent_services** | AI Agent×サービス紐付け | ai_agent_id, service_class, tool_selection_mode, enabled |
+
+**セキュリティ**:
+- 認証情報は AES-256-GCM で暗号化
+- Backend-go でのみ復号化可能
+
+### 設計原則
+
+1. **単一データアクセスポイント**: Backend-go のみが PostgreSQL にアクセス
+2. **MVP に集中**: 現在は 1対1 チャット（User ↔ AI Agent）のみサポート
+3. **パフォーマンス最適化**: 適切なインデックス配置、トリガーによる自動更新
+4. **セキュリティ**: 機密情報の暗号化、CHECK 制約による型安全性
+
+### データ量見積もり
+
+**現在（開発環境）**: 約 1.2 MB（462レコード）
+
+**将来（10,000ユーザー想定）**: 
+- 1ヶ月: 約 7.5 GB
+- 1年: 約 90 GB
+
+### 詳細ドキュメント
+
+- 📊 [現在のデータベース設計（MVP版）](./docs/DATABASE_DESIGN_CURRENT.md) - 全テーブル詳細、ER図、インデックス戦略
+- 🚀 [将来のデータベース設計](./docs/DATABASE_DESIGN.md) - グループチャット、友達機能等の将来設計
+- 📈 [スキーマ分析レポート](./docs/backend/SCHEMA_ANALYSIS_REPORT.md) - 現在のスキーマ状態と最適化情報
 
 ## 認証
 
@@ -522,7 +642,9 @@ terraform apply
 
 **アーキテクチャ**
 
-- [データベース設計](./docs/DATABASE_DESIGN.md)
+- 🗄️ [現在のデータベース設計](./docs/DATABASE_DESIGN_CURRENT.md) - **現在の 8 テーブル詳細（MVP 版）**
+- 🚀 [将来のデータベース設計](./docs/DATABASE_DESIGN.md) - グループチャット、友達機能等の将来設計
+- 📊 [スキーマ分析レポート](./docs/backend/SCHEMA_ANALYSIS_REPORT.md) - スキーマ状態と最適化情報
 - [フロントエンドアーキテクチャ](./docs/frontend/ARCHITECTURE.md)
 - [認証アーキテクチャ](./docs/frontend/AUTH_ARCHITECTURE.md)
 - [エラーハンドリング](./docs/frontend/ERROR_HANDLING_ARCHITECTURE.md)
