@@ -27,6 +27,7 @@
 - [認証](#認証)
 - [インフラストラクチャ](#インフラストラクチャ)
 - [ドキュメント](#ドキュメント)
+- [CI/CD](#cicd)
 - [デプロイ](#デプロイ)
 - [トラブルシューティング](#トラブルシューティング)
 - [ライセンス](#ライセンス)
@@ -774,6 +775,7 @@ terraform apply
 
 **その他**
 
+- [CI/CD セットアップガイド](./docs/CI_CD_SETUP.md) - **GitHub Actions 自動デプロイ**
 - [Swagger/OpenAPI 設定](./docs/backend/SWAGGER_GUIDE.md)
 - [ルーティングベストプラクティス](./docs/frontend/ROUTING_BEST_PRACTICES.md)
 - [サーバーサイドフェッチ](./docs/frontend/SERVER_SIDE_FETCH.md)
@@ -787,6 +789,67 @@ terraform apply
 - **機密情報管理**: AWS Secrets Manager
 
 **重要**: `.env.local`ファイルは絶対にコミットしないでください。
+
+## CI/CD
+
+GitHub Actions を使用した自動化された CI/CD パイプラインを実装しています。
+
+### ワークフロー
+
+**1. CI (Continuous Integration)** - `.github/workflows/ci.yml`
+
+Pull Request 作成時に自動実行：
+
+- **変更検出**: 変更されたコンポーネントのみテスト
+- **Frontend**: ESLint、TypeScript 型チェック、ビルドチェック
+- **Backend Go**: golangci-lint、テスト実行、ビルドチェック
+- **Backend Python**: ruff、black、型チェック
+
+**2. Terraform Plan** - `.github/workflows/terraform-plan.yml`
+
+Terraform 変更時に PR へ plan 結果をコメント：
+
+- フォーマットチェック
+- バリデーション
+- Plan 実行と結果表示
+
+**3. Deploy (Continuous Deployment)** - `.github/workflows/deploy.yml`
+
+main ブランチへの push 時に自動デプロイ：
+
+- Docker イメージビルド
+- ECR へプッシュ
+- ECS サービス更新
+- デプロイ完了待機
+
+### セットアップ
+
+詳細な設定手順は [CI/CD セットアップガイド](./docs/CI_CD_SETUP.md) を参照してください。
+
+**必要な GitHub Secrets**:
+
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_REGION`
+- `ECR_REGISTRY`
+- `ECS_CLUSTER_NAME`
+- `ECS_SERVICE_NAME_GO`
+- `ECS_SERVICE_NAME_PYTHON`
+
+### ローカルでの Linter 実行
+
+コミット前にローカルでチェック：
+
+```bash
+# Backend Go
+cd backend-go && golangci-lint run
+
+# Backend Python
+cd backend-python && ruff check . && black --check .
+
+# Frontend
+cd frontend && npm run lint
+```
 
 ## デプロイ
 
