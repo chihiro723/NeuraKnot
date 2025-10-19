@@ -1,30 +1,27 @@
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- 背景の円 -->
-  <circle cx="512" cy="512" r="480" fill="#6366f1"/>
-  
-  <!-- ブリッジのアイコン -->
+  <!-- グラデーション定義 -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- 背景の角丸四角形 (グラデーション) -->
+  <rect x="0" y="0" width="1024" height="1024" rx="200" fill="url(#bgGradient)"/>
+
+  <!-- 吹き出しアイコン (MessageCircle) - 楕円形 -->
   <g transform="translate(512, 512)">
-    <!-- 左側の柱 -->
-    <rect x="-280" y="-200" width="80" height="400" rx="40" fill="white"/>
-    
-    <!-- 右側の柱 -->
-    <rect x="200" y="-200" width="80" height="400" rx="40" fill="white"/>
-    
-    <!-- ブリッジの道路部分 -->
-    <rect x="-300" y="40" width="600" height="60" rx="30" fill="white"/>
-    
-    <!-- ケーブル（左側） -->
-    <path d="M -240 -160 Q -120 -40, 0 40" stroke="white" stroke-width="24" fill="none" stroke-linecap="round"/>
-    <path d="M -240 -80 Q -80 0, 0 40" stroke="white" stroke-width="24" fill="none" stroke-linecap="round"/>
-    <path d="M -240 0 Q -40 20, 0 40" stroke="white" stroke-width="24" fill="none" stroke-linecap="round"/>
-    
-    <!-- ケーブル（右側） -->
-    <path d="M 240 -160 Q 120 -40, 0 40" stroke="white" stroke-width="24" fill="none" stroke-linecap="round"/>
-    <path d="M 240 -80 Q 80 0, 0 40" stroke="white" stroke-width="24" fill="none" stroke-linecap="round"/>
-    <path d="M 240 0 Q 40 20, 0 40" stroke="white" stroke-width="24" fill="none" stroke-linecap="round"/>
-    
-    <!-- 中央の接続点（人とAIの出会い） -->
-    <circle cx="0" cy="40" r="60" fill="#8b5cf6"/>
-    <circle cx="0" cy="40" r="40" fill="white"/>
+    <!-- メインの吹き出し本体（楕円形、少し小さく） -->
+    <ellipse cx="0" cy="-40" rx="310" ry="245" fill="white"/>
+
+    <!-- 吹き出しのしっぽ（左寄り、太く、上に配置） -->
+    <path
+      d="M -160 155 L -240 330 L -40 190 Z"
+      fill="white"
+      stroke="white"
+      stroke-width="6"
+      stroke-linejoin="round"
+    />
   </g>
 </svg>
