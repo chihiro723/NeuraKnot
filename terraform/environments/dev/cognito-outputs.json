@@ -1,0 +1,47 @@
+{
+  "aws_region": {
+    "sensitive": false,
+    "type": "string",
+    "value": "ap-northeast-1"
+  },
+  "cognito_client_id": {
+    "sensitive": false,
+    "type": "string",
+    "value": "789rmm3gu5hkjh86s8knie7g73"
+  },
+  "cognito_client_secret": {
+    "sensitive": true,
+    "type": "string",
+    "value": "hd89tt3ilcgvi8j08bpfih6o8c5v4prd94aqe0b96vsit1fv5su"
+  },
+  "cognito_domain": {
+    "sensitive": false,
+    "type": "string",
+    "value": "neuraknot-dev-xs0hszxh"
+  },
+  "cognito_issuer": {
+    "sensitive": false,
+    "type": "string",
+    "value": "https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_CwAIHQJp9"
+  },
+  "cognito_user_pool_arn": {
+    "sensitive": false,
+    "type": "string",
+    "value": "arn:aws:cognito-idp:ap-northeast-1:528757808906:userpool/ap-northeast-1_CwAIHQJp9"
+  },
+  "cognito_user_pool_endpoint": {
+    "sensitive": false,
+    "type": "string",
+    "value": "cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_CwAIHQJp9"
+  },
+  "cognito_user_pool_id": {
+    "sensitive": false,
+    "type": "string",
+    "value": "ap-northeast-1_CwAIHQJp9"
+  },
+  "environment": {
+    "sensitive": false,
+    "type": "string",
+    "value": "dev"
+  }
+}

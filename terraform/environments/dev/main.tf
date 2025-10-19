@@ -12,10 +12,10 @@ terraform {
     }
   }
 
-  backend "s3" {
-    # S3 backend configuration will be set via terraform init -backend-config
-    # Example: terraform init -backend-config="bucket=your-terraform-state-bucket"
-  }
+  # backend "s3" {
+  #   # S3 backend configuration will be set via terraform init -backend-config
+  #   # Example: terraform init -backend-config="bucket=your-terraform-state-bucket"
+  # }
 }
 
 provider "aws" {
@@ -42,14 +42,6 @@ module "cognito" {
   password_minimum_length = var.password_minimum_length
   token_validity_access   = var.token_validity_access
   token_validity_refresh  = var.token_validity_refresh
-  enable_oauth            = var.enable_oauth
-
-  # Callback URLs for dev environment
-  callback_urls = var.callback_urls
-  logout_urls   = var.logout_urls
-
-  # OAuth providers (optional for dev)
-  oauth_providers = var.oauth_providers
 
   tags = {
     Environment = var.environment
