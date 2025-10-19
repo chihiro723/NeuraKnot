@@ -610,8 +610,8 @@ export function ChatWindow({
               <div
                 className={`flex items-end space-x-2 md:space-x-3 ${
                   message.sender_type === "user"
-                    ? "flex-row-reverse space-x-reverse max-w-[95%] md:max-w-[90%]"
-                    : "max-w-[95%] md:max-w-[90%] overflow-hidden"
+                    ? "flex-row-reverse space-x-reverse max-w-[90%] md:max-w-[75%]"
+                    : "max-w-[90%] md:max-w-[75%] overflow-hidden"
                 }`}
               >
                 {message.sender_type === "user" ? (
@@ -698,14 +698,18 @@ export function ChatWindow({
 
           {/* ストリーミングメッセージ（最初のトークンが来てから表示） */}
           {isStreaming && streamingContent && (
-            <StreamingMessage
-              content={streamingContent}
-              tools={streamingTools}
-              avatarUrl={selectedChat.avatar_url}
-              name={selectedChat.name}
-              showCursor={true}
-              agentId={selectedChat.id}
-            />
+            <div className="flex justify-start">
+              <div className="flex items-end space-x-2 md:space-x-3 max-w-[90%] md:max-w-[75%] overflow-hidden">
+                <StreamingMessage
+                  content={streamingContent}
+                  tools={streamingTools}
+                  avatarUrl={selectedChat.avatar_url}
+                  name={selectedChat.name}
+                  showCursor={true}
+                  agentId={selectedChat.id}
+                />
+              </div>
+            </div>
           )}
 
           {/* ローディングインジケーター（ストリーミング開始前 or 非ストリーミング） */}

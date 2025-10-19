@@ -162,9 +162,8 @@ export function StreamingMessage({
   };
 
   return (
-    <div className="flex overflow-hidden justify-start px-2 w-full">
-      <div className="flex items-start space-x-2 md:space-x-3 max-w-[95%] md:max-w-[85%] lg:max-w-[75%]">
-        {/* アイコン（クリック可能） */}
+    <div className="flex items-start space-x-2 md:space-x-3 w-full">
+      {/* アイコン（クリック可能） */}
         <button
           onClick={handleAvatarClick}
           disabled={!agentId}
@@ -232,7 +231,6 @@ export function StreamingMessage({
             </div>
           </div>
         </div>
-      </div>
     </div>
   );
 }
