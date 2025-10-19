@@ -2,7 +2,7 @@
 resource "aws_ecr_repository" "repositories" {
   for_each = toset(var.repositories)
 
-  name                 = "${var.project_name}-${var.environment}-${each.key}"
+  name                 = "${lower(var.project_name)}-${var.environment}-${each.key}"
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
