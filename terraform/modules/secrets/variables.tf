@@ -23,29 +23,18 @@ variable "cognito_client_secret" {
   sensitive   = true
 }
 
-variable "oauth_credentials" {
-  description = "OAuth provider credentials"
-  type = map(object({
-    client_id     = string
-    client_secret = string
-    team_id       = optional(string) # For Apple
-    key_id        = optional(string) # For Apple
-  }))
-  default = {}
-}
-
 variable "ai_api_keys" {
   description = "AI API keys (OpenAI, Anthropic, Google)"
-  type = map(string)
-  default = {}
-  sensitive = true
+  type        = map(string)
+  default     = {}
+  sensitive   = true
 }
 
 variable "external_api_keys" {
   description = "External service API keys (Slack, Notion, Weather, etc.)"
-  type = map(string)
-  default = {}
-  sensitive = true
+  type        = map(string)
+  default     = {}
+  sensitive   = true
 }
 
 variable "recovery_window_in_days" {
