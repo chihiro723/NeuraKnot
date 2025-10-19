@@ -41,6 +41,12 @@ variable "private_subnet_cidrs" {
   default     = ["10.0.10.0/24", "10.0.20.0/24"]
 }
 
+variable "single_nat_gateway" {
+  description = "Use a single NAT Gateway instead of one per AZ (cost saving)"
+  type        = bool
+  default     = false
+}
+
 # ECR Configuration
 variable "ecr_repositories" {
   description = "List of ECR repository names"
@@ -67,35 +73,6 @@ variable "token_validity_refresh" {
   default     = 30
 }
 
-variable "enable_oauth" {
-  description = "Enable OAuth providers"
-  type        = bool
-  default     = true
-}
-
-variable "callback_urls" {
-  description = "List of callback URLs for OAuth"
-  type        = list(string)
-  default     = []
-}
-
-variable "logout_urls" {
-  description = "List of logout URLs for OAuth"
-  type        = list(string)
-  default     = []
-}
-
-variable "oauth_providers" {
-  description = "OAuth provider configurations"
-  type = map(object({
-    client_id     = string
-    client_secret = string
-    team_id       = optional(string) # For Apple
-    key_id        = optional(string) # For Apple
-  }))
-  default = {}
-}
-
 variable "cognito_redirect_url" {
   description = "Cognito redirect URL"
   type        = string
@@ -108,20 +85,6 @@ variable "db_password" {
   type        = string
   default     = ""
   sensitive   = true
-}
-
-variable "ai_api_keys" {
-  description = "AI API keys (OpenAI, Anthropic, Google)"
-  type = map(string)
-  default = {}
-  sensitive = true
-}
-
-variable "external_api_keys" {
-  description = "External service API keys (Slack, Notion, Weather, etc.)"
-  type = map(string)
-  default = {}
-  sensitive = true
 }
 
 # RDS Configuration
@@ -179,6 +142,7 @@ variable "enable_rds_enhanced_monitoring" {
   default     = true
 }
 
+
 # ALB Configuration
 variable "alb_health_check_path" {
   description = "Health check path for ALB"
@@ -192,8 +156,13 @@ variable "alb_enable_deletion_protection" {
   default     = true
 }
 
+variable "domain_name" {
+  description = "Domain name for the application"
+  type        = string
+}
+
 variable "ssl_certificate_arn" {
-  description = "ARN of SSL certificate for HTTPS listener"
+  description = "ARN of SSL certificate for HTTPS listener (deprecated, use ACM module)"
   type        = string
   default     = ""
 }
@@ -267,20 +236,80 @@ variable "log_level" {
   default     = "info"
 }
 
-variable "oauth_credentials" {
-  description = "OAuth credentials for external providers"
-  type = map(object({
-    client_id     = string
-    client_secret = string
-    team_id       = optional(string) # For Apple
-    key_id        = optional(string) # For Apple
-  }))
-  default = {}
-  sensitive = true
-}
-
 variable "backend_python_service_name" {
   description = "Name of the Backend Python service"
   type        = string
   default     = "backend-python"
+}
+
+# Backend Go specific environment variables
+variable "gin_mode" {
+  description = "Gin mode (debug, release)"
+  type        = string
+  default     = "release"
+}
+
+variable "cognito_token_expiration" {
+  description = "Cognito token expiration in seconds"
+  type        = number
+  default     = 3600
+}
+
+variable "encryption_master_key" {
+  description = "Encryption master key (Base64 encoded)"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "frontend_url" {
+  description = "Frontend URL for CORS configuration"
+  type        = string
+}
+
+# Backend Python specific environment variables
+variable "openai_api_key" {
+  description = "OpenAI API Key"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "anthropic_api_key" {
+  description = "Anthropic API Key"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "google_api_key" {
+  description = "Google API Key"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "langsmith_tracing_v2" {
+  description = "Enable LangSmith tracing"
+  type        = bool
+  default     = false
+}
+
+variable "langsmith_api_key" {
+  description = "LangSmith API Key"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "langsmith_project" {
+  description = "LangSmith project name"
+  type        = string
+  default     = "NeuraKnot"
+}
+
+variable "langsmith_endpoint" {
+  description = "LangSmith endpoint URL"
+  type        = string
+  default     = "https://smith.langchain.com"
 }

@@ -127,12 +127,6 @@ output "backend_python_service_discovery_namespace" {
   value       = module.service_discovery.namespace_name
 }
 
-# Secrets Outputs
-output "secrets_manager_arns" {
-  description = "List of all secret ARNs"
-  value       = module.secrets.all_secret_arns
-}
-
 # Environment Information
 output "environment" {
   description = "Environment name"
