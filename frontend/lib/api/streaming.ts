@@ -16,13 +16,16 @@ export async function sendMessageStream(
   onError: (error: string) => void
 ) {
   try {
+    // LocalStorageからトークンを取得（引数で渡されない場合のフォールバック）
+    const token = accessToken || (typeof window !== 'undefined' ? localStorage.getItem('access_token') : null);
+
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
 
     // アクセストークンがあればAuthorizationヘッダーに設定
-    if (accessToken) {
-      headers['Authorization'] = `Bearer ${accessToken}`;
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
 
     const response = await fetch(

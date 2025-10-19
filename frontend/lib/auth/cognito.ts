@@ -36,7 +36,15 @@ export class CognitoAuthClient {
       }
     }
 
-    return response.json()
+    const data = await response.json()
+    
+    // アクセストークンをLocalStorageに保存（クロスドメインでも使用可能にするため）
+    if (data.access_token && typeof window !== 'undefined') {
+      localStorage.setItem('access_token', data.access_token)
+      console.log('[AUTH] Access token saved to localStorage')
+    }
+    
+    return data
   }
 
   /**
