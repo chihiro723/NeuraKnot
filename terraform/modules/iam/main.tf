@@ -44,7 +44,7 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# ECS Task Role Policy for Secrets Manager
+# ECS Task Role Policy for Secrets Manager (only if secrets are used)
 resource "aws_iam_policy" "ecs_task_secrets_policy" {
   count = length(var.secrets_manager_arns) > 0 ? 1 : 0
 
@@ -124,8 +124,6 @@ resource "aws_iam_policy" "ecs_task_cognito_policy" {
 
 # ECS Task Role Policy for Service Discovery
 resource "aws_iam_policy" "ecs_task_service_discovery_policy" {
-  count = var.service_discovery_arn != "" ? 1 : 0
-
   name        = "${var.project_name}-${var.environment}-ecs-task-service-discovery-policy"
   description = "Policy for ECS tasks to access Service Discovery"
 
@@ -169,10 +167,8 @@ resource "aws_iam_role_policy_attachment" "ecs_task_cognito_policy" {
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_task_service_discovery_policy" {
-  count = var.service_discovery_arn != "" ? 1 : 0
-
   role       = aws_iam_role.ecs_task_role.name
-  policy_arn = aws_iam_policy.ecs_task_service_discovery_policy[0].arn
+  policy_arn = aws_iam_policy.ecs_task_service_discovery_policy.arn
 }
 
 # RDS Enhanced Monitoring Role
