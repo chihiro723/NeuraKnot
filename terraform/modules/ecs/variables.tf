@@ -14,6 +14,11 @@ variable "vpc_id" {
   type        = string
 }
 
+variable "vpc_cidr" {
+  description = "CIDR block of the VPC"
+  type        = string
+}
+
 variable "private_subnet_ids" {
   description = "List of private subnet IDs for ECS tasks"
   type        = list(string)
@@ -191,4 +196,87 @@ variable "log_level" {
   description = "Log level for applications"
   type        = string
   default     = "info"
+}
+
+# Backend Go specific environment variables
+variable "gin_mode" {
+  description = "Gin mode (debug, release)"
+  type        = string
+  default     = "release"
+}
+
+variable "cognito_client_secret" {
+  description = "Cognito Client Secret"
+  type        = string
+  sensitive   = true
+}
+
+variable "cognito_token_expiration" {
+  description = "Cognito token expiration in seconds"
+  type        = number
+  default     = 3600
+}
+
+variable "encryption_master_key" {
+  description = "Encryption master key (Base64 encoded)"
+  type        = string
+  sensitive   = true
+}
+
+variable "frontend_url" {
+  description = "Frontend URL for CORS configuration"
+  type        = string
+}
+
+variable "db_password" {
+  description = "Database password"
+  type        = string
+  sensitive   = true
+}
+
+# Backend Python specific environment variables
+variable "openai_api_key" {
+  description = "OpenAI API Key"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "anthropic_api_key" {
+  description = "Anthropic API Key"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "google_api_key" {
+  description = "Google API Key"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "langsmith_tracing_v2" {
+  description = "Enable LangSmith tracing"
+  type        = bool
+  default     = false
+}
+
+variable "langsmith_api_key" {
+  description = "LangSmith API Key"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "langsmith_project" {
+  description = "LangSmith project name"
+  type        = string
+  default     = "NeuraKnot"
+}
+
+variable "langsmith_endpoint" {
+  description = "LangSmith endpoint URL"
+  type        = string
+  default     = "https://smith.langchain.com"
 }

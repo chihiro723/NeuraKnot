@@ -17,6 +17,15 @@ resource "aws_cloudwatch_log_group" "backend_python" {
   })
 }
 
+resource "aws_cloudwatch_log_group" "migrate" {
+  name              = "/ecs/${var.project_name}-${var.environment}-migrate"
+  retention_in_days = var.log_retention_in_days
+
+  tags = merge(var.tags, {
+    Name = "${var.project_name}-${var.environment}-migrate-logs"
+  })
+}
+
 
 # Security Group for ECS
 resource "aws_security_group" "ecs" {
@@ -32,11 +41,11 @@ resource "aws_security_group" "ecs" {
   }
 
   ingress {
-    from_port       = var.backend_python_port
-    to_port         = var.backend_python_port
-    protocol        = "tcp"
-    security_groups = [aws_security_group.ecs.id]
-    description     = "Backend Python from Backend Go"
+    from_port   = var.backend_python_port
+    to_port     = var.backend_python_port
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+    description = "Backend Python from VPC"
   }
 
 
@@ -111,6 +120,10 @@ resource "aws_ecs_task_definition" "backend_go" {
           value = "0.0.0.0"
         },
         {
+          name  = "GIN_MODE"
+          value = var.gin_mode
+        },
+        {
           name  = "DB_HOST"
           value = var.db_host
         },
@@ -121,6 +134,10 @@ resource "aws_ecs_task_definition" "backend_go" {
         {
           name  = "DB_USER"
           value = var.db_username
+        },
+        {
+          name  = "DB_PASSWORD"
+          value = var.db_password
         },
         {
           name  = "DB_NAME"
@@ -143,8 +160,16 @@ resource "aws_ecs_task_definition" "backend_go" {
           value = var.cognito_client_id
         },
         {
+          name  = "COGNITO_CLIENT_SECRET"
+          value = var.cognito_client_secret
+        },
+        {
           name  = "COGNITO_REDIRECT_URL"
           value = var.cognito_redirect_url
+        },
+        {
+          name  = "COGNITO_TOKEN_EXPIRATION"
+          value = tostring(var.cognito_token_expiration)
         },
         {
           name  = "AI_SERVICE_URL"
@@ -161,9 +186,16 @@ resource "aws_ecs_task_definition" "backend_go" {
         {
           name  = "LOG_FORMAT"
           value = "json"
+        },
+        {
+          name  = "ENCRYPTION_MASTER_KEY"
+          value = var.encryption_master_key
+        },
+        {
+          name  = "FRONTEND_URL"
+          value = var.frontend_url
         }
       ]
-      secrets = var.secrets_manager_arns
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -217,7 +249,7 @@ resource "aws_ecs_task_definition" "backend_python" {
         },
         {
           name  = "PROJECT_NAME"
-          value = "NeuraKnot Backend Python"
+          value = "NeuraKnot"
         },
         {
           name  = "VERSION"
@@ -225,14 +257,42 @@ resource "aws_ecs_task_definition" "backend_python" {
         },
         {
           name  = "ALLOWED_ORIGINS"
-          value = join(",", var.allowed_origins)
+          value = jsonencode(var.allowed_origins)
         },
         {
-          name  = "SERVICE_CONNECTION_TIMEOUT"
+          name  = "OPENAI_API_KEY"
+          value = var.openai_api_key
+        },
+        {
+          name  = "ANTHROPIC_API_KEY"
+          value = var.anthropic_api_key
+        },
+        {
+          name  = "GOOGLE_API_KEY"
+          value = var.google_api_key
+        },
+        {
+          name  = "LANGSMITH_TRACING_V2"
+          value = tostring(var.langsmith_tracing_v2)
+        },
+        {
+          name  = "LANGSMITH_API_KEY"
+          value = var.langsmith_api_key
+        },
+        {
+          name  = "LANGSMITH_PROJECT"
+          value = var.langsmith_project
+        },
+        {
+          name  = "LANGSMITH_ENDPOINT"
+          value = var.langsmith_endpoint
+        },
+        {
+          name  = "MCP_CONNECTION_TIMEOUT"
           value = "10"
         },
         {
-          name  = "SERVICE_TOOL_TIMEOUT"
+          name  = "MCP_TOOL_TIMEOUT"
           value = "30"
         },
         {
@@ -240,7 +300,6 @@ resource "aws_ecs_task_definition" "backend_python" {
           value = "120"
         }
       ]
-      secrets = var.secrets_manager_arns
       logConfiguration = {
         logDriver = "awslogs"
         options = {
