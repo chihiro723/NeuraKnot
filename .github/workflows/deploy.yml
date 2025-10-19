@@ -1,0 +1,158 @@
+name: Deploy to Production
+
+on:
+  # 手動実行のみ（GitHub Secrets設定後に自動化を有効化）
+  workflow_dispatch:
+  # push:
+  #   branches: [main]
+  #   paths:
+  #     - 'backend-go/**'
+  #     - 'backend-python/**'
+  #     - '.github/workflows/deploy.yml'
+
+jobs:
+  # 変更検出
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend-go: ${{ steps.filter.outputs.backend-go }}
+      backend-python: ${{ steps.filter.outputs.backend-python }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            backend-go:
+              - 'backend-go/**'
+            backend-python:
+              - 'backend-python/**'
+
+  # Backend Go デプロイ
+  deploy-backend-go:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend-go == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          ECR_REPOSITORY: neuraknot-prod-backend-go
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -f backend-go/docker/Dockerfile.prod \
+            backend-go/
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+      
+      - name: Update ECS Service
+        run: |
+          aws ecs update-service \
+            --cluster ${{ secrets.ECS_CLUSTER_NAME }} \
+            --service ${{ secrets.ECS_SERVICE_NAME_GO }} \
+            --force-new-deployment \
+            --region ${{ secrets.AWS_REGION }}
+      
+      - name: Wait for service stability
+        run: |
+          aws ecs wait services-stable \
+            --cluster ${{ secrets.ECS_CLUSTER_NAME }} \
+            --services ${{ secrets.ECS_SERVICE_NAME_GO }} \
+            --region ${{ secrets.AWS_REGION }}
+      
+      - name: Deployment Success Notification
+        if: success()
+        run: |
+          echo "✅ Backend Go deployed successfully!"
+          echo "Image: ${{ steps.build-image.outputs.image }}"
+
+  # Backend Python デプロイ
+  deploy-backend-python:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend-python == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+          ECR_REPOSITORY: neuraknot-prod-backend-python
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -f backend-python/docker/Dockerfile.prod \
+            backend-python/
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+      
+      - name: Update ECS Service
+        run: |
+          aws ecs update-service \
+            --cluster ${{ secrets.ECS_CLUSTER_NAME }} \
+            --service ${{ secrets.ECS_SERVICE_NAME_PYTHON }} \
+            --force-new-deployment \
+            --region ${{ secrets.AWS_REGION }}
+      
+      - name: Wait for service stability
+        run: |
+          aws ecs wait services-stable \
+            --cluster ${{ secrets.ECS_CLUSTER_NAME }} \
+            --services ${{ secrets.ECS_SERVICE_NAME_PYTHON }} \
+            --region ${{ secrets.AWS_REGION }}
+      
+      - name: Deployment Success Notification
+        if: success()
+        run: |
+          echo "✅ Backend Python deployed successfully!"
+          echo "Image: ${{ steps.build-image.outputs.image }}"
+
+  # デプロイ完了通知
+  deployment-complete:
+    needs: [deploy-backend-go, deploy-backend-python]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check deployment status
+        run: |
+          if [ "${{ needs.deploy-backend-go.result }}" = "success" ] || \
+             [ "${{ needs.deploy-backend-python.result }}" = "success" ]; then
+            echo "🚀 Deployment completed successfully!"
+          else
+            echo "⚠️ No services were deployed or deployment failed"
+            exit 1
+          fi
+
