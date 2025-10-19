@@ -8,7 +8,7 @@ resource "random_password" "db_password" {
 
 # DB Subnet Group
 resource "aws_db_subnet_group" "main" {
-  name       = "${var.project_name}-${var.environment}-db-subnet-group"
+  name       = "${lower(var.project_name)}-${var.environment}-db-subnet-group"
   subnet_ids = var.private_subnet_ids
 
   tags = merge(var.tags, {
@@ -22,11 +22,22 @@ resource "aws_security_group" "rds" {
   vpc_id      = var.vpc_id
 
   ingress {
-    from_port       = 5432
-    to_port         = 5432
-    protocol        = "tcp"
-    security_groups = [var.ecs_security_group_id]
-    description     = "PostgreSQL access from ECS"
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+    description = "PostgreSQL access from VPC"
+  }
+
+  dynamic "ingress" {
+    for_each = var.allowed_cidr_blocks
+    content {
+      from_port   = 5432
+      to_port     = 5432
+      protocol    = "tcp"
+      cidr_blocks = [ingress.value]
+      description = "PostgreSQL access for migration/development"
+    }
   }
 
   egress {
@@ -48,7 +59,7 @@ resource "aws_security_group" "rds" {
 
 # RDS Instance
 resource "aws_db_instance" "main" {
-  identifier = "${var.project_name}-${var.environment}-db"
+  identifier = "${lower(var.project_name)}-${var.environment}-db"
 
   # Engine settings
   engine         = "postgres"
@@ -69,28 +80,27 @@ resource "aws_db_instance" "main" {
   # Network settings
   db_subnet_group_name   = aws_db_subnet_group.main.name
   vpc_security_group_ids = [aws_security_group.rds.id]
-  publicly_accessible    = false
 
   # Backup settings
   backup_retention_period = var.backup_retention_period
-  backup_window          = var.backup_window
-  maintenance_window     = var.maintenance_window
+  backup_window           = var.backup_window
+  maintenance_window      = var.maintenance_window
 
   # Monitoring settings
-  monitoring_interval = var.monitoring_interval
+  monitoring_interval = var.monitoring_role_arn != null ? var.monitoring_interval : 0
   monitoring_role_arn = var.monitoring_role_arn
 
   # Performance Insights
-  performance_insights_enabled = var.performance_insights_enabled
+  performance_insights_enabled          = var.performance_insights_enabled
   performance_insights_retention_period = var.performance_insights_retention_period
 
   # Multi-AZ deployment
   multi_az = var.multi_az
 
   # Deletion protection
-  deletion_protection = var.deletion_protection
-  skip_final_snapshot = var.skip_final_snapshot
-  final_snapshot_identifier = var.skip_final_snapshot ? null : "${var.project_name}-${var.environment}-db-final-snapshot-${formatdate("YYYY-MM-DD-hhmm", timestamp())}"
+  deletion_protection       = var.deletion_protection
+  skip_final_snapshot       = var.skip_final_snapshot
+  final_snapshot_identifier = var.skip_final_snapshot ? null : "${lower(var.project_name)}-${var.environment}-db-final-snapshot-${formatdate("YYYY-MM-DD-hhmm", timestamp())}"
 
   # Parameter group
   parameter_group_name = aws_db_parameter_group.main.name
@@ -104,7 +114,7 @@ resource "aws_db_instance" "main" {
 
 # DB Parameter Group
 resource "aws_db_parameter_group" "main" {
-  name   = "${var.project_name}-${var.environment}-db-params"
+  name   = "${lower(var.project_name)}-${var.environment}-db-params"
   family = var.parameter_group_family
 
   parameter {

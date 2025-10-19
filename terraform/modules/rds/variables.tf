@@ -19,8 +19,8 @@ variable "private_subnet_ids" {
   type        = list(string)
 }
 
-variable "ecs_security_group_id" {
-  description = "Security group ID of ECS tasks"
+variable "vpc_cidr" {
+  description = "CIDR block of the VPC for RDS security group ingress"
   type        = string
 }
 
@@ -52,7 +52,7 @@ variable "instance_class" {
 variable "engine_version" {
   description = "PostgreSQL engine version"
   type        = string
-  default     = "15.4"
+  default     = "15.8"
 }
 
 variable "allocated_storage" {
@@ -131,6 +131,12 @@ variable "parameter_group_family" {
   description = "DB parameter group family"
   type        = string
   default     = "postgres15"
+}
+
+variable "allowed_cidr_blocks" {
+  description = "List of CIDR blocks allowed to access RDS (for local development/migration)"
+  type        = list(string)
+  default     = []
 }
 
 variable "tags" {
