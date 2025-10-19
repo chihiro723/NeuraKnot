@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { VerifyCodeInput } from "@/components/auth/VerifyCodeInput";
 import { cognitoAuth } from "@/lib/auth/cognito";
@@ -9,7 +9,7 @@ import { ArrowLeft } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/feedback/LoadingSpinner";
 import { getAuthErrorMessage } from "@/lib/utils/auth-errors";
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const [email, setEmail] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -138,9 +138,7 @@ export default function VerifyEmailPage() {
               メールアドレスを確認
             </h1>
             <p className="text-sm text-white/70">
-              <span className="font-medium text-emerald-400">
-                {maskEmail(email)}
-              </span>
+              <span className="font-medium text-emerald-400">{email}</span>
               <br />
               に認証コードを送信しました
             </p>
@@ -161,7 +159,7 @@ export default function VerifyEmailPage() {
           )}
 
           {successMessage && (
-            <div className="mb-4 p-3 text-sm text-center text-green-300 rounded-lg border bg-green-500/20 border-green-500/30">
+            <div className="p-3 mb-4 text-sm text-center text-green-300 rounded-lg border bg-green-500/20 border-green-500/30">
               {successMessage}
             </div>
           )}
@@ -174,7 +172,7 @@ export default function VerifyEmailPage() {
                 <button
                   onClick={handleResendCode}
                   disabled={loading}
-                  className="px-4 py-2 text-sm text-emerald-400 border border-emerald-400/30 rounded-lg transition-colors hover:bg-emerald-400/10 hover:border-emerald-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-4 py-2 text-sm text-emerald-400 rounded-lg border transition-colors border-emerald-400/30 hover:bg-emerald-400/10 hover:border-emerald-400/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   認証コードを再送信
                 </button>
@@ -197,5 +195,13 @@ export default function VerifyEmailPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<LoadingSpinner centerScreen variant="auth" />}>
+      <VerifyEmailContent />
+    </Suspense>
   );
 }

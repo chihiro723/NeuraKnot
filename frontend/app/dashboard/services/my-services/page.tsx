@@ -1,8 +1,7 @@
 "use client";
 
-import { useSearchParams, useRouter } from "next/navigation";
-import { Server, Plus, ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Server, ArrowLeft } from "lucide-react";
 import { ServiceList } from "@/components/services/ServiceList";
 import { useIsMobile } from "@/lib/hooks/useResponsive";
 
@@ -11,10 +10,8 @@ import { useIsMobile } from "@/lib/hooks/useResponsive";
  * 登録済みサービスをカードグリッドで表示
  */
 export default function MyServicesPage() {
-  const searchParams = useSearchParams();
   const router = useRouter();
   const isMobile = useIsMobile();
-  const highlightServiceId = searchParams.get("highlight");
 
   const handleBack = () => {
     router.push("/dashboard/services");
@@ -23,7 +20,7 @@ export default function MyServicesPage() {
   return (
     <div className="flex flex-col h-full">
       {/* ヘッダー */}
-      <div className="flex justify-between items-center h-16 px-4 bg-white border-b border-gray-200 md:h-16 md:px-6 dark:bg-gray-900 dark:border-gray-700">
+      <div className="flex justify-between items-center px-4 h-16 bg-white border-b border-gray-200 md:h-16 md:px-6 dark:bg-gray-900 dark:border-gray-700">
         <div className="flex items-center space-x-3">
           <div className="flex justify-center items-center w-10 h-10 bg-green-100 rounded-lg dark:bg-green-500/20">
             <Server className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -41,7 +38,7 @@ export default function MyServicesPage() {
         {isMobile && (
           <button
             onClick={handleBack}
-            className="flex items-center justify-center p-2 text-gray-600 bg-gray-50/80 transition-all duration-200 dark:text-gray-300 dark:bg-gray-800/50 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-gray-700 rounded-lg"
+            className="flex justify-center items-center p-2 text-gray-600 rounded-lg transition-all duration-200 bg-gray-50/80 dark:text-gray-300 dark:bg-gray-800/50 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-gray-700"
             title="戻る"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -51,7 +48,7 @@ export default function MyServicesPage() {
 
       {/* コンテンツ */}
       <div className="overflow-y-auto flex-1 p-4 bg-gray-50 md:p-6 dark:bg-gray-900">
-        <ServiceList highlightedServiceId={highlightServiceId || undefined} />
+        <ServiceList />
       </div>
     </div>
   );
