@@ -83,13 +83,18 @@ resource "aws_lb_listener" "http" {
   port              = "80"
   protocol          = "HTTP"
 
+  # SSL証明書がある場合はHTTPSにリダイレクト、ない場合は直接転送
   default_action {
-    type = "redirect"
+    type             = var.ssl_certificate_arn != "" ? "redirect" : "forward"
+    target_group_arn = var.ssl_certificate_arn != "" ? null : aws_lb_target_group.backend_go.arn
 
-    redirect {
-      port        = "443"
-      protocol    = "HTTPS"
-      status_code = "HTTP_301"
+    dynamic "redirect" {
+      for_each = var.ssl_certificate_arn != "" ? [1] : []
+      content {
+        port        = "443"
+        protocol    = "HTTPS"
+        status_code = "HTTP_301"
+      }
     }
   }
 }

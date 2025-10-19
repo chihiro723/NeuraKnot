@@ -13,6 +13,11 @@ output "alb_arn" {
   value       = aws_lb.main.arn
 }
 
+output "alb_security_group_id" {
+  description = "Security Group ID of the Application Load Balancer"
+  value       = aws_security_group.alb.id
+}
+
 output "alb_arn_suffix" {
   description = "ARN suffix of the Application Load Balancer"
   value       = aws_lb.main.arn_suffix
