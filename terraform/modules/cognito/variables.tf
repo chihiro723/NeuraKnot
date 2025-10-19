@@ -32,35 +32,6 @@ variable "token_validity_refresh" {
   default     = 30
 }
 
-variable "enable_oauth" {
-  description = "Enable OAuth providers"
-  type        = bool
-  default     = false
-}
-
-variable "callback_urls" {
-  description = "List of callback URLs for OAuth"
-  type        = list(string)
-  default     = []
-}
-
-variable "logout_urls" {
-  description = "List of logout URLs for OAuth"
-  type        = list(string)
-  default     = []
-}
-
-variable "oauth_providers" {
-  description = "OAuth provider configurations"
-  type = map(object({
-    client_id     = string
-    client_secret = string
-    team_id       = optional(string) # For Apple
-    key_id        = optional(string) # For Apple
-  }))
-  default = {}
-}
-
 variable "tags" {
   description = "Tags to apply to resources"
   type        = map(string)
