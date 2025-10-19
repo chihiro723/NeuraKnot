@@ -31,8 +31,11 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Builderステージから依存関係をコピー
-COPY --from=builder /root/.local /root/.local
+# 非rootユーザーを作成（先に作成）
+RUN adduser --disabled-password --gecos '' appuser
+
+# Builderステージから依存関係をコピー（appuserのディレクトリに）
+COPY --from=builder /root/.local /home/appuser/.local
 
 # アプリケーションコードをコピー
 COPY app/ ./app/
@@ -40,15 +43,14 @@ COPY app/ ./app/
 # ログディレクトリを作成
 RUN mkdir -p logs
 
-# 非rootユーザーを作成
-RUN adduser --disabled-password --gecos '' appuser && \
-    chown -R appuser:appuser /app
+# 所有権を変更
+RUN chown -R appuser:appuser /app /home/appuser/.local
 
 # 非rootユーザーに切り替え
 USER appuser
 
 # 環境変数を設定
-ENV PATH=/root/.local/bin:$PATH
+ENV PATH=/home/appuser/.local/bin:$PATH
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
@@ -60,5 +62,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 EXPOSE 8001
 
 # アプリケーションを起動（本番モード）
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "4"]
+# Note: 最小構成（256 CPU / 512 MB）に合わせて workers を 1 に設定
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--workers", "1"]
 

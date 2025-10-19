@@ -14,20 +14,22 @@ COPY go.mod go.sum ./
 # 依存関係をダウンロード（レイヤーキャッシュ最適化）
 RUN go mod download
 
-# swagコマンドをインストール
-RUN go install github.com/swaggo/swag/cmd/swag@latest
+# swagコマンドをインストール（プロジェクトと同じバージョン）
+RUN go install github.com/swaggo/swag/cmd/swag@v1.8.12
 
-# ソースコードをコピー
+# ソースコードをコピー（docsディレクトリは除外）
 COPY . .
 
-# Swaggerドキュメントを生成
-RUN export PATH=$PATH:$(go env GOPATH)/bin && swag init -g cmd/api/main.go -o docs
+# 既存のdocsを削除してから、Swaggerドキュメントを生成
+RUN rm -rf docs && \
+    export PATH=$PATH:$(go env GOPATH)/bin && \
+    swag init -g cmd/api/main.go -o docs
 
 # アプリケーションをビルド（最適化フラグ）
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -a -installsuffix cgo \
     -ldflags='-w -s -extldflags "-static"' \
-    -o main ./cmd
+    -o main ./cmd/api
 
 # 実行ステージ - distrolessイメージでセキュリティ強化
 FROM gcr.io/distroless/static-debian11:nonroot
