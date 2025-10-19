@@ -108,52 +108,164 @@ NeuraKnot は PostgreSQL 15 を使用し、**Backend-go のみ**がデータベ�
 
 ##### 1. ユーザー管理
 
-| テーブル名 | 用途                             | 主要カラム                                   |
-| ---------- | -------------------------------- | -------------------------------------------- |
-| **users**  | ユーザー情報（AWS Cognito 連携） | cognito_user_id, email, display_name, status |
+**users** - ユーザー情報（AWS Cognito 連携）
+
+| カラム名        | 型           | 説明                                              |
+| --------------- | ------------ | ------------------------------------------------- |
+| id              | UUID         | PRIMARY KEY                                       |
+| cognito_user_id | VARCHAR(255) | AWS Cognito ユーザー ID (UNIQUE)                  |
+| email           | VARCHAR(255) | メールアドレス (UNIQUE)                           |
+| display_name    | VARCHAR(255) | 表示名                                            |
+| status          | VARCHAR(50)  | ステータス (active, inactive, suspended, deleted) |
+| created_at      | TIMESTAMP    | 作成日時                                          |
+| updated_at      | TIMESTAMP    | 更新日時                                          |
 
 ##### 2. AI エージェント
 
-| テーブル名    | 用途                          | 主要カラム                                                          |
-| ------------- | ----------------------------- | ------------------------------------------------------------------- |
-| **ai_agents** | AI エージェント設定とペルソナ | name, persona_type, provider, model, temperature, streaming_enabled |
+**ai_agents** - AI エージェント設定とペルソナ
+
+| カラム名          | 型            | 説明                                         |
+| ----------------- | ------------- | -------------------------------------------- |
+| id                | UUID          | PRIMARY KEY                                  |
+| user_id           | UUID          | ユーザー ID (FK)                             |
+| name              | VARCHAR(255)  | エージェント名                               |
+| description       | TEXT          | 説明                                         |
+| avatar_url        | TEXT          | アバター画像 URL                             |
+| persona_type      | VARCHAR(50)   | ペルソナ (assistant, creative, analytical)   |
+| provider          | VARCHAR(50)   | LLM プロバイダー (openai, anthropic, google) |
+| model             | VARCHAR(100)  | LLM モデル名                                 |
+| temperature       | DECIMAL(3, 2) | 温度パラメータ (0.0-2.0)                     |
+| max_tokens        | INTEGER       | 最大トークン数 (100-8000)                    |
+| system_prompt     | TEXT          | システムプロンプト（NULL なら自動生成）      |
+| tools_enabled     | BOOLEAN       | ツール使用の有効化                           |
+| streaming_enabled | BOOLEAN       | ストリーミングレスポンスの有効化             |
+| is_active         | BOOLEAN       | アクティブ状態                               |
+| message_count     | INTEGER       | メッセージ総数                               |
+| last_chat_at      | TIMESTAMP     | 最終チャット日時                             |
+| created_at        | TIMESTAMP     | 作成日時                                     |
+| updated_at        | TIMESTAMP     | 更新日時                                     |
 
 **サポートする LLM モデル**:
 
-- OpenAI: gpt-4o, gpt-4o-mini, gpt-4-turbo, gpt-4, gpt-3.5-turbo
-- Anthropic: claude-3-5-sonnet-20241022, claude-3.5-sonnet, claude-3-opus-20240229
-- Google: gemini-pro, gemini-1.5-pro, gemini-1.5-flash
+- **OpenAI**: gpt-4o, gpt-4o-mini, gpt-4-turbo, gpt-4, gpt-3.5-turbo
+- **Anthropic**: claude-3-5-sonnet-20241022, claude-3.5-sonnet, claude-3-opus-20240229, claude-3-sonnet-20240229, claude-3-haiku-20240307
+- **Google**: gemini-pro, gemini-1.5-pro, gemini-1.5-flash
 
 ##### 3. 会話・メッセージ
 
-| テーブル名        | 用途                                 | 主要カラム                                                      |
-| ----------------- | ------------------------------------ | --------------------------------------------------------------- |
-| **conversations** | ユーザーと AI Agent 間の 1 対 1 会話 | user_id, ai_agent_id, message_count, last_message_at            |
-| **messages**      | チャットメッセージ                   | conversation_id, sender_type, sender_id, content, ai_session_id |
+**conversations** - ユーザーと AI Agent 間の 1 対 1 会話
+
+| カラム名        | 型        | 説明                    |
+| --------------- | --------- | ----------------------- |
+| id              | UUID      | PRIMARY KEY             |
+| user_id         | UUID      | ユーザー ID (FK)        |
+| ai_agent_id     | UUID      | AI エージェント ID (FK) |
+| message_count   | INTEGER   | メッセージ総数          |
+| last_message_at | TIMESTAMP | 最終メッセージ日時      |
+| created_at      | TIMESTAMP | 作成日時                |
+| updated_at      | TIMESTAMP | 更新日時                |
+
+**UNIQUE 制約**: (user_id, ai_agent_id) - 1 ユーザー × 1 エージェント = 1 会話
+
+**messages** - チャットメッセージ
+
+| カラム名        | 型          | 説明                                           |
+| --------------- | ----------- | ---------------------------------------------- |
+| id              | UUID        | PRIMARY KEY                                    |
+| conversation_id | UUID        | 会話 ID (FK)                                   |
+| sender_type     | VARCHAR(20) | 送信者タイプ (user: ユーザー, ai: AI Agent)    |
+| sender_id       | UUID        | 送信者 ID (users.id または ai_agents.id)       |
+| content         | TEXT        | メッセージ内容                                 |
+| ai_session_id   | UUID        | AI セッション ID (FK, sender_type='ai' の場合) |
+| created_at      | TIMESTAMP   | 作成日時                                       |
 
 ##### 4. AI 処理履歴
 
-| テーブル名           | 用途                                      | 主要カラム                                                    |
-| -------------------- | ----------------------------------------- | ------------------------------------------------------------- |
-| **ai_chat_sessions** | AI 処理セッション履歴（分析・デバッグ用） | provider, model, tokens_total, processing_time_ms, status     |
-| **ai_tool_usage**    | AI ツール使用履歴                         | tool_name, input_data, output_data, status, execution_time_ms |
+**ai_chat_sessions** - AI 処理セッション履歴（分析・デバッグ用）
+
+| カラム名           | 型            | 説明                                       |
+| ------------------ | ------------- | ------------------------------------------ |
+| id                 | UUID          | PRIMARY KEY                                |
+| user_id            | UUID          | ユーザー ID (FK)                           |
+| conversation_id    | UUID          | 会話 ID (FK)                               |
+| ai_agent_id        | UUID          | AI エージェント ID (FK)                    |
+| message_id         | UUID          | メッセージ ID (FK)                         |
+| provider           | VARCHAR(50)   | LLM プロバイダー                           |
+| model              | VARCHAR(100)  | LLM モデル                                 |
+| persona            | VARCHAR(50)   | ペルソナタイプ                             |
+| temperature        | DECIMAL(3, 2) | 温度パラメータ                             |
+| tokens_prompt      | INTEGER       | プロンプトトークン数                       |
+| tokens_completion  | INTEGER       | 応答トークン数                             |
+| tokens_total       | INTEGER       | 総トークン数                               |
+| processing_time_ms | INTEGER       | 処理時間（ミリ秒）                         |
+| tools_used         | INTEGER       | 使用したツール数                           |
+| status             | VARCHAR(50)   | ステータス (processing, completed, failed) |
+| error_message      | TEXT          | エラーメッセージ                           |
+| started_at         | TIMESTAMP     | 処理開始日時                               |
+| completed_at       | TIMESTAMP     | 処理完了日時                               |
+
+**ai_tool_usage** - AI ツール使用履歴
+
+| カラム名          | 型           | 説明                            |
+| ----------------- | ------------ | ------------------------------- |
+| id                | UUID         | PRIMARY KEY                     |
+| session_id        | UUID         | セッション ID (FK)              |
+| message_id        | UUID         | メッセージ ID (FK)              |
+| tool_name         | VARCHAR(255) | ツール名                        |
+| tool_category     | VARCHAR(100) | ツールカテゴリ (basic, service) |
+| input_data        | JSONB        | 入力データ（JSON 形式）         |
+| output_data       | TEXT         | 出力データ                      |
+| status            | VARCHAR(50)  | ステータス (completed, failed)  |
+| error_message     | TEXT         | エラーメッセージ                |
+| execution_time_ms | INTEGER      | 実行時間（ミリ秒）              |
+| insert_position   | INTEGER      | UI 表示用：メッセージ内挿入位置 |
+| executed_at       | TIMESTAMP    | 実行日時                        |
 
 **現在の統計（開発環境）**:
 
 - 平均トークン使用量: 2,690 トークン
 - 平均処理時間: 5.8 秒
 - ツール成功率: 100%
+- 総 AI セッション: 117 件
+- 総ツール実行: 56 件
 
 ##### 5. サービス連携
 
-| テーブル名               | 用途                             | 主要カラム                                                  |
-| ------------------------ | -------------------------------- | ----------------------------------------------------------- |
-| **user_service_configs** | ユーザーのサービス設定（暗号化） | service_class, encrypted_config, encrypted_auth, is_enabled |
-| **ai_agent_services**    | AI Agent× サービス紐付け         | ai_agent_id, service_class, tool_selection_mode, enabled    |
+**user_service_configs** - ユーザーのサービス設定（暗号化）
+
+| カラム名         | 型           | 説明                                 |
+| ---------------- | ------------ | ------------------------------------ |
+| id               | UUID         | PRIMARY KEY                          |
+| user_id          | UUID         | ユーザー ID (FK)                     |
+| service_class    | VARCHAR(255) | サービスクラス名 (例: NotionService) |
+| encrypted_config | BYTEA        | 暗号化された設定情報 (AES-256-GCM)   |
+| config_nonce     | BYTEA        | 設定暗号化用 Nonce                   |
+| encrypted_auth   | BYTEA        | 暗号化された認証情報 (AES-256-GCM)   |
+| auth_nonce       | BYTEA        | 認証情報暗号化用 Nonce               |
+| is_enabled       | BOOLEAN      | サービス有効化フラグ                 |
+| created_at       | TIMESTAMP    | 作成日時                             |
+| updated_at       | TIMESTAMP    | 更新日時                             |
+
+**UNIQUE 制約**: (user_id, service_class) - 1 ユーザー × 1 サービス = 1 設定
+
+**ai_agent_services** - AI Agent × サービス紐付け
+
+| カラム名            | 型           | 説明                                         |
+| ------------------- | ------------ | -------------------------------------------- |
+| id                  | UUID         | PRIMARY KEY                                  |
+| ai_agent_id         | UUID         | AI エージェント ID (FK)                      |
+| service_class       | VARCHAR(255) | サービスクラス名                             |
+| tool_selection_mode | VARCHAR(50)  | ツール選択モード (all: 全て, selected: 選択) |
+| selected_tools      | TEXT[]       | 選択されたツール名の配列                     |
+| enabled             | BOOLEAN      | このサービスを使用するかどうか               |
+| created_at          | TIMESTAMP    | 作成日時                                     |
+
+**UNIQUE 制約**: (ai_agent_id, service_class) - 1 エージェント × 1 サービス = 1 紐付け
 
 **セキュリティ**:
 
 - 認証情報は AES-256-GCM で暗号化
+- Nonce を使用して暗号化の一意性を保証
 - Backend-go でのみ復号化可能
 
 #### 設計原則
@@ -174,9 +286,9 @@ NeuraKnot は PostgreSQL 15 を使用し、**Backend-go のみ**がデータベ�
 
 #### 詳細ドキュメント
 
-- 📊 [現在のデータベース設計（MVP 版）](./docs/DATABASE_DESIGN_CURRENT.md) - 全テーブル詳細、ER 図、インデックス戦略
-- 🚀 [将来のデータベース設計](./docs/DATABASE_DESIGN.md) - グループチャット、友達機能等の将来設計
-- 📈 [スキーマ分析レポート](./docs/backend/SCHEMA_ANALYSIS_REPORT.md) - 現在のスキーマ状態と最適化情報
+- [現在のデータベース設計（MVP 版）](./docs/DATABASE_DESIGN_CURRENT.md) - 全テーブル詳細、ER 図、インデックス戦略
+- [将来のデータベース設計](./docs/DATABASE_DESIGN.md) - グループチャット、友達機能等の将来設計
+- [スキーマ分析レポート](./docs/backend/SCHEMA_ANALYSIS_REPORT.md) - 現在のスキーマ状態と最適化情報
 
 ### プロジェクト構成
 
@@ -360,7 +472,7 @@ curl http://localhost:8001/api/health
 ./dev.sh urls            # アクセスURL一覧を表示
 
 # ビルド関連
-./dev.sh build           # 再ビルドして起動（キャッシュ使用）
+./dev.sh build           # 再ビルドして起動（レイヤーキャッシュ使用）
 ./dev.sh rebuild         # 完全再ビルド（キャッシュ無視）
 ./dev.sh build frontend  # 特定サービスのみ再ビルド
 
@@ -377,12 +489,12 @@ curl http://localhost:8001/api/health
 
 **主な機能:**
 
-- ✅ カラフルなログ出力で視認性向上
-- ✅ サービス個別の起動・停止・再起動に対応
-- ✅ 自動データベーススキーマ構築
-- ✅ アクセス URL 一覧表示
-- ✅ リソース使用状況の確認
-- ✅ 機密情報をマスクした環境変数表示
+- カラフルなログ出力で視認性向上
+- サービス個別の起動・停止・再起動に対応
+- 自動データベーススキーマ構築
+- アクセス URL 一覧表示
+- リソース使用状況の確認
+- 機密情報をマスクした環境変数表示
 
 ### Docker Compose コマンド
 
@@ -557,7 +669,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 
 NeuraKnot のインフラストラクチャは **Terraform** を使用して Infrastructure as Code (IaC) として管理されています。
 
-### 🏗️ アーキテクチャ概要
+### アーキテクチャ概要
 
 **開発環境（Dev）**
 
@@ -576,7 +688,7 @@ NeuraKnot のインフラストラクチャは **Terraform** を使用して Inf
 - **Service Discovery**: Backend Python 用内部通信
 - **Secrets Manager**: 機密情報管理
 
-### 📋 モジュール構成
+### モジュール構成
 
 | モジュール            | 用途                         | 主要リソース                                                      |
 | --------------------- | ---------------------------- | ----------------------------------------------------------------- |
@@ -590,7 +702,7 @@ NeuraKnot のインフラストラクチャは **Terraform** を使用して Inf
 | **Secrets Manager**   | 機密情報管理                 | Secrets, Secret Versions                                          |
 | **IAM**               | アクセス制御                 | Roles, Policies, Policy Attachments                               |
 
-### 🚀 クイックスタート
+### クイックスタート
 
 **Dev 環境のデプロイ（Cognito のみ）**
 
@@ -610,7 +722,7 @@ terraform plan
 terraform apply
 ```
 
-### 📊 コスト見積もり
+### コスト見積もり
 
 - **Dev 環境**: $0/月（Cognito 無料枠内）
 - **Prod 環境**: $100-130/月（AWS）+ Vercel
@@ -621,13 +733,13 @@ terraform apply
   - その他: $5-15
   - Vercel: 無料枠または $20/月（Pro プラン）
 
-### 🔒 セキュリティ
+### セキュリティ
 
 - **ネットワークセキュリティ**: ALB → ECS → RDS の段階的アクセス制御
 - **機密情報管理**: Secrets Manager による暗号化された機密情報管理
 - **暗号化**: RDS、EBS、Secrets Manager で暗号化有効
 
-### 📚 詳細ドキュメント
+### 詳細ドキュメント
 
 **Terraform の詳細な使用方法、設定、トラブルシューティングについては、[terraform/README.md](./terraform/README.md) を参照してください。**
 
@@ -639,16 +751,16 @@ terraform apply
 
 **開発ガイド**
 
-- 📋 [開発ルール・貢献ガイド](./docs/CONTRIBUTING.md) - コミットメッセージ、プルリクエスト、コードレビューのルール
+- [開発ルール・貢献ガイド](./docs/CONTRIBUTING.md) - コミットメッセージ、プルリクエスト、コードレビューのルール
 - [フロントエンド開発](./docs/frontend/GETTING_STARTED.md)
 - [Backend Go 開発](./backend-go/README.md)
 - [Backend Python 開発](./backend-python/README.md)
 
 **アーキテクチャ**
 
-- 🗄️ [現在のデータベース設計](./docs/DATABASE_DESIGN_CURRENT.md) - **現在の 8 テーブル詳細（MVP 版）**
-- 🚀 [将来のデータベース設計](./docs/DATABASE_DESIGN.md) - グループチャット、友達機能等の将来設計
-- 📊 [スキーマ分析レポート](./docs/backend/SCHEMA_ANALYSIS_REPORT.md) - スキーマ状態と最適化情報
+- [現在のデータベース設計](./docs/DATABASE_DESIGN_CURRENT.md) - **現在の 8 テーブル詳細（MVP 版）**
+- [将来のデータベース設計](./docs/DATABASE_DESIGN.md) - グループチャット、友達機能等の将来設計
+- [スキーマ分析レポート](./docs/backend/SCHEMA_ANALYSIS_REPORT.md) - スキーマ状態と最適化情報
 - [フロントエンドアーキテクチャ](./docs/frontend/ARCHITECTURE.md)
 - [認証アーキテクチャ](./docs/frontend/AUTH_ARCHITECTURE.md)
 - [エラーハンドリング](./docs/frontend/ERROR_HANDLING_ARCHITECTURE.md)
