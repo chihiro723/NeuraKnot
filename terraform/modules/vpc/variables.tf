@@ -33,6 +33,12 @@ variable "private_subnet_cidrs" {
   default     = ["10.0.10.0/24", "10.0.20.0/24"]
 }
 
+variable "single_nat_gateway" {
+  description = "Use a single NAT Gateway instead of one per AZ (cost saving)"
+  type        = bool
+  default     = false
+}
+
 variable "tags" {
   description = "Tags to apply to resources"
   type        = map(string)
