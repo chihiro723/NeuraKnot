@@ -416,7 +416,7 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
                 </div>
                 <div>
                   <span className="font-medium text-gray-900 dark:text-white">
-                    温度:
+                    創造性:
                   </span>
                   <span className="ml-2 text-gray-600 dark:text-gray-400">
                     {agent.temperature}

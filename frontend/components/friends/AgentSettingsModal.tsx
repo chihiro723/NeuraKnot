@@ -264,7 +264,7 @@ export function AgentSettingsModal({
 
   return (
     <div
-      className="flex fixed inset-0 z-50 justify-center items-center p-2 md:p-4 backdrop-blur-md bg-black/60"
+      className="flex fixed inset-0 z-50 justify-center items-center p-2 backdrop-blur-md md:p-4 bg-black/60"
       onClick={onClose}
     >
       <div
@@ -272,8 +272,8 @@ export function AgentSettingsModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* ヘッダー */}
-        <div className="flex justify-between items-center p-4 md:p-6 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-base md:text-xl font-semibold text-gray-900 dark:text-white">
+        <div className="flex justify-between items-center p-4 border-b border-gray-200 md:p-6 dark:border-gray-700">
+          <h2 className="text-base font-semibold text-gray-900 md:text-xl dark:text-white">
             エージェント設定
           </h2>
           <button
@@ -314,10 +314,10 @@ export function AgentSettingsModal({
           )}
 
           {error && (
-            <div className="p-3 md:p-4 mb-3 md:mb-4 bg-red-50 rounded-lg border border-red-200 dark:bg-red-900/20 dark:border-red-800">
+            <div className="p-3 mb-3 bg-red-50 rounded-lg border border-red-200 md:p-4 md:mb-4 dark:bg-red-900/20 dark:border-red-800">
               <div className="flex items-center space-x-1.5 md:space-x-2">
-                <AlertCircle className="w-4 h-4 md:w-5 md:h-5 text-red-500 dark:text-red-400 flex-shrink-0" />
-                <span className="text-xs md:text-sm text-red-600 dark:text-red-400">
+                <AlertCircle className="flex-shrink-0 w-4 h-4 text-red-500 md:w-5 md:h-5 dark:text-red-400" />
+                <span className="text-xs text-red-600 md:text-sm dark:text-red-400">
                   {error}
                 </span>
               </div>
@@ -325,10 +325,10 @@ export function AgentSettingsModal({
           )}
 
           {success && (
-            <div className="p-3 md:p-4 mb-3 md:mb-4 bg-green-50 rounded-lg border border-green-200 dark:bg-green-900/20 dark:border-green-800">
+            <div className="p-3 mb-3 bg-green-50 rounded-lg border border-green-200 md:p-4 md:mb-4 dark:bg-green-900/20 dark:border-green-800">
               <div className="flex items-center space-x-1.5 md:space-x-2">
-                <Check className="w-4 h-4 md:w-5 md:h-5 text-green-500 dark:text-green-400 flex-shrink-0" />
-                <span className="text-xs md:text-sm text-green-600 dark:text-green-400">
+                <Check className="flex-shrink-0 w-4 h-4 text-green-500 md:w-5 md:h-5 dark:text-green-400" />
+                <span className="text-xs text-green-600 md:text-sm dark:text-green-400">
                   {success}
                 </span>
               </div>
@@ -406,7 +406,7 @@ export function AgentSettingsModal({
           {/* LLM設定タブ */}
           {activeTab === "llm" && (
             <div className="space-y-4 md:space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
                 <div>
                   <label className="block mb-1.5 md:mb-2 text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300">
                     プロバイダー
@@ -439,7 +439,7 @@ export function AgentSettingsModal({
 
               <div>
                 <label className="block mb-1.5 md:mb-2 text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300">
-                  温度: {formData.temperature || 0.7}
+                  創造性: {formData.temperature || 0.7}
                 </label>
                 <input
                   type="range"
@@ -472,10 +472,10 @@ export function AgentSettingsModal({
 
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <h3 className="text-xs font-medium text-gray-700 md:text-sm dark:text-gray-300">
                     ストリーミング
                   </h3>
-                  <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-gray-500 md:text-sm dark:text-gray-400">
                     リアルタイムレスポンスの有効化
                   </p>
                 </div>
@@ -498,7 +498,7 @@ export function AgentSettingsModal({
           {activeTab === "services" && (
             <div className="space-y-4 md:space-y-6">
               <div>
-                <h3 className="mb-3 md:mb-4 text-base md:text-lg font-medium text-gray-900 dark:text-white">
+                <h3 className="mb-3 text-base font-medium text-gray-900 md:mb-4 md:text-lg dark:text-white">
                   連携サービス
                 </h3>
 
@@ -533,15 +533,15 @@ export function AgentSettingsModal({
                           <div
                             key={userService.service.class_name}
                             className={cn(
-                              "border rounded-xl",
+                              "rounded-xl border",
                               isSelected
-                                ? "border-green-500 bg-green-50 dark:bg-green-900/20"
-                                : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800"
+                                ? "bg-green-50 border-green-500 dark:bg-green-900/20"
+                                : "bg-gray-50 border-gray-200 dark:border-gray-700 dark:bg-gray-800"
                             )}
                           >
                             {/* サービス選択 */}
                             <div
-                              className="flex gap-2 md:gap-3 items-center p-3 md:p-4 cursor-pointer"
+                              className="flex gap-2 items-center p-3 cursor-pointer md:gap-3 md:p-4"
                               onClick={() => {
                                 if (isRegistered) {
                                   // 既に登録済みの場合は有効/無効を切り替え
@@ -558,9 +558,9 @@ export function AgentSettingsModal({
                               }}
                             >
                               {isSelected ? (
-                                <CheckSquare className="flex-shrink-0 w-4 h-4 md:w-5 md:h-5 text-green-500" />
+                                <CheckSquare className="flex-shrink-0 w-4 h-4 text-green-500 md:w-5 md:h-5" />
                               ) : (
-                                <Square className="flex-shrink-0 w-4 h-4 md:w-5 md:h-5 text-gray-400" />
+                                <Square className="flex-shrink-0 w-4 h-4 text-gray-400 md:w-5 md:h-5" />
                               )}
                               <div
                                 className={cn(
@@ -570,11 +570,11 @@ export function AgentSettingsModal({
                                     : "bg-gradient-to-br from-green-500 to-green-600"
                                 )}
                               >
-                                <Server className="w-4 h-4 md:w-5 md:h-5 text-white" />
+                                <Server className="w-4 h-4 text-white md:w-5 md:h-5" />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex gap-1.5 md:gap-2 items-center">
-                                  <h3 className="text-sm md:text-base font-medium text-gray-900 truncate dark:text-white">
+                                  <h3 className="text-sm font-medium text-gray-900 truncate md:text-base dark:text-white">
                                     {userService.service.name}
                                   </h3>
                                   {!userService.config.is_enabled && (
@@ -583,7 +583,7 @@ export function AgentSettingsModal({
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-xs md:text-sm text-gray-500 truncate dark:text-gray-400">
+                                <p className="text-xs text-gray-500 truncate md:text-sm dark:text-gray-400">
                                   {userService.service.description}
                                 </p>
                               </div>
@@ -598,7 +598,7 @@ export function AgentSettingsModal({
                                       userService.service.class_name
                                     );
                                   }}
-                                  className="p-2 md:p-3 text-gray-400 rounded-full transition-colors hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                                  className="p-2 text-gray-400 rounded-full transition-colors md:p-3 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                                 >
                                   {isExpanded ? (
                                     <ChevronUp className="w-4 h-4 md:w-5 md:h-5" />
@@ -611,10 +611,10 @@ export function AgentSettingsModal({
 
                             {/* ツール選択（選択されている場合のみ） */}
                             {isSelected && isExpanded && agentService && (
-                              <div className="p-3 md:p-4 space-y-2 md:space-y-3 border-t border-gray-200 dark:border-gray-700">
+                              <div className="p-3 space-y-2 border-t border-gray-200 md:p-4 md:space-y-3 dark:border-gray-700">
                                 {/* ツール選択モード */}
                                 <div className="flex justify-between items-center">
-                                  <span className="text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  <span className="text-xs font-medium text-gray-700 md:text-sm dark:text-gray-300">
                                     ツール選択
                                   </span>
                                   <div className="flex gap-1.5 md:gap-2">
@@ -730,7 +730,7 @@ export function AgentSettingsModal({
                                           <Square className="flex-shrink-0 w-3 h-3 md:w-4 md:h-4" />
                                         )}
                                         <div className="flex-1 min-w-0">
-                                          <div className="text-xs md:text-sm font-medium truncate">
+                                          <div className="text-xs font-medium truncate md:text-sm">
                                             {tool.name}
                                           </div>
                                           {tool.description && (
@@ -750,9 +750,9 @@ export function AgentSettingsModal({
                       })}
                   </div>
                 ) : (
-                  <div className="py-4 md:py-6 text-center rounded-lg border border-gray-300 border-dashed dark:border-gray-700">
+                  <div className="py-4 text-center rounded-lg border border-gray-300 border-dashed md:py-6 dark:border-gray-700">
                     <Server className="mx-auto mb-1.5 md:mb-2 w-6 h-6 md:w-8 md:h-8 text-gray-400" />
-                    <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-gray-500 md:text-sm dark:text-gray-400">
                       利用可能なサービスがありません
                     </p>
                   </div>
@@ -763,7 +763,7 @@ export function AgentSettingsModal({
         </div>
 
         {/* フッター */}
-        <div className="flex justify-end items-center p-4 md:p-6 space-x-2 md:space-x-3 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex justify-end items-center p-4 space-x-2 border-t border-gray-200 md:p-6 md:space-x-3 dark:border-gray-700">
           <button
             onClick={onClose}
             className="px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-medium text-gray-700 bg-white rounded-lg border border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
