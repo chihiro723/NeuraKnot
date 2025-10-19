@@ -265,7 +265,7 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
   return (
     <>
       {/* ヘッダー */}
-      <div className="flex justify-between items-center px-4 h-16 bg-white border-b border-gray-200 md:h-16 md:px-6 dark:bg-gray-900 dark:border-gray-700">
+      <div className="flex justify-between items-center px-4 h-14 bg-white border-b border-gray-200 sm:h-16 sm:px-6 dark:bg-gray-900 dark:border-gray-700">
         <div className="flex items-center space-x-3">
           <div className="flex justify-center items-center w-10 h-10 bg-green-100 rounded-lg dark:bg-green-500/20">
             {friend.type === "ai" ? (
@@ -298,7 +298,7 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
 
       {/* メインコンテンツ */}
       <div className="overflow-y-auto flex-1 bg-gray-50 dark:bg-gray-900">
-        <div className="p-4 mx-auto space-y-8 max-w-2xl md:p-8 md:space-y-10">
+        <div className="p-4 mx-auto space-y-8 max-w-2xl sm:p-8 sm:space-y-10">
           {/* プロフィール情報 */}
           <div className="space-y-6">
             <div className="flex items-center space-x-6">
