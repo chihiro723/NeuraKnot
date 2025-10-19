@@ -169,12 +169,28 @@ go-mod-cache/
 vendor/
 
 # Terraform
+# 状態ファイル（機密情報を含むためコミット禁止）
 *.tfstate
 *.tfstate.*
+*.tfstate.backup
+
+# プロバイダープラグイン（ダウンロード可能なのでコミット不要）
 .terraform/
-.terraform.lock.hcl
+
+# 環境固有の変数ファイル（機密情報を含む可能性があるためコミット禁止）
 terraform.tfvars
 terraform.tfvars.json
+*.auto.tfvars
+*.auto.tfvars.json
+
+# secrets.tfvars（機密情報を含むためコミット禁止）
+secrets.tfvars
+
+# 以下はコミットすべき（.gitignoreに含めない）
+# - .terraform-version : Terraformバージョンの固定
+# - .terraform.lock.hcl : プロバイダーバージョンのロック
+# - *.tf : Terraformコード
+# - *.tfvars.example : 変数ファイルのテンプレート
 
 # Docker
 docker-compose.override.yml
@@ -223,3 +239,9 @@ coverage/
 # Local development
 .local/
 local/
+
+# Migration temporary files
+/tmp/migrate-task.json
+/tmp/migration.log
+migrate
+backend-go/migrate
