@@ -76,7 +76,7 @@ terraform apply
 - **Vercel**: Next.js Frontend（フロントエンド）
 - **RDS PostgreSQL**: Multi-AZ、暗号化有効
 - **ALB**: Application Load Balancer（API 用）
-- **Cognito**: OAuth 対応（Google, LINE, Apple）
+- **Cognito**: メール・パスワード認証
 - **Service Discovery**: Backend Python 用内部通信
 - **Secrets Manager**: 機密情報管理
 
@@ -84,14 +84,13 @@ terraform apply
 
 ### 1. Cognito モジュール
 
-**用途**: ユーザー認証・管理
+**用途**: ユーザー認証・管理（メール・パスワード認証）
 
 **主要リソース**:
 
 - `aws_cognito_user_pool` - User Pool 本体
 - `aws_cognito_user_pool_client` - クライアントアプリ
 - `aws_cognito_user_pool_domain` - Cognito ドメイン
-- `aws_cognito_identity_provider` - OAuth プロバイダー
 
 ### 2. VPC モジュール
 
@@ -191,7 +190,11 @@ export ENVIRONMENT="dev"  # または "prod"
 environment = "dev"
 aws_region  = "ap-northeast-1"
 project_name = "neuraKnot"
-enable_oauth = false
+
+# Cognito settings
+password_minimum_length = 8
+token_validity_access   = 60
+token_validity_refresh  = 30
 ```
 
 **Prod 環境**:
@@ -200,7 +203,6 @@ enable_oauth = false
 environment = "prod"
 aws_region  = "ap-northeast-1"
 project_name = "neuraKnot"
-enable_oauth = true
 # その他の設定...
 ```
 
@@ -284,8 +286,9 @@ terraform destroy
 ### 機密情報管理
 
 - データベースパスワード: Secrets Manager
-- OAuth 認証情報: Secrets Manager
+- Cognito クライアントシークレット: Secrets Manager
 - AI API キー: Secrets Manager
+- 外部 API キー: Secrets Manager
 
 ### 暗号化
 
