@@ -98,8 +98,11 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 
 // setupRoutes ルートを設定
 func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *AIAgentHandler, chatHandler *ChatHandler, serviceHandler *ServiceHandler, authService user.AuthService) {
-	// ヘルスチェック
+	// ヘルスチェック（ALB用に/api/healthも追加）
 	engine.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
+	engine.GET("/api/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 

@@ -86,7 +86,7 @@ resource "aws_lb_listener" "http" {
   # SSL証明書がある場合はHTTPSにリダイレクト、ない場合は直接転送
   default_action {
     type             = var.ssl_certificate_arn != "" ? "redirect" : "forward"
-    target_group_arn = var.ssl_certificate_arn != "" ? null : aws_lb_target_group.backend_go.arn
+    target_group_arn = var.ssl_certificate_arn == "" ? aws_lb_target_group.backend_go.arn : null
 
     dynamic "redirect" {
       for_each = var.ssl_certificate_arn != "" ? [1] : []

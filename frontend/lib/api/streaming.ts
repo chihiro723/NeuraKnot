@@ -15,14 +15,27 @@ export async function sendMessageStream(
   onError: (error: string) => void
 ) {
   try {
+    // アクセストークンを取得
+    const accessToken = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('access_token='))
+      ?.split('=')[1];
+
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+
+    // アクセストークンがあればAuthorizationヘッダーに設定
+    if (accessToken) {
+      headers['Authorization'] = `Bearer ${accessToken}`;
+    }
+
     const response = await fetch(
       `${BACKEND_URL}/api/v1/conversations/${conversationId}/messages`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Cookieを自動的に含める
+        headers,
+        credentials: 'include', // Cookieも含める（フォールバック用）
         body: JSON.stringify({ content }),
       }
     )

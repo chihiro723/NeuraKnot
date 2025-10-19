@@ -32,6 +32,14 @@ func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 		// Cookieからアクセストークンを取得
 		token, err := c.Cookie(AccessTokenCookie)
 		if err != nil || token == "" {
+			// Cookieにトークンがない場合、Authorizationヘッダーから取得を試みる
+			authHeader := c.GetHeader("Authorization")
+			if authHeader != "" && len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+				token = authHeader[7:]
+			}
+		}
+
+		if token == "" {
 			c.JSON(http.StatusUnauthorized, response.NewUnauthorizedErrorResponse("Authentication required"))
 			c.Abort()
 			return
@@ -60,6 +68,14 @@ func (m *AuthMiddleware) OptionalAuth() gin.HandlerFunc {
 		// Cookieからアクセストークンを取得
 		token, err := c.Cookie(AccessTokenCookie)
 		if err != nil || token == "" {
+			// Cookieにトークンがない場合、Authorizationヘッダーから取得を試みる
+			authHeader := c.GetHeader("Authorization")
+			if authHeader != "" && len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+				token = authHeader[7:]
+			}
+		}
+
+		if token == "" {
 			c.Next()
 			return
 		}
