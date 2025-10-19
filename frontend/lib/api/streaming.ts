@@ -11,16 +11,11 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '')
 export async function sendMessageStream(
   conversationId: string,
   content: string,
+  accessToken: string | null,
   onEvent: (event: any) => void,
   onError: (error: string) => void
 ) {
   try {
-    // アクセストークンを取得
-    const accessToken = document.cookie
-      .split('; ')
-      .find(row => row.startsWith('access_token='))
-      ?.split('=')[1];
-
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
     };
