@@ -719,21 +719,20 @@ export function ChatWindow({
           {/* ローディングインジケーター（ストリーミング開始前 or 非ストリーミング） */}
           {((isStreaming && !streamingContent) ||
             (isLoading && !isStreaming)) && (
-            <div className="flex justify-start px-2">
-              <div className="flex items-start space-x-3">
+            <div className="flex justify-start">
+              <div className="flex items-start space-x-2 md:space-x-3 max-w-[90%] md:max-w-[75%] overflow-hidden">
                 {/* アイコン */}
-                <div className="flex overflow-hidden flex-shrink-0 justify-center items-center w-10 h-10 bg-green-500 rounded-full">
+                <div className="flex overflow-hidden flex-shrink-0 justify-center items-center w-8 h-8 bg-green-500 rounded-full md:w-10 md:h-10">
                   <span className="text-xs font-medium text-white md:text-sm">
                     {selectedChat.name.charAt(0)}
                   </span>
                 </div>
 
-                {/* 名前とバブル */}
-                <div className="flex flex-col space-y-1">
+                {/* 名前 + バブル（通常AIメッセージと合わせる） */}
+                <div className="flex overflow-hidden flex-col space-y-1 min-w-0 max-w-full">
                   <span className="text-xs font-medium text-gray-600 md:text-sm dark:text-gray-400">
                     {selectedChat.name}
                   </span>
-
                   {/* 入力中バブル（固定幅） */}
                   <div className="px-4 py-3 w-20 text-gray-900 bg-white rounded-2xl rounded-tl-sm border border-gray-200 shadow-sm dark:text-gray-100 dark:bg-gray-800 dark:border-gray-700">
                     <div className="flex justify-center space-x-1">

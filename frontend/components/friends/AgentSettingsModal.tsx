@@ -92,7 +92,7 @@ export function AgentSettingsModal({
         max_tokens: agent.max_tokens,
         system_prompt: agent.system_prompt,
         tools_enabled: agent.tools_enabled,
-        streaming_enabled: agent.streaming_enabled,
+        streaming_enabled: agent.streaming_enabled ?? true,
       });
       loadData();
     }
@@ -419,8 +419,12 @@ export function AgentSettingsModal({
                     className="w-full px-3 md:px-4 py-2 md:py-2.5 text-sm md:text-base text-gray-900 dark:text-white bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                   >
                     <option value="openai">OpenAI</option>
-                    <option value="anthropic">Anthropic</option>
-                    <option value="google">Google</option>
+                    <option value="anthropic" disabled>
+                      Anthropic（近日追加予定）
+                    </option>
+                    <option value="google" disabled>
+                      Google（近日追加予定）
+                    </option>
                   </select>
                 </div>
 
@@ -482,7 +486,7 @@ export function AgentSettingsModal({
                 <label className="inline-flex relative items-center cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={formData.streaming_enabled || false}
+                    checked={formData.streaming_enabled ?? true}
                     onChange={(e) =>
                       handleInputChange("streaming_enabled", e.target.checked)
                     }

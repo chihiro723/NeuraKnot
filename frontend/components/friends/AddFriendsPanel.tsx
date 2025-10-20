@@ -297,7 +297,7 @@ export function AIAgentCreationPanel({
     avatar_url: "",
 
     // ペルソナ設定
-    persona_type: "",
+    persona_type: "assistant",
     system_prompt: "",
 
     // LLM設定
@@ -308,7 +308,7 @@ export function AIAgentCreationPanel({
 
     // 機能設定
     tools_enabled: true,
-    streaming_enabled: false,
+    streaming_enabled: true,
   });
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -370,31 +370,46 @@ export function AIAgentCreationPanel({
       id: "openai",
       name: "OpenAI",
       models: [
-        { id: "gpt-4o", name: "GPT-4o", description: "最新の高性能モデル" },
-        { id: "gpt-4o-mini", name: "GPT-4o Mini", description: "高速で経済的" },
+        {
+          id: "gpt-4o",
+          name: "GPT-4o",
+          description: "最新の高性能モデル",
+          disabled: false,
+        },
+        {
+          id: "gpt-4o-mini",
+          name: "GPT-4o Mini (近日追加予定)",
+          description: "高速で経済的",
+          disabled: true,
+        },
       ],
+      disabled: false,
     },
     {
       id: "anthropic",
-      name: "Anthropic",
+      name: "Anthropic (近日追加予定)",
       models: [
         {
           id: "claude-3.5-sonnet",
           name: "Claude 3.5 Sonnet",
           description: "高度な推論能力",
+          disabled: true,
         },
       ],
+      disabled: true,
     },
     {
       id: "google",
-      name: "Google",
+      name: "Google (近日追加予定)",
       models: [
         {
           id: "gemini-pro",
           name: "Gemini Pro",
           description: "マルチモーダル対応",
+          disabled: true,
         },
       ],
+      disabled: true,
     },
   ];
 
@@ -508,14 +523,14 @@ export function AIAgentCreationPanel({
           name: "",
           description: "",
           avatar_url: "",
-          persona_type: "",
+          persona_type: "assistant",
           system_prompt: "",
           provider: "openai",
           model: "gpt-4o",
           temperature: 0.7,
           max_tokens: 2000,
           tools_enabled: true,
-          streaming_enabled: false,
+          streaming_enabled: true,
         });
 
         // デスクトップの場合もモバイルの場合も、rosterページに遷移するため
@@ -706,17 +721,23 @@ export function AIAgentCreationPanel({
                   <button
                     key={provider.id}
                     type="button"
-                    onClick={() =>
+                    onClick={() => {
+                      if (provider.disabled) return;
                       setFormData({
                         ...formData,
                         provider: provider.id,
-                        model: provider.models[0].id,
-                      })
-                    }
+                        model:
+                          provider.models.find(
+                            (m) => !("disabled" in m) || !m.disabled
+                          )?.id || formData.model,
+                      });
+                    }}
                     className={cn(
                       "p-3 rounded-lg border transition-all font-medium text-sm",
-                      formData.provider === provider.id
+                      formData.provider === provider.id && !provider.disabled
                         ? "bg-green-50 border-green-500 text-green-700 dark:bg-green-900/20 dark:text-green-400 dark:border-green-500"
+                        : provider.disabled
+                        ? "bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:border-gray-700 dark:text-gray-500"
                         : "bg-white border-gray-300 text-gray-700 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-600"
                     )}
                   >
@@ -735,14 +756,17 @@ export function AIAgentCreationPanel({
                   <button
                     key={model.id}
                     type="button"
-                    onClick={() =>
-                      setFormData({ ...formData, model: model.id })
-                    }
+                    onClick={() => {
+                      if ((model as any).disabled) return;
+                      setFormData({ ...formData, model: model.id });
+                    }}
                     className={cn(
                       "w-full p-4 rounded-lg border transition-all text-left",
-                      formData.model === model.id
+                      formData.model === model.id && !(model as any).disabled
                         ? "bg-green-50 border-green-500 dark:bg-green-900/20 dark:border-green-500"
-                        : "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600"
+                        : (model as any).disabled
+                        ? "bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:border-gray-700 dark:text-gray-500"
+                        : "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-700 hover:border-gray-400 dark:hover:bg-gray-600"
                     )}
                   >
                     <div className="flex justify-between items-center">
