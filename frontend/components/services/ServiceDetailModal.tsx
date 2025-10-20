@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 import {
   X,
   Trash2,
@@ -41,6 +42,9 @@ export function ServiceDetailModal({
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set()
   );
+
+  // 背景スクロールをロック
+  useBodyScrollLock(isOpen);
 
   if (!isOpen || !service) return null;
 

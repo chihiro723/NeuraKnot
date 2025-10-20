@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 import { X, Save, Camera } from "lucide-react";
 import { updateProfile } from "@/lib/actions/user";
 import { useRouter } from "next/navigation";
@@ -35,6 +36,9 @@ export function EditProfileModal({
       setError(null);
     }
   }, [isOpen, currentDisplayName, currentAvatarUrl]);
+
+  // 背景スクロールをロック
+  useBodyScrollLock(isOpen);
 
   // ESCキーでモーダルを閉じる
   useEffect(() => {

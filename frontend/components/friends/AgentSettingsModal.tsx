@@ -18,6 +18,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 import {
   updateAgent,
   getAgentServices,
@@ -97,6 +98,9 @@ export function AgentSettingsModal({
       loadData();
     }
   }, [isOpen, agent]);
+
+  // 背景スクロールをロック
+  useBodyScrollLock(isOpen);
 
   const loadData = async () => {
     if (!agent) return;

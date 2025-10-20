@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 import {
   X,
   Server,
@@ -54,6 +55,9 @@ export function ServiceSelectorModal({
   }, [isOpen]);
 
   if (!isOpen) return null;
+
+  // 背景スクロールをロック
+  useBodyScrollLock(isOpen);
 
   const toggleExpand = (serviceClass: string) => {
     const newExpanded = new Set(expandedServices);

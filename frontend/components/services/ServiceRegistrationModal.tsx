@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
 import { X, Plus, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { getServiceIcon, getServiceGradient } from "@/lib/utils/serviceIcons";
@@ -32,6 +33,9 @@ export function ServiceRegistrationModal({
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set()
   );
+
+  // 背景スクロールをロック
+  useBodyScrollLock(isOpen);
 
   if (!isOpen || !service) return null;
 
