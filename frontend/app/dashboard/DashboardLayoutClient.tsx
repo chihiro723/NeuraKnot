@@ -28,14 +28,15 @@ export function DashboardLayoutClient({
   const showNavigation = !(isMobile && isDetailPage);
 
   return (
-    <div className="flex overflow-hidden min-h-[var(--app-dvh)] bg-gray-50 dark:bg-gray-950">
+    <div className="flex overflow-hidden h-[var(--app-dvh)] md:h-screen bg-gray-50 dark:bg-gray-950">
       {/* ナビゲーション（モバイル詳細画面では非表示） */}
       {showNavigation && <AppNavigation profile={profile} user={user} />}
 
       {/* メインコンテンツエリア */}
       <div
         className={cn(
-          "flex overflow-hidden flex-col flex-1",
+          // メイン領域だけを縦スクロール可能にする
+          "flex flex-col flex-1 overflow-y-auto overflow-x-hidden",
           // モバイルでナビゲーションバーが表示される時のみ下部パディングを追加
           showNavigation && isMobile ? "pb-12" : "pb-0"
         )}
