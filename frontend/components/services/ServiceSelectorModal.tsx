@@ -46,6 +46,9 @@ export function ServiceSelectorModal({
     Map<string, SelectedService>
   >(new Map());
 
+  // 背景スクロールをロック（Hooksの呼び出し順を安定させるため、早期returnより前で常に呼ぶ）
+  useBodyScrollLock(isOpen);
+
   // モーダルが開いたときにリセット
   useEffect(() => {
     if (isOpen) {
@@ -55,9 +58,6 @@ export function ServiceSelectorModal({
   }, [isOpen]);
 
   if (!isOpen) return null;
-
-  // 背景スクロールをロック
-  useBodyScrollLock(isOpen);
 
   const toggleExpand = (serviceClass: string) => {
     const newExpanded = new Set(expandedServices);
