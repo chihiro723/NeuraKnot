@@ -103,171 +103,27 @@ Internet
 
 ### データベース設計
 
+NeuraKnot は **PostgreSQL 15** を使用し、**Backend-go のみ**がデータベースにアクセスします。
+
 #### テーブル構成（8 テーブル）
 
-NeuraKnot は PostgreSQL 15 を使用し、**Backend-go のみ**がデータベースにアクセスします。
+| カテゴリ       | テーブル名             | 説明                                   |
+| -------------- | ---------------------- | -------------------------------------- |
+| ユーザー管理   | `users`                | ユーザー情報（AWS Cognito 連携）       |
+| AI エージェント | `ai_agents`            | AI エージェント設定とペルソナ          |
+| 会話           | `conversations`        | ユーザーと AI Agent 間の 1 対 1 会話   |
+|                | `messages`             | チャットメッセージ                     |
+| AI 処理履歴    | `ai_chat_sessions`     | AI 処理セッション履歴（分析・デバッグ用） |
+|                | `ai_tool_usage`        | AI ツール使用履歴                      |
+| サービス連携   | `user_service_configs` | ユーザーのサービス設定（暗号化）       |
+|                | `ai_agent_services`    | AI Agent × サービス紐付け              |
 
-##### 1. ユーザー管理
+#### 主な機能
 
-**users** - ユーザー情報（AWS Cognito 連携）
-
-| カラム名        | 型           | 説明                                              |
-| --------------- | ------------ | ------------------------------------------------- |
-| id              | UUID         | PRIMARY KEY                                       |
-| cognito_user_id | VARCHAR(255) | AWS Cognito ユーザー ID (UNIQUE)                  |
-| email           | VARCHAR(255) | メールアドレス (UNIQUE)                           |
-| display_name    | VARCHAR(255) | 表示名                                            |
-| status          | VARCHAR(50)  | ステータス (active, inactive, suspended, deleted) |
-| created_at      | TIMESTAMP    | 作成日時                                          |
-| updated_at      | TIMESTAMP    | 更新日時                                          |
-
-##### 2. AI エージェント
-
-**ai_agents** - AI エージェント設定とペルソナ
-
-| カラム名          | 型            | 説明                                         |
-| ----------------- | ------------- | -------------------------------------------- |
-| id                | UUID          | PRIMARY KEY                                  |
-| user_id           | UUID          | ユーザー ID (FK)                             |
-| name              | VARCHAR(255)  | エージェント名                               |
-| description       | TEXT          | 説明                                         |
-| avatar_url        | TEXT          | アバター画像 URL                             |
-| persona_type      | VARCHAR(50)   | ペルソナ (assistant, creative, analytical)   |
-| provider          | VARCHAR(50)   | LLM プロバイダー (openai, anthropic, google) |
-| model             | VARCHAR(100)  | LLM モデル名                                 |
-| temperature       | DECIMAL(3, 2) | 温度パラメータ (0.0-2.0)                     |
-| max_tokens        | INTEGER       | 最大トークン数 (100-8000)                    |
-| system_prompt     | TEXT          | システムプロンプト（NULL なら自動生成）      |
-| tools_enabled     | BOOLEAN       | ツール使用の有効化                           |
-| streaming_enabled | BOOLEAN       | ストリーミングレスポンスの有効化             |
-| is_active         | BOOLEAN       | アクティブ状態                               |
-| message_count     | INTEGER       | メッセージ総数                               |
-| last_chat_at      | TIMESTAMP     | 最終チャット日時                             |
-| created_at        | TIMESTAMP     | 作成日時                                     |
-| updated_at        | TIMESTAMP     | 更新日時                                     |
-
-**サポートする LLM モデル**:
-
-- **OpenAI**: gpt-4o, gpt-4o-mini, gpt-4-turbo, gpt-4, gpt-3.5-turbo
-- **Anthropic**: claude-3-5-sonnet-20241022, claude-3.5-sonnet, claude-3-opus-20240229, claude-3-sonnet-20240229, claude-3-haiku-20240307
-- **Google**: gemini-pro, gemini-1.5-pro, gemini-1.5-flash
-
-##### 3. 会話・メッセージ
-
-**conversations** - ユーザーと AI Agent 間の 1 対 1 会話
-
-| カラム名        | 型        | 説明                    |
-| --------------- | --------- | ----------------------- |
-| id              | UUID      | PRIMARY KEY             |
-| user_id         | UUID      | ユーザー ID (FK)        |
-| ai_agent_id     | UUID      | AI エージェント ID (FK) |
-| message_count   | INTEGER   | メッセージ総数          |
-| last_message_at | TIMESTAMP | 最終メッセージ日時      |
-| created_at      | TIMESTAMP | 作成日時                |
-| updated_at      | TIMESTAMP | 更新日時                |
-
-**UNIQUE 制約**: (user_id, ai_agent_id) - 1 ユーザー × 1 エージェント = 1 会話
-
-**messages** - チャットメッセージ
-
-| カラム名        | 型          | 説明                                           |
-| --------------- | ----------- | ---------------------------------------------- |
-| id              | UUID        | PRIMARY KEY                                    |
-| conversation_id | UUID        | 会話 ID (FK)                                   |
-| sender_type     | VARCHAR(20) | 送信者タイプ (user: ユーザー, ai: AI Agent)    |
-| sender_id       | UUID        | 送信者 ID (users.id または ai_agents.id)       |
-| content         | TEXT        | メッセージ内容                                 |
-| ai_session_id   | UUID        | AI セッション ID (FK, sender_type='ai' の場合) |
-| created_at      | TIMESTAMP   | 作成日時                                       |
-
-##### 4. AI 処理履歴
-
-**ai_chat_sessions** - AI 処理セッション履歴（分析・デバッグ用）
-
-| カラム名           | 型            | 説明                                       |
-| ------------------ | ------------- | ------------------------------------------ |
-| id                 | UUID          | PRIMARY KEY                                |
-| user_id            | UUID          | ユーザー ID (FK)                           |
-| conversation_id    | UUID          | 会話 ID (FK)                               |
-| ai_agent_id        | UUID          | AI エージェント ID (FK)                    |
-| message_id         | UUID          | メッセージ ID (FK)                         |
-| provider           | VARCHAR(50)   | LLM プロバイダー                           |
-| model              | VARCHAR(100)  | LLM モデル                                 |
-| persona            | VARCHAR(50)   | ペルソナタイプ                             |
-| temperature        | DECIMAL(3, 2) | 温度パラメータ                             |
-| tokens_prompt      | INTEGER       | プロンプトトークン数                       |
-| tokens_completion  | INTEGER       | 応答トークン数                             |
-| tokens_total       | INTEGER       | 総トークン数                               |
-| processing_time_ms | INTEGER       | 処理時間（ミリ秒）                         |
-| tools_used         | INTEGER       | 使用したツール数                           |
-| status             | VARCHAR(50)   | ステータス (processing, completed, failed) |
-| error_message      | TEXT          | エラーメッセージ                           |
-| started_at         | TIMESTAMP     | 処理開始日時                               |
-| completed_at       | TIMESTAMP     | 処理完了日時                               |
-
-**ai_tool_usage** - AI ツール使用履歴
-
-| カラム名          | 型           | 説明                            |
-| ----------------- | ------------ | ------------------------------- |
-| id                | UUID         | PRIMARY KEY                     |
-| session_id        | UUID         | セッション ID (FK)              |
-| message_id        | UUID         | メッセージ ID (FK)              |
-| tool_name         | VARCHAR(255) | ツール名                        |
-| tool_category     | VARCHAR(100) | ツールカテゴリ (basic, service) |
-| input_data        | JSONB        | 入力データ（JSON 形式）         |
-| output_data       | TEXT         | 出力データ                      |
-| status            | VARCHAR(50)  | ステータス (completed, failed)  |
-| error_message     | TEXT         | エラーメッセージ                |
-| execution_time_ms | INTEGER      | 実行時間（ミリ秒）              |
-| insert_position   | INTEGER      | UI 表示用：メッセージ内挿入位置 |
-| executed_at       | TIMESTAMP    | 実行日時                        |
-
-**現在の統計（開発環境）**:
-
-- 平均トークン使用量: 2,690 トークン
-- 平均処理時間: 5.8 秒
-- ツール成功率: 100%
-- 総 AI セッション: 117 件
-- 総ツール実行: 56 件
-
-##### 5. サービス連携
-
-**user_service_configs** - ユーザーのサービス設定（暗号化）
-
-| カラム名         | 型           | 説明                                 |
-| ---------------- | ------------ | ------------------------------------ |
-| id               | UUID         | PRIMARY KEY                          |
-| user_id          | UUID         | ユーザー ID (FK)                     |
-| service_class    | VARCHAR(255) | サービスクラス名 (例: NotionService) |
-| encrypted_config | BYTEA        | 暗号化された設定情報 (AES-256-GCM)   |
-| config_nonce     | BYTEA        | 設定暗号化用 Nonce                   |
-| encrypted_auth   | BYTEA        | 暗号化された認証情報 (AES-256-GCM)   |
-| auth_nonce       | BYTEA        | 認証情報暗号化用 Nonce               |
-| is_enabled       | BOOLEAN      | サービス有効化フラグ                 |
-| created_at       | TIMESTAMP    | 作成日時                             |
-| updated_at       | TIMESTAMP    | 更新日時                             |
-
-**UNIQUE 制約**: (user_id, service_class) - 1 ユーザー × 1 サービス = 1 設定
-
-**ai_agent_services** - AI Agent × サービス紐付け
-
-| カラム名            | 型           | 説明                                         |
-| ------------------- | ------------ | -------------------------------------------- |
-| id                  | UUID         | PRIMARY KEY                                  |
-| ai_agent_id         | UUID         | AI エージェント ID (FK)                      |
-| service_class       | VARCHAR(255) | サービスクラス名                             |
-| tool_selection_mode | VARCHAR(50)  | ツール選択モード (all: 全て, selected: 選択) |
-| selected_tools      | TEXT[]       | 選択されたツール名の配列                     |
-| enabled             | BOOLEAN      | このサービスを使用するかどうか               |
-| created_at          | TIMESTAMP    | 作成日時                                     |
-
-**UNIQUE 制約**: (ai_agent_id, service_class) - 1 エージェント × 1 サービス = 1 紐付け
-
-**セキュリティ**:
-
-- 認証情報は AES-256-GCM で暗号化
-- Nonce を使用して暗号化の一意性を保証
-- Backend-go でのみ復号化可能
+- **LLM サポート**: OpenAI (GPT-4o, GPT-4o-mini), Anthropic (Claude 3.5 Sonnet), Google (Gemini)
+- **ペルソナ**: assistant, creative, analytical
+- **ツール連携**: Notion, Slack, GitHub, Weather など
+- **セキュリティ**: 認証情報は AES-256-GCM で暗号化
 
 #### 設計原則
 
@@ -276,19 +132,10 @@ NeuraKnot は PostgreSQL 15 を使用し、**Backend-go のみ**がデータベ�
 3. **パフォーマンス最適化**: 適切なインデックス配置、トリガーによる自動更新
 4. **セキュリティ**: 機密情報の暗号化、CHECK 制約による型安全性
 
-#### データ量見積もり
-
-**現在（開発環境）**: 約 1.2 MB（462 レコード）
-
-**将来（10,000 ユーザー想定）**:
-
-- 1 ヶ月: 約 7.5 GB
-- 1 年: 約 90 GB
-
 #### 詳細ドキュメント
 
-- [現在のデータベース設計（MVP 版）](./docs/DATABASE_DESIGN_CURRENT.md) - 全テーブル詳細、ER 図、インデックス戦略
-- [将来のデータベース設計](./docs/DATABASE_DESIGN.md) - グループチャット、友達機能等の将来設計
+- 📘 [現在のデータベース設計（MVP 版）](./docs/DATABASE_DESIGN_CURRENT.md) - 全テーブル詳細、ER 図、インデックス戦略
+- 📗 [将来のデータベース設計](./docs/DATABASE_DESIGN.md) - グループチャット、友達機能等の将来設計
 - [スキーマ分析レポート](./docs/backend/SCHEMA_ANALYSIS_REPORT.md) - 現在のスキーマ状態と最適化情報
 
 ### プロジェクト構成
