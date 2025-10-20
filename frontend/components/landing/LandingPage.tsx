@@ -253,7 +253,7 @@ export function LandingPage({
   };
 
   return (
-    <div className="relative min-h-[var(--app-dvh)] bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
+    <div className="relative h-[var(--app-dvh)] md:h-screen flex flex-col bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
       {/* ナビゲーション */}
       <nav className="fixed top-0 right-0 left-0 z-50 border-b backdrop-blur-md bg-slate-900/90 border-white/10">
         <div className="px-4 py-4 mx-auto max-w-7xl md:px-6">
@@ -608,743 +608,756 @@ export function LandingPage({
         </div>
       </div>
 
-      {/* エレガントなヒーローセクション */}
-      <section className="flex overflow-hidden relative justify-center items-center min-h-screen">
-        {/* 中央ハイライト効果 */}
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute top-1/2 left-1/2 w-96 h-96 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2 bg-emerald-400/30"></div>
-        </div>
-        {/* メインコンテンツ */}
-        <div className="relative px-6 pt-16 mx-auto max-w-5xl text-center">
-          {/* バッジ */}
-          <div className="inline-flex items-center px-6 py-3 mb-8 font-medium text-emerald-300 rounded-full border backdrop-blur-sm bg-white/5 border-emerald-500/30">
-            <Sparkles className="mr-3 w-5 h-5" />
-            AI統合チャット + 20種類のサービス連携
+      <main className="flex-1 overflow-y-auto overflow-x-hidden">
+        {/* エレガントなヒーローセクション */}
+        <section className="flex overflow-hidden relative justify-center items-center min-h-screen">
+          {/* 中央ハイライト効果 */}
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute top-1/2 left-1/2 w-96 h-96 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2 bg-emerald-400/30"></div>
           </div>
+          {/* メインコンテンツ */}
+          <div className="relative px-6 pt-16 mx-auto max-w-5xl text-center">
+            {/* バッジ */}
+            <div className="inline-flex items-center px-6 py-3 mb-8 font-medium text-emerald-300 rounded-full border backdrop-blur-sm bg-white/5 border-emerald-500/30">
+              <Sparkles className="mr-3 w-5 h-5" />
+              AI統合チャット + 20種類のサービス連携
+            </div>
 
-          {/* メインタイトル */}
-          <h1 className="mb-8 text-5xl font-bold leading-tight md:text-7xl">
-            <span className="text-white">AIに</span>
-            <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
-              命を吹き込む
-            </span>
-            <br />
-            <span className="text-white">NeuraKnot</span>
-          </h1>
+            {/* メインタイトル */}
+            <h1 className="mb-8 text-5xl font-bold leading-tight md:text-7xl">
+              <span className="text-white">AIに</span>
+              <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
+                命を吹き込む
+              </span>
+              <br />
+              <span className="text-white">NeuraKnot</span>
+            </h1>
 
-          {/* サブタイトル */}
-          <p className="mx-auto mb-12 max-w-3xl text-xl leading-relaxed md:text-2xl text-slate-300">
-            あなただけのアシスタントが、人・AI・サービスを結ぶ
-          </p>
+            {/* サブタイトル */}
+            <p className="mx-auto mb-12 max-w-3xl text-xl leading-relaxed md:text-2xl text-slate-300">
+              あなただけのアシスタントが、人・AI・サービスを結ぶ
+            </p>
 
-          {/* CTAボタン */}
-          <div className="flex flex-col gap-6 justify-center items-center mb-20 md:flex-row">
-            {!isLoading && user ? (
-              <div className="text-center">
+            {/* CTAボタン */}
+            <div className="flex flex-col gap-6 justify-center items-center mb-20 md:flex-row">
+              {!isLoading && user ? (
+                <div className="text-center">
+                  <Link
+                    href="/dashboard"
+                    className="px-10 py-5 text-lg font-bold text-white bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-500 rounded-2xl shadow-2xl transition-all duration-300 transform hover:from-emerald-600 hover:via-emerald-500 hover:to-cyan-600 hover:scale-105 hover:shadow-emerald-500/30"
+                  >
+                    ダッシュボードへ移動
+                  </Link>
+                </div>
+              ) : !isLoading ? (
                 <Link
-                  href="/dashboard"
+                  href="/auth/signup"
                   className="px-10 py-5 text-lg font-bold text-white bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-500 rounded-2xl shadow-2xl transition-all duration-300 transform hover:from-emerald-600 hover:via-emerald-500 hover:to-cyan-600 hover:scale-105 hover:shadow-emerald-500/30"
                 >
-                  ダッシュボードへ移動
+                  無料で始める
                 </Link>
-              </div>
-            ) : !isLoading ? (
-              <Link
-                href="/auth/signup"
-                className="px-10 py-5 text-lg font-bold text-white bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-500 rounded-2xl shadow-2xl transition-all duration-300 transform hover:from-emerald-600 hover:via-emerald-500 hover:to-cyan-600 hover:scale-105 hover:shadow-emerald-500/30"
-              >
-                無料で始める
-              </Link>
-            ) : (
-              <div className="px-10 py-5 text-lg font-bold text-transparent bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-500 rounded-2xl animate-pulse">
-                読込中...
-              </div>
-            )}
-
-            <button
-              onClick={() => setIsVideoPlaying(!isVideoPlaying)}
-              className="flex items-center px-8 py-5 rounded-2xl border backdrop-blur-sm transition-all duration-300 text-slate-300 hover:text-white border-slate-600/50 hover:border-emerald-400/50 bg-white/5 hover:bg-white/10"
-            >
-              {isVideoPlaying ? (
-                <Pause className="mr-3 w-5 h-5" />
               ) : (
-                <Play className="mr-3 w-5 h-5" />
+                <div className="px-10 py-5 text-lg font-bold text-transparent bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-500 rounded-2xl animate-pulse">
+                  読込中...
+                </div>
               )}
-              <span className="font-medium">デモ動画を見る</span>
-            </button>
-          </div>
 
-          {/* スクロール促進 */}
-          <button
-            data-scroll-button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              executeAutoScroll();
-            }}
-            className="flex flex-col justify-center items-center mx-auto opacity-80 transition-all duration-500 transform cursor-pointer group hover:opacity-100 hover:scale-110 active:scale-95 hover:-translate-y-2 touch-manipulation"
-            style={{
-              animation:
-                "gentle-float 3s ease-in-out infinite, subtle-glow 2s ease-in-out infinite alternate",
-            }}
-          >
-            <span className="mb-4 text-sm font-medium transition-colors duration-300 animate-pulse text-slate-300 group-hover:text-emerald-300 group-hover:animate-pulse">
-              詳細を見る
-            </span>
-            <div className="relative">
-              {/* モバイル版 - シェブロンダウンアイコン */}
-              <div className="md:hidden">
-                {/* 背景の輝きエフェクト */}
-                <div className="absolute inset-0 w-12 h-12 rounded-full blur-md transition-all duration-300 animate-pulse bg-emerald-400/20 group-hover:bg-emerald-400/40"></div>
+              <button
+                onClick={() => setIsVideoPlaying(!isVideoPlaying)}
+                className="flex items-center px-8 py-5 rounded-2xl border backdrop-blur-sm transition-all duration-300 text-slate-300 hover:text-white border-slate-600/50 hover:border-emerald-400/50 bg-white/5 hover:bg-white/10"
+              >
+                {isVideoPlaying ? (
+                  <Pause className="mr-3 w-5 h-5" />
+                ) : (
+                  <Play className="mr-3 w-5 h-5" />
+                )}
+                <span className="font-medium">デモ動画を見る</span>
+              </button>
+            </div>
 
-                {/* メインのシェブロンダウンアイコン */}
-                <div className="flex relative justify-center items-center w-12 h-12 bg-gradient-to-b rounded-full border transition-all duration-300 from-emerald-500/20 to-cyan-500/20 group-hover:from-emerald-500/40 group-hover:to-cyan-500/40 border-emerald-400/30 group-hover:border-emerald-400/60">
-                  <ChevronDown className="w-6 h-6 text-emerald-400 transition-colors duration-300 animate-bounce group-hover:text-emerald-300 group-hover:animate-pulse" />
+            {/* スクロール促進 */}
+            <button
+              data-scroll-button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                executeAutoScroll();
+              }}
+              className="flex flex-col justify-center items-center mx-auto opacity-80 transition-all duration-500 transform cursor-pointer group hover:opacity-100 hover:scale-110 active:scale-95 hover:-translate-y-2 touch-manipulation"
+              style={{
+                animation:
+                  "gentle-float 3s ease-in-out infinite, subtle-glow 2s ease-in-out infinite alternate",
+              }}
+            >
+              <span className="mb-4 text-sm font-medium transition-colors duration-300 animate-pulse text-slate-300 group-hover:text-emerald-300 group-hover:animate-pulse">
+                詳細を見る
+              </span>
+              <div className="relative">
+                {/* モバイル版 - シェブロンダウンアイコン */}
+                <div className="md:hidden">
+                  {/* 背景の輝きエフェクト */}
+                  <div className="absolute inset-0 w-12 h-12 rounded-full blur-md transition-all duration-300 animate-pulse bg-emerald-400/20 group-hover:bg-emerald-400/40"></div>
 
-                  {/* パルスエフェクト */}
-                  <div className="absolute inset-0 w-12 h-12 rounded-full border opacity-40 animate-ping border-emerald-400/20 group-hover:opacity-70"></div>
+                  {/* メインのシェブロンダウンアイコン */}
+                  <div className="flex relative justify-center items-center w-12 h-12 bg-gradient-to-b rounded-full border transition-all duration-300 from-emerald-500/20 to-cyan-500/20 group-hover:from-emerald-500/40 group-hover:to-cyan-500/40 border-emerald-400/30 group-hover:border-emerald-400/60">
+                    <ChevronDown className="w-6 h-6 text-emerald-400 transition-colors duration-300 animate-bounce group-hover:text-emerald-300 group-hover:animate-pulse" />
+
+                    {/* パルスエフェクト */}
+                    <div className="absolute inset-0 w-12 h-12 rounded-full border opacity-40 animate-ping border-emerald-400/20 group-hover:opacity-70"></div>
+                  </div>
+                </div>
+
+                {/* デスクトップ版 - マウスアイコン */}
+                <div className="hidden md:block">
+                  {/* 常時輝きエフェクト */}
+                  <div className="absolute inset-0 w-6 h-10 rounded-full blur-sm transition-all duration-300 animate-pulse bg-emerald-400/10 group-hover:bg-emerald-400/40 group-hover:blur-md"></div>
+
+                  {/* 常時回転する円形ボーダー */}
+                  <div
+                    className="absolute inset-0 w-6 h-10 rounded-full"
+                    style={{
+                      background:
+                        "conic-gradient(from 0deg, transparent, rgba(52, 211, 153, 0.3), transparent)",
+                      animation: "spin 4s linear infinite",
+                    }}
+                  ></div>
+
+                  {/* メインのマウスアイコン */}
+                  <div className="flex relative justify-center w-6 h-10 bg-gradient-to-b rounded-full border-2 transition-all duration-300 border-emerald-400/40 group-hover:border-emerald-400/80 from-emerald-400/5 to-emerald-400/10 group-hover:to-emerald-400/20">
+                    <div className="mt-2 w-1 h-3 bg-emerald-400 rounded-full transition-colors duration-300 animate-bounce group-hover:bg-emerald-300 group-hover:animate-pulse"></div>
+
+                    {/* 常時パルスエフェクト */}
+                    <div className="absolute inset-0 w-6 h-10 rounded-full border opacity-30 animate-ping border-emerald-400/30 group-hover:opacity-60"></div>
+                  </div>
+
+                  {/* 下向き矢印のヒント */}
+                  <div className="absolute -bottom-2 left-1/2 opacity-40 transition-opacity duration-300 animate-bounce transform -translate-x-1/2 group-hover:opacity-80">
+                    <div className="w-0 h-0 border-r-2 border-l-2 border-transparent border-t-3 border-t-emerald-400/60"></div>
+                  </div>
                 </div>
               </div>
 
-              {/* デスクトップ版 - マウスアイコン */}
-              <div className="hidden md:block">
-                {/* 常時輝きエフェクト */}
-                <div className="absolute inset-0 w-6 h-10 rounded-full blur-sm transition-all duration-300 animate-pulse bg-emerald-400/10 group-hover:bg-emerald-400/40 group-hover:blur-md"></div>
-
-                {/* 常時回転する円形ボーダー */}
+              {/* 常時キラキラエフェクト */}
+              <div className="absolute inset-0 pointer-events-none">
                 <div
-                  className="absolute inset-0 w-6 h-10 rounded-full"
+                  className="absolute top-1/4 left-1/4 w-1 h-1 bg-emerald-400 rounded-full opacity-20 animate-ping group-hover:opacity-100"
+                  style={{ animation: "twinkle 3s ease-in-out infinite" }}
+                ></div>
+                <div
+                  className="absolute top-1/3 right-1/4 w-1 h-1 bg-cyan-400 rounded-full opacity-20 animate-ping group-hover:opacity-100"
+                  style={{ animation: "twinkle 3s ease-in-out infinite 1s" }}
+                ></div>
+                <div
+                  className="absolute bottom-1/3 left-1/3 w-1 h-1 bg-emerald-300 rounded-full opacity-20 animate-ping group-hover:opacity-100"
+                  style={{ animation: "twinkle 3s ease-in-out infinite 2s" }}
+                ></div>
+              </div>
+
+              {/* 常時浮遊する光の粒子 */}
+              <div className="overflow-hidden absolute inset-0 pointer-events-none">
+                <div
+                  className="absolute w-0.5 h-0.5 bg-emerald-400/40 rounded-full"
                   style={{
-                    background:
-                      "conic-gradient(from 0deg, transparent, rgba(52, 211, 153, 0.3), transparent)",
-                    animation: "spin 4s linear infinite",
+                    animation: "float-particle-1 6s ease-in-out infinite",
+                    top: "60%",
+                    left: "20%",
                   }}
                 ></div>
-
-                {/* メインのマウスアイコン */}
-                <div className="flex relative justify-center w-6 h-10 bg-gradient-to-b rounded-full border-2 transition-all duration-300 border-emerald-400/40 group-hover:border-emerald-400/80 from-emerald-400/5 to-emerald-400/10 group-hover:to-emerald-400/20">
-                  <div className="mt-2 w-1 h-3 bg-emerald-400 rounded-full transition-colors duration-300 animate-bounce group-hover:bg-emerald-300 group-hover:animate-pulse"></div>
-
-                  {/* 常時パルスエフェクト */}
-                  <div className="absolute inset-0 w-6 h-10 rounded-full border opacity-30 animate-ping border-emerald-400/30 group-hover:opacity-60"></div>
-                </div>
-
-                {/* 下向き矢印のヒント */}
-                <div className="absolute -bottom-2 left-1/2 opacity-40 transition-opacity duration-300 animate-bounce transform -translate-x-1/2 group-hover:opacity-80">
-                  <div className="w-0 h-0 border-r-2 border-l-2 border-transparent border-t-3 border-t-emerald-400/60"></div>
-                </div>
+                <div
+                  className="absolute w-0.5 h-0.5 bg-cyan-400/40 rounded-full"
+                  style={{
+                    animation: "float-particle-2 5s ease-in-out infinite",
+                    top: "40%",
+                    right: "25%",
+                  }}
+                ></div>
               </div>
-            </div>
+            </button>
 
-            {/* 常時キラキラエフェクト */}
-            <div className="absolute inset-0 pointer-events-none">
-              <div
-                className="absolute top-1/4 left-1/4 w-1 h-1 bg-emerald-400 rounded-full opacity-20 animate-ping group-hover:opacity-100"
-                style={{ animation: "twinkle 3s ease-in-out infinite" }}
-              ></div>
-              <div
-                className="absolute top-1/3 right-1/4 w-1 h-1 bg-cyan-400 rounded-full opacity-20 animate-ping group-hover:opacity-100"
-                style={{ animation: "twinkle 3s ease-in-out infinite 1s" }}
-              ></div>
-              <div
-                className="absolute bottom-1/3 left-1/3 w-1 h-1 bg-emerald-300 rounded-full opacity-20 animate-ping group-hover:opacity-100"
-                style={{ animation: "twinkle 3s ease-in-out infinite 2s" }}
-              ></div>
-            </div>
-
-            {/* 常時浮遊する光の粒子 */}
-            <div className="overflow-hidden absolute inset-0 pointer-events-none">
-              <div
-                className="absolute w-0.5 h-0.5 bg-emerald-400/40 rounded-full"
-                style={{
-                  animation: "float-particle-1 6s ease-in-out infinite",
-                  top: "60%",
-                  left: "20%",
-                }}
-              ></div>
-              <div
-                className="absolute w-0.5 h-0.5 bg-cyan-400/40 rounded-full"
-                style={{
-                  animation: "float-particle-2 5s ease-in-out infinite",
-                  top: "40%",
-                  right: "25%",
-                }}
-              ></div>
-            </div>
-          </button>
-
-          <style jsx>{`
-            @keyframes gentle-float {
-              0%,
-              100% {
-                transform: translateY(0px);
-              }
-              50% {
-                transform: translateY(-3px);
-              }
-            }
-
-            @keyframes subtle-glow {
-              0% {
-                filter: drop-shadow(0 0 3px rgba(52, 211, 153, 0.1));
-              }
-              100% {
-                filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.3));
-              }
-            }
-
-            @keyframes twinkle {
-              0%,
-              100% {
-                opacity: 0.2;
-                transform: scale(1);
-              }
-              50% {
-                opacity: 0.8;
-                transform: scale(1.2);
-              }
-            }
-
-            @keyframes float-particle-1 {
-              0%,
-              100% {
-                transform: translateY(0px) translateX(0px);
-                opacity: 0.4;
-              }
-              25% {
-                transform: translateY(-8px) translateX(3px);
-                opacity: 0.8;
-              }
-              50% {
-                transform: translateY(-12px) translateX(0px);
-                opacity: 0.6;
-              }
-              75% {
-                transform: translateY(-8px) translateX(-3px);
-                opacity: 0.8;
-              }
-            }
-
-            @keyframes float-particle-2 {
-              0%,
-              100% {
-                transform: translateY(0px) translateX(0px);
-                opacity: 0.3;
-              }
-              30% {
-                transform: translateY(-6px) translateX(-2px);
-                opacity: 0.7;
-              }
-              60% {
-                transform: translateY(-10px) translateX(2px);
-                opacity: 0.5;
-              }
-              90% {
-                transform: translateY(-4px) translateX(0px);
-                opacity: 0.9;
-              }
-            }
-
-            /* モバイル最適化 */
-            @media (max-width: 768px) {
+            <style jsx>{`
               @keyframes gentle-float {
                 0%,
                 100% {
                   transform: translateY(0px);
                 }
                 50% {
-                  transform: translateY(-2px);
+                  transform: translateY(-3px);
                 }
               }
 
-              .group:active {
-                transform: scale(0.95) translateY(-1px);
+              @keyframes subtle-glow {
+                0% {
+                  filter: drop-shadow(0 0 3px rgba(52, 211, 153, 0.1));
+                }
+                100% {
+                  filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.3));
+                }
               }
-            }
-          `}</style>
-        </div>
-      </section>
 
-      {/* 成果統計セクション */}
-      <section className="px-6 py-24 -mt-1">
-        <div className="mx-auto max-w-6xl">
-          <div className="mb-20 text-center">
-            <h2 className="mb-6 text-4xl font-bold text-white md:text-5xl">
-              <span className="text-emerald-400">NeuraKnot</span>が証明する革命
-            </h2>
-            <p className="mx-auto max-w-2xl text-xl text-slate-300">
-              AIに命を吹き込む技術で実現する、確かな成果
-            </p>
+              @keyframes twinkle {
+                0%,
+                100% {
+                  opacity: 0.2;
+                  transform: scale(1);
+                }
+                50% {
+                  opacity: 0.8;
+                  transform: scale(1.2);
+                }
+              }
+
+              @keyframes float-particle-1 {
+                0%,
+                100% {
+                  transform: translateY(0px) translateX(0px);
+                  opacity: 0.4;
+                }
+                25% {
+                  transform: translateY(-8px) translateX(3px);
+                  opacity: 0.8;
+                }
+                50% {
+                  transform: translateY(-12px) translateX(0px);
+                  opacity: 0.6;
+                }
+                75% {
+                  transform: translateY(-8px) translateX(-3px);
+                  opacity: 0.8;
+                }
+              }
+
+              @keyframes float-particle-2 {
+                0%,
+                100% {
+                  transform: translateY(0px) translateX(0px);
+                  opacity: 0.3;
+                }
+                30% {
+                  transform: translateY(-6px) translateX(-2px);
+                  opacity: 0.7;
+                }
+                60% {
+                  transform: translateY(-10px) translateX(2px);
+                  opacity: 0.5;
+                }
+                90% {
+                  transform: translateY(-4px) translateX(0px);
+                  opacity: 0.9;
+                }
+              }
+
+              /* モバイル最適化 */
+              @media (max-width: 768px) {
+                @keyframes gentle-float {
+                  0%,
+                  100% {
+                    transform: translateY(0px);
+                  }
+                  50% {
+                    transform: translateY(-2px);
+                  }
+                }
+
+                .group:active {
+                  transform: scale(0.95) translateY(-1px);
+                }
+              }
+            `}</style>
           </div>
+        </section>
 
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-            {STATS.map((stat, index) => (
-              <div
-                key={index}
-                className="p-8 text-center rounded-2xl border backdrop-blur-sm transition-all duration-300 group bg-white/5 border-white/10 hover:border-emerald-400/30 hover:bg-white/10"
-              >
-                <div className="mb-4 text-4xl font-black text-emerald-400 transition-transform duration-300 md:text-5xl group-hover:scale-110">
-                  {stat.value}
-                  {stat.suffix}
-                </div>
-                <div className="mb-3 text-lg font-bold text-white">
-                  {stat.label}
-                </div>
-                <div className="text-sm leading-relaxed text-slate-400">
-                  {stat.description}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 機能デモセクション */}
-      <section id="features" className="px-6 py-32 -mt-1">
-        <div className="mx-auto max-w-6xl">
-          <div className="mb-24 text-center">
-            <h2 className="mb-8 text-4xl font-bold text-white md:text-6xl">
-              <span className="text-emerald-400">NeuraKnot</span>でAIに
-              <br className="hidden md:block" />
-              <span className="text-emerald-400">命を吹き込む</span>
-            </h2>
-            <p className="mx-auto max-w-4xl text-2xl leading-relaxed text-slate-300">
-              マルチLLM対応（OpenAI・Anthropic・Google）と
-              <span className="font-bold text-emerald-400">
-                20種類のサービス
-              </span>
-              で 人間とAIの神経を結ぶ新しい絆を創造
-            </p>
-          </div>
-
-          {/* シンプルなデモ */}
-          <div className="mx-auto mb-24 max-w-4xl">
-            <div className="p-12 rounded-3xl border backdrop-blur-sm bg-white/5 border-white/10">
-              <div className="mb-12 text-center">
-                <div className="flex justify-center items-center mx-auto mb-6 w-20 h-20 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-2xl">
-                  <Sparkles className="w-10 h-10 text-white" />
-                </div>
-                <h3 className="mb-4 text-3xl font-bold text-white">
-                  AIに命を吹き込む技術
-                </h3>
-                <p className="text-xl text-slate-300">
-                  LangChain Agent + MCP統合で自律的なタスク実行
-                </p>
-              </div>
-
-              <div className="grid gap-6 mb-8 md:grid-cols-4">
-                <div className="p-4 text-center rounded-xl border bg-emerald-500/10 border-emerald-500/30">
-                  <div className="flex justify-center items-center mx-auto mb-2 w-12 h-12 rounded-lg bg-emerald-500/20">
-                    <MessageCircle className="w-6 h-6 text-emerald-400" />
-                  </div>
-                  <div className="font-medium text-emerald-400">マルチLLM</div>
-                </div>
-                <div className="p-4 text-center rounded-xl border bg-emerald-500/10 border-emerald-500/30">
-                  <div className="flex justify-center items-center mx-auto mb-2 w-12 h-12 rounded-lg bg-emerald-500/20">
-                    <Sparkles className="w-6 h-6 text-emerald-400" />
-                  </div>
-                  <div className="font-medium text-emerald-400">
-                    20種サービス
-                  </div>
-                </div>
-                <div className="p-4 text-center rounded-xl border bg-emerald-500/10 border-emerald-500/30">
-                  <div className="flex justify-center items-center mx-auto mb-2 w-12 h-12 rounded-lg bg-emerald-500/20">
-                    <User className="w-6 h-6 text-emerald-400" />
-                  </div>
-                  <div className="font-medium text-emerald-400">MCP統合</div>
-                </div>
-                <div className="p-4 text-center rounded-xl border bg-emerald-500/10 border-emerald-500/30">
-                  <div className="flex justify-center items-center mx-auto mb-2 w-12 h-12 rounded-lg bg-emerald-500/20">
-                    <Play className="w-6 h-6 text-emerald-400" />
-                  </div>
-                  <div className="font-medium text-emerald-400">自律実行</div>
-                </div>
-              </div>
-
-              <div className="text-center">
-                <div className="inline-block px-6 py-3 rounded-full border bg-emerald-500/20 border-emerald-500/50">
-                  <span className="font-bold text-emerald-300">
-                    AIが自律的にタスクを実行！
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* 連携サービス */}
-          <div className="mb-24 text-center">
-            <h3 className="mb-8 text-2xl font-bold text-white">
-              マルチLLM対応 + 外部API連携
-            </h3>
-            <div className="flex flex-wrap gap-4 justify-center">
-              {SERVICES.map((service) => (
-                <span
-                  key={service}
-                  className="px-6 py-3 rounded-full border transition-colors bg-white/5 text-slate-300 border-white/10 hover:border-emerald-400/30"
-                >
-                  {service}
-                </span>
-              ))}
-              <span className="px-6 py-3 font-medium text-emerald-400 rounded-full border bg-emerald-500/10 border-emerald-500/30">
-                +MCP統合
-              </span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 料金セクション */}
-      <section id="pricing" className="px-6 py-24 -mt-1">
-        <div className="mx-auto max-w-6xl">
-          <div className="mb-20 text-center">
-            <h2 className="mb-6 text-4xl font-bold text-white md:text-5xl">
-              <span className="text-emerald-400">NeuraKnot</span>の料金プラン
-            </h2>
-            <p className="mx-auto max-w-2xl text-xl text-slate-300">
-              あなたに最適なプランで、AIの力を最大限活用しましょう
-            </p>
-          </div>
-
-          <div className="grid gap-8 md:grid-cols-3">
-            {/* ベーシックプラン */}
-            <div className="p-8 rounded-2xl border backdrop-blur-sm transition-all duration-300 group bg-white/5 border-white/10 hover:border-emerald-400/30 hover:bg-white/10">
-              <div className="mb-6 text-center">
-                <h3 className="mb-2 text-2xl font-bold text-white">
-                  ベーシック
-                </h3>
-                <div className="mb-4">
-                  <span className="text-4xl font-black text-emerald-400">
-                    無料
-                  </span>
-                </div>
-                <p className="text-slate-400">個人利用に最適</p>
-              </div>
-              <ul className="mb-8 space-y-4">
-                <li className="flex items-center text-slate-300">
-                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
-                  月100回のAIチャット
-                </li>
-                <li className="flex items-center text-slate-300">
-                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
-                  外部サービス20種類
-                </li>
-                <li className="flex items-center text-slate-300">
-                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
-                  1つのAIエージェント
-                </li>
-                <li className="flex items-center text-slate-300">
-                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
-                  メールサポート
-                </li>
-              </ul>
-              <div className="px-6 py-3 text-center rounded-lg text-slate-400 bg-slate-800/50">
-                近日追加予定
-              </div>
-            </div>
-
-            {/* プロプラン */}
-            <div className="relative p-8 bg-gradient-to-b rounded-2xl border backdrop-blur-sm transition-all duration-300 group from-emerald-500/10 to-cyan-500/10 border-emerald-400/30 hover:border-emerald-400/50 hover:bg-emerald-500/20">
-              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                <span className="px-4 py-1 text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full">
-                  人気
-                </span>
-              </div>
-              <div className="mb-6 text-center">
-                <h3 className="mb-2 text-2xl font-bold text-white">プロ</h3>
-                <div className="mb-4">
-                  <span className="text-4xl font-black text-emerald-400">
-                    ¥980
-                  </span>
-                  <span className="text-slate-400">/月</span>
-                </div>
-                <p className="text-slate-400">ビジネス利用に最適</p>
-              </div>
-              <ul className="mb-8 space-y-4">
-                <li className="flex items-center text-slate-300">
-                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
-                  無制限のAIチャット
-                </li>
-                <li className="flex items-center text-slate-300">
-                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
-                  全サービス + 外部API連携
-                </li>
-                <li className="flex items-center text-slate-300">
-                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
-                  最大5つのAIエージェント
-                </li>
-                <li className="flex items-center text-slate-300">
-                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
-                  優先サポート
-                </li>
-                <li className="flex items-center text-slate-300">
-                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
-                  カスタムサービス作成
-                </li>
-              </ul>
-              <div className="px-6 py-3 text-center text-white bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-lg">
-                近日追加予定
-              </div>
-            </div>
-
-            {/* エンタープライズプラン */}
-            <div className="p-8 rounded-2xl border backdrop-blur-sm transition-all duration-300 group bg-white/5 border-white/10 hover:border-emerald-400/30 hover:bg-white/10">
-              <div className="mb-6 text-center">
-                <h3 className="mb-2 text-2xl font-bold text-white">マックス</h3>
-                <div className="mb-4">
-                  <span className="text-4xl font-black text-emerald-400">
-                    カスタム
-                  </span>
-                </div>
-                <p className="text-slate-400">最高の性能を追求</p>
-              </div>
-              <ul className="mb-8 space-y-4">
-                <li className="flex items-center text-slate-300">
-                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
-                  無制限のAIチャット
-                </li>
-                <li className="flex items-center text-slate-300">
-                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
-                  全機能 + カスタム開発
-                </li>
-                <li className="flex items-center text-slate-300">
-                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
-                  無制限のAIエージェント
-                </li>
-                <li className="flex items-center text-slate-300">
-                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
-                  専任サポート
-                </li>
-                <li className="flex items-center text-slate-300">
-                  <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
-                  SSO統合
-                </li>
-              </ul>
-              <div className="px-6 py-3 text-center rounded-lg text-slate-400 bg-slate-800/50">
-                近日追加予定
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* サポートセクション */}
-      <section id="support" className="px-6 py-24 -mt-1">
-        <div className="mx-auto max-w-6xl">
-          <div className="mb-20 text-center">
-            <h2 className="mb-6 text-4xl font-bold text-white md:text-5xl">
-              <span className="text-emerald-400">NeuraKnot</span>サポート
-            </h2>
-            <p className="mx-auto max-w-2xl text-xl text-slate-300">
-              いつでも安心してご利用いただけるよう、充実したサポート体制をご用意しています
-            </p>
-          </div>
-
-          <div className="text-center">
-            <div className="inline-block p-12 rounded-2xl border backdrop-blur-sm bg-white/5 border-white/10">
-              <div className="mb-6">
-                <div className="flex justify-center items-center mx-auto mb-4 w-20 h-20 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-2xl">
-                  <MessageCircle className="w-10 h-10 text-white" />
-                </div>
-                <h3 className="mb-2 text-2xl font-bold text-white">サポート</h3>
-                <p className="text-slate-400">
-                  いつでもお気軽にお問い合わせください
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 最終CTAセクション */}
-      <section className="px-6 py-24 -mt-1">
-        <div className="mx-auto max-w-4xl text-center">
-          <h2 className="mb-8 text-4xl font-bold text-white md:text-5xl">
-            <span className="text-emerald-400">NeuraKnot</span>で
-            AIに命を吹き込もう
-          </h2>
-
-          <p className="mx-auto mb-12 max-w-2xl text-xl text-slate-300">
-            人間とAIの神経を結ぶ、新しい絆の始まりを体験しよう
-          </p>
-
-          <div className="flex flex-col gap-6 justify-center items-center mb-16 md:flex-row">
-            {!isLoading && user ? (
-              <Link
-                href="/dashboard"
-                className="px-12 py-6 text-xl font-bold text-white bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-500 rounded-2xl shadow-2xl transition-all duration-300 transform hover:from-emerald-600 hover:via-emerald-500 hover:to-cyan-600 hover:scale-105 hover:shadow-emerald-500/30"
-              >
-                ダッシュボードで開始
-              </Link>
-            ) : !isLoading ? (
-              <Link
-                href="/auth/signup"
-                className="px-12 py-6 text-xl font-bold text-white bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-500 rounded-2xl shadow-2xl transition-all duration-300 transform hover:from-emerald-600 hover:via-emerald-500 hover:to-cyan-600 hover:scale-105 hover:shadow-emerald-500/30"
-              >
-                NeuraKnotでAIに命を吹き込む
-              </Link>
-            ) : (
-              <div className="px-12 py-6 text-xl font-bold text-transparent bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-500 rounded-2xl animate-pulse">
-                読込中...
-              </div>
-            )}
-
-            <button
-              onClick={() => setIsVideoPlaying(!isVideoPlaying)}
-              className="flex items-center px-8 py-6 rounded-2xl border backdrop-blur-sm transition-all duration-300 text-slate-300 hover:text-white border-slate-600/50 hover:border-emerald-400/50 bg-white/5 hover:bg-white/10"
-            >
-              {isVideoPlaying ? (
-                <Pause className="mr-3 w-5 h-5" />
-              ) : (
-                <Play className="mr-3 w-5 h-5" />
-              )}
-              <span className="font-medium">デモ動画を見る</span>
-            </button>
-          </div>
-
-          <div className="p-8 rounded-2xl border backdrop-blur-sm bg-white/5 border-white/10">
-            <p className="mb-3 text-lg text-slate-300">
-              30日間無料トライアル　・　いつでもキャンセル可能　・　即座に利用開始
-            </p>
-            <p className="text-slate-400">
-              数千人のユーザーが既に新しい働き方をスタートしています
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* フッター */}
-      <footer className="px-6 py-16 -mt-1">
-        <div className="mx-auto max-w-6xl">
-          <div className="grid gap-8 mb-12 md:grid-cols-4">
-            {/* ブランド */}
-            <div className="md:col-span-2">
-              <Link href="/" className="flex items-center mb-6 space-x-3">
-                <div className="flex justify-center items-center w-10 h-10 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl">
-                  <MessageCircle className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-2xl font-bold text-white">NeuraKnot</span>
-              </Link>
-
-              <p className="mb-8 max-w-md leading-relaxed text-slate-400">
-                AIに命を吹き込む技術で、人間とAIの神経を結ぶ新しい絆を創造するプラットフォーム。
+        {/* 成果統計セクション */}
+        <section className="px-6 py-24 -mt-1">
+          <div className="mx-auto max-w-6xl">
+            <div className="mb-20 text-center">
+              <h2 className="mb-6 text-4xl font-bold text-white md:text-5xl">
+                <span className="text-emerald-400">NeuraKnot</span>
+                が証明する革命
+              </h2>
+              <p className="mx-auto max-w-2xl text-xl text-slate-300">
+                AIに命を吹き込む技術で実現する、確かな成果
               </p>
+            </div>
 
-              <div className="flex space-x-4">
-                {SOCIAL_LINKS.slice(0, 3).map((social) => (
-                  <a
-                    key={social.name}
-                    href={social.href}
-                    className="transition-colors text-slate-400 hover:text-emerald-400"
-                    aria-label={social.name}
-                  >
-                    <svg
-                      className="w-6 h-6"
-                      fill="currentColor"
-                      viewBox={social.viewBox}
-                    >
-                      <path
-                        d={social.path}
-                        fillRule={
-                          social.name === "GitHub" || social.name === "LinkedIn"
-                            ? "evenodd"
-                            : undefined
-                        }
-                        clipRule={
-                          social.name === "GitHub" || social.name === "LinkedIn"
-                            ? "evenodd"
-                            : undefined
-                        }
-                      />
-                    </svg>
-                  </a>
-                ))}
+            <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+              {STATS.map((stat, index) => (
+                <div
+                  key={index}
+                  className="p-8 text-center rounded-2xl border backdrop-blur-sm transition-all duration-300 group bg-white/5 border-white/10 hover:border-emerald-400/30 hover:bg-white/10"
+                >
+                  <div className="mb-4 text-4xl font-black text-emerald-400 transition-transform duration-300 md:text-5xl group-hover:scale-110">
+                    {stat.value}
+                    {stat.suffix}
+                  </div>
+                  <div className="mb-3 text-lg font-bold text-white">
+                    {stat.label}
+                  </div>
+                  <div className="text-sm leading-relaxed text-slate-400">
+                    {stat.description}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* 機能デモセクション */}
+        <section id="features" className="px-6 py-32 -mt-1">
+          <div className="mx-auto max-w-6xl">
+            <div className="mb-24 text-center">
+              <h2 className="mb-8 text-4xl font-bold text-white md:text-6xl">
+                <span className="text-emerald-400">NeuraKnot</span>でAIに
+                <br className="hidden md:block" />
+                <span className="text-emerald-400">命を吹き込む</span>
+              </h2>
+              <p className="mx-auto max-w-4xl text-2xl leading-relaxed text-slate-300">
+                マルチLLM対応（OpenAI・Anthropic・Google）と
+                <span className="font-bold text-emerald-400">
+                  20種類のサービス
+                </span>
+                で 人間とAIの神経を結ぶ新しい絆を創造
+              </p>
+            </div>
+
+            {/* シンプルなデモ */}
+            <div className="mx-auto mb-24 max-w-4xl">
+              <div className="p-12 rounded-3xl border backdrop-blur-sm bg-white/5 border-white/10">
+                <div className="mb-12 text-center">
+                  <div className="flex justify-center items-center mx-auto mb-6 w-20 h-20 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-2xl">
+                    <Sparkles className="w-10 h-10 text-white" />
+                  </div>
+                  <h3 className="mb-4 text-3xl font-bold text-white">
+                    AIに命を吹き込む技術
+                  </h3>
+                  <p className="text-xl text-slate-300">
+                    LangChain Agent + MCP統合で自律的なタスク実行
+                  </p>
+                </div>
+
+                <div className="grid gap-6 mb-8 md:grid-cols-4">
+                  <div className="p-4 text-center rounded-xl border bg-emerald-500/10 border-emerald-500/30">
+                    <div className="flex justify-center items-center mx-auto mb-2 w-12 h-12 rounded-lg bg-emerald-500/20">
+                      <MessageCircle className="w-6 h-6 text-emerald-400" />
+                    </div>
+                    <div className="font-medium text-emerald-400">
+                      マルチLLM
+                    </div>
+                  </div>
+                  <div className="p-4 text-center rounded-xl border bg-emerald-500/10 border-emerald-500/30">
+                    <div className="flex justify-center items-center mx-auto mb-2 w-12 h-12 rounded-lg bg-emerald-500/20">
+                      <Sparkles className="w-6 h-6 text-emerald-400" />
+                    </div>
+                    <div className="font-medium text-emerald-400">
+                      20種サービス
+                    </div>
+                  </div>
+                  <div className="p-4 text-center rounded-xl border bg-emerald-500/10 border-emerald-500/30">
+                    <div className="flex justify-center items-center mx-auto mb-2 w-12 h-12 rounded-lg bg-emerald-500/20">
+                      <User className="w-6 h-6 text-emerald-400" />
+                    </div>
+                    <div className="font-medium text-emerald-400">MCP統合</div>
+                  </div>
+                  <div className="p-4 text-center rounded-xl border bg-emerald-500/10 border-emerald-500/30">
+                    <div className="flex justify-center items-center mx-auto mb-2 w-12 h-12 rounded-lg bg-emerald-500/20">
+                      <Play className="w-6 h-6 text-emerald-400" />
+                    </div>
+                    <div className="font-medium text-emerald-400">自律実行</div>
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <div className="inline-block px-6 py-3 rounded-full border bg-emerald-500/20 border-emerald-500/50">
+                    <span className="font-bold text-emerald-300">
+                      AIが自律的にタスクを実行！
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* プロダクト */}
-            <div>
-              <h3 className="mb-6 font-bold text-white">プロダクト</h3>
-              <ul className="space-y-3">
-                <li>
-                  <a
-                    href="#features"
-                    className="transition-colors text-slate-400 hover:text-emerald-400"
+            {/* 連携サービス */}
+            <div className="mb-24 text-center">
+              <h3 className="mb-8 text-2xl font-bold text-white">
+                マルチLLM対応 + 外部API連携
+              </h3>
+              <div className="flex flex-wrap gap-4 justify-center">
+                {SERVICES.map((service) => (
+                  <span
+                    key={service}
+                    className="px-6 py-3 rounded-full border transition-colors bg-white/5 text-slate-300 border-white/10 hover:border-emerald-400/30"
                   >
-                    機能
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="transition-colors text-slate-400 hover:text-emerald-400"
-                  >
-                    セキュリティ
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="transition-colors text-slate-400 hover:text-emerald-400"
-                  >
-                    統合
-                  </a>
-                </li>
-              </ul>
-            </div>
-
-            {/* サポート */}
-            <div>
-              <h3 className="mb-6 font-bold text-white">サポート</h3>
-              <ul className="space-y-3">
-                <li>
-                  <a
-                    href="#"
-                    className="transition-colors text-slate-400 hover:text-emerald-400"
-                  >
-                    ヘルプセンター
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="transition-colors text-slate-400 hover:text-emerald-400"
-                  >
-                    お問い合わせ
-                  </a>
-                </li>
-                <li>
-                  <a
-                    href="#"
-                    className="transition-colors text-slate-400 hover:text-emerald-400"
-                  >
-                    コミュニティ
-                  </a>
-                </li>
-              </ul>
+                    {service}
+                  </span>
+                ))}
+                <span className="px-6 py-3 font-medium text-emerald-400 rounded-full border bg-emerald-500/10 border-emerald-500/30">
+                  +MCP統合
+                </span>
+              </div>
             </div>
           </div>
+        </section>
 
-          <div className="pt-8 text-center border-t border-slate-700/50">
-            <p className="text-slate-500">
-              © 2024 NeuraKnot. All rights reserved. |
-              <a
-                href="#"
-                className="ml-2 transition-colors hover:text-emerald-400"
-              >
-                プライバシーポリシー
-              </a>{" "}
-              |
-              <a
-                href="#"
-                className="ml-2 transition-colors hover:text-emerald-400"
-              >
-                利用規約
-              </a>
+        {/* 料金セクション */}
+        <section id="pricing" className="px-6 py-24 -mt-1">
+          <div className="mx-auto max-w-6xl">
+            <div className="mb-20 text-center">
+              <h2 className="mb-6 text-4xl font-bold text-white md:text-5xl">
+                <span className="text-emerald-400">NeuraKnot</span>の料金プラン
+              </h2>
+              <p className="mx-auto max-w-2xl text-xl text-slate-300">
+                あなたに最適なプランで、AIの力を最大限活用しましょう
+              </p>
+            </div>
+
+            <div className="grid gap-8 md:grid-cols-3">
+              {/* ベーシックプラン */}
+              <div className="p-8 rounded-2xl border backdrop-blur-sm transition-all duration-300 group bg-white/5 border-white/10 hover:border-emerald-400/30 hover:bg-white/10">
+                <div className="mb-6 text-center">
+                  <h3 className="mb-2 text-2xl font-bold text-white">
+                    ベーシック
+                  </h3>
+                  <div className="mb-4">
+                    <span className="text-4xl font-black text-emerald-400">
+                      無料
+                    </span>
+                  </div>
+                  <p className="text-slate-400">個人利用に最適</p>
+                </div>
+                <ul className="mb-8 space-y-4">
+                  <li className="flex items-center text-slate-300">
+                    <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                    月100回のAIチャット
+                  </li>
+                  <li className="flex items-center text-slate-300">
+                    <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                    外部サービス20種類
+                  </li>
+                  <li className="flex items-center text-slate-300">
+                    <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                    1つのAIエージェント
+                  </li>
+                  <li className="flex items-center text-slate-300">
+                    <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                    メールサポート
+                  </li>
+                </ul>
+                <div className="px-6 py-3 text-center rounded-lg text-slate-400 bg-slate-800/50">
+                  近日追加予定
+                </div>
+              </div>
+
+              {/* プロプラン */}
+              <div className="relative p-8 bg-gradient-to-b rounded-2xl border backdrop-blur-sm transition-all duration-300 group from-emerald-500/10 to-cyan-500/10 border-emerald-400/30 hover:border-emerald-400/50 hover:bg-emerald-500/20">
+                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                  <span className="px-4 py-1 text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-full">
+                    人気
+                  </span>
+                </div>
+                <div className="mb-6 text-center">
+                  <h3 className="mb-2 text-2xl font-bold text-white">プロ</h3>
+                  <div className="mb-4">
+                    <span className="text-4xl font-black text-emerald-400">
+                      ¥980
+                    </span>
+                    <span className="text-slate-400">/月</span>
+                  </div>
+                  <p className="text-slate-400">ビジネス利用に最適</p>
+                </div>
+                <ul className="mb-8 space-y-4">
+                  <li className="flex items-center text-slate-300">
+                    <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                    無制限のAIチャット
+                  </li>
+                  <li className="flex items-center text-slate-300">
+                    <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                    全サービス + 外部API連携
+                  </li>
+                  <li className="flex items-center text-slate-300">
+                    <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                    最大5つのAIエージェント
+                  </li>
+                  <li className="flex items-center text-slate-300">
+                    <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                    優先サポート
+                  </li>
+                  <li className="flex items-center text-slate-300">
+                    <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                    カスタムサービス作成
+                  </li>
+                </ul>
+                <div className="px-6 py-3 text-center text-white bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-lg">
+                  近日追加予定
+                </div>
+              </div>
+
+              {/* エンタープライズプラン */}
+              <div className="p-8 rounded-2xl border backdrop-blur-sm transition-all duration-300 group bg-white/5 border-white/10 hover:border-emerald-400/30 hover:bg-white/10">
+                <div className="mb-6 text-center">
+                  <h3 className="mb-2 text-2xl font-bold text-white">
+                    マックス
+                  </h3>
+                  <div className="mb-4">
+                    <span className="text-4xl font-black text-emerald-400">
+                      カスタム
+                    </span>
+                  </div>
+                  <p className="text-slate-400">最高の性能を追求</p>
+                </div>
+                <ul className="mb-8 space-y-4">
+                  <li className="flex items-center text-slate-300">
+                    <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                    無制限のAIチャット
+                  </li>
+                  <li className="flex items-center text-slate-300">
+                    <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                    全機能 + カスタム開発
+                  </li>
+                  <li className="flex items-center text-slate-300">
+                    <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                    無制限のAIエージェント
+                  </li>
+                  <li className="flex items-center text-slate-300">
+                    <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                    専任サポート
+                  </li>
+                  <li className="flex items-center text-slate-300">
+                    <span className="mr-3 w-2 h-2 bg-emerald-400 rounded-full"></span>
+                    SSO統合
+                  </li>
+                </ul>
+                <div className="px-6 py-3 text-center rounded-lg text-slate-400 bg-slate-800/50">
+                  近日追加予定
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* サポートセクション */}
+        <section id="support" className="px-6 py-24 -mt-1">
+          <div className="mx-auto max-w-6xl">
+            <div className="mb-20 text-center">
+              <h2 className="mb-6 text-4xl font-bold text-white md:text-5xl">
+                <span className="text-emerald-400">NeuraKnot</span>サポート
+              </h2>
+              <p className="mx-auto max-w-2xl text-xl text-slate-300">
+                いつでも安心してご利用いただけるよう、充実したサポート体制をご用意しています
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="inline-block p-12 rounded-2xl border backdrop-blur-sm bg-white/5 border-white/10">
+                <div className="mb-6">
+                  <div className="flex justify-center items-center mx-auto mb-4 w-20 h-20 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-2xl">
+                    <MessageCircle className="w-10 h-10 text-white" />
+                  </div>
+                  <h3 className="mb-2 text-2xl font-bold text-white">
+                    サポート
+                  </h3>
+                  <p className="text-slate-400">
+                    いつでもお気軽にお問い合わせください
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 最終CTAセクション */}
+        <section className="px-6 py-24 -mt-1">
+          <div className="mx-auto max-w-4xl text-center">
+            <h2 className="mb-8 text-4xl font-bold text-white md:text-5xl">
+              <span className="text-emerald-400">NeuraKnot</span>で
+              AIに命を吹き込もう
+            </h2>
+
+            <p className="mx-auto mb-12 max-w-2xl text-xl text-slate-300">
+              人間とAIの神経を結ぶ、新しい絆の始まりを体験しよう
             </p>
+
+            <div className="flex flex-col gap-6 justify-center items-center mb-16 md:flex-row">
+              {!isLoading && user ? (
+                <Link
+                  href="/dashboard"
+                  className="px-12 py-6 text-xl font-bold text-white bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-500 rounded-2xl shadow-2xl transition-all duration-300 transform hover:from-emerald-600 hover:via-emerald-500 hover:to-cyan-600 hover:scale-105 hover:shadow-emerald-500/30"
+                >
+                  ダッシュボードで開始
+                </Link>
+              ) : !isLoading ? (
+                <Link
+                  href="/auth/signup"
+                  className="px-12 py-6 text-xl font-bold text-white bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-500 rounded-2xl shadow-2xl transition-all duration-300 transform hover:from-emerald-600 hover:via-emerald-500 hover:to-cyan-600 hover:scale-105 hover:shadow-emerald-500/30"
+                >
+                  NeuraKnotでAIに命を吹き込む
+                </Link>
+              ) : (
+                <div className="px-12 py-6 text-xl font-bold text-transparent bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-500 rounded-2xl animate-pulse">
+                  読込中...
+                </div>
+              )}
+
+              <button
+                onClick={() => setIsVideoPlaying(!isVideoPlaying)}
+                className="flex items-center px-8 py-6 rounded-2xl border backdrop-blur-sm transition-all duration-300 text-slate-300 hover:text-white border-slate-600/50 hover:border-emerald-400/50 bg-white/5 hover:bg-white/10"
+              >
+                {isVideoPlaying ? (
+                  <Pause className="mr-3 w-5 h-5" />
+                ) : (
+                  <Play className="mr-3 w-5 h-5" />
+                )}
+                <span className="font-medium">デモ動画を見る</span>
+              </button>
+            </div>
+
+            <div className="p-8 rounded-2xl border backdrop-blur-sm bg-white/5 border-white/10">
+              <p className="mb-3 text-lg text-slate-300">
+                30日間無料トライアル　・　いつでもキャンセル可能　・　即座に利用開始
+              </p>
+              <p className="text-slate-400">
+                数千人のユーザーが既に新しい働き方をスタートしています
+              </p>
+            </div>
           </div>
-        </div>
-      </footer>
+        </section>
+
+        {/* フッター */}
+        <footer className="px-6 py-16 -mt-1">
+          <div className="mx-auto max-w-6xl">
+            <div className="grid gap-8 mb-12 md:grid-cols-4">
+              {/* ブランド */}
+              <div className="md:col-span-2">
+                <Link href="/" className="flex items-center mb-6 space-x-3">
+                  <div className="flex justify-center items-center w-10 h-10 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-xl">
+                    <MessageCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-2xl font-bold text-white">
+                    NeuraKnot
+                  </span>
+                </Link>
+
+                <p className="mb-8 max-w-md leading-relaxed text-slate-400">
+                  AIに命を吹き込む技術で、人間とAIの神経を結ぶ新しい絆を創造するプラットフォーム。
+                </p>
+
+                <div className="flex space-x-4">
+                  {SOCIAL_LINKS.slice(0, 3).map((social) => (
+                    <a
+                      key={social.name}
+                      href={social.href}
+                      className="transition-colors text-slate-400 hover:text-emerald-400"
+                      aria-label={social.name}
+                    >
+                      <svg
+                        className="w-6 h-6"
+                        fill="currentColor"
+                        viewBox={social.viewBox}
+                      >
+                        <path
+                          d={social.path}
+                          fillRule={
+                            social.name === "GitHub" ||
+                            social.name === "LinkedIn"
+                              ? "evenodd"
+                              : undefined
+                          }
+                          clipRule={
+                            social.name === "GitHub" ||
+                            social.name === "LinkedIn"
+                              ? "evenodd"
+                              : undefined
+                          }
+                        />
+                      </svg>
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              {/* プロダクト */}
+              <div>
+                <h3 className="mb-6 font-bold text-white">プロダクト</h3>
+                <ul className="space-y-3">
+                  <li>
+                    <a
+                      href="#features"
+                      className="transition-colors text-slate-400 hover:text-emerald-400"
+                    >
+                      機能
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      className="transition-colors text-slate-400 hover:text-emerald-400"
+                    >
+                      セキュリティ
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      className="transition-colors text-slate-400 hover:text-emerald-400"
+                    >
+                      統合
+                    </a>
+                  </li>
+                </ul>
+              </div>
+
+              {/* サポート */}
+              <div>
+                <h3 className="mb-6 font-bold text-white">サポート</h3>
+                <ul className="space-y-3">
+                  <li>
+                    <a
+                      href="#"
+                      className="transition-colors text-slate-400 hover:text-emerald-400"
+                    >
+                      ヘルプセンター
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      className="transition-colors text-slate-400 hover:text-emerald-400"
+                    >
+                      お問い合わせ
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      className="transition-colors text-slate-400 hover:text-emerald-400"
+                    >
+                      コミュニティ
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="pt-8 text-center border-t border-slate-700/50">
+              <p className="text-slate-500">
+                © 2024 NeuraKnot. All rights reserved. |
+                <a
+                  href="#"
+                  className="ml-2 transition-colors hover:text-emerald-400"
+                >
+                  プライバシーポリシー
+                </a>{" "}
+                |
+                <a
+                  href="#"
+                  className="ml-2 transition-colors hover:text-emerald-400"
+                >
+                  利用規約
+                </a>
+              </p>
+            </div>
+          </div>
+        </footer>
+      </main>
     </div>
   );
 }
