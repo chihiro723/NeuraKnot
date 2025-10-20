@@ -22,12 +22,26 @@ export function SignOutButton() {
       // サインアウト処理を実行
       await signOut();
 
-      // ログインページにリダイレクト
-      router.push("/auth/login");
+      // ログインページにリダイレクト（置換 + refresh で確実に反映）
+      router.replace("/auth/login");
+      router.refresh();
+
+      // フェイルセーフ: 300ms後に遷移できていなければ強制遷移
+      setTimeout(() => {
+        if (typeof window !== "undefined" && window.location.pathname !== "/auth/login") {
+          window.location.assign("/auth/login");
+        }
+      }, 300);
     } catch (error) {
       console.error("Sign out error:", error);
-      // エラーが発生してもログインページにリダイレクト
-      router.push("/auth/login");
+      // エラー時もログインページに遷移
+      router.replace("/auth/login");
+      router.refresh();
+      setTimeout(() => {
+        if (typeof window !== "undefined" && window.location.pathname !== "/auth/login") {
+          window.location.assign("/auth/login");
+        }
+      }, 300);
     } finally {
       setIsLoading(false);
     }

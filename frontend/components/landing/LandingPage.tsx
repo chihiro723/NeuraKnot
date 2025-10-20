@@ -241,12 +241,24 @@ export function LandingPage({
       // サインアウト処理を実行
       await signOut();
 
-      // ホームページにリダイレクト
-      router.push("/");
+      // ログインページへ遷移（置換 + refresh + フェイルセーフ）
+      router.replace("/auth/login");
+      router.refresh();
+      setTimeout(() => {
+        if (typeof window !== "undefined" && window.location.pathname !== "/auth/login") {
+          window.location.assign("/auth/login");
+        }
+      }, 300);
     } catch (error) {
       console.error("ログアウトエラー:", error);
-      // エラーが発生してもホームページにリダイレクト
-      router.push("/");
+      // エラー時もログインページへ遷移
+      router.replace("/auth/login");
+      router.refresh();
+      setTimeout(() => {
+        if (typeof window !== "undefined" && window.location.pathname !== "/auth/login") {
+          window.location.assign("/auth/login");
+        }
+      }, 300);
     } finally {
       setIsLoggingOut(false);
     }
@@ -608,7 +620,7 @@ export function LandingPage({
         </div>
       </div>
 
-      <main className="flex-1 overflow-y-auto overflow-x-hidden">
+      <main className="overflow-y-auto overflow-x-hidden flex-1">
         {/* エレガントなヒーローセクション */}
         <section className="flex overflow-hidden relative justify-center items-center min-h-screen">
           {/* 中央ハイライト効果 */}
