@@ -23,7 +23,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex overflow-hidden relative justify-center items-center p-4 min-h-[var(--app-dvh)] bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
+    <div className="flex relative justify-center items-center p-4 min-h-[var(--app-dvh)] overflow-y-auto bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
       {/* 中央ハイライト効果 */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-1/2 left-1/2 w-96 h-96 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2 bg-emerald-400/30"></div>

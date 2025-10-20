@@ -65,7 +65,7 @@ function ResetPasswordForm() {
 
   if (success) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
+      <div className="flex justify-center items-center min-h-[var(--app-dvh)] overflow-y-auto bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
         <div className="space-y-8 w-full max-w-md p-8 rounded-2xl border shadow-2xl backdrop-blur-md bg-white/10 border-white/20">
           <div className="text-center">
             <div className="mb-4 text-xl text-emerald-400">
@@ -88,7 +88,7 @@ function ResetPasswordForm() {
   }
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
+    <div className="flex justify-center items-center min-h-[var(--app-dvh)] overflow-y-auto bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
       {/* 中央ハイライト効果 */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-1/2 left-1/2 w-96 h-96 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2 bg-emerald-400/30"></div>

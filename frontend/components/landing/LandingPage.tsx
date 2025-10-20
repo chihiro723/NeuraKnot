@@ -253,7 +253,7 @@ export function LandingPage({
   };
 
   return (
-    <div className="overflow-hidden relative min-h-[var(--app-dvh)] bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
+    <div className="relative min-h-[var(--app-dvh)] bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
       {/* ナビゲーション */}
       <nav className="fixed top-0 right-0 left-0 z-50 border-b backdrop-blur-md bg-slate-900/90 border-white/10">
         <div className="px-4 py-4 mx-auto max-w-7xl md:px-6">
