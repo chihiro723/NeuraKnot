@@ -66,6 +66,7 @@ export function ChatWindow({
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const footerRef = useRef<HTMLDivElement>(null);
 
   // ストリーミング状態
   const [isStreaming, setIsStreaming] = useState(false);
@@ -244,6 +245,23 @@ export function ChatWindow({
   useEffect(() => {
     adjustTextareaHeight();
   }, [newMessage, adjustTextareaHeight]);
+
+  // テキストエリアfocus時にキーボードで隠れないようスクロール
+  const handleInputFocus = useCallback(() => {
+    // 少し遅延させてビューポート縮小後にスクロール
+    setTimeout(() => {
+      try {
+        footerRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+        const container = messagesContainerRef.current;
+        if (container) {
+          container.scrollTo({
+            top: container.scrollHeight,
+            behavior: "smooth",
+          });
+        }
+      } catch {}
+    }, 50);
+  }, []);
 
   // スタンプピッカー外側クリックで閉じる
   useEffect(() => {
@@ -596,11 +614,11 @@ export function ChatWindow({
   );
 
   return (
-    <div className="flex overflow-hidden flex-col flex-1">
+    <div className="flex overflow-hidden flex-col flex-1 overscroll-none">
       {/* メッセージエリア */}
       <div
         ref={messagesContainerRef}
-        className="overflow-y-auto overflow-x-hidden flex-1 pt-4 px-3 pb-0 md:px-4 w-full bg-gray-50 dark:bg-gray-900 lg:pt-6 lg:px-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        className="overflow-y-auto overflow-x-hidden flex-1 pt-4 px-3 pb-0 md:px-4 w-full bg-gray-50 dark:bg-gray-900 lg:pt-6 lg:px-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] overscroll-contain touch-pan-y"
       >
         <div className="space-y-4 md:space-y-6">
           {messages.map((message) => (
@@ -758,7 +776,10 @@ export function ChatWindow({
       </div>
 
       {/* 入力エリア */}
-      <div className="flex-shrink-0 px-3 pt-0 pb-3 bg-gray-50 md:px-4 md:pb-4 dark:bg-gray-900">
+      <div
+        ref={footerRef}
+        className="flex-shrink-0 px-3 pt-0 pb-3 bg-gray-50 md:px-4 md:pb-4 dark:bg-gray-900"
+      >
         <div className="relative w-full">
           {/* 統合されたモダンな入力コンテナ */}
           <div
@@ -773,13 +794,17 @@ export function ChatWindow({
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyDown={handleKeyDown}
+              onFocus={handleInputFocus}
               placeholder="メッセージを入力...（Cmd/Ctrl+Enterで送信）"
               className={cn(
                 "px-0 py-0 w-full bg-transparent border-0 resize-none",
                 "overflow-y-auto focus:outline-none",
-                "text-sm placeholder-gray-500 text-gray-900 dark:placeholder-gray-400 dark:text-gray-100 lg:text-base"
+                // iOS自動ズーム防止のためモバイルで16px以上
+                "text-base placeholder-gray-500 text-gray-900 dark:placeholder-gray-400 dark:text-gray-100"
               )}
               rows={1}
+              inputMode="text"
+              enterKeyHint="send"
               style={{ minHeight: "32px", lineHeight: "24px" }}
               disabled={isLoading || isStreaming}
             />
