@@ -60,7 +60,7 @@ export default function ForgotPasswordPage() {
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-1/2 left-1/2 w-96 h-96 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2 bg-emerald-400/30"></div>
       </div>
-      <div className="relative z-10 space-y-8 w-full max-w-md p-8 rounded-2xl border shadow-2xl backdrop-blur-md bg-white/10 border-white/20">
+      <div className="relative z-10 space-y-6 md:space-y-8 w-full max-w-sm md:max-w-md p-5 md:p-8 rounded-2xl border shadow-2xl backdrop-blur-md bg-white/10 border-white/20">
         <div>
           <h2 className="mt-6 text-3xl font-extrabold text-center text-white">
             パスワードリセット

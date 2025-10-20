@@ -110,18 +110,18 @@ function VerifyEmailContent() {
       {/* 戻るボタン */}
       <Link
         href="/auth/signup"
-        className="absolute top-6 left-6 z-20 group p-3 bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-white/20 text-white rounded-xl transition-all duration-300 hover:scale-105 hover:-translate-y-0.5"
+        className="absolute top-4 md:top-6 left-4 md:left-6 z-20 group p-2 md:p-3 bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-white/20 text-white rounded-xl transition-all duration-300 hover:scale-105 hover:-translate-y-0.5"
       >
         <ArrowLeft className="w-5 h-5 transition-colors duration-300 text-white/70 group-hover:text-white" />
       </Link>
 
       {/* メインコンテンツ */}
-      <div className="relative z-10 w-full max-w-md">
-        <div className="p-8 rounded-2xl border shadow-2xl backdrop-blur-md bg-white/10 border-white/20">
-          <div className="mb-8 text-center">
-            <div className="inline-flex justify-center items-center mb-4 w-16 h-16 rounded-full bg-emerald-500/20">
+      <div className="relative z-10 w-full max-w-sm md:max-w-md">
+        <div className="p-5 md:p-8 rounded-2xl border shadow-2xl backdrop-blur-md bg-white/10 border-white/20">
+          <div className="mb-6 text-center">
+            <div className="inline-flex justify-center items-center mb-4 w-12 h-12 md:w-16 md:h-16 rounded-full bg-emerald-500/20">
               <svg
-                className="w-8 h-8 text-emerald-400"
+                className="w-6 h-6 md:w-8 md:h-8 text-emerald-400"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -134,7 +134,7 @@ function VerifyEmailContent() {
                 />
               </svg>
             </div>
-            <h1 className="mb-2 text-3xl font-bold text-white">
+            <h1 className="mb-2 text-2xl md:text-3xl font-bold text-white">
               メールアドレスを確認
             </h1>
             <p className="text-sm text-white/70">

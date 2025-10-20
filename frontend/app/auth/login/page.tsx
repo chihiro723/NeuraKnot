@@ -32,16 +32,18 @@ export default function LoginPage() {
       {/* 戻るボタン */}
       <Link
         href="/"
-        className="absolute top-6 left-6 z-20 group p-3 bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-white/20 text-white rounded-xl transition-all duration-300 hover:scale-105 hover:-translate-y-0.5"
+        className="absolute top-4 md:top-6 left-4 md:left-6 z-20 group p-2 md:p-3 bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 hover:border-white/20 text-white rounded-xl transition-all duration-300 hover:scale-105 hover:-translate-y-0.5"
       >
         <ArrowLeft className="w-5 h-5 transition-colors duration-300 text-white/70 group-hover:text-white" />
       </Link>
 
       {/* メインコンテンツ */}
-      <div className="relative z-10 w-full max-w-md">
-        <div className="p-8 rounded-2xl border shadow-2xl backdrop-blur-md bg-white/10 border-white/20">
-          <div className="mb-8 text-center">
-            <h1 className="mb-2 text-3xl font-bold text-white">ログイン</h1>
+      <div className="relative z-10 w-full max-w-sm md:max-w-md">
+        <div className="p-5 rounded-2xl border shadow-2xl backdrop-blur-md md:p-8 bg-white/10 border-white/20">
+          <div className="mb-6 text-center">
+            <h1 className="mb-2 text-2xl font-bold text-white md:text-3xl">
+              ログイン
+            </h1>
             <p className="text-white/70">アカウントにログインしてください</p>
           </div>
 
