@@ -695,13 +695,34 @@ NeuraKnot のインフラストラクチャは **Terraform** を使用して Inf
 | --------------------- | ---------------------------- | ----------------------------------------------------------------- |
 | **Cognito**           | ユーザー認証・管理           | User Pool, User Pool Client, OAuth Providers                      |
 | **VPC**               | ネットワーク基盤             | VPC, Subnets, Internet Gateway, NAT Gateway                       |
+| **Route 53**          | DNS 管理                     | Hosted Zone, DNS Records (A, CNAME)                               |
+| **ACM**               | SSL/TLS 証明書管理           | Certificate, DNS Validation                                       |
 | **ECR**               | コンテナイメージ管理         | ECR Repositories (backend-go, backend-python), Lifecycle Policies |
 | **ECS**               | コンテナオーケストレーション | ECS Cluster, Task Definition, Service (バックエンド API のみ)     |
 | **RDS**               | データベース                 | PostgreSQL 15, Multi-AZ, Encryption                               |
-| **ALB**               | ロードバランシング           | Application Load Balancer, Target Groups                          |
+| **ALB**               | ロードバランシング           | Application Load Balancer, Target Groups, HTTPS Listener          |
 | **Service Discovery** | 内部サービス通信             | Cloud Map, Private DNS Namespace                                  |
 | **Secrets Manager**   | 機密情報管理                 | Secrets, Secret Versions                                          |
 | **IAM**               | アクセス制御                 | Roles, Policies, Policy Attachments                               |
+
+### カスタムドメインと HTTPS
+
+本番環境では、カスタムドメイン（`neuraknot.net`）と SSL/TLS 証明書を使用して安全な HTTPS 通信を提供しています。
+
+**構成**:
+- **ドメイン**: `neuraknot.net`（Route 53 で管理）
+- **API エンドポイント**: `https://api.neuraknot.net`
+- **SSL/TLS 証明書**: AWS Certificate Manager（ACM）で自動管理
+- **証明書タイプ**: ワイルドカード証明書（`*.neuraknot.net`）
+
+**セットアップ手順**:
+詳細は [Route 53 & ACM セットアップガイド](./docs/ROUTE53_ACM_SETUP.md) を参照してください。
+
+**主な機能**:
+- ✅ 自動 DNS 管理（Route 53）
+- ✅ 自動 SSL/TLS 証明書発行・更新（ACM）
+- ✅ HTTP から HTTPS への自動リダイレクト
+- ✅ ワイルドカード証明書によるサブドメイン対応
 
 ### クイックスタート
 
