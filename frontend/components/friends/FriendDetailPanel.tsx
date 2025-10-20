@@ -264,8 +264,8 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
 
   return (
     <>
-      {/* ヘッダー */}
-      <div className="flex justify-between items-center px-4 h-14 bg-white border-b border-gray-200 sm:h-16 sm:px-6 dark:bg-gray-900 dark:border-gray-700">
+      {/* ヘッダー（モバイルで常時上部固定） */}
+      <div className="flex sticky top-0 z-20 justify-between items-center px-4 h-14 bg-white/95 border-b border-gray-200 backdrop-blur supports-[backdrop-filter]:bg-white/80 sm:h-16 sm:px-6 dark:bg-gray-900/95 dark:border-gray-700">
         <div className="flex items-center space-x-3">
           <div className="flex justify-center items-center w-10 h-10 bg-green-100 rounded-lg dark:bg-green-500/20">
             {friend.type === "ai" ? (

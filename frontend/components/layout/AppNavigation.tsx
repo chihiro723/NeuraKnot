@@ -26,7 +26,7 @@ export function AppNavigation({ profile }: AppNavigationProps) {
   // モバイル版: 下部横型ナビゲーション
   if (isMobile) {
     return (
-      <div className="fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around h-16 bg-white border-t border-gray-200 dark:bg-gray-900 dark:border-gray-700 safe-area-inset-bottom">
+      <div className="fixed bottom-0 left-0 right-0 z-30 flex items-center justify-around h-16 bg-white/95 border-t border-gray-200 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:bg-gray-900/95 dark:border-gray-700 safe-area-inset-bottom">
         {NAVIGATION_TABS.map((tab) => {
           const Icon = tab.icon;
           const isActive = pathname.startsWith(tab.path);

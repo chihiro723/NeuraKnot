@@ -28,7 +28,7 @@ export function DashboardLayoutClient({
   const showNavigation = !(isMobile && isDetailPage);
 
   return (
-    <div className="flex overflow-hidden h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="flex overflow-hidden min-h-[var(--app-dvh)] bg-gray-50 dark:bg-gray-950">
       {/* ナビゲーション（モバイル詳細画面では非表示） */}
       {showNavigation && <AppNavigation profile={profile} user={user} />}
 
