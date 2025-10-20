@@ -710,6 +710,7 @@ NeuraKnot のインフラストラクチャは **Terraform** を使用して Inf
 本番環境では、カスタムドメイン（`neuraknot.net`）と SSL/TLS 証明書を使用して安全な HTTPS 通信を提供しています。
 
 **構成**:
+
 - **ドメイン**: `neuraknot.net`（Route 53 で管理）
 - **API エンドポイント**: `https://api.neuraknot.net`
 - **SSL/TLS 証明書**: AWS Certificate Manager（ACM）で自動管理
@@ -719,6 +720,7 @@ NeuraKnot のインフラストラクチャは **Terraform** を使用して Inf
 詳細は [Route 53 & ACM セットアップガイド](./docs/ROUTE53_ACM_SETUP.md) を参照してください。
 
 **主な機能**:
+
 - ✅ 自動 DNS 管理（Route 53）
 - ✅ 自動 SSL/TLS 証明書発行・更新（ACM）
 - ✅ HTTP から HTTPS への自動リダイレクト

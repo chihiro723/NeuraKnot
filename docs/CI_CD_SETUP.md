@@ -292,3 +292,4 @@ cd frontend && npm run lint
 - [golangci-lint](https://golangci-lint.run/)
 - [Ruff](https://docs.astral.sh/ruff/)
 - [Terraform](https://www.terraform.io/docs)
+

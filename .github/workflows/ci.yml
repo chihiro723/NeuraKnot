@@ -127,3 +127,4 @@ jobs:
           mypy app/ --ignore-missing-imports || echo "Type check skipped"
         continue-on-error: true
 
+
