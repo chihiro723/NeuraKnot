@@ -51,14 +51,14 @@ export function CognitoLoginForm() {
       const result = await signIn({ email: email.toLowerCase(), password });
 
       if (result.success) {
-        // 成功: 即座にダッシュボードへ遷移
-        router.replace("/dashboard");
+        // 成功: 即座にダッシュボード(chats)へ遷移
+        router.replace("/dashboard/chats");
         router.refresh();
 
         // フェイルセーフ: 300ms後に遷移できていなければ強制遷移
         setTimeout(() => {
-          if (typeof window !== "undefined" && window.location.pathname !== "/dashboard") {
-            window.location.assign("/dashboard");
+          if (typeof window !== "undefined" && !window.location.pathname.startsWith("/dashboard")) {
+            window.location.assign("/dashboard/chats");
           }
         }, 300);
       } else {
