@@ -14,7 +14,14 @@ export default function SignUpPage() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      router.push("/dashboard");
+      router.replace("/dashboard/chats");
+      router.refresh();
+      // フェイルセーフ
+      setTimeout(() => {
+        if (typeof window !== "undefined" && !window.location.pathname.startsWith("/dashboard")) {
+          window.location.assign("/dashboard/chats");
+        }
+      }, 300);
     }
   }, [isAuthenticated, loading, router]);
 

@@ -13,21 +13,18 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (isAuthenticated) {
-      // 認証成功を検知した時点で即座に遷移（loadingに依存しない）
-      router.replace("/dashboard");
+    if (!loading && isAuthenticated) {
+      // 認証済みの場合は即座にダッシュボードへ遷移
+      router.replace("/dashboard/chats");
       router.refresh();
-      // まれな遷移不発のフェイルセーフ
+      // フェイルセーフ
       setTimeout(() => {
-        if (
-          typeof window !== "undefined" &&
-          window.location.pathname !== "/dashboard"
-        ) {
-          window.location.assign("/dashboard");
+        if (typeof window !== "undefined" && !window.location.pathname.startsWith("/dashboard")) {
+          window.location.assign("/dashboard/chats");
         }
       }, 300);
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, loading, router]);
 
   if (loading) {
     return <LoadingSpinner centerScreen variant="auth" />;

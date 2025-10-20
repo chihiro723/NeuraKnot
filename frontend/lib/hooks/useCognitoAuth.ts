@@ -85,28 +85,30 @@ export function useCognitoAuth() {
     }
   }, [])
 
-  const signUp = useCallback(async (userData: SignUpRequest): Promise<void> => {
+  const signUp = useCallback(async (userData: SignUpRequest): Promise<{ success: boolean }> => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }))
-      
+
       await cognitoAuth.signUp(
         userData.email,
         userData.password,
         userData.display_name
       )
-      
+
       setState(prev => ({
         ...prev,
         loading: false,
         error: null
       }))
+
+      return { success: true }
     } catch (error) {
       setState(prev => ({
         ...prev,
         loading: false,
         error: error instanceof Error ? error.message : 'アカウント作成に失敗しました'
       }))
-      // エラーをthrowしない - フック内でエラーメッセージを管理
+      return { success: false }
     }
   }, [])
 

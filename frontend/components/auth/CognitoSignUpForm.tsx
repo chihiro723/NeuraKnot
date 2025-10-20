@@ -67,20 +67,26 @@ export function CognitoSignUpForm() {
       return;
     }
 
-    await signUp({
+    const result = await signUp({
       email: formData.email.toLowerCase(),
       password: formData.password,
       display_name: formData.displayName,
     });
 
-    // エラーがある場合の処理
-    if (authError) {
+    if (result.success) {
+      // サインアップ成功時
+      // メールアドレスとパスワードをsessionStorageに保存（自動ログイン用）
+      sessionStorage.setItem("verify_email", formData.email.toLowerCase());
+      sessionStorage.setItem("verify_password", formData.password);
+      // 認証コード入力ページへ遷移
+      router.push("/auth/verify");
+    } else {
       // エラー時はsessionStorageをクリア
       sessionStorage.removeItem("verify_email");
       sessionStorage.removeItem("verify_password");
 
       // 既存アカウントエラーの場合、適切なメッセージとリンクを表示
-      if (isExistingAccountError(new Error(authError))) {
+      if (authError && isExistingAccountError(new Error(authError))) {
         setError(
           <div className="text-center">
             <p className="mb-2">このメールアドレスは既に登録されています。</p>
@@ -102,18 +108,10 @@ export function CognitoSignUpForm() {
           </div>
         );
       } else {
-        setError(getAuthErrorMessage(new Error(authError)));
+        setError(authError ? getAuthErrorMessage(new Error(authError)) : "サインアップに失敗しました");
       }
-    } else {
-      // サインアップ成功時
-      // メールアドレスとパスワードをsessionStorageに保存（自動ログイン用）
-      sessionStorage.setItem("verify_email", formData.email.toLowerCase());
-      sessionStorage.setItem("verify_password", formData.password);
-      // 認証コード入力ページへ遷移
-      router.push("/auth/verify");
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
