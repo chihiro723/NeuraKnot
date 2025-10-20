@@ -60,18 +60,20 @@ export function useCognitoAuth() {
     }
   }, [])
 
-  const signIn = useCallback(async (credentials: SignInRequest): Promise<void> => {
+  const signIn = useCallback(async (credentials: SignInRequest): Promise<{ success: boolean }> => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }))
-      
+
       const authResponse = await cognitoAuth.signIn(credentials.email, credentials.password)
-      
+
       setState({
         user: authResponse.user,
         session: null,
         loading: false,
         error: null
       })
+
+      return { success: true }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'ログインに失敗しました'
       setState(prev => ({
@@ -79,7 +81,7 @@ export function useCognitoAuth() {
         loading: false,
         error: errorMessage
       }))
-      // エラーをthrowしない - フック内でエラーメッセージを管理
+      return { success: false }
     }
   }, [])
 

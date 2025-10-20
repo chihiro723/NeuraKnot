@@ -47,25 +47,41 @@ export function CognitoLoginForm() {
       return;
     }
 
-    await signIn({
-      email: email.toLowerCase(),
-      password,
-    });
+    try {
+      const result = await signIn({ email: email.toLowerCase(), password });
 
-    // 未確認ユーザーの場合、verifyページに遷移
-    if (authError && isUnconfirmedUserError(new Error(authError))) {
-      sessionStorage.setItem("verify_email", email.toLowerCase());
-      router.push(
-        `/auth/verify?email=${encodeURIComponent(email.toLowerCase())}`
-      );
-    } else if (authError) {
-      setError(getAuthErrorMessage(new Error(authError)));
-    } else {
-      // ログイン成功時はダッシュボードに遷移
-      router.push("/dashboard");
+      if (result.success) {
+        // 成功: 即座にダッシュボードへ遷移
+        router.replace("/dashboard");
+        router.refresh();
+
+        // フェイルセーフ: 300ms後に遷移できていなければ強制遷移
+        setTimeout(() => {
+          if (typeof window !== "undefined" && window.location.pathname !== "/dashboard") {
+            window.location.assign("/dashboard");
+          }
+        }, 300);
+      } else {
+        // 失敗: エラーをチェックして適切に処理
+        if (authError) {
+          const err = new Error(authError);
+          if (isUnconfirmedUserError(err)) {
+            const lower = email.toLowerCase();
+            sessionStorage.setItem("verify_email", lower);
+            router.push(`/auth/verify?email=${encodeURIComponent(lower)}`);
+          } else {
+            setError(getAuthErrorMessage(err));
+          }
+        } else {
+          setError("ログインに失敗しました");
+        }
+        setLoading(false);
+      }
+    } catch (error) {
+      // 予期しないエラー
+      setError("ログイン処理中にエラーが発生しました");
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
@@ -115,7 +131,7 @@ export function CognitoLoginForm() {
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80 transition-colors"
+            className="absolute right-3 top-1/2 transition-colors -translate-y-1/2 text-white/50 hover:text-white/80"
             aria-label={showPassword ? "パスワードを隠す" : "パスワードを表示"}
           >
             {showPassword ? (
