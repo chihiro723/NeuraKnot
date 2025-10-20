@@ -107,16 +107,16 @@ NeuraKnot は **PostgreSQL 15** を使用し、**Backend-go のみ**がデータ
 
 #### テーブル構成（8 テーブル）
 
-| カテゴリ       | テーブル名             | 説明                                   |
-| -------------- | ---------------------- | -------------------------------------- |
-| ユーザー管理   | `users`                | ユーザー情報（AWS Cognito 連携）       |
-| AI エージェント | `ai_agents`            | AI エージェント設定とペルソナ          |
-| 会話           | `conversations`        | ユーザーと AI Agent 間の 1 対 1 会話   |
-|                | `messages`             | チャットメッセージ                     |
-| AI 処理履歴    | `ai_chat_sessions`     | AI 処理セッション履歴（分析・デバッグ用） |
-|                | `ai_tool_usage`        | AI ツール使用履歴                      |
-| サービス連携   | `user_service_configs` | ユーザーのサービス設定（暗号化）       |
-|                | `ai_agent_services`    | AI Agent × サービス紐付け              |
+| カテゴリ        | テーブル名             | 説明                                      |
+| --------------- | ---------------------- | ----------------------------------------- |
+| ユーザー管理    | `users`                | ユーザー情報（AWS Cognito 連携）          |
+| AI エージェント | `ai_agents`            | AI エージェント設定とペルソナ             |
+| 会話            | `conversations`        | ユーザーと AI Agent 間の 1 対 1 会話      |
+|                 | `messages`             | チャットメッセージ                        |
+| AI 処理履歴     | `ai_chat_sessions`     | AI 処理セッション履歴（分析・デバッグ用） |
+|                 | `ai_tool_usage`        | AI ツール使用履歴                         |
+| サービス連携    | `user_service_configs` | ユーザーのサービス設定（暗号化）          |
+|                 | `ai_agent_services`    | AI Agent × サービス紐付け                 |
 
 #### 主な機能
 
