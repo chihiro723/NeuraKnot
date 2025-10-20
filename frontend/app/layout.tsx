@@ -86,7 +86,7 @@ export default function RootLayout({
       <head>
         <meta
           name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1"
+          content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, height=device-height"
         />
         <meta name="theme-color" content={SEO_CONFIG.themeColor} />
         <meta name="msapplication-TileColor" content={SEO_CONFIG.themeColor} />
@@ -115,8 +115,26 @@ export default function RootLayout({
             `,
           }}
         />
+        {/* 動的ビューポート高さ（モバイルのブラウザUIによる高さズレ対策） */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                function setAppDvh() {
+                  try {
+                    var h = window.innerHeight;
+                    document.documentElement.style.setProperty('--app-dvh', h + 'px');
+                  } catch (e) {}
+                }
+                setAppDvh();
+                window.addEventListener('resize', setAppDvh);
+                window.addEventListener('orientationchange', setAppDvh);
+              })();
+            `,
+          }}
+        />
       </head>
-      <body suppressHydrationWarning>
+      <body suppressHydrationWarning className="app-dvh">
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

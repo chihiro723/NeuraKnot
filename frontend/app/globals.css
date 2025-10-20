@@ -12,6 +12,9 @@
   --accent: 262 83% 58%;
   --surface: 220 13% 9%;
   
+  /* ビューポート高さ（dvh対策用、JSで更新） */
+  --app-dvh: 100dvh;
+  
   /* エフェクト */
   --glass-opacity: 0.1;
   --blur: 20px;
@@ -384,6 +387,32 @@
   /* テーブルのスタイル */
   --markdown-table-border: #e5e7eb;
   --markdown-table-header-bg: rgba(0, 0, 0, 0.05);
+}
+
+/* ===========================================
+   グローバルスクロール制御・ビューポート調整
+   =========================================== */
+html,
+body {
+  height: 100%;
+  overscroll-behavior-x: none;
+  overscroll-behavior-y: none;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  overflow-x: hidden; /* 横スクロールによるはみ出し防止 */
+}
+
+/* アプリ全体の高さをブラウザUIを除いた実描画領域に合わせる */
+.app-dvh {
+  min-height: var(--app-dvh);
+}
+
+/* モーダル表示中に背景スクロールを停止するためのクラス（フックで制御） */
+body.scroll-lock {
+  overflow: hidden !important;
 }
 
 /* ダークモード用のMarkdownスタイル */
