@@ -313,3 +313,16 @@ variable "langsmith_endpoint" {
   type        = string
   default     = "https://smith.langchain.com"
 }
+
+# GitHub Actions OIDC Configuration
+variable "github_username" {
+  description = "GitHub username or organization name"
+  type        = string
+  default     = "chihiro723"
+}
+
+variable "github_repository" {
+  description = "GitHub repository name"
+  type        = string
+  default     = "NeuraKnot"
+}

@@ -90,6 +90,13 @@ module "iam" {
   environment  = var.environment
   project_name = var.project_name
 
+  # GitHub Actions OIDC Configuration
+  github_username     = var.github_username
+  github_repository   = var.github_repository
+  ecr_repository_arns = values(module.ecr.repository_arns)
+  ecs_cluster_arn     = module.ecs.cluster_arn
+  ecs_service_arns    = module.ecs.service_arns
+
   secrets_manager_arns           = []
   cognito_user_pool_arn          = module.cognito.user_pool_arn
   service_discovery_arn          = module.service_discovery.backend_python_service_arn

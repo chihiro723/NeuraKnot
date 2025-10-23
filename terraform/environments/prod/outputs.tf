@@ -148,3 +148,14 @@ output "api_url" {
   description = "URL of the API"
   value       = "https://${module.alb.alb_dns_name}/api"
 }
+
+# GitHub Actions OIDC Outputs
+output "github_actions_role_arn" {
+  description = "ARN of the GitHub Actions IAM Role (set this as AWS_ROLE_ARN in GitHub Secrets)"
+  value       = module.iam.github_actions_role_arn
+}
+
+output "github_oidc_provider_arn" {
+  description = "ARN of the GitHub OIDC Identity Provider"
+  value       = module.iam.github_oidc_provider_arn
+}
