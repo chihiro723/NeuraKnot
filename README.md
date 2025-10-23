@@ -694,17 +694,21 @@ main ブランチへの push 時に自動デプロイ：
 
 ### セットアップ
 
-詳細な設定手順は [CI/CD セットアップガイド](./docs/CI_CD_SETUP.md) を参照してください。
+詳細な設定手順は以下のドキュメントを参照してください：
 
-**必要な GitHub Secrets**:
+- [CI/CD セットアップガイド](./docs/CI_CD_SETUP.md) - GitHub Actions 基本設定
+- [GitHub Actions OIDC 設定ガイド](./docs/GITHUB_ACTIONS_OIDC_SETUP.md) - **AWS OIDC 認証設定（推奨）**
 
-- `AWS_ACCESS_KEY_ID`
-- `AWS_SECRET_ACCESS_KEY`
-- `AWS_REGION`
-- `ECR_REGISTRY`
-- `ECS_CLUSTER_NAME`
-- `ECS_SERVICE_NAME_GO`
-- `ECS_SERVICE_NAME_PYTHON`
+**必要な GitHub Secrets（OIDC 認証使用時）**:
+
+- `AWS_ROLE_ARN` - GitHub Actions 用 IAM ロール ARN（Terraform で作成）
+- `AWS_REGION` - AWS リージョン（例：ap-northeast-1）
+- `ECR_REGISTRY` - ECR レジストリ URL
+- `ECS_CLUSTER_NAME` - ECS クラスター名
+- `ECS_SERVICE_NAME_GO` - Backend Go サービス URL
+- `ECS_SERVICE_NAME_PYTHON` - Backend Python サービス名
+
+**セキュリティ向上**: 従来のアクセスキー（`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`）の代わりに OIDC 認証を使用することで、一時的な認証情報による安全なデプロイが可能です。
 
 ### ローカルでの Linter 実行
 
