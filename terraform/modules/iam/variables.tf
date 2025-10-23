@@ -38,3 +38,34 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+# GitHub Actions OIDC Configuration
+variable "github_username" {
+  description = "GitHub username or organization name"
+  type        = string
+  default     = ""
+}
+
+variable "github_repository" {
+  description = "GitHub repository name"
+  type        = string
+  default     = ""
+}
+
+variable "ecr_repository_arns" {
+  description = "List of ECR repository ARNs that GitHub Actions can access"
+  type        = list(string)
+  default     = []
+}
+
+variable "ecs_cluster_arn" {
+  description = "ARN of the ECS cluster"
+  type        = string
+  default     = ""
+}
+
+variable "ecs_service_arns" {
+  description = "List of ECS service ARNs that GitHub Actions can update"
+  type        = list(string)
+  default     = []
+}

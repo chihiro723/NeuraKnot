@@ -199,3 +199,141 @@ resource "aws_iam_role_policy_attachment" "rds_enhanced_monitoring_role_policy" 
   role       = aws_iam_role.rds_enhanced_monitoring_role[0].name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonRDSEnhancedMonitoringRole"
 }
+
+# ============================================================================
+# GitHub Actions OIDC Configuration
+# ============================================================================
+
+# GitHub Actions OIDC Identity Provider
+resource "aws_iam_openid_connect_provider" "github_actions" {
+  count = var.github_username != "" && var.github_repository != "" ? 1 : 0
+
+  url = "https://token.actions.githubusercontent.com"
+
+  client_id_list = [
+    "sts.amazonaws.com"
+  ]
+
+  thumbprint_list = [
+    "6938fd4d98bab03faadb97b34396831e3780aea1"
+  ]
+
+  tags = merge(var.tags, {
+    Name = "${var.project_name}-${var.environment}-github-actions-oidc"
+  })
+}
+
+# GitHub Actions IAM Role
+resource "aws_iam_role" "github_actions_role" {
+  count = var.github_username != "" && var.github_repository != "" ? 1 : 0
+
+  name = "${var.project_name}-${var.environment}-github-actions-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Federated = aws_iam_openid_connect_provider.github_actions[0].arn
+        }
+        Action = "sts:AssumeRoleWithWebIdentity"
+        Condition = {
+          StringEquals = {
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+          }
+          StringLike = {
+            "token.actions.githubusercontent.com:sub" = "repo:${var.github_username}/${var.github_repository}:ref:refs/heads/main"
+          }
+        }
+      }
+    ]
+  })
+
+  tags = merge(var.tags, {
+    Name = "${var.project_name}-${var.environment}-github-actions-role"
+  })
+}
+
+# GitHub Actions IAM Policy for ECR
+resource "aws_iam_policy" "github_actions_ecr_policy" {
+  count = var.github_username != "" && var.github_repository != "" ? 1 : 0
+
+  name        = "${var.project_name}-${var.environment}-github-actions-ecr-policy"
+  description = "Policy for GitHub Actions to access ECR"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:GetDownloadUrlForLayer",
+          "ecr:BatchGetImage",
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+          "ecr:PutImage"
+        ]
+        Resource = var.ecr_repository_arns
+      }
+    ]
+  })
+
+  tags = var.tags
+}
+
+# GitHub Actions IAM Policy for ECS
+resource "aws_iam_policy" "github_actions_ecs_policy" {
+  count = var.github_username != "" && var.github_repository != "" ? 1 : 0
+
+  name        = "${var.project_name}-${var.environment}-github-actions-ecs-policy"
+  description = "Policy for GitHub Actions to manage ECS services"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecs:DescribeServices",
+          "ecs:ListServices",
+          "ecs:DescribeClusters"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecs:UpdateService"
+        ]
+        Resource = var.ecs_service_arns
+      }
+    ]
+  })
+
+  tags = var.tags
+}
+
+# Attach policies to GitHub Actions role
+resource "aws_iam_role_policy_attachment" "github_actions_ecr_policy" {
+  count = var.github_username != "" && var.github_repository != "" ? 1 : 0
+
+  role       = aws_iam_role.github_actions_role[0].name
+  policy_arn = aws_iam_policy.github_actions_ecr_policy[0].arn
+}
+
+resource "aws_iam_role_policy_attachment" "github_actions_ecs_policy" {
+  count = var.github_username != "" && var.github_repository != "" ? 1 : 0
+
+  role       = aws_iam_role.github_actions_role[0].name
+  policy_arn = aws_iam_policy.github_actions_ecs_policy[0].arn
+}
