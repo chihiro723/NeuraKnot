@@ -55,3 +55,8 @@ output "backend_python_log_group_name" {
   description = "Name of the Backend Python log group"
   value       = aws_cloudwatch_log_group.backend_python.name
 }
+
+output "service_arns" {
+  description = "List of ECS service ARNs"
+  value       = [aws_ecs_service.backend_go.id, aws_ecs_service.backend_python.id]
+}
