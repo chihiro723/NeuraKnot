@@ -205,10 +205,14 @@ docker-compose.override.yml
 *.sqlite3
 
 # AI/ML
-models/
+# ML model files (but not application code)
 *.model
 *.pkl
 *.joblib
+# Ignore ML models directory but not application models directory
+/**/models/
+!backend-python/app/models/
+!frontend/*/models/
 
 # AWS Cognito
 .aws/
