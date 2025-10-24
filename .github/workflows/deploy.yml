@@ -67,11 +67,38 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
+      - name: Download current task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition neuraKnot-prod-backend-go \
+            --query taskDefinition \
+            --region ${{ secrets.AWS_REGION }} > task-definition.json
+
+      - name: Update task definition with new image
+        id: task-def
+        run: |
+          # 既存のタスク定義から新しいタスク定義を作成（イメージURLのみ更新）
+          NEW_TASK_DEF=$(cat task-definition.json | \
+            jq --arg IMAGE "${{ steps.build-image.outputs.image }}" \
+            '.containerDefinitions[0].image = $IMAGE | 
+             del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)')
+
+          # 新しいタスク定義を登録
+          NEW_TASK_ARN=$(echo $NEW_TASK_DEF | \
+            aws ecs register-task-definition \
+            --cli-input-json file:///dev/stdin \
+            --region ${{ secrets.AWS_REGION }} | \
+            jq -r '.taskDefinition.taskDefinitionArn')
+
+          echo "task_definition_arn=$NEW_TASK_ARN" >> $GITHUB_OUTPUT
+          echo "New task definition registered: $NEW_TASK_ARN"
+
       - name: Update ECS Service
         run: |
           aws ecs update-service \
             --cluster ${{ secrets.ECS_CLUSTER_NAME }} \
             --service ${{ secrets.ECS_SERVICE_NAME_GO }} \
+            --task-definition ${{ steps.task-def.outputs.task_definition_arn }} \
             --force-new-deployment \
             --region ${{ secrets.AWS_REGION }}
 
@@ -122,11 +149,38 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
+      - name: Download current task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition neuraKnot-prod-backend-python \
+            --query taskDefinition \
+            --region ${{ secrets.AWS_REGION }} > task-definition.json
+
+      - name: Update task definition with new image
+        id: task-def
+        run: |
+          # 既存のタスク定義から新しいタスク定義を作成（イメージURLのみ更新）
+          NEW_TASK_DEF=$(cat task-definition.json | \
+            jq --arg IMAGE "${{ steps.build-image.outputs.image }}" \
+            '.containerDefinitions[0].image = $IMAGE | 
+             del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)')
+
+          # 新しいタスク定義を登録
+          NEW_TASK_ARN=$(echo $NEW_TASK_DEF | \
+            aws ecs register-task-definition \
+            --cli-input-json file:///dev/stdin \
+            --region ${{ secrets.AWS_REGION }} | \
+            jq -r '.taskDefinition.taskDefinitionArn')
+
+          echo "task_definition_arn=$NEW_TASK_ARN" >> $GITHUB_OUTPUT
+          echo "New task definition registered: $NEW_TASK_ARN"
+
       - name: Update ECS Service
         run: |
           aws ecs update-service \
             --cluster ${{ secrets.ECS_CLUSTER_NAME }} \
             --service ${{ secrets.ECS_SERVICE_NAME_PYTHON }} \
+            --task-definition ${{ steps.task-def.outputs.task_definition_arn }} \
             --force-new-deployment \
             --region ${{ secrets.AWS_REGION }}
 
