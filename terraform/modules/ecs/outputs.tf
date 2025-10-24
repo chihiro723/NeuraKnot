@@ -60,3 +60,18 @@ output "service_arns" {
   description = "List of ECS service ARNs"
   value       = [aws_ecs_service.backend_go.id, aws_ecs_service.backend_python.id]
 }
+
+output "ssm_proxy_task_definition_arn" {
+  description = "ARN of the SSM Proxy task definition"
+  value       = aws_ecs_task_definition.ssm_proxy.arn
+}
+
+output "ssm_proxy_log_group_name" {
+  description = "Name of the SSM Proxy log group"
+  value       = aws_cloudwatch_log_group.ssm_proxy.name
+}
+
+output "ecs_security_group_id" {
+  description = "Security group ID of ECS tasks"
+  value       = aws_security_group.ecs.id
+}

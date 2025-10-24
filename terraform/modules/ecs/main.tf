@@ -320,11 +320,12 @@ resource "aws_ecs_task_definition" "backend_python" {
 
 # ECS Service for Backend Go
 resource "aws_ecs_service" "backend_go" {
-  name            = "${var.project_name}-${var.environment}-backend-go"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.backend_go.arn
-  desired_count   = var.backend_go_desired_count
-  launch_type     = "FARGATE"
+  name                   = "${var.project_name}-${var.environment}-backend-go"
+  cluster                = aws_ecs_cluster.main.id
+  task_definition        = aws_ecs_task_definition.backend_go.arn
+  desired_count          = var.backend_go_desired_count
+  launch_type            = "FARGATE"
+  enable_execute_command = true
 
   network_configuration {
     subnets          = var.private_subnet_ids
@@ -344,6 +345,11 @@ resource "aws_ecs_service" "backend_go" {
 
   depends_on = [aws_ecs_task_definition.backend_go]
 
+  # CI/CDでタスク定義が更新されるため、Terraformでは無視
+  lifecycle {
+    ignore_changes = [task_definition]
+  }
+
   tags = merge(var.tags, {
     Name = "${var.project_name}-${var.environment}-backend-go"
   })
@@ -351,11 +357,12 @@ resource "aws_ecs_service" "backend_go" {
 
 # ECS Service for Backend Python
 resource "aws_ecs_service" "backend_python" {
-  name            = "${var.project_name}-${var.environment}-backend-python"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.backend_python.arn
-  desired_count   = var.backend_python_desired_count
-  launch_type     = "FARGATE"
+  name                   = "${var.project_name}-${var.environment}-backend-python"
+  cluster                = aws_ecs_cluster.main.id
+  task_definition        = aws_ecs_task_definition.backend_python.arn
+  desired_count          = var.backend_python_desired_count
+  launch_type            = "FARGATE"
+  enable_execute_command = true
 
   network_configuration {
     subnets          = var.private_subnet_ids
@@ -369,8 +376,54 @@ resource "aws_ecs_service" "backend_python" {
 
   depends_on = [aws_ecs_task_definition.backend_python]
 
+  # CI/CDでタスク定義が更新されるため、Terraformでは無視
+  lifecycle {
+    ignore_changes = [task_definition]
+  }
+
   tags = merge(var.tags, {
     Name = "${var.project_name}-${var.environment}-backend-python"
   })
 }
 
+# SSM Proxy 専用のロググループ
+resource "aws_cloudwatch_log_group" "ssm_proxy" {
+  name              = "/ecs/${var.project_name}-${var.environment}-ssm-proxy"
+  retention_in_days = var.log_retention_in_days
+
+  tags = merge(var.tags, {
+    Name = "${var.project_name}-${var.environment}-ssm-proxy-logs"
+  })
+}
+
+# SSM Proxy タスク定義（DB接続専用）
+resource "aws_ecs_task_definition" "ssm_proxy" {
+  family                   = "${var.project_name}-${var.environment}-ssm-proxy"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = var.ecs_task_execution_role_arn
+  task_role_arn            = var.ecs_task_role_arn
+
+  container_definitions = jsonencode([{
+    name    = "ssm-proxy"
+    image   = "public.ecr.aws/amazonlinux/amazonlinux:2"
+    command = ["sleep", "infinity"]
+
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        "awslogs-group"         = aws_cloudwatch_log_group.ssm_proxy.name
+        "awslogs-region"        = var.aws_region
+        "awslogs-stream-prefix" = "ssm-proxy"
+      }
+    }
+    essential = true
+  }])
+
+  tags = merge(var.tags, {
+    Name        = "${var.project_name}-${var.environment}-ssm-proxy"
+    Description = "Lightweight task for SSM port forwarding to RDS"
+  })
+}

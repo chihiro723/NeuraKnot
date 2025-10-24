@@ -643,6 +643,11 @@ terraform apply
 - [AWS Cognito 設定](./docs/aws/COGNITO_SETUP.md)
 - [AWS ドキュメント一覧](./docs/aws/)
 
+**データベース管理**
+
+- [SSM 経由 RDS 接続ガイド](./docs/backend/SSM_RDS_CONNECTION_GUIDE.md) - プライベート RDS への安全な接続方法
+- [pgAdmin セットアップ](./docs/backend/PGADMIN_SETUP.md)
+
 **その他**
 
 - [CI/CD セットアップガイド](./docs/CI_CD_SETUP.md) - **GitHub Actions 自動デプロイ**

@@ -132,9 +132,10 @@ module "rds" {
   environment  = var.environment
   project_name = var.project_name
 
-  vpc_id             = module.vpc.vpc_id
-  vpc_cidr           = var.vpc_cidr
-  private_subnet_ids = module.vpc.private_subnet_ids
+  vpc_id                = module.vpc.vpc_id
+  vpc_cidr              = var.vpc_cidr
+  private_subnet_ids    = module.vpc.private_subnet_ids
+  ecs_security_group_id = module.ecs.ecs_security_group_id
 
   db_password             = var.db_password
   db_name                 = var.db_name
@@ -280,4 +281,22 @@ module "ecs" {
   log_retention_in_days = var.log_retention_in_days
   log_level             = var.log_level
   aws_region            = var.aws_region
+}
+
+# VPC Endpoints Module (for ECS Exec)
+module "vpc_endpoints" {
+  source = "../../modules/vpc-endpoints"
+
+  environment           = var.environment
+  project_name          = var.project_name
+  vpc_id                = module.vpc.vpc_id
+  private_subnet_ids    = module.vpc.private_subnet_ids
+  ecs_security_group_id = module.ecs.ecs_security_group_id
+  aws_region            = var.aws_region
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    ManagedBy   = "Terraform"
+  }
 }
