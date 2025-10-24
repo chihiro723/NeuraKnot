@@ -53,8 +53,9 @@ Internet
 [ECS Fargate - Backend Go] <--(内部通信)--> [ECS Fargate - Backend Python]
     |                                           |
     v                                           v
-[RDS PostgreSQL]                          [External APIs]
-[Redis]                                   (OpenWeather, Slack, Notion, etc.)
+[RDS PostgreSQL] <--(管理用)-- [EC2 Bastion Host (SSM経由)]
+[Redis]                                   [External APIs]
+                                          (OpenWeather, Slack, Notion, etc.)
     |
     v
 [AWS Cognito]
@@ -177,6 +178,8 @@ neuraKnot/
 │   │   ├── ecs/              # ECS クラスター（バックエンドのみ）
 │   │   ├── rds/              # RDS PostgreSQL
 │   │   ├── alb/              # Application Load Balancer
+│   │   ├── bastion/          # EC2 Bastion Host (SSM経由RDS接続用)
+│   │   ├── vpc-endpoints/    # VPC Endpoints (SSM用)
 │   │   ├── service-discovery/ # Cloud Map
 │   │   ├── secrets/          # Secrets Manager
 │   │   └── iam/              # IAM ロール・ポリシー

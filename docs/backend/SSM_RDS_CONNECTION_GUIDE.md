@@ -9,28 +9,31 @@
 ```
 ローカルPC (localhost:15432)
     ↓
-AWS SSM Session Manager
+AWS SSM Session Manager (Port Forwarding)
     ↓
-ECS Fargate Task (SSM Proxy)
+EC2 Bastion Host (Private Subnet)
     ↓
 RDS (Private Subnet)
 ```
 
-### SSM Proxy タスクの詳細
+### Bastion Host の詳細
 
-- **イメージ**: `public.ecr.aws/amazonlinux/amazonlinux:latest` (Amazon Linux 2023)
-- **リソース**: 256 CPU / 512 MB メモリ
+- **インスタンスタイプ**: `t4g.nano` (ARM64)
+- **AMI**: Amazon Linux 2
+- **vCPU**: 2 コア
+- **メモリ**: 512 MB
 - **ネットワーク**: プライベートサブネット、パブリック IP なし
-- **実行時間**: 接続中のみ起動、使用後は停止
-- **SSM Agent**: Fargate 基盤側で自動管理（コンテナ内不要）
+- **SSM Agent**: プリインストール済み
+- **コスト**: 約 $3/月（常時稼働）
 
 ### 主要なメリット
 
 1. **セキュア**: SSH キー不要、パブリック IP アドレス不要
-2. **コスト効率**: 使う時だけタスク起動（約 2 円/時間）
+2. **低コスト**: 月額 $3 で常時接続可能
 3. **監査可能**: CloudTrail で接続ログを記録
 4. **簡単**: IAM ベースの認証
-5. **保守不要**: Amazon Linux 2 の公式イメージを直接使用
+5. **保守不要**: Amazon Linux 2 の自動更新
+6. **高速**: 起動待ち時間なし（常時稼働）
 
 ## 前提条件
 
@@ -91,26 +94,16 @@ aws sts get-caller-identity
     {
       "Effect": "Allow",
       "Action": [
-        "ecs:RunTask",
-        "ecs:DescribeTasks",
-        "ecs:ListTasks",
-        "ecs:StopTask",
-        "ecs:ExecuteCommand"
+        "ec2:DescribeInstances",
+        "ssm:StartSession",
+        "ssm:TerminateSession"
       ],
       "Resource": "*"
     },
     {
       "Effect": "Allow",
-      "Action": ["ssm:StartSession"],
-      "Resource": ["arn:aws:ecs:ap-northeast-1:*:task/neuraKnot-prod-cluster/*"]
-    },
-    {
-      "Effect": "Allow",
-      "Action": ["iam:PassRole"],
-      "Resource": [
-        "arn:aws:iam::*:role/neuraKnot-prod-ecs-task-execution-role",
-        "arn:aws:iam::*:role/neuraKnot-prod-ecs-task-role"
-      ]
+      "Action": ["rds:DescribeDBInstances"],
+      "Resource": "*"
     }
   ]
 }
@@ -123,21 +116,20 @@ aws sts get-caller-identity
 #### Step 1: スクリプトに実行権限を付与
 
 ```bash
-chmod +x scripts/connect-rds.sh
+chmod +x scripts/connect-rds-bastion.sh
 ```
 
 #### Step 2: 接続開始
 
 ```bash
-./scripts/connect-rds.sh start
+./scripts/connect-rds-bastion.sh start
 ```
 
 スクリプトは自動的に以下を実行します:
 
-1. VPC 情報の取得（サブネット、セキュリティグループ）
+1. Bastion Host インスタンス ID の取得
 2. RDS エンドポイントの取得
-3. SSM Proxy タスクの起動
-4. ポートフォワーディングの開始
+3. ポートフォワーディングの開始
 
 #### Step 3: pgAdmin で接続
 
@@ -156,74 +148,42 @@ chmod +x scripts/connect-rds.sh
 接続を終了する場合:
 
 1. ポートフォワーディングターミナルで `Ctrl+C` を押す
-2. タスクを停止:
+
+または:
 
 ```bash
-./scripts/connect-rds.sh stop
+./scripts/connect-rds-bastion.sh stop
 ```
 
 #### その他のコマンド
 
 ```bash
-# タスクのステータス確認
-./scripts/connect-rds.sh status
+# Bastion と RDS のステータス確認
+./scripts/connect-rds-bastion.sh status
 
 # ヘルプ表示
-./scripts/connect-rds.sh help
+./scripts/connect-rds-bastion.sh help
 ```
 
 ### 方法 2: 手動実行
 
 手動で各ステップを実行する場合:
 
-#### Step 1: VPC 情報の取得
+#### Step 1: Bastion Host インスタンス ID の取得
 
 ```bash
-# プライベートサブネットIDを取得
-SUBNET_IDS=$(aws ec2 describe-subnets \
-    --filters "Name=tag:Name,Values=neuraKnot-prod-private-*" \
-    --query 'Subnets[*].SubnetId' \
-    --output json \
-    --region ap-northeast-1)
-
-# ECSセキュリティグループIDを取得
-SG_ID=$(aws ec2 describe-security-groups \
-    --filters "Name=tag:Name,Values=neuraKnot-prod-ecs-sg" \
-    --query 'SecurityGroups[0].GroupId' \
+INSTANCE_ID=$(aws ec2 describe-instances \
+    --filters \
+        "Name=tag:Name,Values=neuraKnot-prod-bastion" \
+        "Name=instance-state-name,Values=running" \
+    --query 'Reservations[0].Instances[0].InstanceId' \
     --output text \
     --region ap-northeast-1)
 
-echo "Subnet IDs: $SUBNET_IDS"
-echo "Security Group: $SG_ID"
+echo "Bastion Instance ID: ${INSTANCE_ID}"
 ```
 
-#### Step 2: SSM Proxy タスクの起動
-
-```bash
-CLUSTER_NAME="neuraKnot-prod-cluster"
-TASK_DEFINITION="neuraKnot-prod-ssm-proxy"
-
-TASK_ARN=$(aws ecs run-task \
-    --cluster ${CLUSTER_NAME} \
-    --task-definition ${TASK_DEFINITION} \
-    --launch-type FARGATE \
-    --network-configuration "awsvpcConfiguration={subnets=${SUBNET_IDS},securityGroups=[${SG_ID}],assignPublicIp=DISABLED}" \
-    --enable-execute-command \
-    --region ap-northeast-1 \
-    --query 'tasks[0].taskArn' \
-    --output text)
-
-TASK_ID=$(echo $TASK_ARN | cut -d'/' -f3)
-echo "Task ID: ${TASK_ID}"
-
-# タスクが起動するまで待機
-aws ecs wait tasks-running \
-    --cluster ${CLUSTER_NAME} \
-    --tasks ${TASK_ARN} \
-    --region ap-northeast-1
-```
-
-#### Step 3: RDS エンドポイントの取得
+#### Step 2: RDS エンドポイントの取得
 
 ```bash
 RDS_ENDPOINT=$(aws rds describe-db-instances \
@@ -235,11 +195,11 @@ RDS_ENDPOINT=$(aws rds describe-db-instances \
 echo "RDS Endpoint: ${RDS_ENDPOINT}"
 ```
 
-#### Step 4: ポートフォワーディングの開始
+#### Step 3: ポートフォワーディングの開始
 
 ```bash
 aws ssm start-session \
-    --target "ecs:${CLUSTER_NAME}_${TASK_ID}" \
+    --target ${INSTANCE_ID} \
     --document-name AWS-StartPortForwardingSessionToRemoteHost \
     --parameters "{\"host\":[\"${RDS_ENDPOINT}\"],\"portNumber\":[\"5432\"],\"localPortNumber\":[\"15432\"]}" \
     --region ap-northeast-1
@@ -251,15 +211,6 @@ aws ssm start-session \
 Starting session with SessionId: ...
 Port 15432 opened for session [...]
 Waiting for connections...
-```
-
-#### Step 5: タスクの停止
-
-```bash
-aws ecs stop-task \
-    --cluster ${CLUSTER_NAME} \
-    --task ${TASK_ARN} \
-    --region ap-northeast-1
 ```
 
 ## データベースパスワードの取得
@@ -341,32 +292,26 @@ Session Manager Plugin を再インストール:
 brew reinstall --cask session-manager-plugin
 ```
 
-### 2. タスクが起動しない
+### 2. Bastion Host が見つからない
 
 **確認項目:**
 
-1. ECS クラスターが存在するか確認
-2. タスク定義が存在するか確認
-3. CloudWatch Logs を確認
-
 ```bash
-# ECSクラスターの確認
-aws ecs describe-clusters \
-    --clusters neuraKnot-prod-cluster \
-    --region ap-northeast-1
-
-# タスク定義の確認
-aws ecs describe-task-definition \
-    --task-definition neuraKnot-prod-ssm-proxy \
-    --region ap-northeast-1
-
-# CloudWatch Logsの確認
-aws logs tail /ecs/neuraKnot-prod-backend-go \
-    --follow \
+# Bastion インスタンスの確認
+aws ec2 describe-instances \
+    --filters "Name=tag:Name,Values=neuraKnot-prod-bastion" \
     --region ap-northeast-1
 ```
 
-### 3. SSM セッションが開始できない
+**解決策:**
+Terraform で Bastion Host をデプロイ:
+
+```bash
+cd terraform/environments/prod
+terraform apply
+```
+
+### 3. SSM Agent がオフライン
 
 **エラー:**
 
@@ -376,22 +321,24 @@ An error occurred (TargetNotConnected) when calling the StartSession operation: 
 
 **原因と解決策:**
 
-1. **タスクが RUNNING 状態になっていない**
+1. **SSM Agent が起動していない**
 
    ```bash
-   # タスクの状態を確認
-   aws ecs describe-tasks \
-       --cluster neuraKnot-prod-cluster \
-       --tasks ${TASK_ARN} \
+   # Systems Manager で確認
+   aws ssm describe-instance-information \
+       --filters "Key=InstanceIds,Values=${INSTANCE_ID}" \
        --region ap-northeast-1
    ```
 
-2. **Execute Command が有効になっていない**
+2. **VPC Endpoints が設定されていない**
 
-   - タスク起動時に `--enable-execute-command` フラグを指定
+   - プライベートサブネットには以下の VPC Endpoints が必要:
+     - `com.amazonaws.ap-northeast-1.ssm`
+     - `com.amazonaws.ap-northeast-1.ssmmessages`
+     - `com.amazonaws.ap-northeast-1.ec2messages`
 
-3. **IAM ロールに SSM 権限がない**
-   - Terraform で追加した IAM 権限が適用されているか確認
+3. **セキュリティグループの設定**
+   - Bastion Host のセキュリティグループが全てのアウトバウンドトラフィックを許可しているか確認
 
 ### 4. RDS に接続できない
 
@@ -400,10 +347,14 @@ An error occurred (TargetNotConnected) when calling the StartSession operation: 
 1. **セキュリティグループルール**
 
    ```bash
-   aws ec2 describe-security-groups \
-       --group-ids ${SG_ID} \
+   # RDS セキュリティグループの確認
+   aws rds describe-db-instances \
+       --db-instance-identifier neuraKnot-prod-db \
+       --query 'DBInstances[0].VpcSecurityGroups' \
        --region ap-northeast-1
    ```
+
+   - RDS のセキュリティグループが Bastion Host からの接続を許可しているか確認
 
 2. **RDS のステータス**
 
@@ -415,8 +366,7 @@ An error occurred (TargetNotConnected) when calling the StartSession operation: 
    ```
 
 3. **ネットワーク接続**
-   - ECS タスクと RDS が同じ VPC にあるか確認
-   - NAT Gateway が正常に動作しているか確認
+   - Bastion Host と RDS が同じ VPC にあるか確認
 
 ### 5. ポート 15432 が既に使用されている
 
@@ -431,7 +381,7 @@ Port 15432 is already in use
 
 ```bash
 aws ssm start-session \
-    --target "ecs:${CLUSTER_NAME}_${TASK_ID}" \
+    --target ${INSTANCE_ID} \
     --document-name AWS-StartPortForwardingSessionToRemoteHost \
     --parameters "{\"host\":[\"${RDS_ENDPOINT}\"],\"portNumber\":[\"5432\"],\"localPortNumber\":[\"25432\"]}" \
     --region ap-northeast-1
@@ -441,19 +391,11 @@ pgAdmin の接続設定でもポート番号を `25432` に変更してくださ
 
 ## セキュリティのベストプラクティス
 
-### 1. タスクの即時停止
-
-使用後はすぐに SSM Proxy タスクを停止してください:
-
-```bash
-./scripts/connect-rds.sh stop
-```
-
-### 2. IAM 権限の最小化
+### 1. IAM 権限の最小化
 
 必要最小限の権限のみを付与してください。
 
-### 3. CloudTrail での監査
+### 2. CloudTrail での監査
 
 SSM 接続は自動的に CloudTrail に記録されます:
 
@@ -463,35 +405,58 @@ aws cloudtrail lookup-events \
     --region ap-northeast-1
 ```
 
-### 4. パスワード管理
+### 3. パスワード管理
 
 - RDS パスワードは Secrets Manager で管理
 - ローカル PC にパスワードを保存しない
 - 定期的にパスワードをローテーション
 
-### 5. VPC フローログ
+### 4. VPC フローログ
 
 VPC フローログを有効にして、ネットワークトラフィックを監視してください。
 
+### 5. Session Manager セッションログ
+
+Session Manager のセッションログを CloudWatch Logs に保存:
+
+```bash
+# Terraform で設定済み
+# セッションログの確認
+aws logs tail /aws/ssm/session-logs --follow --region ap-northeast-1
+```
+
 ## コスト
 
-### SSM Proxy タスクのコスト
+### Bastion Host のコスト
 
-Fargate 料金（ap-northeast-1 リージョン）:
+EC2 t4g.nano 料金（ap-northeast-1 リージョン）:
 
-- vCPU: 0.25 vCPU × $0.04656/時間 = $0.01164/時間
-- メモリ: 0.5 GB × $0.00511/GB/時間 = $0.002555/時間
-- **合計: 約 $0.014/時間（約 2 円/時間）**
+- **オンデマンド**: $0.0042/時間
+- **月額**: $0.0042 × 24 × 30 = **約 $3/月**
 
 ### 使用例
 
-- 1 日 1 時間接続: 月額約 60 円
-- 1 日 8 時間接続: 月額約 480 円
+- 常時稼働: 月額約 $3（約 450 円）
+- 追加のデータ転送料金は発生しない（同一 VPC 内）
+
+### コスト最適化
+
+必要に応じて Bastion Host を停止することで、さらにコストを削減できます:
+
+```bash
+# インスタンスを停止
+aws ec2 stop-instances --instance-ids ${INSTANCE_ID} --region ap-northeast-1
+
+# インスタンスを起動
+aws ec2 start-instances --instance-ids ${INSTANCE_ID} --region ap-northeast-1
+```
+
+停止中は EBS ストレージ料金のみ（月額約 $0.8）
 
 ## 関連ドキュメント
 
 - [AWS SSM Session Manager 公式ドキュメント](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager.html)
-- [ECS Exec 公式ドキュメント](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-exec.html)
+- [EC2 Instance Connect 公式ドキュメント](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/Connect-using-EC2-Instance-Connect.html)
 - [pgAdmin 公式ドキュメント](https://www.pgadmin.org/docs/)
 
 ## サポート
@@ -502,4 +467,4 @@ Fargate 料金（ap-northeast-1 リージョン）:
 2. 実行したコマンド
 3. AWS CLI のバージョン: `aws --version`
 4. Session Manager Plugin のバージョン: `session-manager-plugin --version`
-5. CloudWatch Logs の該当部分
+5. Bastion Host のシステムログ (必要に応じて)
