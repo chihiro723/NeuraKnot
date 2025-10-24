@@ -133,6 +133,12 @@ chmod +x scripts/connect-rds-bastion.sh
 
 #### Step 3: pgAdmin で接続
 
+**pgAdmin 4 を起動:**
+
+```bash
+open -a "pgAdmin 4"
+```
+
 別のターミナルまたは pgAdmin を開き、以下の設定で接続:
 
 | 項目     | 値                               |
@@ -227,6 +233,24 @@ terraform output -raw db_password
 RDS パスワードは Secrets Manager で管理することを強く推奨します。
 
 ## pgAdmin での接続設定
+
+### 0. pgAdmin 4 を起動
+
+**macOS:**
+
+```bash
+open -a "pgAdmin 4"
+```
+
+**Windows:**
+
+スタートメニューから「pgAdmin 4」を検索して起動
+
+**Linux:**
+
+```bash
+pgadmin4
+```
 
 ### 1. 新しいサーバーの追加
 
