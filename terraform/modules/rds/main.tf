@@ -59,17 +59,17 @@ resource "aws_security_group" "rds" {
   }
 }
 
-# ECS SSM Proxy タスクからのアクセスを許可
-resource "aws_security_group_rule" "rds_from_ecs_ssm_proxy" {
-  count = var.ecs_security_group_id != "" ? 1 : 0
+# Bastion Host からのアクセスを許可
+resource "aws_security_group_rule" "rds_from_bastion" {
+  count = var.bastion_security_group_id != "" ? 1 : 0
 
   type                     = "ingress"
   from_port                = 5432
   to_port                  = 5432
   protocol                 = "tcp"
-  source_security_group_id = var.ecs_security_group_id
+  source_security_group_id = var.bastion_security_group_id
   security_group_id        = aws_security_group.rds.id
-  description              = "PostgreSQL access from ECS SSM Proxy tasks"
+  description              = "PostgreSQL access from Bastion Host"
 }
 
 # RDS Instance

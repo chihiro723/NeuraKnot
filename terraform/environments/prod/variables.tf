@@ -142,6 +142,12 @@ variable "enable_rds_enhanced_monitoring" {
   default     = true
 }
 
+# Bastion Configuration
+variable "bastion_instance_type" {
+  description = "Instance type for bastion host"
+  type        = string
+  default     = "t4g.nano"
+}
 
 # ALB Configuration
 variable "alb_health_check_path" {

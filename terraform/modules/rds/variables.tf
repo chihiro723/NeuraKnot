@@ -145,8 +145,8 @@ variable "tags" {
   default     = {}
 }
 
-variable "ecs_security_group_id" {
-  description = "Security group ID of ECS tasks (for SSM proxy access)"
+variable "bastion_security_group_id" {
+  description = "Security group ID of bastion host (for RDS access)"
   type        = string
   default     = ""
 }

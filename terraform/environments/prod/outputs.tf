@@ -78,6 +78,17 @@ output "rds_username" {
   value       = module.rds.db_username
 }
 
+# Bastion Outputs
+output "bastion_instance_id" {
+  description = "Instance ID of the bastion host"
+  value       = module.bastion.instance_id
+}
+
+output "bastion_private_ip" {
+  description = "Private IP of the bastion host"
+  value       = module.bastion.private_ip
+}
+
 # ALB Outputs
 output "alb_dns_name" {
   description = "DNS name of the Application Load Balancer"

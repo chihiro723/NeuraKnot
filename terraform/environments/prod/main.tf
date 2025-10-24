@@ -132,10 +132,10 @@ module "rds" {
   environment  = var.environment
   project_name = var.project_name
 
-  vpc_id                = module.vpc.vpc_id
-  vpc_cidr              = var.vpc_cidr
-  private_subnet_ids    = module.vpc.private_subnet_ids
-  ecs_security_group_id = module.ecs.ecs_security_group_id
+  vpc_id                    = module.vpc.vpc_id
+  vpc_cidr                  = var.vpc_cidr
+  private_subnet_ids        = module.vpc.private_subnet_ids
+  bastion_security_group_id = module.bastion.security_group_id
 
   db_password             = var.db_password
   db_name                 = var.db_name
@@ -147,6 +147,25 @@ module "rds" {
   multi_az                = var.rds_multi_az
   deletion_protection     = var.rds_deletion_protection
   monitoring_role_arn     = module.iam.rds_enhanced_monitoring_role_arn
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    ManagedBy   = "Terraform"
+  }
+}
+
+# Bastion Host Module
+module "bastion" {
+  source = "../../modules/bastion"
+
+  environment  = var.environment
+  project_name = var.project_name
+
+  vpc_id        = module.vpc.vpc_id
+  vpc_cidr      = var.vpc_cidr
+  subnet_id     = module.vpc.private_subnet_ids[0] # 最初のプライベートサブネットを使用
+  instance_type = var.bastion_instance_type
 
   tags = {
     Environment = var.environment
@@ -287,12 +306,12 @@ module "ecs" {
 module "vpc_endpoints" {
   source = "../../modules/vpc-endpoints"
 
-  environment           = var.environment
-  project_name          = var.project_name
-  vpc_id                = module.vpc.vpc_id
-  private_subnet_ids    = module.vpc.private_subnet_ids
-  ecs_security_group_id = module.ecs.ecs_security_group_id
-  aws_region            = var.aws_region
+  environment               = var.environment
+  project_name              = var.project_name
+  vpc_id                    = module.vpc.vpc_id
+  private_subnet_ids        = module.vpc.private_subnet_ids
+  bastion_security_group_id = module.bastion.security_group_id
+  aws_region                = var.aws_region
 
   tags = {
     Environment = var.environment

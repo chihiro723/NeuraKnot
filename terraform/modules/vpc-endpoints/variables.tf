@@ -18,9 +18,10 @@ variable "private_subnet_ids" {
   type        = list(string)
 }
 
-variable "ecs_security_group_id" {
-  description = "ECS tasks security group ID"
+variable "bastion_security_group_id" {
+  description = "Bastion host security group ID"
   type        = string
+  default     = ""
 }
 
 variable "aws_region" {

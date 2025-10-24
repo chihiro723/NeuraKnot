@@ -1,5 +1,5 @@
-# VPC Endpoints for ECS Exec (SSM Session Manager)
-# プライベートサブネットでECS Execを使用するために必要なエンドポイント
+# VPC Endpoints for SSM Session Manager
+# プライベートサブネットでSSM Session Managerを使用するために必要なエンドポイント
 
 # SSM用VPCエンドポイント
 resource "aws_vpc_endpoint" "ssm" {
@@ -29,7 +29,7 @@ resource "aws_vpc_endpoint" "ssmmessages" {
   })
 }
 
-# EC2 Messages用VPCエンドポイント（ECS Exec通信用）
+# EC2 Messages用VPCエンドポイント（SSM Session Manager通信用）
 resource "aws_vpc_endpoint" "ec2messages" {
   vpc_id              = var.vpc_id
   service_name        = "com.amazonaws.${var.aws_region}.ec2messages"
@@ -63,15 +63,6 @@ resource "aws_security_group" "vpc_endpoints" {
   description = "Security group for VPC endpoints (SSM, SSM Messages, EC2 Messages, Logs)"
   vpc_id      = var.vpc_id
 
-  # ECSタスクからのHTTPSアクセスを許可
-  ingress {
-    description     = "HTTPS from ECS tasks"
-    from_port       = 443
-    to_port         = 443
-    protocol        = "tcp"
-    security_groups = [var.ecs_security_group_id]
-  }
-
   # 全てのアウトバウンドを許可
   egress {
     description = "Allow all outbound"
@@ -84,5 +75,24 @@ resource "aws_security_group" "vpc_endpoints" {
   tags = merge(var.tags, {
     Name = "${var.project_name}-${var.environment}-vpc-endpoints-sg"
   })
+
+  lifecycle {
+    create_before_destroy = true
+    # aws_security_group_ruleで管理されるルールの変更を無視
+    ignore_changes = [ingress]
+  }
+}
+
+# Bastion Host からのアクセスを許可
+resource "aws_security_group_rule" "vpc_endpoints_from_bastion" {
+  count = var.bastion_security_group_id != "" ? 1 : 0
+
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  source_security_group_id = var.bastion_security_group_id
+  security_group_id        = aws_security_group.vpc_endpoints.id
+  description              = "HTTPS from Bastion Host"
 }
 
