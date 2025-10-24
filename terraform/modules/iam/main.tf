@@ -306,7 +306,9 @@ resource "aws_iam_policy" "github_actions_ecs_policy" {
         Action = [
           "ecs:DescribeServices",
           "ecs:ListServices",
-          "ecs:DescribeClusters"
+          "ecs:DescribeClusters",
+          "ecs:DescribeTaskDefinition",
+          "ecs:RegisterTaskDefinition"
         ]
         Resource = "*"
       },
@@ -316,6 +318,21 @@ resource "aws_iam_policy" "github_actions_ecs_policy" {
           "ecs:UpdateService"
         ]
         Resource = var.ecs_service_arns
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:PassRole"
+        ]
+        Resource = [
+          "arn:aws:iam::*:role/${var.project_name}-${var.environment}-ecs-task-execution-role",
+          "arn:aws:iam::*:role/${var.project_name}-${var.environment}-ecs-task-role"
+        ]
+        Condition = {
+          StringEquals = {
+            "iam:PassedToService" = "ecs-tasks.amazonaws.com"
+          }
+        }
       }
     ]
   })
