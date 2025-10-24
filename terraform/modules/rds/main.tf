@@ -54,7 +54,22 @@ resource "aws_security_group" "rds" {
 
   lifecycle {
     create_before_destroy = true
+    # aws_security_group_ruleで管理されるルールの変更を無視
+    ignore_changes = [ingress]
   }
+}
+
+# ECS SSM Proxy タスクからのアクセスを許可
+resource "aws_security_group_rule" "rds_from_ecs_ssm_proxy" {
+  count = var.ecs_security_group_id != "" ? 1 : 0
+
+  type                     = "ingress"
+  from_port                = 5432
+  to_port                  = 5432
+  protocol                 = "tcp"
+  source_security_group_id = var.ecs_security_group_id
+  security_group_id        = aws_security_group.rds.id
+  description              = "PostgreSQL access from ECS SSM Proxy tasks"
 }
 
 # RDS Instance

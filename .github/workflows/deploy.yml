@@ -78,9 +78,13 @@ jobs:
         run: |
           echo "Image to deploy: ${{ steps.build-image.outputs.image }}"
 
-          # 既存のタスク定義から新しいタスク定義を作成（イメージURLのみ更新）
+          # 既存のタスク定義から新しいタスク定義を作成（イメージURLとタスクロールを更新）
           jq --arg IMAGE "${{ steps.build-image.outputs.image }}" \
+            --arg TASK_ROLE "arn:aws:iam::528757808906:role/neuraKnot-prod-ecs-task-role" \
+            --arg EXEC_ROLE "arn:aws:iam::528757808906:role/neuraKnot-prod-ecs-task-execution-role" \
             '.containerDefinitions[0].image = $IMAGE | 
+             .taskRoleArn = $TASK_ROLE | 
+             .executionRoleArn = $EXEC_ROLE | 
              del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' \
             task-definition.json > new-task-definition.json
 
@@ -179,9 +183,13 @@ jobs:
         run: |
           echo "Image to deploy: ${{ steps.build-image.outputs.image }}"
 
-          # 既存のタスク定義から新しいタスク定義を作成（イメージURLのみ更新）
+          # 既存のタスク定義から新しいタスク定義を作成（イメージURLとタスクロールを更新）
           jq --arg IMAGE "${{ steps.build-image.outputs.image }}" \
+            --arg TASK_ROLE "arn:aws:iam::528757808906:role/neuraKnot-prod-ecs-task-role" \
+            --arg EXEC_ROLE "arn:aws:iam::528757808906:role/neuraKnot-prod-ecs-task-execution-role" \
             '.containerDefinitions[0].image = $IMAGE | 
+             .taskRoleArn = $TASK_ROLE | 
+             .executionRoleArn = $EXEC_ROLE | 
              del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' \
             task-definition.json > new-task-definition.json
 
