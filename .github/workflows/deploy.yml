@@ -1,14 +1,13 @@
 name: Deploy to Production
 
 on:
-  # 手動実行のみ（GitHub Secrets設定後に自動化を有効化）
+  push:
+    branches: [main]
+    paths:
+      - "backend-go/**"
+      - "backend-python/**"
+      - ".github/workflows/deploy.yml"
   workflow_dispatch:
-  # push:
-  #   branches: [main]
-  #   paths:
-  #     - 'backend-go/**'
-  #     - 'backend-python/**'
-  #     - '.github/workflows/deploy.yml'
 
 # OIDC認証に必要な権限を明示的に指定
 permissions:
