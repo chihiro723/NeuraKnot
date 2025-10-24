@@ -77,19 +77,30 @@ jobs:
       - name: Update task definition with new image
         id: task-def
         run: |
+          echo "Image to deploy: ${{ steps.build-image.outputs.image }}"
+          
           # 既存のタスク定義から新しいタスク定義を作成（イメージURLのみ更新）
           NEW_TASK_DEF=$(cat task-definition.json | \
             jq --arg IMAGE "${{ steps.build-image.outputs.image }}" \
             '.containerDefinitions[0].image = $IMAGE | 
              del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)')
-
+          
+          echo "Registering new task definition..."
+          
           # 新しいタスク定義を登録
-          NEW_TASK_ARN=$(echo $NEW_TASK_DEF | \
+          TASK_DEF_OUTPUT=$(echo "$NEW_TASK_DEF" | \
             aws ecs register-task-definition \
             --cli-input-json file:///dev/stdin \
-            --region ${{ secrets.AWS_REGION }} | \
-            jq -r '.taskDefinition.taskDefinitionArn')
-
+            --region ${{ secrets.AWS_REGION }})
+          
+          NEW_TASK_ARN=$(echo "$TASK_DEF_OUTPUT" | jq -r '.taskDefinition.taskDefinitionArn')
+          
+          if [ -z "$NEW_TASK_ARN" ] || [ "$NEW_TASK_ARN" = "null" ]; then
+            echo "Error: Failed to get task definition ARN"
+            echo "$TASK_DEF_OUTPUT"
+            exit 1
+          fi
+          
           echo "task_definition_arn=$NEW_TASK_ARN" >> $GITHUB_OUTPUT
           echo "New task definition registered: $NEW_TASK_ARN"
 
@@ -159,19 +170,30 @@ jobs:
       - name: Update task definition with new image
         id: task-def
         run: |
+          echo "Image to deploy: ${{ steps.build-image.outputs.image }}"
+          
           # 既存のタスク定義から新しいタスク定義を作成（イメージURLのみ更新）
           NEW_TASK_DEF=$(cat task-definition.json | \
             jq --arg IMAGE "${{ steps.build-image.outputs.image }}" \
             '.containerDefinitions[0].image = $IMAGE | 
              del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)')
-
+          
+          echo "Registering new task definition..."
+          
           # 新しいタスク定義を登録
-          NEW_TASK_ARN=$(echo $NEW_TASK_DEF | \
+          TASK_DEF_OUTPUT=$(echo "$NEW_TASK_DEF" | \
             aws ecs register-task-definition \
             --cli-input-json file:///dev/stdin \
-            --region ${{ secrets.AWS_REGION }} | \
-            jq -r '.taskDefinition.taskDefinitionArn')
-
+            --region ${{ secrets.AWS_REGION }})
+          
+          NEW_TASK_ARN=$(echo "$TASK_DEF_OUTPUT" | jq -r '.taskDefinition.taskDefinitionArn')
+          
+          if [ -z "$NEW_TASK_ARN" ] || [ "$NEW_TASK_ARN" = "null" ]; then
+            echo "Error: Failed to get task definition ARN"
+            echo "$TASK_DEF_OUTPUT"
+            exit 1
+          fi
+          
           echo "task_definition_arn=$NEW_TASK_ARN" >> $GITHUB_OUTPUT
           echo "New task definition registered: $NEW_TASK_ARN"
 
