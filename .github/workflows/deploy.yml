@@ -80,17 +80,25 @@ jobs:
           echo "Image to deploy: ${{ steps.build-image.outputs.image }}"
           
           # 既存のタスク定義から新しいタスク定義を作成（イメージURLのみ更新）
-          NEW_TASK_DEF=$(cat task-definition.json | \
-            jq --arg IMAGE "${{ steps.build-image.outputs.image }}" \
+          jq --arg IMAGE "${{ steps.build-image.outputs.image }}" \
             '.containerDefinitions[0].image = $IMAGE | 
-             del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)')
+             del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' \
+            task-definition.json > new-task-definition.json
+          
+          echo "New task definition created. Validating JSON..."
+          
+          # JSONが有効か確認
+          if ! jq empty new-task-definition.json 2>/dev/null; then
+            echo "Error: Generated task definition is not valid JSON"
+            cat new-task-definition.json
+            exit 1
+          fi
           
           echo "Registering new task definition..."
           
           # 新しいタスク定義を登録
-          TASK_DEF_OUTPUT=$(echo "$NEW_TASK_DEF" | \
-            aws ecs register-task-definition \
-            --cli-input-json file:///dev/stdin \
+          TASK_DEF_OUTPUT=$(aws ecs register-task-definition \
+            --cli-input-json file://new-task-definition.json \
             --region ${{ secrets.AWS_REGION }})
           
           NEW_TASK_ARN=$(echo "$TASK_DEF_OUTPUT" | jq -r '.taskDefinition.taskDefinitionArn')
@@ -173,17 +181,25 @@ jobs:
           echo "Image to deploy: ${{ steps.build-image.outputs.image }}"
           
           # 既存のタスク定義から新しいタスク定義を作成（イメージURLのみ更新）
-          NEW_TASK_DEF=$(cat task-definition.json | \
-            jq --arg IMAGE "${{ steps.build-image.outputs.image }}" \
+          jq --arg IMAGE "${{ steps.build-image.outputs.image }}" \
             '.containerDefinitions[0].image = $IMAGE | 
-             del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)')
+             del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' \
+            task-definition.json > new-task-definition.json
+          
+          echo "New task definition created. Validating JSON..."
+          
+          # JSONが有効か確認
+          if ! jq empty new-task-definition.json 2>/dev/null; then
+            echo "Error: Generated task definition is not valid JSON"
+            cat new-task-definition.json
+            exit 1
+          fi
           
           echo "Registering new task definition..."
           
           # 新しいタスク定義を登録
-          TASK_DEF_OUTPUT=$(echo "$NEW_TASK_DEF" | \
-            aws ecs register-task-definition \
-            --cli-input-json file:///dev/stdin \
+          TASK_DEF_OUTPUT=$(aws ecs register-task-definition \
+            --cli-input-json file://new-task-definition.json \
             --region ${{ secrets.AWS_REGION }})
           
           NEW_TASK_ARN=$(echo "$TASK_DEF_OUTPUT" | jq -r '.taskDefinition.taskDefinitionArn')
