@@ -634,3 +634,60 @@ func (h *AIAgentHandler) DeleteAgentService(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+// DeleteAgent はAI Agentを削除
+// @Summary AI Agent削除
+// @Description AI Agentを削除（所有者のみ）
+// @Tags AI Agent
+// @Accept json
+// @Produce json
+// @Param id path string true "AI Agent ID"
+// @Success 204 "削除成功"
+// @Failure 400 {object} response.ErrorResponse "バリデーションエラー"
+// @Failure 401 {object} response.ErrorResponse "認証エラー"
+// @Failure 404 {object} response.ErrorResponse "AI Agentが見つかりません"
+// @Failure 403 {object} response.ErrorResponse "権限エラー"
+// @Router /api/v1/ai-agents/{id} [delete]
+func (h *AIAgentHandler) DeleteAgent(c *gin.Context) {
+	// 認証ミドルウェアからユーザーを取得
+	user, exists := middleware.GetUserFromContext(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, response.NewUnauthorizedErrorResponse("User not found in context"))
+		return
+	}
+
+	// IDをパース
+	agentIDStr := c.Param("id")
+	agentID, err := uuid.Parse(agentIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid agent ID"))
+		return
+	}
+
+	// UserIDをUUIDに変換
+	userID, err := uuid.Parse(string(user.ID))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid user ID"))
+		return
+	}
+
+	// AI Agentを取得して所有者チェック
+	agent, err := h.agentUsecase.GetAgentByID(c.Request.Context(), agentID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, response.NewNotFoundErrorResponse("AI Agent not found"))
+		return
+	}
+
+	if agent.UserID != userID {
+		c.JSON(http.StatusForbidden, response.NewErrorResponse(errors.New("access denied"), http.StatusForbidden))
+		return
+	}
+
+	// AI Agentを削除
+	if err := h.agentUsecase.DeleteAgent(c.Request.Context(), agentID); err != nil {
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}

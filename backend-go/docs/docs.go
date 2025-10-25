@@ -241,6 +241,57 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "description": "AI Agentを削除（所有者のみ）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AI Agent"
+                ],
+                "summary": "AI Agent削除",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "AI Agent ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "削除成功"
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "権限エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "AI Agentが見つかりません",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
             }
         },
         "/api/v1/ai-agents/{id}/services": {

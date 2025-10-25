@@ -314,3 +314,38 @@ export async function deleteAgentService(agentId: string, serviceId: string) {
   }
 }
 
+/**
+ * AI Agent削除
+ */
+export async function deleteAgent(agentId: string) {
+  try {
+    const cookieStore = await cookies()
+    const accessToken = cookieStore.get('access_token')?.value
+
+    if (!accessToken) {
+      return { success: false, error: 'Unauthorized' }
+    }
+
+    const response = await fetch(`${BACKEND_GO_URL}/api/v1/ai-agents/${agentId}`, {
+      method: 'DELETE',
+      headers: {
+        'Cookie': `access_token=${accessToken}`,
+      },
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Failed to delete agent' }))
+      return { success: false, error: error.message || error.error || 'AI Agentの削除に失敗しました' }
+    }
+
+    // AI Agent一覧を再検証
+    revalidatePath('/dashboard')
+    revalidatePath('/dashboard/roster')
+    
+    return { success: true }
+  } catch (error) {
+    console.error('Delete agent error:', error)
+    return { success: false, error: 'AI Agentの削除に失敗しました' }
+  }
+}
+

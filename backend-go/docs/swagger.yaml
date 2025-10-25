@@ -575,6 +575,40 @@ paths:
       tags:
       - AI Agent
   /api/v1/ai-agents/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: AI Agentを削除（所有者のみ）
+      parameters:
+      - description: AI Agent ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: 削除成功
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "403":
+          description: 権限エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "404":
+          description: AI Agentが見つかりません
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      summary: AI Agent削除
+      tags:
+      - AI Agent
     get:
       consumes:
       - application/json

@@ -150,6 +150,7 @@ func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *A
 			aiAgents.GET("", aiAgentHandler.ListAgents)
 			aiAgents.GET("/:id", aiAgentHandler.GetAgent)
 			aiAgents.PUT("/:id", aiAgentHandler.UpdateAgent)
+			aiAgents.DELETE("/:id", aiAgentHandler.DeleteAgent)
 			aiAgents.GET("/:id/services", aiAgentHandler.GetAgentServices)
 			aiAgents.POST("/:id/services", aiAgentHandler.AddAgentService)
 			aiAgents.PUT("/:id/services/:service_id", aiAgentHandler.UpdateAgentService)

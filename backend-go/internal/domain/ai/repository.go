@@ -20,6 +20,6 @@ type Repository interface {
 	// Update はAI Agentを更新
 	Update(ctx context.Context, agent *Agent) error
 
-	// Delete はAI Agentを削除（ソフトデリート）
+	// Delete はAI Agentを削除（完全削除、関連データもカスケード削除）
 	Delete(ctx context.Context, id uuid.UUID) error
 }
