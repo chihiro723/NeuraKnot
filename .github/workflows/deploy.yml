@@ -258,10 +258,15 @@ jobs:
     steps:
       - name: Check deployment status
         run: |
-          if [ "${{ needs.deploy-backend-go.result }}" = "success" ] || \
-             [ "${{ needs.deploy-backend-python.result }}" = "success" ]; then
+          GO_RESULT="${{ needs.deploy-backend-go.result }}"
+          PYTHON_RESULT="${{ needs.deploy-backend-python.result }}"
+
+          if [ "$GO_RESULT" = "success" ] || [ "$PYTHON_RESULT" = "success" ]; then
             echo "🚀 Deployment completed successfully!"
-          else
-            echo "⚠️ No services were deployed or deployment failed"
+          elif [ "$GO_RESULT" = "failure" ] || [ "$PYTHON_RESULT" = "failure" ]; then
+            echo "❌ Deployment failed"
             exit 1
+          else
+            echo "ℹ️ No services were deployed (no changes detected)"
+            echo "✓ Workflow completed successfully"
           fi

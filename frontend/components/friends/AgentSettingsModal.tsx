@@ -2,13 +2,10 @@
 
 import {
   X,
-  Save,
   User,
   Bot,
   Settings,
   Wrench,
-  Code,
-  Loader2,
   AlertCircle,
   Check,
   Server,
@@ -16,6 +13,7 @@ import {
   Square,
   ChevronUp,
   ChevronDown,
+  Loader2,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
@@ -26,17 +24,11 @@ import {
   updateAgentService,
   deleteAgentService,
 } from "@/lib/actions/ai-agent";
-import {
-  listServices,
-  getServiceTools,
-  getUserServicesWithDetails,
-} from "@/lib/actions/services";
+import { getUserServicesWithDetails } from "@/lib/actions/services";
 import type {
   AIAgent,
   UpdateAgentInput,
   AgentService,
-  CreateAIAgentServiceInput,
-  UpdateAIAgentServiceInput,
 } from "@/lib/types/ai-agent";
 import type { UserServiceWithDetails } from "@/lib/types/service";
 import { cn } from "@/lib/utils/cn";
@@ -311,12 +303,6 @@ export function AgentSettingsModal({
 
         {/* コンテンツ */}
         <div className="overflow-y-auto flex-1 p-4 md:p-6">
-          {loading && (
-            <div className="flex justify-center items-center h-32">
-              <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
-            </div>
-          )}
-
           {error && (
             <div className="p-3 mb-3 bg-red-50 rounded-lg border border-red-200 md:p-4 md:mb-4 dark:bg-red-900/20 dark:border-red-800">
               <div className="flex items-center space-x-1.5 md:space-x-2">
@@ -400,7 +386,7 @@ export function AgentSettingsModal({
                     handleInputChange("system_prompt", e.target.value)
                   }
                   rows={6}
-                  placeholder="エージェントの振る舞いや徳等を具体的に指示"
+                  placeholder="エージェントの振る舞いや特徴を具体的指示（キーワード入力→AI強化を使ってみよう）"
                   className="w-full px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all placeholder-gray-500 dark:placeholder-gray-400 font-mono"
                 />
               </div>
