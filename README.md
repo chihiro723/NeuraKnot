@@ -10,7 +10,8 @@
 
 - **本番環境**: [https://neuraknot.net](https://neuraknot.net) / [https://www.neuraknot.net](https://www.neuraknot.net)
 - **API エンドポイント**: [https://api.neuraknot.net](https://api.neuraknot.net)
-- **Swagger UI**: [https://api.neuraknot.net/swagger/index.html](https://api.neuraknot.net/swagger/index.html)
+
+**注意**: セキュリティ上の理由から、本番環境の Swagger UI への直接リンクは公開していません。開発環境では`http://localhost:8080/swagger/index.html`でアクセス可能です。
 
 ---
 
@@ -713,15 +714,38 @@ terraform apply
 - [ルーティングベストプラクティス](./docs/frontend/ROUTING_BEST_PRACTICES.md)
 - [サーバーサイドフェッチ](./docs/frontend/SERVER_SIDE_FETCH.md)
 
+**セキュリティ**
+
+- [セキュリティガイド](./docs/SECURITY.md) - **認証・CORS・機密情報管理・セキュリティベストプラクティス**
+
 ### セキュリティ
+
+**認証・認可**
 
 - **認証**: AWS Cognito + JWT
 - **認可**: ロールベースアクセス制御
-- **暗号化**: 通信（TLS）+ データ保存（RDS 暗号化）
-- **入力検証**: リクエスト DTO バリデーション
+- **トークン有効期限**: アクセストークン 1 時間、リフレッシュトークン 30 日
+
+**通信・データ保護**
+
+- **暗号化**: TLS 1.2+ (通信)、AES-256-GCM (機密データ保存)
+- **データベース**: RDS 暗号化有効
 - **機密情報管理**: AWS Secrets Manager
 
-**重要**: `.env.local`ファイルは絶対にコミットしないでください。
+**アプリケーションセキュリティ**
+
+- **入力検証**: リクエスト DTO バリデーション
+- **CORS 制限**: 本番環境では許可されたオリジンのみアクセス可能
+  - `https://neuraknot.net`
+  - `https://www.neuraknot.net`
+  - バックアップ用: `https://neuraknot.vercel.app`
+- **API 仕様の保護**: 本番環境の Swagger UI は非公開
+
+**開発時の注意事項**
+
+- **環境変数**: `.env.local`ファイルは絶対にコミットしない
+- **機密情報**: API キー、パスワード、シークレットは環境変数または Secrets Manager で管理
+- **本番環境**: デバッグモード無効、詳細エラーメッセージ非表示
 
 ## CI/CD
 
