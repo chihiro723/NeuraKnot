@@ -51,10 +51,12 @@ CREATE TABLE ai_agents (
     -- === ペルソナ設定（統合） ===
     
     -- 振る舞いタイプ
-    persona_type VARCHAR(50) NOT NULL DEFAULT 'assistant',
+    persona_type VARCHAR(50) DEFAULT '',
+    -- '': 未選択（ペルソナなし）
     -- assistant: 親切で丁寧なアシスタント
     -- creative: 創造的で発想豊かな対話
     -- analytical: 論理的で分析的な対話
+    -- concise: 簡潔で要点を絞った応答
     
     -- LLM 設定
     provider VARCHAR(50) NOT NULL DEFAULT 'openai',
@@ -89,7 +91,7 @@ CREATE TABLE ai_agents (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     -- 制約
-    CONSTRAINT chk_persona_type CHECK (persona_type IN ('assistant', 'creative', 'analytical')),
+    CONSTRAINT chk_persona_type CHECK (persona_type IN ('', 'assistant', 'creative', 'analytical', 'concise')),
     CONSTRAINT chk_provider CHECK (provider IN ('openai', 'anthropic', 'google')),
     CONSTRAINT chk_model CHECK (model IN (
         -- OpenAI Models
