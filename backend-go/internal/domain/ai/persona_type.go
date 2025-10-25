@@ -6,9 +6,11 @@ import "errors"
 type PersonaType string
 
 const (
+	PersonaNone       PersonaType = "" // 未選択（ペルソナなし）
 	PersonaAssistant  PersonaType = "assistant"
 	PersonaCreative   PersonaType = "creative"
 	PersonaAnalytical PersonaType = "analytical"
+	PersonaConcise    PersonaType = "concise"
 )
 
 // String は文字列表現を返す
@@ -19,7 +21,7 @@ func (p PersonaType) String() string {
 // IsValid はPersonaTypeが有効かどうかを確認
 func (p PersonaType) IsValid() bool {
 	switch p {
-	case PersonaAssistant, PersonaCreative, PersonaAnalytical:
+	case PersonaNone, PersonaAssistant, PersonaCreative, PersonaAnalytical, PersonaConcise:
 		return true
 	default:
 		return false
@@ -37,6 +39,9 @@ func ParsePersonaType(s string) (PersonaType, error) {
 
 // DefaultSystemPrompts はペルソナタイプごとのデフォルトシステムプロンプト
 var DefaultSystemPrompts = map[PersonaType]string{
+	PersonaNone: `あなたは有能なAIアシスタントです。
+ユーザーの質問に対して適切に回答してください。`,
+
 	PersonaAssistant: `あなたは親切で丁寧なアシスタントです。
 ユーザーの質問に分かりやすく、丁寧に答えてください。
 必要に応じて、ステップバイステップで説明してください。`,
@@ -48,4 +53,7 @@ var DefaultSystemPrompts = map[PersonaType]string{
 	PersonaAnalytical: `あなたは論理的で分析的なアシスタントです。
 データと事実に基づいて回答し、根拠を明確に示してください。
 複雑な問題は要素に分解し、体系的に分析してください。`,
+
+	PersonaConcise: `あなたは簡潔で要点を絞った応答をする専門家です。
+無駄を省き、核心的な情報のみを提供してください。`,
 }
