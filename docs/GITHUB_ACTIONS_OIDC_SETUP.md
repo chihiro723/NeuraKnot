@@ -33,7 +33,9 @@ IAM Role (neuraKnot-prod-github-actions-role)
 
 - **URL**: `https://token.actions.githubusercontent.com`
 - **Audience**: `sts.amazonaws.com`
-- **Thumbprint**: `6938fd4d98bab03faadb97b34396831e3780aea1`
+- **Thumbprints**:
+  - `1b511abead59c6ce207077c0bf0e0043b1382612` (2023 年以降の新サムプリント)
+  - `6938fd4d98bab03faadb97b34396831e3780aea1` (レガシーサムプリント、後方互換性のため保持)
 
 #### IAM Role
 
@@ -163,9 +165,42 @@ permissions:
 
 ## トラブルシューティング
 
-### エラー: "User is not authorized to perform: sts:AssumeRoleWithWebIdentity"
+### エラー: "Could not assume role with OIDC: Not authorized to perform sts:AssumeRoleWithWebIdentity"
 
-**原因**: IAM ロールの信頼ポリシーが正しく設定されていない
+このエラーには複数の原因が考えられます：
+
+#### 原因 1: OIDC プロバイダーのサムプリントが古い
+
+**症状**: GitHub Actions で何度も "Assuming role with OIDC" が繰り返され、最終的にエラーになる
+
+**原因**: GitHub は 2023 年に OIDC サムプリントを更新しており、古いサムプリントのみでは認証できない
+
+**解決策**:
+
+1. Terraform 設定で新しいサムプリントを追加：
+
+   ```hcl
+   thumbprint_list = [
+     "1b511abead59c6ce207077c0bf0e0043b1382612",  # 新しいサムプリント（2023年以降）
+     "6938fd4d98bab03faadb97b34396831e3780aea1"   # 古いサムプリント（後方互換性のため）
+   ]
+   ```
+
+2. Terraform 適用：
+
+   ```bash
+   cd terraform/environments/prod
+   terraform apply -var-file=secrets.tfvars
+   ```
+
+3. サムプリントが更新されたことを確認：
+   ```bash
+   aws iam get-open-id-connect-provider \
+     --open-id-connect-provider-arn arn:aws:iam::<ACCOUNT_ID>:oidc-provider/token.actions.githubusercontent.com \
+     --query 'ThumbprintList'
+   ```
+
+#### 原因 2: IAM ロールの信頼ポリシーが正しく設定されていない
 
 **解決策**:
 
