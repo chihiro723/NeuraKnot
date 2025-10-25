@@ -29,6 +29,7 @@ import { getUserServicesWithDetails } from "@/lib/actions/services";
 import type { UserServiceWithDetails } from "@/lib/types/service";
 import { ServiceSelectorModal } from "@/components/services/ServiceSelectorModal";
 import { generateAgentIntroduction } from "@/lib/actions/agent-introduction";
+import { enhanceSystemPrompt } from "@/lib/actions/prompt-enhancement";
 import { useRouter } from "next/navigation";
 
 type AddType = "user" | "ai" | "group" | null;
@@ -297,7 +298,7 @@ export function AIAgentCreationPanel({
     avatar_url: "",
 
     // ペルソナ設定
-    persona_type: "assistant",
+    persona_type: "",
     system_prompt: "",
 
     // LLM設定
@@ -312,6 +313,11 @@ export function AIAgentCreationPanel({
   });
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  // プロンプト強化機能の状態
+  const [isEnhancing, setIsEnhancing] = useState(false);
+  const [enhanceError, setEnhanceError] = useState<string>("");
+  const [isEnhanceButtonHovered, setIsEnhanceButtonHovered] = useState(false);
 
   // サービス選択
   const [userServices, setUserServices] = useState<UserServiceWithDetails[]>(
@@ -362,6 +368,11 @@ export function AIAgentCreationPanel({
       id: "analytical",
       name: "アナリティカル",
       description: "論理的で分析的な対話",
+    },
+    {
+      id: "concise",
+      name: "簡潔",
+      description: "要点を絞った簡潔な応答",
     },
   ];
 
@@ -466,6 +477,27 @@ export function AIAgentCreationPanel({
           : s
       )
     );
+  };
+
+  // AI強化ハンドラー
+  const handleEnhancePrompt = async () => {
+    setIsEnhancing(true);
+    setEnhanceError("");
+
+    try {
+      const result = await enhanceSystemPrompt(formData.system_prompt || "");
+
+      if (!result.success) {
+        setEnhanceError(result.error || "プロンプト生成に失敗しました");
+        return;
+      }
+
+      setFormData({ ...formData, system_prompt: result.data || "" });
+    } catch (err) {
+      setEnhanceError("プロンプト生成中にエラーが発生しました");
+    } finally {
+      setIsEnhancing(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -642,9 +674,9 @@ export function AIAgentCreationPanel({
             {/* パーソナリティ選択 */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-900 dark:text-white">
-                対話スタイル <span className="text-green-600">*</span>
+                対話スタイル
               </label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-3">
                 {personalities.map((personality) => {
                   const isSelected = formData.persona_type === personality.id;
                   return (
@@ -654,7 +686,7 @@ export function AIAgentCreationPanel({
                       onClick={() =>
                         setFormData({
                           ...formData,
-                          persona_type: personality.id,
+                          persona_type: isSelected ? "" : personality.id,
                         })
                       }
                       className={cn(
@@ -680,26 +712,68 @@ export function AIAgentCreationPanel({
 
             {/* システムプロンプト */}
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-900 dark:text-white">
-                カスタムシステムプロンプト{" "}
-                <span className="text-xs text-gray-400">上級者向け</span>
-              </label>
-              <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
-                空欄の場合、選択したパーソナリティに基づいて自動生成されます
-              </p>
+              <div className="flex justify-between items-center">
+                <label className="block text-sm font-medium text-gray-900 dark:text-white">
+                  カスタム指示{" "}
+                </label>
+                <button
+                  type="button"
+                  onClick={handleEnhancePrompt}
+                  onMouseEnter={() => setIsEnhanceButtonHovered(true)}
+                  onMouseLeave={() => setIsEnhanceButtonHovered(false)}
+                  disabled={isEnhancing || !formData.system_prompt?.trim()}
+                  className={cn(
+                    "flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl transition-all duration-300 transform",
+                    isEnhancing || !formData.system_prompt?.trim()
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800"
+                      : "text-white bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-500 shadow-lg hover:from-emerald-600 hover:via-emerald-500 hover:to-cyan-600 hover:scale-105 hover:shadow-emerald-500/30"
+                  )}
+                  title={
+                    !formData.system_prompt?.trim()
+                      ? "カスタム指示を入力してください"
+                      : "AIでカスタム指示を強化"
+                  }
+                >
+                  {isEnhancing ? (
+                    <>
+                      <div className="w-3 h-3 rounded-full border-2 border-white animate-spin border-t-transparent" />
+                      <span>生成中...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>AI強化</span>
+                    </>
+                  )}
+                </button>
+              </div>
               <textarea
                 value={formData.system_prompt}
                 onChange={(e) =>
                   setFormData({ ...formData, system_prompt: e.target.value })
                 }
-                placeholder="カスタムの指示を入力（例: あなたは親切で丁寧なアシスタントです...）"
-                rows={4}
+                placeholder="エージェントの振る舞いや徳等を具体的に指示"
+                rows={Math.max(
+                  6,
+                  Math.ceil((formData.system_prompt?.length || 0) / 50)
+                )}
+                disabled={isEnhancing}
                 className={cn(
-                  "px-4 py-3 w-full bg-white rounded-lg border border-gray-300 dark:bg-gray-900 dark:border-gray-700",
-                  "focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500",
-                  "text-sm placeholder-gray-400 text-gray-900 resize-none dark:text-white dark:placeholder-gray-500"
+                  "px-4 py-3 w-full bg-white rounded-lg border-2 transition-all duration-300",
+                  "focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500",
+                  "text-sm placeholder-gray-400 text-gray-900 resize-none dark:text-white dark:placeholder-gray-500",
+                  isEnhancing && "opacity-50 cursor-not-allowed",
+                  isEnhanceButtonHovered &&
+                    !isEnhancing &&
+                    formData.system_prompt?.trim()
+                    ? "border-emerald-400 shadow-lg shadow-emerald-500/20 dark:border-emerald-500 dark:bg-gray-900 animate-glow-border"
+                    : "border-gray-300 dark:bg-gray-900 dark:border-gray-700"
                 )}
               />
+              {enhanceError && (
+                <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                  {enhanceError}
+                </p>
+              )}
             </div>
           </div>
 
@@ -1100,15 +1174,10 @@ export function AIAgentCreationPanel({
             )}
             <button
               type="submit"
-              disabled={
-                !formData.name ||
-                !formData.persona_type ||
-                !formData.model ||
-                isPending
-              }
+              disabled={!formData.name || !formData.model || isPending}
               className={cn(
                 "flex-1 px-6 py-3 font-medium rounded-lg transition-all",
-                "flex justify-center items-center space-x-2",
+                "flex items-center space-x-2 j ustify-center",
                 "text-white bg-green-600 hover:bg-green-700",
                 "disabled:bg-gray-400 dark:disabled:bg-gray-600",
                 "disabled:cursor-not-allowed"
