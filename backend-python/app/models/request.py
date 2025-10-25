@@ -64,3 +64,8 @@ class ToolsRequest(BaseModel):
     user_id: str
     services: List[ServiceConfig]
 
+
+class EnhancePromptRequest(BaseModel):
+    """プロンプト強化リクエスト"""
+    current_prompt: str = Field(..., max_length=5000, description="強化対象のシステムプロンプト")
+

@@ -5,7 +5,7 @@ NeuraKnot Backend Python
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.v1 import chat, health, services
+from app.api.v1 import chat, health, services, prompt
 from app.middleware.error_handler import add_exception_handlers
 from app.core.log_filter import setup_logging_with_filter
 import logging
@@ -51,6 +51,11 @@ app.include_router(
     health.router,
     prefix=settings.API_V1_PREFIX,
     tags=["Health"]
+)
+app.include_router(
+    prompt.router,
+    prefix=settings.API_V1_PREFIX,
+    tags=["Prompt"]
 )
 
 
