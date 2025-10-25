@@ -221,7 +221,8 @@ resource "aws_iam_openid_connect_provider" "github_actions" {
   ]
 
   thumbprint_list = [
-    "6938fd4d98bab03faadb97b34396831e3780aea1"
+    "1b511abead59c6ce207077c0bf0e0043b1382612", # 新しいサムプリント（2023年以降）
+    "6938fd4d98bab03faadb97b34396831e3780aea1"  # 古いサムプリント（後方互換性のため）
   ]
 
   tags = merge(var.tags, {
