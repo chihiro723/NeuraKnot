@@ -2,13 +2,10 @@
 
 import {
   X,
-  Save,
   User,
   Bot,
   Settings,
   Wrench,
-  Code,
-  Loader2,
   AlertCircle,
   Check,
   Server,
@@ -16,6 +13,8 @@ import {
   Square,
   ChevronUp,
   ChevronDown,
+  Loader2,
+  Trash2,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
@@ -25,21 +24,18 @@ import {
   addAgentService,
   updateAgentService,
   deleteAgentService,
+  deleteAgent,
 } from "@/lib/actions/ai-agent";
-import {
-  listServices,
-  getServiceTools,
-  getUserServicesWithDetails,
-} from "@/lib/actions/services";
+import { getUserServicesWithDetails } from "@/lib/actions/services";
 import type {
   AIAgent,
   UpdateAgentInput,
   AgentService,
-  CreateAIAgentServiceInput,
-  UpdateAIAgentServiceInput,
 } from "@/lib/types/ai-agent";
 import type { UserServiceWithDetails } from "@/lib/types/service";
 import { cn } from "@/lib/utils/cn";
+import { ConfirmModal } from "@/components/ui/modals/ConfirmModal";
+import { useRouter } from "next/navigation";
 
 interface AgentSettingsModalProps {
   agent: AIAgent | null;
@@ -56,10 +52,13 @@ export function AgentSettingsModal({
   onClose,
   onSave,
 }: AgentSettingsModalProps) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>("basic");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // フォーム状態
   const [formData, setFormData] = useState<UpdateAgentInput>({});
@@ -264,6 +263,31 @@ export function AgentSettingsModal({
     }
   };
 
+  const handleDelete = async () => {
+    if (!agent) return;
+
+    try {
+      setIsDeleting(true);
+      const result = await deleteAgent(agent.id);
+
+      if (result.success) {
+        setIsDeleteConfirmOpen(false);
+        onClose();
+        // 削除後、ダッシュボードに遷移
+        router.push("/dashboard/roster");
+      } else {
+        setError(result.error || "削除に失敗しました");
+        setIsDeleteConfirmOpen(false);
+      }
+    } catch (err) {
+      console.error("Failed to delete agent:", err);
+      setError("削除に失敗しました");
+      setIsDeleteConfirmOpen(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (!isOpen || !agent) return null;
 
   return (
@@ -311,12 +335,6 @@ export function AgentSettingsModal({
 
         {/* コンテンツ */}
         <div className="overflow-y-auto flex-1 p-4 md:p-6">
-          {loading && (
-            <div className="flex justify-center items-center h-32">
-              <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
-            </div>
-          )}
-
           {error && (
             <div className="p-3 mb-3 bg-red-50 rounded-lg border border-red-200 md:p-4 md:mb-4 dark:bg-red-900/20 dark:border-red-800">
               <div className="flex items-center space-x-1.5 md:space-x-2">
@@ -400,7 +418,7 @@ export function AgentSettingsModal({
                     handleInputChange("system_prompt", e.target.value)
                   }
                   rows={6}
-                  placeholder="エージェントの振る舞いや徳等を具体的に指示"
+                  placeholder="エージェントの振る舞いや特徴を具体的指示（キーワード入力→AI強化を使ってみよう）"
                   className="w-full px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all placeholder-gray-500 dark:placeholder-gray-400 font-mono"
                 />
               </div>
@@ -771,25 +789,51 @@ export function AgentSettingsModal({
         </div>
 
         {/* フッター */}
-        <div className="flex justify-end items-center p-4 space-x-2 border-t border-gray-200 md:p-6 md:space-x-3 dark:border-gray-700">
+        <div className="flex justify-between items-center p-4 border-t border-gray-200 md:p-6 dark:border-gray-700">
+          {/* 削除ボタン */}
           <button
-            onClick={onClose}
-            className="px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-medium text-gray-700 bg-white rounded-lg border border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
+            onClick={() => setIsDeleteConfirmOpen(true)}
+            disabled={loading || isDeleting}
+            className="flex items-center px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-medium text-red-600 bg-red-50 rounded-lg border border-red-200 transition-colors hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/30 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            キャンセル
+            <Trash2 className="mr-1.5 w-3 h-3 md:w-4 md:h-4" />
+            <span>削除</span>
           </button>
-          <button
-            onClick={handleSave}
-            disabled={loading}
-            className="flex items-center px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50"
-          >
-            {loading && (
-              <Loader2 className="mr-1.5 md:mr-2 w-3 h-3 md:w-4 md:h-4 animate-spin" />
-            )}
-            <span>保存</span>
-          </button>
+
+          {/* 右側のボタン群 */}
+          <div className="flex items-center space-x-2 md:space-x-3">
+            <button
+              onClick={onClose}
+              className="px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-medium text-gray-700 bg-white rounded-lg border border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
+            >
+              キャンセル
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={loading}
+              className="flex items-center px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:opacity-50"
+            >
+              {loading && (
+                <Loader2 className="mr-1.5 md:mr-2 w-3 h-3 md:w-4 md:h-4 animate-spin" />
+              )}
+              <span>保存</span>
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* 削除確認モーダル */}
+      <ConfirmModal
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => setIsDeleteConfirmOpen(false)}
+        onConfirm={handleDelete}
+        title="エージェントを削除"
+        message={`「${agent.name}」を削除してもよろしいですか？この操作は取り消せません。`}
+        confirmText="削除"
+        cancelText="キャンセル"
+        variant="danger"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

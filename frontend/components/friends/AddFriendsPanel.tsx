@@ -5,9 +5,7 @@ import {
   Bot,
   User,
   ArrowRight,
-  Plus,
   UserPlus,
-  Search,
   QrCode,
   Users,
   Handshake,
@@ -610,7 +608,7 @@ export function AIAgentCreationPanel({
       {/* フォーム */}
       <div className="overflow-y-auto flex-1">
         <form
-          onSubmit={handleSubmit}
+          onSubmit={(e) => e.preventDefault()}
           className="p-4 mx-auto space-y-8 max-w-2xl sm:p-8 sm:space-y-10"
         >
           {/* セクション1: 基本情報 */}
@@ -751,7 +749,7 @@ export function AIAgentCreationPanel({
                 onChange={(e) =>
                   setFormData({ ...formData, system_prompt: e.target.value })
                 }
-                placeholder="エージェントの振る舞いや徳等を具体的に指示"
+                placeholder="エージェントの振る舞いや特徴を具体的指示（キーワード入力→AI強化を使ってみよう）"
                 rows={Math.max(
                   6,
                   Math.ceil((formData.system_prompt?.length || 0) / 50)
@@ -1173,7 +1171,11 @@ export function AIAgentCreationPanel({
               </button>
             )}
             <button
-              type="submit"
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                handleSubmit(e as any);
+              }}
               disabled={!formData.name || !formData.model || isPending}
               className={cn(
                 "flex-1 px-6 py-3 font-medium rounded-lg transition-all",

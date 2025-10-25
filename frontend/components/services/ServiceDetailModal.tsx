@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/utils/cn";
 import { getServiceIcon, getServiceGradient } from "@/lib/utils/serviceIcons";
 import type { Service, Tool, ServiceConfig } from "@/lib/types/service";
+import { ConfirmModal } from "@/components/ui/modals/ConfirmModal";
 
 interface ServiceDetailModalProps {
   service: Service | null;
@@ -39,6 +40,7 @@ export function ServiceDetailModal({
 }: ServiceDetailModalProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isToggling, setIsToggling] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set()
   );
@@ -81,10 +83,10 @@ export function ServiceDetailModal({
 
   const handleDelete = async () => {
     if (!config || !onDelete) return;
-    if (!confirm(`「${service.name}」を削除してもよろしいですか？`)) return;
     setIsDeleting(true);
     try {
       await onDelete(config.id);
+      setIsDeleteConfirmOpen(false);
       onClose();
     } finally {
       setIsDeleting(false);
@@ -272,22 +274,25 @@ export function ServiceDetailModal({
 
         {/* アクションボタン */}
         {config && (
-          <div className="flex gap-3 justify-end px-6 py-4 bg-gray-50 border-t border-gray-200 dark:border-gray-700 dark:bg-gray-900">
+          <div className="flex gap-3 items-center px-6 py-4 bg-gray-50 border-t border-gray-200 dark:border-gray-700 dark:bg-gray-900">
+            {/* 削除ボタン */}
             {canModify && onDelete && (
               <button
-                onClick={handleDelete}
-                disabled={isDeleting}
+                onClick={() => setIsDeleteConfirmOpen(true)}
+                disabled={isDeleting || isToggling}
                 className={cn(
-                  "flex items-center px-4 py-2 space-x-2 rounded-lg transition-colors",
-                  "text-white bg-red-600 hover:bg-red-700",
-                  "disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
+                  "flex items-center px-4 py-2 space-x-2 rounded-lg border transition-colors",
+                  "text-red-600 bg-red-50 border-red-200 hover:bg-red-100",
+                  "dark:bg-red-900/20 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/30",
+                  "disabled:opacity-50 disabled:cursor-not-allowed"
                 )}
               >
                 <Trash2 className="w-4 h-4" />
-                <span>{isDeleting ? "削除中..." : "削除"}</span>
+                <span>削除</span>
               </button>
             )}
 
+            {/* 有効化/無効化ボタン */}
             {onToggleEnabled && (
               <button
                 onClick={handleToggleEnabled}
@@ -317,6 +322,19 @@ export function ServiceDetailModal({
           </div>
         )}
       </div>
+
+      {/* 削除確認モーダル */}
+      <ConfirmModal
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => setIsDeleteConfirmOpen(false)}
+        onConfirm={handleDelete}
+        title="サービスを削除"
+        message={`「${service.name}」を削除してもよろしいですか？この操作は取り消せません。`}
+        confirmText="削除"
+        cancelText="キャンセル"
+        variant="danger"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }

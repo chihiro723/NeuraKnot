@@ -178,14 +178,31 @@ func (r *AIAgentRepository) Update(ctx context.Context, agent *ai.Agent) error {
 	return err
 }
 
-// Delete はAI Agentを削除（ソフトデリート）
+// Delete はAI Agentを削除（完全削除）
 func (r *AIAgentRepository) Delete(ctx context.Context, id uuid.UUID) error {
+	// 完全削除（ON DELETE CASCADEにより関連データも削除される）
+	// - conversations
+	// - messages
+	// - ai_agent_services
 	query := `
-		UPDATE ai_agents 
-		SET is_active = false, updated_at = NOW()
+		DELETE FROM ai_agents 
 		WHERE id = $1
 	`
 
-	_, err := r.db.ExecContext(ctx, query, id)
-	return err
+	result, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	// 削除された行数を確認
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("ai agent not found")
+	}
+
+	return nil
 }
