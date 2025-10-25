@@ -20,26 +20,26 @@ output "ecs_task_role_name" {
 
 output "rds_enhanced_monitoring_role_arn" {
   description = "ARN of the RDS Enhanced Monitoring Role"
-  value       = try(aws_iam_role.rds_enhanced_monitoring_role[0].arn, null)
+  value       = var.enable_rds_enhanced_monitoring ? aws_iam_role.rds_enhanced_monitoring_role[0].arn : null
 }
 
 output "rds_enhanced_monitoring_role_name" {
   description = "Name of the RDS Enhanced Monitoring Role"
-  value       = try(aws_iam_role.rds_enhanced_monitoring_role[0].name, null)
+  value       = var.enable_rds_enhanced_monitoring ? aws_iam_role.rds_enhanced_monitoring_role[0].name : null
 }
 
 # GitHub Actions OIDC Outputs
 output "github_actions_role_arn" {
   description = "ARN of the GitHub Actions IAM Role"
-  value       = aws_iam_role.github_actions_role.arn
+  value       = var.github_username != "" && var.github_repository != "" ? aws_iam_role.github_actions_role[0].arn : null
 }
 
 output "github_actions_role_name" {
   description = "Name of the GitHub Actions IAM Role"
-  value       = aws_iam_role.github_actions_role.name
+  value       = var.github_username != "" && var.github_repository != "" ? aws_iam_role.github_actions_role[0].name : null
 }
 
 output "github_oidc_provider_arn" {
   description = "ARN of the GitHub OIDC Identity Provider"
-  value       = aws_iam_openid_connect_provider.github_actions.arn
+  value       = var.github_username != "" && var.github_repository != "" ? aws_iam_openid_connect_provider.github_actions[0].arn : null
 }
