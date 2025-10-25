@@ -269,12 +269,12 @@ export function AgentSettingsModal({
     try {
       setIsDeleting(true);
       const result = await deleteAgent(agent.id);
-      
+
       if (result.success) {
         setIsDeleteConfirmOpen(false);
         onClose();
         // 削除後、ダッシュボードに遷移
-        router.push("/dashboard");
+        router.push("/dashboard/roster");
       } else {
         setError(result.error || "削除に失敗しました");
         setIsDeleteConfirmOpen(false);
