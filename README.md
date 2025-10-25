@@ -6,12 +6,9 @@
 
 ---
 
-## アクセス URL
+## サービス URL
 
 - **本番環境**: [https://neuraknot.net](https://neuraknot.net) / [https://www.neuraknot.net](https://www.neuraknot.net)
-- **API エンドポイント**: [https://api.neuraknot.net](https://api.neuraknot.net)
-
-**注意**: セキュリティ上の理由から、本番環境の Swagger UI への直接リンクは公開していません。開発環境では`http://localhost:8080/swagger/index.html`でアクセス可能です。
 
 ---
 
