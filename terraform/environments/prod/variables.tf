@@ -167,6 +167,18 @@ variable "domain_name" {
   type        = string
 }
 
+variable "vercel_ip" {
+  description = "Vercel IP address for root domain (optional)"
+  type        = string
+  default     = ""
+}
+
+variable "vercel_cname" {
+  description = "Vercel CNAME for www subdomain (optional)"
+  type        = string
+  default     = ""
+}
+
 variable "ssl_certificate_arn" {
   description = "ARN of SSL certificate for HTTPS listener (deprecated, use ACM module)"
   type        = string
