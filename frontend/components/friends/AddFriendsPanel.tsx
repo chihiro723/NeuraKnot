@@ -1177,7 +1177,7 @@ export function AIAgentCreationPanel({
               disabled={!formData.name || !formData.model || isPending}
               className={cn(
                 "flex-1 px-6 py-3 font-medium rounded-lg transition-all",
-                "flex items-center space-x-2 j ustify-center",
+                "flex justify-center items-center space-x-2",
                 "text-white bg-green-600 hover:bg-green-700",
                 "disabled:bg-gray-400 dark:disabled:bg-gray-600",
                 "disabled:cursor-not-allowed"
