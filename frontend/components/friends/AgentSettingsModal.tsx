@@ -392,7 +392,7 @@ export function AgentSettingsModal({
 
               <div>
                 <label className="block mb-1.5 md:mb-2 text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300">
-                  システムプロンプト
+                  カスタム指示
                 </label>
                 <textarea
                   value={formData.system_prompt || ""}
@@ -400,7 +400,7 @@ export function AgentSettingsModal({
                     handleInputChange("system_prompt", e.target.value)
                   }
                   rows={6}
-                  placeholder="カスタムシステムプロンプトを入力してください。空の場合はパーソナリティタイプに基づいて自動生成されます。"
+                  placeholder="エージェントの振る舞いや徳等を具体的に指示"
                   className="w-full px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all placeholder-gray-500 dark:placeholder-gray-400 font-mono"
                 />
               </div>

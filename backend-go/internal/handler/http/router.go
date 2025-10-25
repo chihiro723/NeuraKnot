@@ -88,8 +88,11 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 	aiAgentHandler := NewAIAgentHandler(agentUsecase, serviceUsecase, aiAgentServiceRepo)
 	chatHandler := NewChatHandler(chatUsecase)
 
+	// Prompt関連のハンドラー
+	promptHandler := NewPromptHandler(cfg.AIService.URL)
+
 	// ルートを設定
-	setupRoutes(engine, userHandler, aiAgentHandler, chatHandler, serviceHandler, authService)
+	setupRoutes(engine, userHandler, aiAgentHandler, chatHandler, serviceHandler, promptHandler, authService)
 
 	return &Router{
 		engine: engine,
@@ -97,7 +100,7 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 }
 
 // setupRoutes ルートを設定
-func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *AIAgentHandler, chatHandler *ChatHandler, serviceHandler *ServiceHandler, authService user.AuthService) {
+func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *AIAgentHandler, chatHandler *ChatHandler, serviceHandler *ServiceHandler, promptHandler *PromptHandler, authService user.AuthService) {
 	// ヘルスチェック（ALB用に/api/healthも追加）
 	engine.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -182,6 +185,13 @@ func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *A
 				services.PUT("/config/:id", serviceHandler.UpdateServiceConfig)
 				services.DELETE("/config/:id", serviceHandler.DeleteServiceConfig)
 			}
+		}
+
+		// プロンプト強化関連（認証必要）
+		prompts := v1.Group("/prompts")
+		prompts.Use(authMiddleware.RequireAuth())
+		{
+			prompts.POST("/enhance", promptHandler.EnhancePrompt)
 		}
 	}
 }

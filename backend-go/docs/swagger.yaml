@@ -123,6 +123,7 @@ definitions:
       name:
         type: string
       persona_type:
+        description: 空文字列許可（未選択 = none）
         type: string
       provider:
         type: string
@@ -139,7 +140,14 @@ definitions:
         type: string
     required:
     - name
-    - persona_type
+    type: object
+  backend-go_internal_handler_http_request.EnhancePromptRequest:
+    properties:
+      current_prompt:
+        maxLength: 5000
+        type: string
+    required:
+    - current_prompt
     type: object
   backend-go_internal_handler_http_request.ForgotPasswordRequest:
     properties:
@@ -387,6 +395,14 @@ definitions:
         type: array
       total:
         type: integer
+    type: object
+  backend-go_internal_handler_http_response.EnhancePromptResponse:
+    properties:
+      enhanced_prompt:
+        type: string
+      metadata:
+        additionalProperties: true
+        type: object
     type: object
   backend-go_internal_handler_http_response.ErrorResponse:
     properties:
@@ -1039,6 +1055,46 @@ paths:
       summary: AIエージェント自己紹介送信
       tags:
       - Chat
+  /api/v1/prompts/enhance:
+    post:
+      consumes:
+      - application/json
+      description: AIを使用してシステムプロンプトを自動生成します
+      parameters:
+      - description: プロンプト強化リクエスト
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/backend-go_internal_handler_http_request.EnhancePromptRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 強化成功
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.EnhancePromptResponse'
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "503":
+          description: LLM APIエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: プロンプト強化
+      tags:
+      - Prompt
   /api/v1/services:
     get:
       consumes:
