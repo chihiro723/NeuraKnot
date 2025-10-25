@@ -19,8 +19,8 @@ jobs:
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      backend-go: ${{ steps.filter.outputs.backend-go }}
-      backend-python: ${{ steps.filter.outputs.backend-python }}
+      backend-go: ${{ steps.filter.outputs.backend-go == 'true' || github.event_name == 'workflow_dispatch' }}
+      backend-python: ${{ steps.filter.outputs.backend-python == 'true' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v2
