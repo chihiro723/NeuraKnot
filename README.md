@@ -1,6 +1,29 @@
 # NeuraKnot
 
-人間と AI エージェントが自然にコミュニケーションできるメッセージングアプリケーション。
+**あなた専用の AI アシスタントを作成・カスタマイズできるメッセージングプラットフォーム**
+
+人間と AI エージェントが自然にコミュニケーションできる次世代メッセージングアプリケーション。複数の LLM（GPT-4o, Claude 3.5, Gemini）を搭載し、Slack、Notion、カレンダーなど様々な外部サービスと連携可能な AI エージェントを構築できます。
+
+---
+
+## アクセス URL
+
+- **本番環境**: [https://neuraknot.net](https://neuraknot.net) / [https://www.neuraknot.net](https://www.neuraknot.net)
+- **API エンドポイント**: [https://api.neuraknot.net](https://api.neuraknot.net)
+- **Swagger UI**: [https://api.neuraknot.net/swagger/index.html](https://api.neuraknot.net/swagger/index.html)
+
+---
+
+## 主な機能
+
+- **カスタマイズ可能な AI エージェント**: 性格（ペルソナ）、LLM モデル、連携サービスを自由に設定
+- **複数 LLM サポート**: OpenAI (GPT-4o), Anthropic (Claude 3.5), Google (Gemini)
+- **外部サービス連携**: Slack、Notion、GitHub、Google Calendar、天気情報など
+- **リアルタイムストリーミング**: レスポンスを即座に表示
+- **セキュアな認証**: AWS Cognito + OAuth (Google, Apple, LINE)
+- **詳細な履歴管理**: チャット履歴、AI ツール使用履歴を完全記録
+
+---
 
 ## 目次
 
@@ -34,7 +57,23 @@
 
 ## 概要
 
-NeuraKnot は、AI エージェントとの対話を通じて様々なタスクを実行できるメッセージングアプリケーションです。複数の個性を持つ AI エージェントと、外部サービス連携による拡張可能なツールシステムを提供します。
+NeuraKnot は、AI エージェントとの対話を通じて様々なタスクを実行できる次世代メッセージングアプリケーションです。
+
+### なぜ NeuraKnot なのか？
+
+従来の AI チャットボットは単一の機能に限定されていますが、NeuraKnot では：
+
+- **複数のペルソナを持つ AI エージェント**を作成（アシスタント、クリエイティブ、分析的など）
+- **必要なツールだけを選択**して、あなた専用の AI を構築
+- **特定のタスクに特化したエージェント**を複数運用（例：Slackbot、Notion アシスタント、リサーチャー）
+- **プライベートで安全**な自分だけの AI エコシステム
+
+### 使用例
+
+- **Notion アシスタント**: 「今日のタスクを Notion に追加して」
+- **データアナリスト**: 「このデータを分析して可視化して」
+- **パーソナルアシスタント**: 「明日の天気を教えて、予定を確認して」
+- **Slack ボット**: 「チームに進捗報告を送って」
 
 ## システムアーキテクチャ
 
@@ -223,9 +262,11 @@ AWS Cognito (DEV User Pool) - 認証専用
 
 ```
 [Vercel - Next.js Frontend]
+ (neuraknot.net / www.neuraknot.net)
         |
         v HTTPS
 [Application Load Balancer]
+ (api.neuraknot.net)
         |
         v
 [ECS Fargate - Backend Go] <--(内部通信)--> [ECS Fargate - Backend Python]
@@ -238,13 +279,15 @@ AWS Cognito (DEV User Pool) - 認証専用
 
 **特徴:**
 
-- フロントエンド: Vercel（Next.js）
-- バックエンド API: AWS ECS Fargate
-- Backend Python サーバー: ECS Fargate（内部通信のみ、ALB から直接アクセス不可）
-- データベース: RDS PostgreSQL（Multi-AZ）
-- Service Discovery: Cloud Map（`backend-python.neuraKnot.local`）
-- ユーザー管理: AWS Cognito PROD User Pool
-- OAuth 対応: Google, Apple, LINE
+- **フロントエンド**: Vercel（Next.js）- `https://neuraknot.net`
+- **バックエンド API**: AWS ECS Fargate - `https://api.neuraknot.net`
+- **Backend Python サーバー**: ECS Fargate（内部通信のみ、ALB から直接アクセス不可）
+- **データベース**: RDS PostgreSQL（Multi-AZ）
+- **Service Discovery**: Cloud Map（`backend-python.neuraKnot.local`）
+- **ユーザー管理**: AWS Cognito PROD User Pool
+- **OAuth 対応**: Google, Apple, LINE
+- **DNS 管理**: Route 53（`neuraknot.net`）
+- **SSL/TLS 証明書**: ACM（自動更新）
 
 ## クイックスタート
 
@@ -559,22 +602,32 @@ NeuraKnot のインフラストラクチャは **Terraform** を使用して Inf
 
 本番環境では、カスタムドメイン（`neuraknot.net`）と SSL/TLS 証明書を使用して安全な HTTPS 通信を提供しています。
 
-**構成**:
+**ドメイン構成**:
 
-- **ドメイン**: `neuraknot.net`（Route 53 で管理）
-- **API エンドポイント**: `https://api.neuraknot.net`
-- **SSL/TLS 証明書**: AWS Certificate Manager（ACM）で自動管理
-- **証明書タイプ**: ワイルドカード証明書（`*.neuraknot.net`）
+| ドメイン                                       | 用途                           | 提供元  | SSL 証明書    |
+| ---------------------------------------------- | ------------------------------ | ------- | ------------- |
+| [neuraknot.net](https://neuraknot.net)         | フロントエンド（リダイレクト） | Vercel  | Let's Encrypt |
+| [www.neuraknot.net](https://www.neuraknot.net) | フロントエンド（メイン）       | Vercel  | Let's Encrypt |
+| [api.neuraknot.net](https://api.neuraknot.net) | バックエンド API               | AWS ALB | ACM           |
+
+**Route 53 DNS レコード**:
+
+- `neuraknot.net` → A レコード → Vercel IP (216.198.79.1)
+- `www.neuraknot.net` → CNAME レコード → Vercel (ea4433abb975d17c.vercel-dns-017.com)
+- `api.neuraknot.net` → Alias レコード → AWS ALB
 
 **セットアップ手順**:
-詳細は [Route 53 & ACM セットアップガイド](./docs/ROUTE53_ACM_SETUP.md) を参照してください。
+
+- **API 用**: [Route 53 & ACM セットアップガイド](./docs/ROUTE53_ACM_SETUP.md)
+- **フロントエンド用**: [Vercel デプロイメントガイド - カスタムドメイン設定](./docs/VERCEL_DEPLOYMENT.md#3-カスタムドメインの設定)
 
 **主な機能**:
 
 - ✅ 自動 DNS 管理（Route 53）
-- ✅ 自動 SSL/TLS 証明書発行・更新（ACM）
+- ✅ 自動 SSL/TLS 証明書発行・更新（ACM + Let's Encrypt）
 - ✅ HTTP から HTTPS への自動リダイレクト
 - ✅ ワイルドカード証明書によるサブドメイン対応
+- ✅ DNS 伝播の自動管理
 
 ### クイックスタート
 
@@ -651,9 +704,11 @@ terraform apply
 - [SSM 経由 RDS 接続ガイド](./docs/backend/SSM_RDS_CONNECTION_GUIDE.md) - プライベート RDS への安全な接続方法
 - [pgAdmin セットアップ](./docs/backend/PGADMIN_SETUP.md)
 
-**その他**
+**デプロイ・インフラ**
 
 - [CI/CD セットアップガイド](./docs/CI_CD_SETUP.md) - **GitHub Actions 自動デプロイ**
+- [Vercel デプロイメントガイド](./docs/VERCEL_DEPLOYMENT.md) - **フロントエンドデプロイ + カスタムドメイン設定**
+- [Route 53 & ACM セットアップガイド](./docs/ROUTE53_ACM_SETUP.md) - **API 用カスタムドメイン設定**
 - [Swagger/OpenAPI 設定](./docs/backend/SWAGGER_GUIDE.md)
 - [ルーティングベストプラクティス](./docs/frontend/ROUTING_BEST_PRACTICES.md)
 - [サーバーサイドフェッチ](./docs/frontend/SERVER_SIDE_FETCH.md)

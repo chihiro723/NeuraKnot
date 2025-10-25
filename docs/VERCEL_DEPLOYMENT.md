@@ -4,7 +4,8 @@
 
 1. **Vercel の環境変数を設定** (フロントエンド → バックエンド接続)
 2. **Terraform で CORS 設定** (バックエンド → フロントエンド許可)
-3. **デプロイして確認**
+3. **カスタムドメインの設定** (Route53 + Vercel)
+4. **デプロイして確認**
 
 ---
 
@@ -90,6 +91,184 @@ cd terraform/environments/prod
 terraform plan -var-file=terraform.tfvars -var-file=secrets.tfvars
 terraform apply -var-file=terraform.tfvars -var-file=secrets.tfvars
 ```
+
+## 3. カスタムドメインの設定
+
+Vercel にカスタムドメインを接続して、`neuraknot.net`でアクセスできるようにします。
+
+### 3-1. Terraform で DNS レコードを作成
+
+Route53 に Vercel 用の DNS レコードを追加します。
+
+#### terraform.tfvars の更新
+
+`terraform/environments/prod/terraform.tfvars`に以下を追加：
+
+```hcl
+# Vercel Configuration
+vercel_ip    = "216.198.79.1"
+vercel_cname = "ea4433abb975d17c.vercel-dns-017.com"
+```
+
+**注意**: Vercel の設定画面で提供される IP アドレスと CNAME 値を使用してください。
+
+#### variables.tf の更新
+
+`terraform/environments/prod/variables.tf`に変数定義を追加：
+
+```hcl
+variable "vercel_ip" {
+  description = "Vercel IP address for root domain (optional)"
+  type        = string
+  default     = ""
+}
+
+variable "vercel_cname" {
+  description = "Vercel CNAME for www subdomain (optional)"
+  type        = string
+  default     = ""
+}
+```
+
+#### main.tf の更新
+
+`terraform/environments/prod/main.tf`の Route53 モジュールに変数を追加：
+
+```hcl
+module "route53" {
+  source = "../../modules/route53"
+
+  environment  = var.environment
+  project_name = var.project_name
+
+  domain_name  = var.domain_name
+  alb_dns_name = module.alb.alb_dns_name
+  alb_zone_id  = module.alb.alb_zone_id
+
+  # Vercel DNS records
+  vercel_ip    = var.vercel_ip
+  vercel_cname = var.vercel_cname
+
+  tags = {
+    Environment = var.environment
+    Project     = var.project_name
+    ManagedBy   = "Terraform"
+  }
+}
+```
+
+#### Terraform の適用
+
+```bash
+cd terraform/environments/prod
+terraform plan -var-file="terraform.tfvars" -var-file="secrets.tfvars"
+terraform apply -var-file="terraform.tfvars" -var-file="secrets.tfvars"
+```
+
+**作成される DNS レコード**:
+
+- `neuraknot.net` → A レコード → `216.198.79.1` (TTL: 300)
+- `www.neuraknot.net` → CNAME レコード → `ea4433abb975d17c.vercel-dns-017.com` (TTL: 300)
+
+#### DNS レコードの確認
+
+```bash
+dig neuraknot.net
+dig www.neuraknot.net
+```
+
+### 3-2. Vercel でドメインを追加
+
+#### 手順
+
+1. **Vercel ダッシュボード**にログイン
+2. プロジェクトを選択
+3. **Settings** → **Domains**
+4. **Add Domain**をクリック
+5. `neuraknot.net`を入力して追加
+6. 同様に`www.neuraknot.net`も追加
+
+#### リダイレクト設定（推奨）
+
+- `neuraknot.net` → `www.neuraknot.net` (307 Temporary Redirect)
+- `www.neuraknot.net` → Production 環境に接続
+
+#### SSL 証明書の自動発行
+
+Vercel が自動的に SSL 証明書を発行します（Let's Encrypt）。
+通常、5〜15 分で完了します。
+
+### 3-3. 動作確認
+
+ブラウザで以下にアクセス：
+
+```bash
+https://neuraknot.net
+https://www.neuraknot.net
+```
+
+両方とも Next.js アプリケーションが正常に表示されることを確認してください。
+
+### 3-4. CORS 設定の更新
+
+カスタムドメインを追加したら、バックエンドの CORS 設定も更新します。
+
+`terraform/environments/prod/terraform.tfvars`を更新：
+
+```hcl
+# Frontend URL for CORS
+frontend_url = "https://neuraknot.net"
+
+# Allowed Origins
+allowed_origins = [
+  "https://neuraknot.net",
+  "https://www.neuraknot.net",
+  "https://neuraknot.vercel.app"  # バックアップ・開発用に残す
+]
+```
+
+再度 Terraform を適用：
+
+```bash
+terraform apply -var-file="terraform.tfvars" -var-file="secrets.tfvars"
+```
+
+ECS サービスが再起動され、新しい CORS 設定が反映されます。
+
+---
+
+## 4. デプロイと確認
+
+### デプロイ
+
+GitHub にプッシュすると、Vercel が自動的にデプロイします：
+
+```bash
+git add .
+git commit -m "feat: Add custom domain configuration"
+git push origin main
+```
+
+### 確認項目
+
+✅ **ドメインアクセス**
+
+- `https://neuraknot.net` → 正常に表示
+- `https://www.neuraknot.net` → 正常に表示
+- SSL 証明書が有効
+
+✅ **API 通信**
+
+- チャット機能が動作
+- サービス作成が動作
+- 認証フローが動作
+
+✅ **リダイレクト**
+
+- `http://neuraknot.net` → `https://www.neuraknot.net`
+- HTTPS が強制される
+
+---
 
 ## トラブルシューティング
 
