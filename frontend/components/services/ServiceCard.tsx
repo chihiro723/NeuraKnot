@@ -64,10 +64,10 @@ export function ServiceCard({
         <>
           <div className="absolute top-0 left-0 w-full h-0.5 md:h-1 bg-gradient-to-r from-yellow-400 via-amber-400 to-orange-400" />
           <div className="absolute top-1 right-1 md:top-2 md:right-2">
-            <Sparkles className="w-2 h-2 md:w-4 md:h-4 text-yellow-500 animate-pulse" />
+            <Sparkles className="w-2 h-2 text-yellow-500 animate-pulse md:w-4 md:h-4" />
           </div>
           <div className="absolute top-1 left-1 md:top-2 md:left-2">
-            <Star className="w-2 h-2 md:w-3 md:h-3 text-amber-500" />
+            <Star className="w-2 h-2 text-amber-500 md:w-3 md:h-3" />
           </div>
         </>
       )}
@@ -76,7 +76,7 @@ export function ServiceCard({
         <>
           <div className="absolute top-0 left-0 w-full h-0.5 md:h-1 bg-gray-400 dark:bg-gray-600" />
           <div className="absolute top-1 right-1 md:top-2 md:right-2">
-            <Check className="w-2 h-2 md:w-4 md:h-4 text-gray-500 dark:text-gray-400" />
+            <Check className="w-2 h-2 text-gray-500 md:w-4 md:h-4 dark:text-gray-400" />
           </div>
         </>
       )}
@@ -104,7 +104,7 @@ export function ServiceCard({
       {/* サービス名 */}
       <h3
         className={cn(
-          "font-bold mb-0.5 md:mb-2 line-clamp-2 text-[8px] md:text-sm leading-tight",
+          "font-bold mb-0.5 md:mb-2 line-clamp-2 text-[9px] md:text-base leading-tight",
           isUnlocked && !isDisabled
             ? "text-amber-900 dark:text-yellow-200"
             : isUnlocked && isDisabled
@@ -120,7 +120,7 @@ export function ServiceCard({
       {/* 説明（短縮版）（モバイルでは表示） */}
       <p
         className={cn(
-          "text-[7px] md:text-xs line-clamp-2 md:line-clamp-2 leading-tight",
+          "text-[8px] md:text-sm line-clamp-2 md:line-clamp-2 leading-tight",
           isUnlocked && !isDisabled
             ? "text-amber-700 dark:text-yellow-300"
             : isUnlocked && isDisabled
@@ -134,7 +134,7 @@ export function ServiceCard({
       </p>
 
       {/* バッジ - 認証状態のみ表示（モバイルでは非表示） */}
-      <div className="hidden md:flex flex-wrap gap-1 justify-center mb-2">
+      <div className="hidden flex-wrap gap-1 justify-center mb-2 md:flex">
         {needsAuth && (
           <span className="px-2 py-0.5 text-xs bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300 rounded flex items-center gap-1">
             <Lock className="w-3 h-3" />
@@ -170,10 +170,10 @@ export function ServiceCard({
           <div className="absolute top-0 left-0 w-full h-0.5 md:h-1 bg-gradient-to-r from-gray-400 via-gray-500 to-gray-400" />
           {/* 左上の無効アイコン */}
           <div className="absolute top-1 left-1 md:top-2 md:left-2">
-            <X className="w-2 h-2 md:w-3 md:h-3 text-gray-500 dark:text-gray-400" />
+            <X className="w-2 h-2 text-gray-500 md:w-3 md:h-3 dark:text-gray-400" />
           </div>
           {/* 全体の無効エフェクト */}
-          <div className="absolute inset-0 bg-gradient-to-br via-transparent rounded-lg md:rounded-xl pointer-events-none from-gray-400/10 to-gray-500/10" />
+          <div className="absolute inset-0 bg-gradient-to-br via-transparent rounded-lg pointer-events-none md:rounded-xl from-gray-400/10 to-gray-500/10" />
         </>
       )}
     </button>
