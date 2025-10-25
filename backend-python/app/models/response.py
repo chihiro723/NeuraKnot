@@ -97,3 +97,9 @@ class HealthResponse(BaseModel):
     dependencies: Dict[str, str]
     errors: list = []
 
+
+class EnhancePromptResponse(BaseModel):
+    """プロンプト強化レスポンス"""
+    enhanced_prompt: str
+    metadata: Optional[Dict[str, Any]] = None
+

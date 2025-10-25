@@ -22,6 +22,7 @@ export default {
         'morphing-gradient': 'morphing-gradient 8s ease-in-out infinite',
         'particle-float': 'particle-float 20s linear infinite',
         'text-glow': 'text-glow 4s ease-in-out infinite',
+        'glow-border': 'glow-border 2s ease-in-out infinite',
       },
       keyframes: {
         fadeIn: {
@@ -95,6 +96,16 @@ export default {
           },
           '50%': {
             textShadow: '0 0 20px hsla(142, 76%, 36%, 0.8), 0 0 30px hsla(142, 76%, 36%, 0.5), 0 0 40px hsla(142, 76%, 36%, 0.2)',
+          },
+        },
+        'glow-border': {
+          '0%, 100%': {
+            borderColor: 'rgb(52, 211, 153)',
+            boxShadow: '0 0 15px rgba(52, 211, 153, 0.3), 0 0 25px rgba(52, 211, 153, 0.15)',
+          },
+          '50%': {
+            borderColor: 'rgb(16, 185, 129)',
+            boxShadow: '0 0 25px rgba(16, 185, 129, 0.5), 0 0 40px rgba(16, 185, 129, 0.25), 0 0 60px rgba(16, 185, 129, 0.1)',
           },
         },
       },

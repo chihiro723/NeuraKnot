@@ -868,6 +868,69 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/prompts/enhance": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "AIを使用してシステムプロンプトを自動生成します",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Prompt"
+                ],
+                "summary": "プロンプト強化",
+                "parameters": [
+                    {
+                        "description": "プロンプト強化リクエスト",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_request.EnhancePromptRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "強化成功",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.EnhancePromptResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "LLM APIエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/services": {
             "get": {
                 "description": "Pythonから全サービスの一覧を取得",
@@ -1878,8 +1941,7 @@ const docTemplate = `{
         "backend-go_internal_handler_http_request.CreateAgentRequest": {
             "type": "object",
             "required": [
-                "name",
-                "persona_type"
+                "name"
             ],
             "properties": {
                 "description": {
@@ -1892,6 +1954,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "persona_type": {
+                    "description": "空文字列許可（未選択 = none）",
                     "type": "string"
                 },
                 "provider": {
@@ -1911,6 +1974,18 @@ const docTemplate = `{
                 "system_prompt": {
                     "description": "カスタムシステムプロンプト",
                     "type": "string"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_request.EnhancePromptRequest": {
+            "type": "object",
+            "required": [
+                "current_prompt"
+            ],
+            "properties": {
+                "current_prompt": {
+                    "type": "string",
+                    "maxLength": 5000
                 }
             }
         },
@@ -2285,6 +2360,18 @@ const docTemplate = `{
                 },
                 "total": {
                     "type": "integer"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_response.EnhancePromptResponse": {
+            "type": "object",
+            "properties": {
+                "enhanced_prompt": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
                 }
             }
         },

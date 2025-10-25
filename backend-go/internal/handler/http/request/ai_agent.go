@@ -10,7 +10,7 @@ type ServiceConfigRequest struct {
 // CreateAgentRequest はAI Agent作成リクエスト
 type CreateAgentRequest struct {
 	Name             string                 `json:"name" binding:"required"`
-	PersonaType      string                 `json:"persona_type" binding:"required"`
+	PersonaType      string                 `json:"persona_type"` // 空文字列許可（未選択 = none）
 	Provider         string                 `json:"provider"`
 	Model            string                 `json:"model"`
 	Description      *string                `json:"description"`

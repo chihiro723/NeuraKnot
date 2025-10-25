@@ -474,14 +474,14 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
             <div className="space-y-6">
               <div className="pb-3 border-b border-gray-200 dark:border-gray-800">
                 <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  システムプロンプト
+                  カスタム指示
                 </h2>
               </div>
               <div className="p-4 bg-gray-100 rounded-lg dark:bg-gray-800">
                 <div className="flex items-center mb-2 space-x-2">
                   <Code className="w-4 h-4 text-gray-500" />
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    カスタムプロンプト
+                    カスタム指示
                   </span>
                 </div>
                 <p className="text-sm leading-relaxed text-gray-600 whitespace-pre-wrap dark:text-gray-400">
