@@ -100,7 +100,9 @@ https://neuraknot.net/dashboard/chats/[id]
 
 AI エージェントとのリアルタイム対話
 
-![チャット画面](docs/images/chat-light.png)
+> **注**: ライトモード・ダークモードの切り替えに対応しています（全ページで利用可能）
+
+![チャット画面 - ダークモード](docs/images/chat-dark.png)
 
 **モバイル表示**
 
