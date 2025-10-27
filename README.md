@@ -222,6 +222,35 @@ AI エージェントとのリアルタイム対話
 
 ---
 
+### 外部サービス管理
+
+**ログイン後**: https://neuraknot.net/dashboard/services
+
+Slack、Notion、GitHub などの外部サービスと連携するための API キーを登録・管理できます。
+
+![マイサービス画面](docs/images/services-my-services.png)
+
+![サービス登録画面](docs/images/services-register.png)
+
+![サービス追加モーダル](docs/images/services-add-modal.png)
+
+**モバイル表示**
+
+<table>
+<tr>
+<td width="50%" align="center">
+<img src="docs/images/services-mobile-my.png" alt="マイサービス画面 - モバイル" width="100%"><br>
+<sub>マイサービス</sub>
+</td>
+<td width="50%" align="center">
+<img src="docs/images/services-mobile-register.png" alt="サービス登録画面 - モバイル" width="100%"><br>
+<sub>サービス登録</sub>
+</td>
+</tr>
+</table>
+
+---
+
 ### 設定画面
 
 **ログイン後**: https://neuraknot.net/dashboard/settings
