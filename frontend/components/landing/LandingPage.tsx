@@ -70,7 +70,7 @@ const STATS = [
     label: "AI稼働",
     description: "休まないアシスタント",
   },
-  { value: 99, suffix: "%", label: "満足度", description: "ユーザー評価" },
+  { value: 100, suffix: "%", label: "カスタマイズ", description: "性格や知識を教えられる個性を持つ" },
 ];
 
 const SERVICES = [
@@ -645,15 +645,11 @@ export function LandingPage({
               )}
 
               <button
-                onClick={() => setIsVideoPlaying(!isVideoPlaying)}
-                className="flex items-center px-8 py-5 rounded-2xl border backdrop-blur-sm transition-all duration-300 text-slate-300 hover:text-white border-slate-600/50 hover:border-emerald-400/50 bg-white/5 hover:bg-white/10"
+                disabled
+                className="flex items-center px-8 py-5 rounded-2xl border backdrop-blur-sm transition-all duration-300 text-slate-400 border-slate-600/30 bg-white/3 cursor-not-allowed"
               >
-                {isVideoPlaying ? (
-                  <Pause className="mr-3 w-5 h-5" />
-                ) : (
-                  <Play className="mr-3 w-5 h-5" />
-                )}
-                <span className="font-medium">デモ動画を見る</span>
+                <Play className="mr-3 w-5 h-5" />
+                <span className="font-medium">Coming Soon</span>
               </button>
             </div>
 
@@ -1179,15 +1175,11 @@ export function LandingPage({
               )}
 
               <button
-                onClick={() => setIsVideoPlaying(!isVideoPlaying)}
-                className="flex items-center px-8 py-6 rounded-2xl border backdrop-blur-sm transition-all duration-300 text-slate-300 hover:text-white border-slate-600/50 hover:border-emerald-400/50 bg-white/5 hover:bg-white/10"
+                disabled
+                className="flex items-center px-8 py-6 rounded-2xl border backdrop-blur-sm transition-all duration-300 text-slate-400 border-slate-600/30 bg-white/3 cursor-not-allowed"
               >
-                {isVideoPlaying ? (
-                  <Pause className="mr-3 w-5 h-5" />
-                ) : (
-                  <Play className="mr-3 w-5 h-5" />
-                )}
-                <span className="font-medium">デモ動画を見る</span>
+                <Play className="mr-3 w-5 h-5" />
+                <span className="font-medium">Coming Soon</span>
               </button>
             </div>
 
