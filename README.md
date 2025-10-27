@@ -96,11 +96,11 @@ https://neuraknot.net
 
 ### チャット画面
 
+https://neuraknot.net/dashboard/chats/[id]
+
 AI エージェントとのリアルタイム対話
 
-| ライトモード                                               | ダークモード                                              |
-| ---------------------------------------------------------- | --------------------------------------------------------- |
-| ![チャット画面 - ライトモード](docs/images/chat-light.png) | ![チャット画面 - ダークモード](docs/images/chat-dark.png) |
+![チャット画面](docs/images/chat-light.png)
 
 **モバイル表示**
 
