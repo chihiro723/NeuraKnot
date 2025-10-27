@@ -100,7 +100,7 @@ https://neuraknot.net
 
 AI エージェントとのリアルタイム対話
 
-> **注**: ライトモード・ダークモードの切り替えに対応しています（全ページで利用可能）。以下、説明はダークモードのみ表示します。
+> **注**: ダークモード・ライトモードの切り替えに対応しています（全ページで利用可能）。以下、説明はダークモードのみ表示します。
 
 > ![チャット画面 - ダークモード](docs/images/chat-dark.png) > ![チャット画面 - ライトモード](docs/images/chat-light.png)
 
@@ -173,12 +173,12 @@ AI エージェントとのリアルタイム対話
 <table>
 <tr>
 <td width="50%" align="center">
-<img src="docs/images/agent-create-mobile.png" alt="エージェント作成画面 - モバイル" width="100%"><br>
-<sub>作成画面</sub>
+<img src="docs/images/add-menu-mobile.png" alt="メニュー一覧 - モバイル" width="100%"><br>
+<sub>メニュー一覧</sub>
 </td>
 <td width="50%" align="center">
-<img src="docs/images/agent-create-mobile-service.png" alt="サービス選択 - モバイル" width="100%"><br>
-<sub>サービス選択</sub>
+<img src="docs/images/add-agent-mobile.png" alt="エージェント作成画面 - モバイル" width="100%"><br>
+<sub>エージェント作成画面</sub>
 </td>
 </tr>
 </table>
