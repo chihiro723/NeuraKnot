@@ -183,6 +183,8 @@ AI エージェントとのリアルタイム対話
 
 ![エージェント作成画面](docs/images/agent-create.png)
 
+![サービス連携モーダル](docs/images/agent-service-modal.png)
+
 **主な設定項目**
 
 - エージェント名とアイコン
@@ -191,7 +193,20 @@ AI エージェントとのリアルタイム対話
 - システムプロンプト（AI の動作を細かく調整）
 - 連携サービス（必要なツールだけを選択）
 
-![サービス連携モーダル](docs/images/agent-service-modal.png)
+**モバイル表示**
+
+<table>
+<tr>
+<td width="50%" align="center">
+<img src="docs/images/agent-create-mobile.png" alt="エージェント作成画面 - モバイル" width="100%"><br>
+<sub>作成画面</sub>
+</td>
+<td width="50%" align="center">
+<img src="docs/images/agent-create-mobile-service.png" alt="サービス選択 - モバイル" width="100%"><br>
+<sub>サービス選択</sub>
+</td>
+</tr>
+</table>
 
 ---
 
