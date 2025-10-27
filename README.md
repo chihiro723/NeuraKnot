@@ -102,9 +102,7 @@ AI エージェントとのリアルタイム対話
 
 > **注**: ライトモード・ダークモードの切り替えに対応しています（全ページで利用可能）。以下、説明はダークモードのみ表示します。
 
-![チャット画面 - ライトモード](docs/images/chat-light.png)
-
-![チャット画面 - ダークモード](docs/images/chat-dark.png)
+> ![チャット画面 - ダークモード](docs/images/chat-dark.png) > ![チャット画面 - ライトモード](docs/images/chat-light.png)
 
 **モバイル表示**
 
@@ -152,32 +150,7 @@ AI エージェントとのリアルタイム対話
 
 ---
 
-### エージェント詳細
-
-**ログイン後**: https://neuraknot.net/dashboard/roster/[id]
-
-特定のエージェントの詳細情報を確認・編集できます。
-
-![エージェント詳細](docs/images/roster-detail.png)
-
-**モバイル表示**
-
-<table>
-<tr>
-<td width="50%" align="center">
-<img src="docs/images/roster-detail-mobile-1.png" alt="エージェント詳細 - モバイル1" width="100%"><br>
-<sub>基本情報</sub>
-</td>
-<td width="50%" align="center">
-<img src="docs/images/roster-detail-mobile-2.png" alt="エージェント詳細 - モバイル2" width="100%"><br>
-<sub>詳細設定</sub>
-</td>
-</tr>
-</table>
-
----
-
-### AI エージェント作成
+### 新規作成ページ
 
 **ログイン後**: https://neuraknot.net/dashboard/add/ai
 
