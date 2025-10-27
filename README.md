@@ -104,7 +104,7 @@ AI エージェントとのリアルタイム対話
 
 ![チャット画面 - ライトモード](docs/images/chat-light.png)
 
-![チャット画面 - ダークモード](docs/images/chat.png-dark)
+![チャット画面 - ダークモード](docs/images/chat-dark.png)
 
 **モバイル表示**
 
@@ -130,6 +130,8 @@ AI エージェントとのリアルタイム対話
 作成した AI エージェントの一覧を確認・管理できます。
 
 ![エージェント一覧](docs/images/roster.png)
+
+歯車アイコンをクリックすると、エージェントの設定を変更できます。連携サービス、性格、AI モデルなどの詳細設定を行えます。
 
 ![サービス設定モーダル - サービスタブ](docs/images/roster-service-modal.png)
 
