@@ -127,7 +127,7 @@ AI エージェントとのリアルタイム対話
 
 **ログイン後**: https://neuraknot.net/dashboard/roster
 
-作成したAIエージェントの一覧を確認・管理できます。
+作成した AI エージェントの一覧を確認・管理できます。
 
 ![エージェント一覧](docs/images/roster-dark.png)
 
@@ -142,6 +142,31 @@ AI エージェントとのリアルタイム対話
 <td width="50%" align="center">
 <img src="docs/images/roster-mobile-detail.png" alt="エージェント詳細 - モバイル" width="100%"><br>
 <sub>詳細表示</sub>
+</td>
+</tr>
+</table>
+
+---
+
+### エージェント詳細
+
+**ログイン後**: https://neuraknot.net/dashboard/roster/[id]
+
+特定のエージェントの詳細情報を確認・編集できます。
+
+![エージェント詳細](docs/images/roster-detail-dark.png)
+
+**モバイル表示**
+
+<table>
+<tr>
+<td width="50%" align="center">
+<img src="docs/images/roster-detail-mobile-1.png" alt="エージェント詳細 - モバイル1" width="100%"><br>
+<sub>基本情報</sub>
+</td>
+<td width="50%" align="center">
+<img src="docs/images/roster-detail-mobile-2.png" alt="エージェント詳細 - モバイル2" width="100%"><br>
+<sub>詳細設定</sub>
 </td>
 </tr>
 </table>
