@@ -53,16 +53,16 @@ const SOCIAL_LINKS = [
 
 const STATS = [
   {
-    value: 20,
-    suffix: "+",
-    label: "基本サービス",
-    description: "日時・計算・テキスト処理",
+    value: 100,
+    suffix: "%",
+    label: "カスタマイズ",
+    description: "性格や振る舞い、知識を自由に設定可能",
   },
   {
-    value: 3,
-    suffix: "",
-    label: "LLM対応",
-    description: "OpenAI・Anthropic・Google",
+    value: 20,
+    suffix: "+",
+    label: "サービス連携",
+    description: "Web検索・Slack・Notion等",
   },
   {
     value: 24,
@@ -70,7 +70,12 @@ const STATS = [
     label: "AI稼働",
     description: "休まないアシスタント",
   },
-  { value: 100, suffix: "%", label: "カスタマイズ", description: "性格や知識を教えられる個性を持つ" },
+  {
+    value: 3,
+    suffix: "",
+    label: "LLM対応",
+    description: "OpenAI・Anthropic・Google",
+  },
 ];
 
 const SERVICES = [
