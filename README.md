@@ -123,13 +123,38 @@ AI エージェントとのリアルタイム対話
 
 ---
 
+### エージェント一覧
+
+**ログイン後**: https://neuraknot.net/dashboard/roster
+
+作成したAIエージェントの一覧を確認・管理できます。
+
+![エージェント一覧](docs/images/roster-dark.png)
+
+**モバイル表示**
+
+<table>
+<tr>
+<td width="50%" align="center">
+<img src="docs/images/roster-mobile.png" alt="エージェント一覧 - モバイル" width="100%"><br>
+<sub>一覧表示</sub>
+</td>
+<td width="50%" align="center">
+<img src="docs/images/roster-mobile-detail.png" alt="エージェント詳細 - モバイル" width="100%"><br>
+<sub>詳細表示</sub>
+</td>
+</tr>
+</table>
+
+---
+
 ### AI エージェント作成
+
+**ログイン後**: https://neuraknot.net/dashboard/add/ai
 
 エージェント名、性格、AI モデル、システムプロンプト、連携サービスを設定して、あなた専用の AI アシスタントを作成できます。
 
-| ライトモード                                  | ダークモード                                  |
-| --------------------------------------------- | --------------------------------------------- |
-| 【画像: エージェント作成画面 - ライトモード】 | 【画像: エージェント作成画面 - ダークモード】 |
+![エージェント作成画面](docs/images/agent-create-dark.png)
 
 **主な設定項目**
 
@@ -139,17 +164,17 @@ AI エージェントとのリアルタイム対話
 - システムプロンプト（AI の動作を細かく調整）
 - 連携サービス（必要なツールだけを選択）
 
-【画像: サービス連携モーダル - 複数サービス選択画面】
+![サービス連携モーダル](docs/images/agent-service-modal.png)
 
 ---
 
 ### 設定画面
 
+**ログイン後**: https://neuraknot.net/dashboard/settings
+
 ユーザー情報の管理や外部サービスとの連携設定を行います。
 
-| ライトモード                      | ダークモード                      |
-| --------------------------------- | --------------------------------- |
-| 【画像: 設定画面 - ライトモード】 | 【画像: 設定画面 - ダークモード】 |
+![設定画面](docs/images/settings-dark.png)
 
 **主な設定項目**
 
@@ -158,7 +183,7 @@ AI エージェントとのリアルタイム対話
 - パスワードの変更
 - 外部サービスの API キー登録（Slack、Notion、GitHub など）
 
-【画像: サービス連携一覧 - Slack, Notion, GitHub, Google Calendar など】
+![サービス連携一覧](docs/images/settings-services.png)
 
 ---
 
@@ -166,9 +191,13 @@ AI エージェントとのリアルタイム対話
 
 メールアドレスとパスワードでログインできます。
 
-| ログイン               | サインアップ               |
-| ---------------------- | -------------------------- |
-| 【画像: ログイン画面】 | 【画像: サインアップ画面】 |
+**ログイン**: https://neuraknot.net/auth/login
+
+**サインアップ**: https://neuraknot.net/auth/signup
+
+![ログイン画面](docs/images/auth-login.png)
+
+![サインアップ画面](docs/images/auth-signup.png)
 
 ---
 
