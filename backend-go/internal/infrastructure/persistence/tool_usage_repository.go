@@ -18,15 +18,27 @@ func NewToolUsageRepository(db *sql.DB) *ToolUsageRepository {
 	return &ToolUsageRepository{db: db}
 }
 
-// Save はツール使用履歴を保存
+// Save はツール使用履歴を保存（UPSERT）
 func (r *ToolUsageRepository) Save(toolUsage *conversation.ToolUsage) error {
 	query := `
 		INSERT INTO ai_tool_usage (
 			id, session_id, message_id, tool_name, tool_category,
 			input_data, output_data, status, error_message, execution_time_ms, insert_position, executed_at
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		ON CONFLICT (id) DO UPDATE SET
+			session_id = EXCLUDED.session_id,
+			message_id = EXCLUDED.message_id,
+			tool_name = EXCLUDED.tool_name,
+			tool_category = EXCLUDED.tool_category,
+			input_data = EXCLUDED.input_data,
+			output_data = EXCLUDED.output_data,
+			status = EXCLUDED.status,
+			error_message = EXCLUDED.error_message,
+			execution_time_ms = EXCLUDED.execution_time_ms,
+			insert_position = EXCLUDED.insert_position,
+			executed_at = EXCLUDED.executed_at
 	`
-	_, err := r.db.ExecContext(
+	result, err := r.db.ExecContext(
 		context.Background(),
 		query,
 		toolUsage.ID,
@@ -42,6 +54,14 @@ func (r *ToolUsageRepository) Save(toolUsage *conversation.ToolUsage) error {
 		toolUsage.InsertPosition,
 		toolUsage.ExecutedAt,
 	)
+	if err == nil {
+		// デバッグ: INSERT or UPDATE を検出
+		rowsAffected, _ := result.RowsAffected()
+		if rowsAffected > 0 {
+			// RowsAffected > 1 の場合はUPDATEが発生した可能性
+			// PostgreSQLのUPSERTではINSERTで1、UPDATEで2を返す
+		}
+	}
 	return err
 }
 

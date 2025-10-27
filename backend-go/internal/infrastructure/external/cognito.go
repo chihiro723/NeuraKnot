@@ -28,6 +28,7 @@ type CognitoService struct {
 	clientSecret   string
 	jwksURL        string
 	jwks           jwk.Set
+	jwksFetched    bool
 	client         *cognitoidentityprovider.Client
 	userRepository user.UserRepository
 }
@@ -46,14 +47,7 @@ func NewCognitoService(cfg *config.Config, userRepository user.UserRepository) (
 
 	fmt.Printf("[COGNITO INIT] Region: %s, UserPoolID: %s, ClientID: %s\n", cfg.Cognito.Region, cfg.Cognito.UserPoolID, cfg.Cognito.ClientID)
 	fmt.Printf("[COGNITO INIT] JWKS URL: %s\n", jwksURL)
-
-	// JWKSを取得
-	jwks, err := jwk.Fetch(context.TODO(), jwksURL)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch JWKS: %w", err)
-	}
-
-	fmt.Printf("[COGNITO INIT] JWKS fetched successfully\n")
+	fmt.Printf("[COGNITO INIT] JWKS fetch will be deferred until first token validation\n")
 
 	return &CognitoService{
 		region:         cfg.Cognito.Region,
@@ -61,10 +55,29 @@ func NewCognitoService(cfg *config.Config, userRepository user.UserRepository) (
 		clientID:       cfg.Cognito.ClientID,
 		clientSecret:   cfg.Cognito.ClientSecret,
 		jwksURL:        jwksURL,
-		jwks:           jwks,
+		jwks:           nil,
+		jwksFetched:    false,
 		client:         client,
 		userRepository: userRepository,
 	}, nil
+}
+
+// ensureJWKS JWKSを遅延取得
+func (c *CognitoService) ensureJWKS(ctx context.Context) error {
+	if c.jwksFetched {
+		return nil
+	}
+
+	fmt.Printf("[COGNITO] Fetching JWKS from: %s\n", c.jwksURL)
+	jwks, err := jwk.Fetch(ctx, c.jwksURL)
+	if err != nil {
+		return fmt.Errorf("failed to fetch JWKS: %w", err)
+	}
+
+	c.jwks = jwks
+	c.jwksFetched = true
+	fmt.Printf("[COGNITO] JWKS fetched successfully\n")
+	return nil
 }
 
 // computeSecretHash SECRET_HASHを計算
@@ -81,6 +94,11 @@ func (c *CognitoService) computeSecretHash(username string) string {
 
 // ValidateToken トークンを検証
 func (c *CognitoService) ValidateToken(ctx context.Context, token string) (*user.AuthResult, error) {
+	// JWKSを遅延取得
+	if err := c.ensureJWKS(ctx); err != nil {
+		return nil, fmt.Errorf("failed to ensure JWKS: %w", err)
+	}
+
 	// JWTトークンを解析
 	parsedToken, err := jwt.ParseString(token, jwt.WithKeySet(c.jwks))
 	if err != nil {

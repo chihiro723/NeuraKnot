@@ -89,7 +89,7 @@ CREATE TABLE ai_agents (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     -- 制約
-    CONSTRAINT chk_persona_type CHECK (persona_type IN ('assistant', 'creative', 'analytical')),
+    CONSTRAINT chk_persona_type CHECK (persona_type IN ('', 'assistant', 'creative', 'analytical', 'concise')),
     CONSTRAINT chk_provider CHECK (provider IN ('openai', 'anthropic', 'google')),
     CONSTRAINT chk_model CHECK (model IN (
         -- OpenAI Models
