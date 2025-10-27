@@ -131,69 +131,32 @@ export function LandingPage({
     );
   };
 
-  // スムーズスクロール実行（ネイティブAPIを活用）
+  // スムーズスクロール実行（シンプルな実装）
   const executeAutoScroll = useCallback(() => {
-    if (isAutoScrolling) {
-      stopAutoScroll();
+    // 次のセクション要素を取得
+    const allSections = document.querySelectorAll("section");
+    if (allSections.length < 2) {
+      console.warn("次のセクションが見つかりません");
       return;
     }
 
-    setIsAutoScrolling(true);
-    isScrollingRef.current = true;
+    // 最初のセクション（ヒーローセクション）の次、つまり統計セクション
+    const nextSection = allSections[1] as HTMLElement;
 
+    // ヘッダーの高さを取得
     const headerHeight = document.querySelector("nav")?.offsetHeight || 80;
-    const viewportHeight = window.innerHeight;
-    const target = viewportHeight - headerHeight;
 
-    // より強いイージング効果のあるスクロール
-    const startPosition = window.pageYOffset;
-    const distance = target - startPosition;
-    const duration = 1500; // 少し長めに設定
-    const startTime = performance.now();
+    // 次のセクションの位置を計算
+    const nextSectionTop =
+      nextSection.getBoundingClientRect().top + window.pageYOffset;
+    const target = nextSectionTop - headerHeight;
 
-    const easeOutExpo = (t: number): number => {
-      return t === 1 ? 1 : 1 - Math.pow(2, -10 * t); // 指数関数的減速
-    };
-
-    const animateScroll = (currentTime: number) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const easedProgress = easeOutExpo(progress);
-
-      window.scrollTo(0, startPosition + distance * easedProgress);
-
-      if (progress < 1 && isScrollingRef.current) {
-        animationFrameRef.current = requestAnimationFrame(animateScroll);
-      } else {
-        // 初期スクロール完了後に継続スクロール開始
-        setTimeout(() => {
-          const maxScroll =
-            document.documentElement.scrollHeight - window.innerHeight;
-
-          const continuousScroll = () => {
-            if (!isScrollingRef.current) return;
-
-            const current = window.pageYOffset;
-            if (current >= maxScroll) {
-              stopAutoScroll();
-              return;
-            }
-
-            window.scrollBy(0, 1);
-            timeoutRef.current = setTimeout(continuousScroll, 20);
-          };
-
-          if (window.pageYOffset < maxScroll && isScrollingRef.current) {
-            continuousScroll();
-          } else {
-            stopAutoScroll();
-          }
-        }, 300);
-      }
-    };
-
-    animationFrameRef.current = requestAnimationFrame(animateScroll);
-  }, [isAutoScrolling, stopAutoScroll]);
+    // スムーズスクロール
+    window.scrollTo({
+      top: target,
+      behavior: "smooth",
+    });
+  }, []);
 
   // 自動スクロールの停止処理
   useEffect(() => {
@@ -245,7 +208,10 @@ export function LandingPage({
       router.replace("/auth/login");
       router.refresh();
       setTimeout(() => {
-        if (typeof window !== "undefined" && window.location.pathname !== "/auth/login") {
+        if (
+          typeof window !== "undefined" &&
+          window.location.pathname !== "/auth/login"
+        ) {
           window.location.assign("/auth/login");
         }
       }, 300);
@@ -255,7 +221,10 @@ export function LandingPage({
       router.replace("/auth/login");
       router.refresh();
       setTimeout(() => {
-        if (typeof window !== "undefined" && window.location.pathname !== "/auth/login") {
+        if (
+          typeof window !== "undefined" &&
+          window.location.pathname !== "/auth/login"
+        ) {
           window.location.assign("/auth/login");
         }
       }, 300);
