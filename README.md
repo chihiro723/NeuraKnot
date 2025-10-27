@@ -81,11 +81,13 @@ https://neuraknot.net
 
 <table>
 <tr>
-<td width="50%">
-<img src="docs/images/landing-mobile.png" alt="ランディングページ - モバイル表示" width="100%">
+<td width="50%" align="center">
+<img src="docs/images/landing-mobile.png" alt="ランディングページ - モバイル表示" width="100%"><br>
+<sub>通常表示</sub>
 </td>
-<td width="50%">
-<img src="docs/images/landing-mobile-sidemenu.png" alt="ランディングページ - モバイルサイドメニュー" width="100%">
+<td width="50%" align="center">
+<img src="docs/images/landing-mobile-sidemenu.png" alt="ランディングページ - モバイルサイドメニュー" width="100%"><br>
+<sub>サイドメニュー</sub>
 </td>
 </tr>
 </table>
