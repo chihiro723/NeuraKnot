@@ -53,16 +53,16 @@ const SOCIAL_LINKS = [
 
 const STATS = [
   {
-    value: 20,
-    suffix: "+",
-    label: "基本サービス",
-    description: "日時・計算・テキスト処理",
+    value: 100,
+    suffix: "%",
+    label: "カスタマイズ",
+    description: "性格や振る舞い、知識を自由に設定可能",
   },
   {
-    value: 3,
-    suffix: "",
-    label: "LLM対応",
-    description: "OpenAI・Anthropic・Google",
+    value: 20,
+    suffix: "+",
+    label: "サービス連携",
+    description: "Web検索・Slack・Notion等",
   },
   {
     value: 24,
@@ -70,7 +70,12 @@ const STATS = [
     label: "AI稼働",
     description: "休まないアシスタント",
   },
-  { value: 99, suffix: "%", label: "満足度", description: "ユーザー評価" },
+  {
+    value: 3,
+    suffix: "",
+    label: "LLM対応",
+    description: "OpenAI・Anthropic・Google",
+  },
 ];
 
 const SERVICES = [
@@ -131,69 +136,32 @@ export function LandingPage({
     );
   };
 
-  // スムーズスクロール実行（ネイティブAPIを活用）
+  // スムーズスクロール実行（シンプルな実装）
   const executeAutoScroll = useCallback(() => {
-    if (isAutoScrolling) {
-      stopAutoScroll();
+    // 次のセクション要素を取得
+    const allSections = document.querySelectorAll("section");
+    if (allSections.length < 2) {
+      console.warn("次のセクションが見つかりません");
       return;
     }
 
-    setIsAutoScrolling(true);
-    isScrollingRef.current = true;
+    // 最初のセクション（ヒーローセクション）の次、つまり統計セクション
+    const nextSection = allSections[1] as HTMLElement;
 
+    // ヘッダーの高さを取得
     const headerHeight = document.querySelector("nav")?.offsetHeight || 80;
-    const viewportHeight = window.innerHeight;
-    const target = viewportHeight - headerHeight;
 
-    // より強いイージング効果のあるスクロール
-    const startPosition = window.pageYOffset;
-    const distance = target - startPosition;
-    const duration = 1500; // 少し長めに設定
-    const startTime = performance.now();
+    // 次のセクションの位置を計算
+    const nextSectionTop =
+      nextSection.getBoundingClientRect().top + window.pageYOffset;
+    const target = nextSectionTop - headerHeight;
 
-    const easeOutExpo = (t: number): number => {
-      return t === 1 ? 1 : 1 - Math.pow(2, -10 * t); // 指数関数的減速
-    };
-
-    const animateScroll = (currentTime: number) => {
-      const elapsed = currentTime - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      const easedProgress = easeOutExpo(progress);
-
-      window.scrollTo(0, startPosition + distance * easedProgress);
-
-      if (progress < 1 && isScrollingRef.current) {
-        animationFrameRef.current = requestAnimationFrame(animateScroll);
-      } else {
-        // 初期スクロール完了後に継続スクロール開始
-        setTimeout(() => {
-          const maxScroll =
-            document.documentElement.scrollHeight - window.innerHeight;
-
-          const continuousScroll = () => {
-            if (!isScrollingRef.current) return;
-
-            const current = window.pageYOffset;
-            if (current >= maxScroll) {
-              stopAutoScroll();
-              return;
-            }
-
-            window.scrollBy(0, 1);
-            timeoutRef.current = setTimeout(continuousScroll, 20);
-          };
-
-          if (window.pageYOffset < maxScroll && isScrollingRef.current) {
-            continuousScroll();
-          } else {
-            stopAutoScroll();
-          }
-        }, 300);
-      }
-    };
-
-    animationFrameRef.current = requestAnimationFrame(animateScroll);
-  }, [isAutoScrolling, stopAutoScroll]);
+    // スムーズスクロール
+    window.scrollTo({
+      top: target,
+      behavior: "smooth",
+    });
+  }, []);
 
   // 自動スクロールの停止処理
   useEffect(() => {
@@ -245,7 +213,10 @@ export function LandingPage({
       router.replace("/auth/login");
       router.refresh();
       setTimeout(() => {
-        if (typeof window !== "undefined" && window.location.pathname !== "/auth/login") {
+        if (
+          typeof window !== "undefined" &&
+          window.location.pathname !== "/auth/login"
+        ) {
           window.location.assign("/auth/login");
         }
       }, 300);
@@ -255,7 +226,10 @@ export function LandingPage({
       router.replace("/auth/login");
       router.refresh();
       setTimeout(() => {
-        if (typeof window !== "undefined" && window.location.pathname !== "/auth/login") {
+        if (
+          typeof window !== "undefined" &&
+          window.location.pathname !== "/auth/login"
+        ) {
           window.location.assign("/auth/login");
         }
       }, 300);
@@ -676,15 +650,11 @@ export function LandingPage({
               )}
 
               <button
-                onClick={() => setIsVideoPlaying(!isVideoPlaying)}
-                className="flex items-center px-8 py-5 rounded-2xl border backdrop-blur-sm transition-all duration-300 text-slate-300 hover:text-white border-slate-600/50 hover:border-emerald-400/50 bg-white/5 hover:bg-white/10"
+                disabled
+                className="flex items-center px-8 py-5 rounded-2xl border backdrop-blur-sm transition-all duration-300 text-slate-400 border-slate-600/30 bg-white/3 cursor-not-allowed"
               >
-                {isVideoPlaying ? (
-                  <Pause className="mr-3 w-5 h-5" />
-                ) : (
-                  <Play className="mr-3 w-5 h-5" />
-                )}
-                <span className="font-medium">デモ動画を見る</span>
+                <Play className="mr-3 w-5 h-5" />
+                <span className="font-medium">Coming Soon</span>
               </button>
             </div>
 
@@ -1210,15 +1180,11 @@ export function LandingPage({
               )}
 
               <button
-                onClick={() => setIsVideoPlaying(!isVideoPlaying)}
-                className="flex items-center px-8 py-6 rounded-2xl border backdrop-blur-sm transition-all duration-300 text-slate-300 hover:text-white border-slate-600/50 hover:border-emerald-400/50 bg-white/5 hover:bg-white/10"
+                disabled
+                className="flex items-center px-8 py-6 rounded-2xl border backdrop-blur-sm transition-all duration-300 text-slate-400 border-slate-600/30 bg-white/3 cursor-not-allowed"
               >
-                {isVideoPlaying ? (
-                  <Pause className="mr-3 w-5 h-5" />
-                ) : (
-                  <Play className="mr-3 w-5 h-5" />
-                )}
-                <span className="font-medium">デモ動画を見る</span>
+                <Play className="mr-3 w-5 h-5" />
+                <span className="font-medium">Coming Soon</span>
               </button>
             </div>
 
