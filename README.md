@@ -133,7 +133,7 @@ https://neuraknot.net
 
 **ログイン後**: https://neuraknot.net/dashboard/chats/[id]
 
-AI エージェントとのリアルタイム対話
+AI エージェントとのリアルタイム対話。ストリーミング表示でレスポンスを即座に確認できます。
 
 > **注**: ダークモード・ライトモードの切り替えに対応しています（全ページで利用可能）。以下、説明はダークモードのみ表示します。
 
@@ -193,7 +193,11 @@ AI エージェントとのリアルタイム対話
 
 エージェント名、性格、AI モデル、システムプロンプト、連携サービスを設定して、あなた専用の AI アシスタントを作成できます。
 
+基本情報とAIモデル、システムプロンプトを設定します。
+
 ![エージェント作成画面](docs/images/agent-create.png)
+
+連携するサービスを選択します。必要なツールだけを選べます。
 
 ![サービス連携モーダル](docs/images/agent-service-modal.png)
 
@@ -228,9 +232,15 @@ AI エージェントとのリアルタイム対話
 
 Slack、Notion、GitHub などの外部サービスと連携するための API キーを登録・管理できます。
 
+登録済みの外部サービス一覧を確認できます。
+
 ![マイサービス画面](docs/images/services-my-services.png)
 
+新規サービスの登録フォームです。
+
 ![サービス登録画面](docs/images/services-register.png)
+
+API キーを入力した後、テスト機能で接続を確認してから保存できます。
 
 ![サービス追加モーダル](docs/images/services-add-modal.png)
 
@@ -257,6 +267,8 @@ Slack、Notion、GitHub などの外部サービスと連携するための API 
 
 ユーザー情報の管理や外部サービスとの連携設定を行います。
 
+プロフィール情報の編集や各種設定を管理できます。
+
 ![設定画面](docs/images/settings.png)
 
 **主な設定項目**
@@ -265,6 +277,8 @@ Slack、Notion、GitHub などの外部サービスと連携するための API 
 - メールアドレスの変更
 - パスワードの変更
 - 外部サービスの API キー登録（Slack、Notion、GitHub など）
+
+外部サービス一覧を確認できます。
 
 ![サービス連携一覧](docs/images/settings-services.png)
 
