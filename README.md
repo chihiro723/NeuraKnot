@@ -2,23 +2,23 @@
 
 **あなた専用の AI アシスタントを作成・カスタマイズできるメッセージングプラットフォーム**
 
-人間と AI エージェントが自然にコミュニケーションできる次世代メッセージングアプリケーション。複数の LLM（GPT-4o, Claude 3.5, Gemini）を搭載し、Slack、Notion、カレンダーなど様々な外部サービスと連携可能な AI エージェントを構築できます。
+人間と AI エージェントが自然にコミュニケーションできる次世代メッセージングアプリケーション。複数の LLM（OpenAI、Anthropic、Google）を搭載し、Slack、Notion、カレンダーなど様々な外部サービスと連携可能な AI エージェントを構築できます。
 
 ---
 
 ## サービス URL
 
-- **本番環境**: [https://neuraknot.net](https://neuraknot.net) / [https://www.neuraknot.net](https://www.neuraknot.net)
+- **本番環境**: [https://neuraknot.net](https://neuraknot.net)
 
 ---
 
 ## 主な機能
 
 - **カスタマイズ可能な AI エージェント**: 性格（ペルソナ）、LLM モデル、連携サービスを自由に設定
-- **複数 LLM サポート**: OpenAI (GPT-4o), Anthropic (Claude 3.5), Google (Gemini)
+- **複数 LLM サポート**: OpenAI、Anthropic、Google の各種モデルに対応
 - **外部サービス連携**: Slack、Notion、GitHub、Google Calendar、天気情報など
 - **リアルタイムストリーミング**: レスポンスを即座に表示
-- **セキュアな認証**: AWS Cognito + OAuth (Google, Apple, LINE)
+- **セキュアな認証**: AWS Cognito によるユーザー管理
 - **詳細な履歴管理**: チャット履歴、AI ツール使用履歴を完全記録
 
 ---
@@ -26,6 +26,7 @@
 ## 目次
 
 - [概要](#概要)
+- [アプリケーション画面](#アプリケーション画面)
 - [システムアーキテクチャ](#システムアーキテクチャ)
   - [全体構成](#全体構成)
   - [技術スタック](#技術スタック)
@@ -66,12 +67,399 @@ NeuraKnot は、AI エージェントとの対話を通じて様々なタスク�
 - **特定のタスクに特化したエージェント**を複数運用（例：Slackbot、Notion アシスタント、リサーチャー）
 - **プライベートで安全**な自分だけの AI エコシステム
 
+---
+
+## アプリケーション画面
+
+### ランディングページ
+
+https://neuraknot.net
+
+NeuraKnot の公式ランディングページです。サービス概要、主な機能、料金プラン、サポート情報を掲載しています。
+
+![ランディングページのヒーローセクション](docs/images/landing-hero.png)
+
+**モバイル表示**
+
+<table>
+<tr>
+<td width="50%" align="center">
+<img src="docs/images/landing-mobile.png" alt="ランディングページ - モバイル表示" width="100%"><br>
+<sub>通常表示</sub>
+</td>
+<td width="50%" align="center">
+<img src="docs/images/landing-mobile-sidemenu.png" alt="ランディングページ - モバイルサイドメニュー" width="100%"><br>
+<sub>サイドメニュー</sub>
+</td>
+</tr>
+</table>
+
+---
+
+### 認証フロー
+
+**ログイン**: https://neuraknot.net/auth/login
+
+**サインアップ**: https://neuraknot.net/auth/signup
+
+**メール認証**: https://neuraknot.net/auth/verify
+
+新規ユーザー登録から始まり、メール認証を経てアプリケーションにログインできるようになります。AWS Cognito を使用した安全な認証システムです。
+
+<table>
+<tr>
+<td width="50%" align="center">
+<img src="docs/images/auth-landing.png" alt="ランディングページ - 無料で始める" width="100%"><br>
+<sub>無料で始めるボタン</sub>
+</td>
+<td width="50%" align="center">
+<img src="docs/images/auth-signup.png" alt="新規登録ページ" width="100%"><br>
+<sub>新規登録</sub>
+</td>
+</tr>
+<tr>
+<td width="50%" align="center">
+<img src="docs/images/auth-verify.png" alt="メール認証ページ" width="100%"><br>
+<sub>メール認証</sub>
+</td>
+<td width="50%" align="center">
+<img src="docs/images/auth-login.png" alt="ログインページ" width="100%"><br>
+<sub>ログイン</sub>
+</td>
+</tr>
+</table>
+
+---
+
+### チャット画面
+
+**ログイン後**: https://neuraknot.net/dashboard/chats/[id]
+
+AI エージェントとの対話画面です。ストリーミング表示により、AI の応答を書き出し中にリアルタイムで確認できます。ツール使用中の状況も可視化され、何の処理が行われているかが一目で分かります。
+
+> **注**: ダークモード・ライトモードの切り替えに対応しています（全ページで利用可能）。以下、説明はダークモードのみ表示します。
+
+![チャット画面 - ダークモード](docs/images/chat-dark.png)
+
+![チャット画面 - ライトモード](docs/images/chat-light.png)
+
+**モバイル表示**
+
+<table>
+<tr>
+<td width="50%" align="center">
+<img src="docs/images/chat-mobile.png" alt="チャット画面 - モバイル" width="100%"><br>
+<sub>通常表示</sub>
+</td>
+<td width="50%" align="center">
+<img src="docs/images/chat-mobile-talk.png" alt="チャット画面 - モバイル会話中" width="100%"><br>
+<sub>会話中</sub>
+</td>
+</tr>
+</table>
+
+---
+
+### エージェント一覧
+
+**ログイン後**: https://neuraknot.net/dashboard/roster
+
+作成した AI エージェントの一覧を確認・管理できます。エージェントごとの会話履歴、最終利用日、作成日などを確認できます。
+
+![エージェント一覧](docs/images/roster.png)
+
+歯車アイコンをクリックすると、エージェントの設定を変更できます。連携サービス、性格、AI モデルなどの詳細設定を行えます。
+
+![サービス設定モーダル - サービスタブ](docs/images/roster-service-modal.png)
+
+**モバイル表示**
+
+<table>
+<tr>
+<td width="50%" align="center">
+<img src="docs/images/roster-mobile.png" alt="エージェント一覧 - モバイル" width="100%"><br>
+<sub>一覧表示</sub>
+</td>
+<td width="50%" align="center">
+<img src="docs/images/roster-mobile-detail.png" alt="エージェント詳細 - モバイル" width="100%"><br>
+<sub>詳細表示</sub>
+</td>
+</tr>
+</table>
+
+---
+
+### 新規作成ページ
+
+**ログイン後**: https://neuraknot.net/dashboard/add/ai
+
+エージェント名、性格、AI モデル、システムプロンプト、連携サービスを設定して、あなた専用の AI アシスタントを作成できます。複数のペルソナを持つエージェントを複数作成し、用途に応じて使い分けることができます。
+
+基本情報と AI モデル、システムプロンプトを設定します。
+
+![エージェント作成画面](docs/images/agent-create.png)
+
+連携するサービスを選択します。必要なツールだけを選べます。
+
+![サービス連携モーダル](docs/images/agent-service-modal.png)
+
+**主な設定項目**
+
+- エージェント名
+- 性格タイプ（アシスタント / クリエイティブ / 分析的 / 簡潔）
+- AI モデル（OpenAI / Anthropic / Google から選択）
+- システムプロンプト（AI の動作を細かく調整）
+- 連携サービス（必要なツールだけを選択）
+
+**モバイル表示**
+
+<table>
+<tr>
+<td width="50%" align="center">
+<img src="docs/images/add-menu-mobile.png" alt="メニュー一覧 - モバイル" width="100%"><br>
+<sub>メニュー一覧</sub>
+</td>
+<td width="50%" align="center">
+<img src="docs/images/add-agent-mobile.png" alt="エージェント作成画面 - モバイル" width="100%"><br>
+<sub>エージェント作成画面</sub>
+</td>
+</tr>
+</table>
+
+---
+
+### 外部サービス管理
+
+**ログイン後**: https://neuraknot.net/dashboard/services
+
+Slack、Notion、GitHub、Google Calendar などの外部サービスと連携するための API キーを登録・管理できます。登録済みのサービスは暗号化されて安全に保存されます。
+
+登録済みの外部サービス一覧です。有効・無効の切り替えが可能です。
+
+![マイサービス画面](docs/images/services-my-services.png)
+
+新規サービスの登録フォームです。API キーとサービス種別を入力します。
+
+![サービス登録画面](docs/images/services-register.png)
+
+API キーを入力した後、テストボタンで実際に API 接続を確認してから保存できます。これにより、無効なキーを登録してしまうことを防ぎます。
+
+![サービス追加モーダル](docs/images/services-add-modal.png)
+
+**モバイル表示**
+
+<table>
+<tr>
+<td width="50%" align="center">
+<img src="docs/images/services-mobile-my.png" alt="マイサービス画面 - モバイル" width="100%"><br>
+<sub>マイサービス</sub>
+</td>
+<td width="50%" align="center">
+<img src="docs/images/services-mobile-register.png" alt="サービス登録画面 - モバイル" width="100%"><br>
+<sub>サービス登録</sub>
+</td>
+</tr>
+</table>
+
+---
+
+### 設定画面
+
+**ログイン後**: https://neuraknot.net/dashboard/settings
+
+プロフィール、外観設定、ホーム、ログアウトなどの各種設定を管理できます。プロフィール情報、メールアドレス、パスワードの変更も可能です。
+
+![設定画面 - プロフィール](docs/images/settings-profile.png)
+
+**主な設定項目**
+
+- **プロフィール** - ユーザー情報の編集、メールアドレスの変更
+- **外観設定** - ライトモード・ダークモードの切り替え
+- **ホーム** - ダッシュボードへの戻り
+- **ログアウト** - サインアウト処理
+- その他の設定項目は近日追加予定
+
+**モバイル表示**
+
+<table>
+<tr>
+<td width="50%" align="center">
+<img src="docs/images/settings-mobile-list.png" alt="設定一覧 - モバイル" width="100%"><br>
+<sub>設定一覧</sub>
+</td>
+<td width="50%" align="center">
+<img src="docs/images/settings-mobile-profile.png" alt="プロフィール設定 - モバイル" width="100%"><br>
+<sub>プロフィール設定</sub>
+</td>
+</tr>
+</table>
+
+---
+
 ### 使用例
 
-- **Notion アシスタント**: 「今日のタスクを Notion に追加して」
-- **データアナリスト**: 「このデータを分析して可視化して」
-- **パーソナルアシスタント**: 「明日の天気を教えて、予定を確認して」
-- **Slack ボット**: 「チームに進捗報告を送って」
+#### Notion タスク管理
+
+「今日のタスクを Notion に追加して」
+
+AI が Notion に接続してタスクを自動で追加します。
+
+#### データ分析と可視化
+
+「このデータを分析して可視化して」
+
+計算ツールを使って統計分析を実行し、結果をわかりやすく表示します。
+
+#### スケジュール管理と天気確認
+
+「明日の天気を教えて、予定も確認して」
+
+複数のツール（天気 API、Google カレンダー）を組み合わせて、まとめて情報を提供します。
+
+#### チーム連携
+
+「チームに進捗報告を送って」
+
+Slack に自動でメッセージを投稿します。
+
+---
+
+### 連携可能なサービス
+
+NeuraKnot は、様々な外部サービスやツールと連携できます。エージェント作成時に必要なサービスだけを選択できます。
+
+#### 組み込みツール（常に利用可能）
+
+- **日時操作** - 現在時刻の取得、タイムゾーン変換、日付計算
+- **計算・統計** - 四則演算、統計処理、データ集計
+- **テキスト処理** - 文字列操作、テキスト整形
+- **データ変換** - JSON・CSV 形式の変換、データ構造の変更
+
+#### 外部サービス連携（API キー設定が必要）
+
+- **Slack** - メッセージ送信、チャンネル一覧取得、チーム連携
+- **Notion** - ページ作成、データベース検索・更新、ドキュメント管理
+- **Google Calendar** - 予定の確認、新規イベント作成、スケジュール管理
+- **GitHub** - リポジトリ情報、Issue・PR 管理、コード検索
+- **天気情報** - リアルタイム天気予報、地域別気象データ（OpenWeather API 使用）
+- **Web 検索** - インターネット検索、最新情報の取得（Brave Search API 使用）
+- **為替レート** - リアルタイム為替レート、通貨換算
+
+---
+
+### 対応 AI モデル
+
+複数の AI プロバイダーのモデルから選択できます。タスクの種類や目的に応じて最適なモデルを使い分けることができます。
+
+#### OpenAI
+
+汎用性が高く、コーディングや論理的な推論が得意です。
+
+#### Anthropic
+
+自然で流暢な会話が特徴。長文の理解と生成に優れています。
+
+#### Google
+
+大量の情報処理と高速レスポンスが強みです。
+
+---
+
+### システム構成
+
+NeuraKnot は、Vercel（フロントエンド）と AWS（バックエンド）を組み合わせたクラウドネイティブなアーキテクチャで動作しています。
+
+**主なコンポーネント**
+
+```
+ユーザー
+  ↓
+┌─────────────────────────────────────┐
+│ Vercel (Frontend)                    │
+│ - Next.js 15                         │
+│ - neuraknot.net / www.neuraknot.net │
+└─────────────────────────────────────┘
+  ↓ HTTPS
+┌─────────────────────────────────────┐
+│ AWS Route 53                         │
+│ - DNS管理                            │
+│ - ドメインルーティング               │
+└─────────────────────────────────────┘
+  ↓
+┌─────────────────────────────────────┐
+│ AWS ALB (Application Load Balancer) │
+│ - api.neuraknot.net                 │
+│ - SSL/TLS終端 (ACM)                  │
+└─────────────────────────────────────┘
+  ↓
+┌─────────────────────────────────────────────────────────┐
+│ AWS ECS Fargate (Private Subnet)                        │
+│ ┌──────────────────┐    ┌──────────────────────────┐  │
+│ │ Backend Go       │───→│ Backend Python           │  │
+│ │ - REST API       │    │ - AI処理 (LangChain)      │  │
+│ │ - 認証・認可     │    │ - LLM統合                │  │
+│ │ - ビジネスロジック│    │ - ツール実行             │  │
+│ └──────────────────┘    └──────────────────────────┘  │
+│          ↓                                              │
+│ ┌──────────────────────────────────────────────────┐  │
+│ │ AWS Cloud Map (Service Discovery)                │  │
+│ │ - backend-python.neuraKnot.local                 │  │
+│ └──────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
+  ↓
+┌─────────────────────────────────────┐
+│ AWS RDS PostgreSQL 15 (Multi-AZ)    │
+│ - アプリケーションデータ            │
+│ - 暗号化有効                        │
+│ - 自動バックアップ                  │
+└─────────────────────────────────────┘
+  ↓
+┌─────────────────────────────────────┐
+│ AWS Secrets Manager                  │
+│ - API Keys                           │
+│ - DB認証情報                         │
+│ - 暗号化キー                        │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│ AWS Cognito (User Pool)              │
+│ - ユーザー認証                       │
+│ - JWT発行                           │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│ 外部サービス                         │
+│ - OpenAI API                        │
+│ - Anthropic API                     │
+│ - Google AI API                     │
+│ - Slack API                         │
+│ - Notion API                        │
+│ - その他連携サービス                 │
+└─────────────────────────────────────┘
+```
+
+**セキュリティとネットワーク**
+
+- **VPC 構成** - Multi-AZ 構成（10.0.0.0/16）で高可用性を確保
+- **ネットワーク分離** - Public サブネットには ALB のみ、Private サブネットに ECS・RDS を配置
+- **NAT Gateway** - プライベートサブネットから安全に外部通信
+- **Security Groups** - 各層で必要最小限のアクセスのみ許可
+- **VPC Endpoints** - SSM 経由で安全に RDS へ接続
+
+**自動デプロイとインフラ管理**
+
+- **GitHub Actions** - コードのプッシュで自動的にビルド・テスト・デプロイ
+- **AWS ECR** - Docker イメージを安全に保管
+- **Terraform** - インフラの構成をコードで管理（Infrastructure as Code）
+- **Vercel** - フロントエンドを自動的にデプロイ
+
+---
+
+### レスポンシブデザイン
+
+デスクトップ、タブレット、モバイルすべてのデバイスで最適な表示を実現しています。
+
+---
 
 ## システムアーキテクチャ
 
@@ -91,7 +479,7 @@ Internet
     |                                           |
     v                                           v
 [RDS PostgreSQL] <--(管理用)-- [EC2 Bastion Host (SSM経由)]
-[Redis]                                   [External APIs]
+                                          [External APIs]
                                           (OpenWeather, Slack, Notion, etc.)
     |
     v
@@ -114,9 +502,9 @@ Internet
 
 **AI / LLM**
 
-- OpenAI (GPT-4o)
-- Anthropic (Claude 3.5)
-- Google (Gemini)
+- OpenAI
+- Anthropic
+- Google
 - LangChain Agent
 
 **データストア**
@@ -124,12 +512,10 @@ Internet
 - PostgreSQL 15 - アプリケーションデータ（Backend-go のみアクセス）
   - 8 テーブル構成 - 詳細は [データベース設計](#データベース設計) セクション参照
   - 完全なドキュメント: [データベース設計書](./docs/DATABASE_DESIGN_CURRENT.md)
-- Redis 7 - キャッシュ・セッション
 
 **認証**
 
-- AWS Cognito
-- OAuth 2.0 (Google, Apple, LINE)
+- AWS Cognito - ユーザー認証と JWT 発行
 
 **インフラ**
 
@@ -158,8 +544,8 @@ NeuraKnot は **PostgreSQL 15** を使用し、**Backend-go のみ**がデータ
 
 #### 主な機能
 
-- **LLM サポート**: OpenAI (GPT-4o, GPT-4o-mini), Anthropic (Claude 3.5 Sonnet), Google (Gemini)
-- **ペルソナ**: assistant, creative, analytical
+- **LLM サポート**: OpenAI、Anthropic、Google の各種モデル
+- **ペルソナ**: assistant, creative, analytical, concise
 - **ツール連携**: Notion, Slack, GitHub, Weather など
 - **セキュリティ**: 認証情報は AES-256-GCM で暗号化
 
@@ -241,8 +627,7 @@ neuraKnot/
 ├── Next.js (localhost:3000)
 ├── Backend Go (localhost:8080)
 ├── Backend Python (localhost:8001)
-├── PostgreSQL (Docker/localhost:5432)
-└── Redis (Docker/localhost:6379)
+└── PostgreSQL (Docker/localhost:5432)
 
 AWS Cognito (DEV User Pool) - 認証専用
 ```
@@ -251,8 +636,7 @@ AWS Cognito (DEV User Pool) - 認証専用
 
 - PostgreSQL: アプリケーションデータのみ保存
 - ユーザー管理: AWS Cognito DEV User Pool
-- 認証方式: メール + パスワード（基本のみ）
-- OAuth: 未対応（開発用のため）
+- 認証方式: メール + パスワード
 
 ### 本番環境（AWS + Vercel）
 
@@ -283,7 +667,6 @@ AWS Cognito (DEV User Pool) - 認証専用
 - **データベース**: RDS PostgreSQL（Multi-AZ）
 - **Service Discovery**: Cloud Map（`backend-python.neuraKnot.local`）
 - **ユーザー管理**: AWS Cognito PROD User Pool
-- **OAuth 対応**: Google, Apple, LINE
 - **DNS 管理**: Route 53（`neuraknot.net`）
 - **SSL/TLS 証明書**: ACM（自動更新）
 
@@ -336,7 +719,6 @@ docker-compose -f docker-compose/dev.yml logs -f
 | Swagger UI     | http://localhost:8080/swagger/index.html | API ドキュメント |
 | Backend Python | http://localhost:8001                    | AI 処理サーバー  |
 | PostgreSQL     | localhost:5432                           | データベース     |
-| Redis          | localhost:6379                           | キャッシュ       |
 
 ```bash
 # ヘルスチェック
@@ -501,9 +883,9 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 
 **対応 LLM プロバイダー**
 
-- OpenAI (GPT-4o, GPT-4o-mini)
-- Anthropic (Claude 3.5 Sonnet, Claude 3.5 Haiku)
-- Google (Gemini 1.5 Pro, Gemini 1.5 Flash)
+- OpenAI
+- Anthropic
+- Google
 
 **利用可能なサービス**
 
@@ -533,15 +915,13 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 
 - User Pool Name: `neuraKnot-dev-user-pool`
 - 認証方式: メール + パスワード
-- OAuth: 未対応
 - MFA: 無効
 - 用途: ローカル開発・テスト専用
 
 **本番環境（PROD User Pool）**
 
 - User Pool Name: `neuraKnot-prod-user-pool`
-- 認証方式: メール + OAuth
-- OAuth プロバイダー: Google, Apple, LINE
+- 認証方式: メール + パスワード
 - MFA: オプションで有効化可能
 - 用途: 本番環境のみ
 
@@ -576,7 +956,7 @@ NeuraKnot のインフラストラクチャは **Terraform** を使用して Inf
 - **Vercel**: Next.js Frontend（フロントエンド）
 - **RDS PostgreSQL**: Multi-AZ、暗号化有効
 - **ALB**: Application Load Balancer（API 用）
-- **Cognito**: OAuth 対応（Google, LINE, Apple）
+- **Cognito**: ユーザー認証・管理
 - **Service Discovery**: Backend Python 用内部通信
 - **Secrets Manager**: 機密情報管理
 
@@ -584,7 +964,7 @@ NeuraKnot のインフラストラクチャは **Terraform** を使用して Inf
 
 | モジュール            | 用途                         | 主要リソース                                                      |
 | --------------------- | ---------------------------- | ----------------------------------------------------------------- |
-| **Cognito**           | ユーザー認証・管理           | User Pool, User Pool Client, OAuth Providers                      |
+| **Cognito**           | ユーザー認証・管理           | User Pool, User Pool Client                                       |
 | **VPC**               | ネットワーク基盤             | VPC, Subnets, Internet Gateway, NAT Gateway                       |
 | **Route 53**          | DNS 管理                     | Hosted Zone, DNS Records (A, CNAME)                               |
 | **ACM**               | SSL/TLS 証明書管理           | Certificate, DNS Validation                                       |
