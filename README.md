@@ -104,7 +104,7 @@ AI エージェントとのリアルタイム対話
 
 ![チャット画面 - ライトモード](docs/images/chat-light.png)
 
-![チャット画面 - ダークモード](docs/images/chat-dark.png)
+![チャット画面 - ダークモード](docs/images/chat.png-dark)
 
 **モバイル表示**
 
@@ -129,7 +129,7 @@ AI エージェントとのリアルタイム対話
 
 作成した AI エージェントの一覧を確認・管理できます。
 
-![エージェント一覧](docs/images/roster-dark.png)
+![エージェント一覧](docs/images/roster.png)
 
 **モバイル表示**
 
@@ -154,7 +154,7 @@ AI エージェントとのリアルタイム対話
 
 特定のエージェントの詳細情報を確認・編集できます。
 
-![エージェント詳細](docs/images/roster-detail-dark.png)
+![エージェント詳細](docs/images/roster-detail.png)
 
 **モバイル表示**
 
@@ -179,7 +179,7 @@ AI エージェントとのリアルタイム対話
 
 エージェント名、性格、AI モデル、システムプロンプト、連携サービスを設定して、あなた専用の AI アシスタントを作成できます。
 
-![エージェント作成画面](docs/images/agent-create-dark.png)
+![エージェント作成画面](docs/images/agent-create.png)
 
 **主な設定項目**
 
@@ -199,7 +199,7 @@ AI エージェントとのリアルタイム対話
 
 ユーザー情報の管理や外部サービスとの連携設定を行います。
 
-![設定画面](docs/images/settings-dark.png)
+![設定画面](docs/images/settings.png)
 
 **主な設定項目**
 
@@ -220,7 +220,7 @@ AI エージェントとのリアルタイム対話
 
 **サインアップ**: https://neuraknot.net/auth/signup
 
-![ログイン画面](docs/images/auth-login.png)
+![ログイン画面](docs/images/auth.png)
 
 ![サインアップ画面](docs/images/auth-signup.png)
 
