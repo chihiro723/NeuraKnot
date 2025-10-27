@@ -8,7 +8,7 @@
 
 ## サービス URL
 
-- **本番環境**: [https://neuraknot.net](https://neuraknot.net) / [https://www.neuraknot.net](https://www.neuraknot.net)
+- **本番環境**: [https://neuraknot.net](https://neuraknot.net)
 
 ---
 
@@ -73,15 +73,15 @@ NeuraKnot は、AI エージェントとの対話を通じて様々なタスク�
 
 ### ランディングページ
 
-[View Live](https://neuraknot.net)
+https://neuraknot.net
 
 ![ランディングページのヒーローセクション](docs/images/landing-hero.png)
 
 **モバイル表示**
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-  <img src="docs/images/landing-mobile.png" alt="ランディングページ - モバイル表示" style="width: 100%;">
-  <img src="docs/images/landing-mobile-sidemenu.png" alt="ランディングページ - モバイルサイドメニュー" style="width: 100%;">
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; max-width: 800px;">
+  <img src="docs/images/landing-mobile.png" alt="ランディングページ - モバイル表示" style="width: 100%; height: auto;">
+  <img src="docs/images/landing-mobile-sidemenu.png" alt="ランディングページ - モバイルサイドメニュー" style="width: 100%; height: auto;">
 </div>
 
 ---
