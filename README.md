@@ -73,15 +73,16 @@ NeuraKnot は、AI エージェントとの対話を通じて様々なタスク�
 
 ### ランディングページ
 
-![ランディングページ全体](docs/images/landing-full.png)
-
-**主要セクション**
+[View Live](https://neuraknot.net)
 
 ![ランディングページのヒーローセクション](docs/images/landing-hero.png)
 
 **モバイル表示**
 
-![ランディングページ - モバイル表示](docs/images/landing-mobile.png)
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+  <img src="docs/images/landing-mobile.png" alt="ランディングページ - モバイル表示" style="width: 100%;">
+  <img src="docs/images/landing-mobile-sidemenu.png" alt="ランディングページ - モバイルサイドメニュー" style="width: 100%;">
+</div>
 
 ---
 
