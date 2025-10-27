@@ -131,6 +131,8 @@ AI エージェントとのリアルタイム対話
 
 ![エージェント一覧](docs/images/roster.png)
 
+![サービス設定モーダル - サービスタブ](docs/images/roster-service-modal.png)
+
 **モバイル表示**
 
 <table>
