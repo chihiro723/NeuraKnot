@@ -96,7 +96,7 @@ https://neuraknot.net
 
 ### チャット画面
 
-https://neuraknot.net/dashboard/chats/[id]
+**ログイン後**: https://neuraknot.net/dashboard/chats/[id]
 
 AI エージェントとのリアルタイム対話
 
