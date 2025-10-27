@@ -94,6 +94,41 @@ https://neuraknot.net
 
 ---
 
+### 認証フロー
+
+**ログイン**: https://neuraknot.net/auth/login
+
+**サインアップ**: https://neuraknot.net/auth/signup
+
+**メール認証**: https://neuraknot.net/auth/verify
+
+ランディングページから新規登録、メール認証、ログインまでの一連のフローです。
+
+<table>
+<tr>
+<td width="50%" align="center">
+<img src="docs/images/auth-landing.png" alt="ランディングページ - 無料で始める" width="100%"><br>
+<sub>無料で始めるボタン</sub>
+</td>
+<td width="50%" align="center">
+<img src="docs/images/auth-signup.png" alt="新規登録ページ" width="100%"><br>
+<sub>新規登録</sub>
+</td>
+</tr>
+<tr>
+<td width="50%" align="center">
+<img src="docs/images/auth-verify.png" alt="メール認証ページ" width="100%"><br>
+<sub>メール認証</sub>
+</td>
+<td width="50%" align="center">
+<img src="docs/images/auth-login.png" alt="ログインページ" width="100%"><br>
+<sub>ログイン</sub>
+</td>
+</tr>
+</table>
+
+---
+
 ### チャット画面
 
 **ログイン後**: https://neuraknot.net/dashboard/chats/[id]
@@ -102,7 +137,9 @@ AI エージェントとのリアルタイム対話
 
 > **注**: ダークモード・ライトモードの切り替えに対応しています（全ページで利用可能）。以下、説明はダークモードのみ表示します。
 
-> ![チャット画面 - ダークモード](docs/images/chat-dark.png) > ![チャット画面 - ライトモード](docs/images/chat-light.png)
+![チャット画面 - ダークモード](docs/images/chat-dark.png)
+
+![チャット画面 - ライトモード](docs/images/chat-light.png)
 
 **モバイル表示**
 
@@ -162,7 +199,7 @@ AI エージェントとのリアルタイム対話
 
 **主な設定項目**
 
-- エージェント名とアイコン
+- エージェント名
 - 性格タイプ（アシスタント / クリエイティブ / 分析的 / 簡潔）
 - AI モデル（OpenAI / Anthropic / Google から選択）
 - システムプロンプト（AI の動作を細かく調整）
@@ -201,20 +238,6 @@ AI エージェントとのリアルタイム対話
 - 外部サービスの API キー登録（Slack、Notion、GitHub など）
 
 ![サービス連携一覧](docs/images/settings-services.png)
-
----
-
-### 認証画面
-
-メールアドレスとパスワードでログインできます。
-
-**ログイン**: https://neuraknot.net/auth/login
-
-**サインアップ**: https://neuraknot.net/auth/signup
-
-![ログイン画面](docs/images/auth.png)
-
-![サインアップ画面](docs/images/auth-signup.png)
 
 ---
 
