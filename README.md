@@ -79,10 +79,16 @@ https://neuraknot.net
 
 **モバイル表示**
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; max-width: 800px;">
-  <img src="docs/images/landing-mobile.png" alt="ランディングページ - モバイル表示" style="width: 100%; height: auto;">
-  <img src="docs/images/landing-mobile-sidemenu.png" alt="ランディングページ - モバイルサイドメニュー" style="width: 100%; height: auto;">
-</div>
+<table>
+<tr>
+<td width="50%">
+<img src="docs/images/landing-mobile.png" alt="ランディングページ - モバイル表示" width="100%">
+</td>
+<td width="50%">
+<img src="docs/images/landing-mobile-sidemenu.png" alt="ランディングページ - モバイルサイドメニュー" width="100%">
+</td>
+</tr>
+</table>
 
 ---
 
