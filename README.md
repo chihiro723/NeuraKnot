@@ -10,6 +10,12 @@
 
 - **本番環境**: [https://neuraknot.net](https://neuraknot.net)
 
+### システム構成図
+
+NeuraKnot は、Vercel（フロントエンド）と AWS（バックエンド）を組み合わせたクラウドネイティブなアーキテクチャで動作しています。
+
+![システム構成図](docs/images/infrastructure.png)
+
 ---
 
 ## 主な機能
@@ -20,12 +26,6 @@
 - **リアルタイムストリーミング**: レスポンスを即座に表示
 - **セキュアな認証**: AWS Cognito によるユーザー管理
 - **詳細な履歴管理**: チャット履歴、AI ツール使用履歴を完全記録
-
-### システム構成図
-
-NeuraKnot は、Vercel（フロントエンド）と AWS（バックエンド）を組み合わせたクラウドネイティブなアーキテクチャで動作しています。
-
-![システム構成図](docs/images/infrastructure.png)
 
 ---
 
