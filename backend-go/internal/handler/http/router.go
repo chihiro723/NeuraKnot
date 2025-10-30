@@ -11,6 +11,7 @@ import (
 	"backend-go/internal/infrastructure/persistence"
 	userrepo "backend-go/internal/infrastructure/persistence/user"
 	aiusecase "backend-go/internal/usecase/ai"
+	analyticsusecase "backend-go/internal/usecase/analytics"
 	chatusecase "backend-go/internal/usecase/chat"
 	serviceusecase "backend-go/internal/usecase/service"
 	userusecase "backend-go/internal/usecase/user"
@@ -91,8 +92,13 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 	// Prompt関連のハンドラー
 	promptHandler := NewPromptHandler(cfg.AIService.URL)
 
+	// Analytics関連のハンドラー
+	analyticsRepo := persistence.NewAnalyticsRepository(db.DB)
+	analyticsUsecase := analyticsusecase.NewAnalyticsUsecase(analyticsRepo)
+	analyticsHandler := NewAnalyticsHandler(analyticsUsecase)
+
 	// ルートを設定
-	setupRoutes(engine, userHandler, aiAgentHandler, chatHandler, serviceHandler, promptHandler, authService)
+	setupRoutes(engine, userHandler, aiAgentHandler, chatHandler, serviceHandler, promptHandler, analyticsHandler, authService)
 
 	return &Router{
 		engine: engine,
@@ -100,7 +106,7 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 }
 
 // setupRoutes ルートを設定
-func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *AIAgentHandler, chatHandler *ChatHandler, serviceHandler *ServiceHandler, promptHandler *PromptHandler, authService user.AuthService) {
+func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *AIAgentHandler, chatHandler *ChatHandler, serviceHandler *ServiceHandler, promptHandler *PromptHandler, analyticsHandler *AnalyticsHandler, authService user.AuthService) {
 	// ヘルスチェック（ALB用に/api/healthも追加）
 	engine.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -193,6 +199,13 @@ func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *A
 		prompts.Use(authMiddleware.RequireAuth())
 		{
 			prompts.POST("/enhance", promptHandler.EnhancePrompt)
+		}
+
+		// 統計・分析関連（認証必要）
+		analyticsRoutes := v1.Group("/analytics")
+		analyticsRoutes.Use(authMiddleware.RequireAuth())
+		{
+			analyticsRoutes.GET("", analyticsHandler.GetUserAnalytics)
 		}
 	}
 }

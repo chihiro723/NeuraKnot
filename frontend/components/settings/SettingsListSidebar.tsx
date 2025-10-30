@@ -122,9 +122,6 @@ export function SettingsListSidebar({ profile }: SettingsListSidebarProps) {
             <h3 className="flex items-center font-medium text-gray-900 dark:text-white lg:text-sm">
               <BarChart3 className="mr-2 w-5 h-5" />
               統計・分析
-              <span className="ml-2 px-2 py-0.5 text-[10px] font-medium text-gray-600 bg-gray-100 rounded dark:text-gray-400 dark:bg-gray-700">
-                近日追加予定
-              </span>
             </h3>
             <ChevronRight className="flex-shrink-0 w-5 h-5 text-gray-400 dark:text-gray-500" />
           </div>

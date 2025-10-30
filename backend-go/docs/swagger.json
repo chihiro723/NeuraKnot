@@ -18,6 +18,61 @@
     "host": "localhost:8080",
     "basePath": "/api/v1",
     "paths": {
+        "/analytics": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "認証済みユーザーの統計データ（トークン使用量、活動量、エージェントパフォーマンス、ツール使用統計、サービス連携状況）を取得します",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "ユーザーの統計データを取得",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "all",
+                        "description": "期間フィルター (today, week, month, all)",
+                        "name": "time_range",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "統計データ取得成功",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.AnalyticsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/ai-agents": {
             "get": {
                 "security": [
@@ -2217,6 +2272,58 @@
                 }
             }
         },
+        "backend-go_internal_handler_http_response.ActivityStatsResponse": {
+            "type": "object",
+            "properties": {
+                "active_conversations": {
+                    "type": "integer"
+                },
+                "ai_messages": {
+                    "type": "integer"
+                },
+                "average_response_time_ms": {
+                    "type": "number"
+                },
+                "daily_activity": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/backend-go_internal_handler_http_response.DailyActivityPointResponse"
+                    }
+                },
+                "total_conversations": {
+                    "type": "integer"
+                },
+                "total_messages": {
+                    "type": "integer"
+                },
+                "user_messages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_response.AgentPerformanceResponse": {
+            "type": "object",
+            "properties": {
+                "agent_id": {
+                    "type": "string"
+                },
+                "agent_name": {
+                    "type": "string"
+                },
+                "average_response_time_ms": {
+                    "type": "number"
+                },
+                "message_count": {
+                    "type": "integer"
+                },
+                "tools_used": {
+                    "type": "integer"
+                },
+                "total_tokens": {
+                    "type": "integer"
+                }
+            }
+        },
         "backend-go_internal_handler_http_response.AgentResponse": {
             "type": "object",
             "properties": {
@@ -2324,6 +2431,29 @@
                 }
             }
         },
+        "backend-go_internal_handler_http_response.AnalyticsResponse": {
+            "type": "object",
+            "properties": {
+                "activity_stats": {
+                    "$ref": "#/definitions/backend-go_internal_handler_http_response.ActivityStatsResponse"
+                },
+                "agent_performance": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/backend-go_internal_handler_http_response.AgentPerformanceResponse"
+                    }
+                },
+                "service_stats": {
+                    "$ref": "#/definitions/backend-go_internal_handler_http_response.ServiceStatsResponse"
+                },
+                "token_stats": {
+                    "$ref": "#/definitions/backend-go_internal_handler_http_response.TokenStatsResponse"
+                },
+                "tool_usage_stats": {
+                    "$ref": "#/definitions/backend-go_internal_handler_http_response.ToolUsageStatsResponse"
+                }
+            }
+        },
         "backend-go_internal_handler_http_response.AuthResultResponse": {
             "type": "object",
             "properties": {
@@ -2403,6 +2533,23 @@
                     }
                 },
                 "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_response.DailyActivityPointResponse": {
+            "type": "object",
+            "properties": {
+                "ai_messages": {
+                    "type": "integer"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "message_count": {
+                    "type": "integer"
+                },
+                "user_messages": {
                     "type": "integer"
                 }
             }
@@ -2491,6 +2638,135 @@
                 }
             }
         },
+        "backend-go_internal_handler_http_response.ServiceStatsResponse": {
+            "type": "object",
+            "properties": {
+                "by_service": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/backend-go_internal_handler_http_response.ServiceUsageStatsResponse"
+                    }
+                },
+                "disabled_services": {
+                    "type": "integer"
+                },
+                "enabled_services": {
+                    "type": "integer"
+                },
+                "total_services": {
+                    "type": "integer"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_response.ServiceUsageStatsResponse": {
+            "type": "object",
+            "properties": {
+                "agent_count": {
+                    "type": "integer"
+                },
+                "is_enabled": {
+                    "type": "boolean"
+                },
+                "service_class": {
+                    "type": "string"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_response.TokenStatsResponse": {
+            "type": "object",
+            "properties": {
+                "by_model": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/backend-go_internal_handler_http_response.TokensByModelResponse"
+                    }
+                },
+                "by_provider": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/backend-go_internal_handler_http_response.TokensByProviderResponse"
+                    }
+                },
+                "completion_tokens": {
+                    "type": "integer"
+                },
+                "estimated_cost_jpy": {
+                    "type": "number"
+                },
+                "estimated_cost_usd": {
+                    "type": "number"
+                },
+                "prompt_tokens": {
+                    "type": "integer"
+                },
+                "total_tokens": {
+                    "type": "integer"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_response.TokensByModelResponse": {
+            "type": "object",
+            "properties": {
+                "completion_tokens": {
+                    "type": "integer"
+                },
+                "estimated_cost_usd": {
+                    "type": "number"
+                },
+                "model": {
+                    "type": "string"
+                },
+                "prompt_tokens": {
+                    "type": "integer"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "total_tokens": {
+                    "type": "integer"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_response.TokensByProviderResponse": {
+            "type": "object",
+            "properties": {
+                "estimated_cost_usd": {
+                    "type": "number"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "total_tokens": {
+                    "type": "integer"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_response.ToolStatsResponse": {
+            "type": "object",
+            "properties": {
+                "average_execution_time_ms": {
+                    "type": "number"
+                },
+                "call_count": {
+                    "type": "integer"
+                },
+                "category": {
+                    "type": "string"
+                },
+                "failure_count": {
+                    "type": "integer"
+                },
+                "success_count": {
+                    "type": "integer"
+                },
+                "success_rate": {
+                    "type": "number"
+                },
+                "tool_name": {
+                    "type": "string"
+                }
+            }
+        },
         "backend-go_internal_handler_http_response.ToolUsageResponse": {
             "type": "object",
             "properties": {
@@ -2523,6 +2799,49 @@
                 },
                 "tool_name": {
                     "type": "string"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_response.ToolUsageStatsResponse": {
+            "type": "object",
+            "properties": {
+                "by_category": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/backend-go_internal_handler_http_response.ToolsByCategoryResponse"
+                    }
+                },
+                "by_tool": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/backend-go_internal_handler_http_response.ToolStatsResponse"
+                    }
+                },
+                "failed_calls": {
+                    "type": "integer"
+                },
+                "success_rate": {
+                    "type": "number"
+                },
+                "successful_calls": {
+                    "type": "integer"
+                },
+                "total_tool_calls": {
+                    "type": "integer"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_response.ToolsByCategoryResponse": {
+            "type": "object",
+            "properties": {
+                "call_count": {
+                    "type": "integer"
+                },
+                "category": {
+                    "type": "string"
+                },
+                "success_rate": {
+                    "type": "number"
                 }
             }
         },
