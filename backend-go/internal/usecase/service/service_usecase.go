@@ -57,7 +57,11 @@ func (u *ServiceUsecase) ListServices() ([]map[string]interface{}, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			u.logger.Error("Failed to read error response body", "error", err)
+			return nil, fmt.Errorf("サービス一覧の取得に失敗しました（ステータス: %d）", resp.StatusCode)
+		}
 		u.logger.Error("Python API returned error", "status", resp.StatusCode, "body", string(body))
 		return nil, fmt.Errorf("サービス一覧の取得に失敗しました（ステータス: %d）", resp.StatusCode)
 	}
@@ -87,7 +91,11 @@ func (u *ServiceUsecase) GetServiceTools(serviceClass string) ([]map[string]inte
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			u.logger.Error("Failed to read error response body", "error", err)
+			return nil, fmt.Errorf("ツール一覧の取得に失敗しました（ステータス: %d）", resp.StatusCode)
+		}
 		u.logger.Error("Python API returned error", "status", resp.StatusCode, "body", string(body))
 		return nil, fmt.Errorf("ツール一覧の取得に失敗しました（ステータス: %d）", resp.StatusCode)
 	}
@@ -332,7 +340,11 @@ func (u *ServiceUsecase) ExecuteTool(userID uuid.UUID, serviceClass, toolName st
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			u.logger.Error("Failed to read error response body", "error", err)
+			return nil, fmt.Errorf("ツールの実行に失敗しました（ステータス: %d）", resp.StatusCode)
+		}
 		u.logger.Error("Python API returned error", "status", resp.StatusCode, "body", string(body))
 		return nil, fmt.Errorf("ツールの実行に失敗しました（ステータス: %d）", resp.StatusCode)
 	}
@@ -399,7 +411,11 @@ func (u *ServiceUsecase) ValidateServiceAuth(serviceClass string, auth map[strin
 	switch resp.StatusCode {
 	case http.StatusOK:
 		// レスポンスボディを確認してエラーメッセージがないかチェック
-		body, _ := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			u.logger.Error("Failed to read response body", "error", err)
+			return fmt.Errorf("レスポンスの読み取りに失敗しました: %w", err)
+		}
 		var result map[string]interface{}
 		if err := json.Unmarshal(body, &result); err != nil {
 			u.logger.Error("Failed to parse Python API response", "error", err, "body", string(body))
@@ -449,7 +465,11 @@ func (u *ServiceUsecase) ValidateServiceAuth(serviceClass string, auth map[strin
 	case http.StatusTooManyRequests:
 		return fmt.Errorf("レート制限を超えました。しばらく待ってから再試行してください")
 	default:
-		body, _ := io.ReadAll(resp.Body)
+		body, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			u.logger.Error("Failed to read error response body", "error", readErr)
+			return fmt.Errorf("接続の確認に失敗しました（ステータス: %d）", resp.StatusCode)
+		}
 		u.logger.Error("Python API returned error during validation", "status", resp.StatusCode, "body", string(body))
 		return fmt.Errorf("接続の確認に失敗しました（ステータス: %d）", resp.StatusCode)
 	}

@@ -41,15 +41,3 @@ type UpdateAIAgentServiceInput struct {
 	SelectedTools     []string `json:"selected_tools"`
 	Enabled           *bool    `json:"enabled"`
 }
-
-
-
-
-
-
-
-
-
-
-
-

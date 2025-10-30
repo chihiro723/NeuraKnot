@@ -30,7 +30,11 @@ func (c *Connection) RunMigrations() error {
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			log.Printf("Warning: failed to rollback transaction: %v", rbErr)
+		}
+	}()
 
 	// 各マイグレーションファイルを実行
 	for _, entry := range entries {
@@ -72,7 +76,11 @@ func (c *Connection) RunMigrationsFromSQL(sqlContent string) error {
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			log.Printf("Warning: failed to rollback transaction: %v", rbErr)
+		}
+	}()
 
 	// マイグレーションを実行
 	if _, err := tx.Exec(sqlContent); err != nil {
@@ -116,7 +124,11 @@ func (c *Connection) ResetDatabase() error {
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			log.Printf("Warning: failed to rollback transaction: %v", rbErr)
+		}
+	}()
 
 	// すべてのテーブルを削除
 	_, err = tx.Exec("DROP SCHEMA public CASCADE")

@@ -56,8 +56,7 @@ func (r *ToolUsageRepository) Save(toolUsage *conversation.ToolUsage) error {
 	)
 	if err == nil {
 		// デバッグ: INSERT or UPDATE を検出
-		rowsAffected, _ := result.RowsAffected()
-		if rowsAffected > 0 {
+		if rowsAffected, affectedErr := result.RowsAffected(); affectedErr == nil && rowsAffected > 0 {
 			// RowsAffected > 1 の場合はUPDATEが発生した可能性
 			// PostgreSQLのUPSERTではINSERTで1、UPDATEで2を返す
 		}

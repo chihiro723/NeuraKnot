@@ -78,14 +78,20 @@ func (r *serviceConfigRepository) FindByID(id uuid.UUID) (*service.ServiceConfig
 	if len(encryptedConfig) > 0 && len(configNonce) > 0 {
 		decryptedConfig, err := r.enc.Decrypt(encryptedConfig, configNonce)
 		if err == nil {
-			_ = json.Unmarshal([]byte(decryptedConfig), &config.Config)
+			if unmarshalErr := json.Unmarshal([]byte(decryptedConfig), &config.Config); unmarshalErr != nil {
+				// エラーはログに記録するが、処理は継続
+				fmt.Printf("Warning: failed to unmarshal config: %v\n", unmarshalErr)
+			}
 		}
 	}
 
 	if len(encryptedAuth) > 0 && len(authNonce) > 0 {
 		decryptedAuth, err := r.enc.Decrypt(encryptedAuth, authNonce)
 		if err == nil {
-			_ = json.Unmarshal([]byte(decryptedAuth), &config.Auth)
+			if unmarshalErr := json.Unmarshal([]byte(decryptedAuth), &config.Auth); unmarshalErr != nil {
+				// エラーはログに記録するが、処理は継続
+				fmt.Printf("Warning: failed to unmarshal auth: %v\n", unmarshalErr)
+			}
 		}
 	}
 
@@ -127,14 +133,18 @@ func (r *serviceConfigRepository) FindByUserID(userID uuid.UUID) ([]service.Serv
 		if len(encryptedConfig) > 0 && len(configNonce) > 0 {
 			decryptedConfig, err := r.enc.Decrypt(encryptedConfig, configNonce)
 			if err == nil {
-				_ = json.Unmarshal([]byte(decryptedConfig), &config.Config)
+				if unmarshalErr := json.Unmarshal([]byte(decryptedConfig), &config.Config); unmarshalErr != nil {
+					fmt.Printf("Warning: failed to unmarshal config: %v\n", unmarshalErr)
+				}
 			}
 		}
 
 		if len(encryptedAuth) > 0 && len(authNonce) > 0 {
 			decryptedAuth, err := r.enc.Decrypt(encryptedAuth, authNonce)
 			if err == nil {
-				_ = json.Unmarshal([]byte(decryptedAuth), &config.Auth)
+				if unmarshalErr := json.Unmarshal([]byte(decryptedAuth), &config.Auth); unmarshalErr != nil {
+					fmt.Printf("Warning: failed to unmarshal auth: %v\n", unmarshalErr)
+				}
 			}
 		}
 
@@ -175,7 +185,9 @@ func (r *serviceConfigRepository) FindByUserAndClass(userID uuid.UUID, serviceCl
 		if err != nil {
 			return nil, nil, nil, nil, nil, fmt.Errorf("failed to decrypt config: %w", err)
 		}
-		_ = json.Unmarshal([]byte(decryptedConfig), &config.Config)
+		if unmarshalErr := json.Unmarshal([]byte(decryptedConfig), &config.Config); unmarshalErr != nil {
+			return nil, nil, nil, nil, nil, fmt.Errorf("failed to unmarshal config: %w", unmarshalErr)
+		}
 	}
 
 	if len(encryptedAuth) > 0 && len(authNonce) > 0 {
@@ -183,7 +195,9 @@ func (r *serviceConfigRepository) FindByUserAndClass(userID uuid.UUID, serviceCl
 		if err != nil {
 			return nil, nil, nil, nil, nil, fmt.Errorf("failed to decrypt auth: %w", err)
 		}
-		_ = json.Unmarshal([]byte(decryptedAuth), &config.Auth)
+		if unmarshalErr := json.Unmarshal([]byte(decryptedAuth), &config.Auth); unmarshalErr != nil {
+			return nil, nil, nil, nil, nil, fmt.Errorf("failed to unmarshal auth: %w", unmarshalErr)
+		}
 	}
 
 	return &config, encryptedConfig, configNonce, encryptedAuth, authNonce, nil
