@@ -434,9 +434,8 @@ func (h *UserHandler) SignOut(c *gin.Context) {
 
 	// トークンがある場合はCognitoのGlobalSignOutを実行
 	if err == nil && token != "" {
-		if signOutErr := h.userService.SignOut(c.Request.Context(), token); signOutErr != nil {
-			// GlobalSignOutエラーは無視（トークンが既に無効の可能性）
-		}
+		_ = h.userService.SignOut(c.Request.Context(), token)
+		// GlobalSignOutエラーは無視（トークンが既に無効の可能性）
 	}
 
 	// エラーの有無に関わらず、Cookieをクリア
