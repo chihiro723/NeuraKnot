@@ -256,10 +256,10 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
       </div>
 
       {/* メインコンテンツ */}
-      <div className="overflow-y-auto flex-1 bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+      <div className="overflow-y-auto flex-1 bg-white dark:bg-gray-900">
         <div className="p-4 mx-auto space-y-6 max-w-3xl sm:p-6">
           {/* プロフィールカード */}
-          <div className="overflow-hidden relative bg-gradient-to-br from-white rounded-2xl border shadow-xl backdrop-blur-xl to-gray-50/50 border-gray-200/50 dark:from-gray-900 dark:to-gray-800/50 dark:border-gray-700/50">
+          <div className="overflow-hidden relative bg-white rounded-2xl border shadow-lg border-gray-200/50 dark:bg-gray-800 dark:border-gray-700/50">
             <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br rounded-full blur-3xl from-green-500/10 to-emerald-500/10" />
 
             <div className="relative p-6 space-y-6 sm:p-8">
@@ -331,7 +331,7 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
 
           {/* AI設定カード */}
           {agent && (
-            <div className="p-6 space-y-4 bg-white rounded-2xl border shadow-lg border-gray-200/50 dark:bg-gray-900 dark:border-gray-700/50">
+            <div className="p-6 space-y-4 bg-white rounded-2xl border shadow-lg border-gray-200/50 dark:bg-gray-800 dark:border-gray-700/50">
               <div className="flex items-center space-x-3">
                 <div className="flex justify-center items-center w-10 h-10 bg-gradient-to-br from-purple-100 to-blue-100 rounded-xl dark:from-purple-900/30 dark:to-blue-900/30">
                   <Brain className="w-5 h-5 text-purple-600 dark:text-purple-400" />
@@ -342,7 +342,7 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-gray-50 rounded-xl dark:bg-gray-800">
+                <div className="p-3 bg-gray-50 rounded-xl dark:bg-gray-900/50">
                   <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">
                     プロバイダー
                   </p>
@@ -350,7 +350,7 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
                     {agent.provider}
                   </p>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-xl dark:bg-gray-800">
+                <div className="p-3 bg-gray-50 rounded-xl dark:bg-gray-900/50">
                   <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">
                     モデル
                   </p>
@@ -358,7 +358,7 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
                     {agent.model}
                   </p>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-xl dark:bg-gray-800">
+                <div className="p-3 bg-gray-50 rounded-xl dark:bg-gray-900/50">
                   <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">
                     創造性
                   </p>
@@ -366,7 +366,7 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
                     {agent.temperature}
                   </p>
                 </div>
-                <div className="p-3 bg-gray-50 rounded-xl dark:bg-gray-800">
+                <div className="p-3 bg-gray-50 rounded-xl dark:bg-gray-900/50">
                   <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">
                     最大トークン
                   </p>
@@ -380,7 +380,7 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
 
           {/* システムプロンプトカード */}
           {agent?.system_prompt && (
-            <div className="p-6 space-y-4 bg-white rounded-2xl border shadow-lg border-gray-200/50 dark:bg-gray-900 dark:border-gray-700/50">
+            <div className="p-6 space-y-4 bg-white rounded-2xl border shadow-lg border-gray-200/50 dark:bg-gray-800 dark:border-gray-700/50">
               <div className="flex items-center space-x-3">
                 <div className="flex justify-center items-center w-10 h-10 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl dark:from-indigo-900/30 dark:to-purple-900/30">
                   <Code className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
@@ -389,7 +389,7 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
                   カスタム指示
                 </h3>
               </div>
-              <div className="p-4 bg-gray-50 rounded-xl dark:bg-gray-800">
+              <div className="p-4 bg-gray-50 rounded-xl dark:bg-gray-900/50">
                 <p className="text-sm leading-relaxed text-gray-700 whitespace-pre-wrap dark:text-gray-300">
                   {agent.system_prompt}
                 </p>
@@ -399,7 +399,7 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
 
           {/* 連携サービスカード */}
           {services.length > 0 && (
-            <div className="p-6 space-y-4 bg-white rounded-2xl border shadow-lg border-gray-200/50 dark:bg-gray-900 dark:border-gray-700/50">
+            <div className="p-6 space-y-4 bg-white rounded-2xl border shadow-lg border-gray-200/50 dark:bg-gray-800 dark:border-gray-700/50">
               <div className="flex items-center space-x-3">
                 <div className="flex justify-center items-center w-10 h-10 bg-gradient-to-br from-yellow-100 to-orange-100 rounded-xl dark:from-yellow-900/30 dark:to-orange-900/30">
                   <Zap className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
@@ -413,7 +413,7 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
                 {services.map((serviceWithTools) => (
                   <div
                     key={serviceWithTools.agentService.id}
-                    className="p-4 bg-gray-50 rounded-xl dark:bg-gray-800"
+                    className="p-4 bg-gray-50 rounded-xl dark:bg-gray-900/50"
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1">
@@ -434,7 +434,7 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
                         {serviceWithTools.tools.map((tool) => (
                           <span
                             key={tool.name}
-                            className="px-2 py-1 text-xs text-gray-600 bg-white rounded-md dark:bg-gray-700 dark:text-gray-300"
+                            className="px-2 py-1 text-xs text-gray-600 bg-white rounded-md dark:bg-gray-800 dark:text-gray-300"
                           >
                             {tool.name}
                           </span>
@@ -449,7 +449,7 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
 
           {/* 友だちになった日 */}
           {friend.created_at && isClient && (
-            <div className="flex justify-center items-center p-4 space-x-2 text-sm text-gray-500 rounded-xl backdrop-blur-sm bg-white/50 dark:bg-gray-900/50 dark:text-gray-400">
+            <div className="flex justify-center items-center p-4 space-x-2 text-sm text-gray-500 bg-gray-50 rounded-xl dark:bg-gray-800 dark:text-gray-400">
               <Clock className="w-4 h-4" />
               <span>友だちになった日: {formatDate(friend.created_at)}</span>
             </div>
