@@ -62,10 +62,10 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 	// 暗号化サービスの初期化
 	var encryption *crypto.EncryptionService
 	if cfg.Security.EncryptionMasterKey != "" {
-		var err error
-		encryption, err = crypto.NewEncryptionService(cfg.Security.EncryptionMasterKey)
-		if err != nil {
-			log.Printf("Warning: Failed to initialize encryption service: %v", err)
+		var encErr error
+		encryption, encErr = crypto.NewEncryptionService(cfg.Security.EncryptionMasterKey)
+		if encErr != nil {
+			log.Printf("Warning: Failed to initialize encryption service: %v", encErr)
 			// 暗号化サービスなしで継続（サービス機能は制限される）
 		}
 	} else {

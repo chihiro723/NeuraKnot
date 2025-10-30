@@ -126,19 +126,19 @@ func (h *ChatHandler) SendMessage(c *gin.Context) {
 
 	// リクエストボディをパース
 	var req request.SendMessageRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Printf("ERROR: Failed to parse request body: %v", err)
-		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(err.Error()))
+	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
+		log.Printf("ERROR: Failed to parse request body: %v", bindErr)
+		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(bindErr.Error()))
 		return
 	}
 
 	// ストリーミングが有効な場合はストリーミングレスポンスを返す
 	if agent.StreamingEnabled {
 		// ストリーミング開始
-		eventChan, _, err := h.chatUsecase.SendMessageStream(c.Request.Context(), userID, conversationID, req.Content)
-		if err != nil {
-			log.Printf("ERROR: Failed to start streaming: %v", err)
-			c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
+		eventChan, _, streamErr := h.chatUsecase.SendMessageStream(c.Request.Context(), userID, conversationID, req.Content)
+		if streamErr != nil {
+			log.Printf("ERROR: Failed to start streaming: %v", streamErr)
+			c.JSON(http.StatusInternalServerError, response.NewErrorResponse(streamErr, http.StatusInternalServerError))
 			return
 		}
 
@@ -160,9 +160,9 @@ func (h *ChatHandler) SendMessage(c *gin.Context) {
 		// イベントチャネルからすべてのイベントを読み取る
 		for event := range eventChan {
 			// JSON形式でイベントをシリアライズ
-			eventJSON, err := json.Marshal(event)
-			if err != nil {
-				log.Printf("ERROR: Failed to marshal event: %v", err)
+			eventJSON, marshalErr := json.Marshal(event)
+			if marshalErr != nil {
+				log.Printf("ERROR: Failed to marshal event: %v", marshalErr)
 				continue
 			}
 
