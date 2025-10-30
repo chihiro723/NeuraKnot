@@ -45,8 +45,8 @@ export function ServiceList() {
       const services = await getUserServicesWithDetails();
       setUserServices((services || []) as UserServiceWithDetails[]);
       setError("");
-    } catch (err: any) {
-      setError(err.message || "サービス一覧の取得に失敗しました");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "サービス一覧の取得に失敗しました");
       setUserServices([]);
     } finally {
       setIsLoading(false);
@@ -76,9 +76,9 @@ export function ServiceList() {
           config: { ...selectedService.config, is_enabled: enabled },
         });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       showToast({
-        message: err.message || "状態の変更に失敗しました",
+        message: err instanceof Error ? err.message : "状態の変更に失敗しました",
         type: "error",
         duration: 5000,
       });
@@ -91,9 +91,9 @@ export function ServiceList() {
       await deleteServiceConfig(id);
       await loadServices();
       setIsModalOpen(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       showToast({
-        message: err.message || "削除に失敗しました",
+        message: err instanceof Error ? err.message : "削除に失敗しました",
         type: "error",
         duration: 5000,
       });

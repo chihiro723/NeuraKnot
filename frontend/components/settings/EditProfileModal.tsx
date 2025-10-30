@@ -75,7 +75,7 @@ export function EditProfileModal({
       } else {
         setError(result.error || "更新に失敗しました");
       }
-    } catch (err) {
+    } catch {
       setError("更新中にエラーが発生しました");
     } finally {
       setIsSaving(false);

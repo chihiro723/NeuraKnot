@@ -23,7 +23,6 @@ import {
   getAgentServices,
   addAgentService,
   updateAgentService,
-  deleteAgentService,
   deleteAgent,
 } from "@/lib/actions/ai-agent";
 import { getUserServicesWithDetails } from "@/lib/actions/services";
@@ -126,7 +125,7 @@ export function AgentSettingsModal({
     }
   };
 
-  const handleInputChange = (field: keyof UpdateAgentInput, value: any) => {
+  const handleInputChange = (field: keyof UpdateAgentInput, value: string | number | boolean | undefined) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -227,18 +226,18 @@ export function AgentSettingsModal({
     }
   };
 
-  const handleRemoveService = async (serviceId: string) => {
-    if (!agent) return;
-
-    try {
-      const result = await deleteAgentService(agent.id, serviceId);
-      if (result.success) {
-        setAgentServices((prev) => prev.filter((s) => s.id !== serviceId));
-      }
-    } catch (err) {
-      console.error("Failed to remove service:", err);
-    }
-  };
+  // TODO: 将来実装予定 - サービス削除機能
+  // const handleRemoveService = async (serviceId: string) => {
+  //   if (!agent) return;
+  //   try {
+  //     const result = await deleteAgentService(agent.id, serviceId);
+  //     if (result.success) {
+  //       setAgentServices((prev) => prev.filter((s) => s.id !== serviceId));
+  //     }
+  //   } catch (err) {
+  //     console.error("Failed to remove service:", err);
+  //   }
+  // };
 
   const handleSave = async () => {
     if (!agent) return;

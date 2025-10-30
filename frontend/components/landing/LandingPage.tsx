@@ -7,7 +7,6 @@ import {
   MessageCircle,
   Sparkles,
   Play,
-  Pause,
   User,
   DoorOpen,
   Menu,
@@ -102,7 +101,6 @@ export function LandingPage({
   profile,
   isLoading = false,
 }: LandingPageProps) {
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isAutoScrolling, setIsAutoScrolling] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -294,8 +292,7 @@ export function LandingPage({
                   >
                     <DoorOpen
                       className={`w-5 h-5 text-slate-400 group-hover:text-red-400 transition-colors ${
-                        isLoggingOut ? "animate-pulse" : ""
-                      }`}
+                        isLoggingOut ? "animate-pulse" : ""}`}
                     />
                   </button>
                 </>
@@ -511,8 +508,7 @@ export function LandingPage({
                     <div className="flex justify-center items-center mr-3 w-8 h-8 rounded-lg transition-all duration-300 bg-red-500/20 group-hover:bg-red-500/30">
                       <DoorOpen
                         className={`w-5 h-5 transition-all duration-300 ${
-                          isLoggingOut ? "animate-pulse" : ""
-                        }`}
+                          isLoggingOut ? "animate-pulse" : ""}`}
                       />
                     </div>
                     <span className="transition-all duration-300 group-hover:font-semibold">
@@ -651,7 +647,7 @@ export function LandingPage({
 
               <button
                 disabled
-                className="flex items-center px-8 py-5 rounded-2xl border backdrop-blur-sm transition-all duration-300 text-slate-400 border-slate-600/30 bg-white/3 cursor-not-allowed"
+                className="flex items-center px-8 py-5 rounded-2xl border backdrop-blur-sm transition-all duration-300 cursor-not-allowed text-slate-400 border-slate-600/30 bg-white/3"
               >
                 <Play className="mr-3 w-5 h-5" />
                 <span className="font-medium">Coming Soon</span>
@@ -1181,7 +1177,7 @@ export function LandingPage({
 
               <button
                 disabled
-                className="flex items-center px-8 py-6 rounded-2xl border backdrop-blur-sm transition-all duration-300 text-slate-400 border-slate-600/30 bg-white/3 cursor-not-allowed"
+                className="flex items-center px-8 py-6 rounded-2xl border backdrop-blur-sm transition-all duration-300 cursor-not-allowed text-slate-400 border-slate-600/30 bg-white/3"
               >
                 <Play className="mr-3 w-5 h-5" />
                 <span className="font-medium">Coming Soon</span>

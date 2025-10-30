@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Send, Smile, Paperclip, Copy, Check } from "lucide-react";
+import { Send, Smile, Paperclip } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils/cn";
@@ -13,7 +13,6 @@ import { sendMessageStream } from "@/lib/api/streaming";
 import { useServerActionsWithAuth } from "@/lib/hooks/useServerActionWithAuth";
 import { getProfile } from "@/lib/actions/user";
 import { StreamingMessage } from "./StreamingMessage";
-import { ToolUsageIndicator } from "./ToolUsageIndicator";
 import { StampPicker } from "./StampPicker";
 import { getCookie } from "@/lib/utils/cookies";
 import { formatDateSeparator, isSameDay } from "@/lib/utils/date";
@@ -59,7 +58,6 @@ export function ChatWindow({
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [newMessage, setNewMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(
     initialConversationId || null
   );
@@ -76,7 +74,6 @@ export function ChatWindow({
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [streamingTools, setStreamingTools] = useState<ToolUsageData[]>([]);
-  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const streamingContentRef = useRef(""); // ストリーミング内容の最新値を追跡
 
   // スタンプピッカーの表示状態
@@ -625,24 +622,6 @@ export function ChatWindow({
     setNewMessage((prev) => prev + stamp);
     // スタンプピッカーは開いたまま（ユーザーが✖️ボタンまたは外側をクリックするまで）
   };
-
-  const handleCopyMessage = useCallback(
-    async (messageId: string, content: string) => {
-      try {
-        await navigator.clipboard.writeText(content);
-        setCopiedMessageId(messageId);
-        setTimeout(() => setCopiedMessageId(null), 2000);
-      } catch (error) {
-        console.error("Failed to copy message:", error);
-        showToast({
-          message: "メッセージのコピーに失敗しました",
-          type: "error",
-          duration: 3000,
-        });
-      }
-    },
-    []
-  );
 
   return (
     <div className="flex overflow-hidden overscroll-none flex-col flex-1">

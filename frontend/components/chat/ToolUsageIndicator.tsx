@@ -1,14 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  ChevronDown,
-  ChevronRight,
-  CheckCircle,
-  XCircle,
-  Loader2,
-  Wrench,
-} from "lucide-react";
+import { ChevronDown, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import type { ToolUsageData } from "@/lib/types";
 
 interface ToolUsageIndicatorProps {

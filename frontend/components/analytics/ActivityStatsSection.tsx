@@ -113,9 +113,9 @@ export function ActivityStatsSection({ stats }: ActivityStatsSectionProps) {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={(entry: any) =>
+                  label={(entry: { name: string; value: number }) =>
                     `${entry.name}: ${(
-                      (entry.value / stats.total_messages) *
+                      ((entry.value as number) / stats.total_messages) *
                       100
                     ).toFixed(1)}%`
                   }

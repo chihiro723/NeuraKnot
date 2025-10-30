@@ -73,7 +73,7 @@ export function ToolUsageSection({ stats }: ToolUsageSectionProps) {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={(entry: any) =>
+                    label={(entry: { name: string; value: number }) =>
                       `${entry.name}: ${(
                         (entry.value / stats.total_tool_calls) *
                         100

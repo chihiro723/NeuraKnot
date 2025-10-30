@@ -11,7 +11,6 @@ import {
   PowerOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
-import { getServiceIcon, getServiceGradient } from "@/lib/utils/serviceIcons";
 import type { Service, Tool, ServiceConfig } from "@/lib/types/service";
 import { ConfirmModal } from "@/components/ui/modals/ConfirmModal";
 
@@ -94,10 +93,6 @@ export function ServiceDetailModal({
   };
 
   const canModify = service.type !== "built_in";
-
-  // サービスに適したアイコンとグラデーションを取得
-  const ServiceIcon = getServiceIcon(service.name);
-  const gradientClass = getServiceGradient(service.name);
 
   return (
     <div

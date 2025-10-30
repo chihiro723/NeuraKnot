@@ -73,7 +73,7 @@ export function TokenStatsSection({ stats }: TokenStatsSectionProps) {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={(entry: any) =>
+                  label={(entry: { name: string; value: number }) =>
                     `${entry.name}: ${(
                       (entry.value / stats.total_tokens) *
                       100
