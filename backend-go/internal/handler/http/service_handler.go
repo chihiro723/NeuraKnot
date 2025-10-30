@@ -252,7 +252,7 @@ func (h *ServiceHandler) DeleteServiceConfig(c *gin.Context) {
 // @Router /api/v1/services/validate [post]
 func (h *ServiceHandler) ValidateServiceAuth(c *gin.Context) {
 	var err error
-	
+
 	var input service.ValidateServiceAuthInput
 	if err = c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "入力が不正です", "details": err.Error()})
