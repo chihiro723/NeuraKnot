@@ -53,7 +53,7 @@ func (s *EncryptionService) Encrypt(plaintext string) ([]byte, []byte, error) {
 
 	// ランダムなNonceを生成（12バイト）
 	nonce := make([]byte, gcm.NonceSize())
-	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
 		return nil, nil, fmt.Errorf("failed to generate nonce: %w", err)
 	}
 
@@ -115,6 +115,8 @@ func (s *EncryptionService) EncryptToBase64(plaintext string) (ciphertextB64 str
 
 // DecryptFromBase64 はBase64エンコードされた暗号文を復号化（オプション）
 func (s *EncryptionService) DecryptFromBase64(ciphertextB64 string, nonceB64 string) (string, error) {
+	var err error
+
 	ciphertext, err := base64.StdEncoding.DecodeString(ciphertextB64)
 	if err != nil {
 		return "", fmt.Errorf("failed to decode ciphertext: %w", err)

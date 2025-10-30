@@ -6,6 +6,7 @@ import (
 	"backend-go/internal/handler/http/request"
 	"backend-go/internal/handler/http/response"
 	userusecase "backend-go/internal/usecase/user"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -434,8 +435,10 @@ func (h *UserHandler) SignOut(c *gin.Context) {
 
 	// トークンがある場合はCognitoのGlobalSignOutを実行
 	if err == nil && token != "" {
-		_ = h.userService.SignOut(c.Request.Context(), token)
-		// GlobalSignOutエラーは無視（トークンが既に無効の可能性）
+		if signOutErr := h.userService.SignOut(c.Request.Context(), token); signOutErr != nil {
+			// GlobalSignOutエラーをログに記録（トークンが既に無効の可能性があるため処理は継続）
+			log.Printf("WARN: Failed to sign out from Cognito: %v", signOutErr)
+		}
 	}
 
 	// エラーの有無に関わらず、Cookieをクリア
