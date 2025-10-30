@@ -47,6 +47,8 @@ func NewAIAgentHandler(agentUsecase *aiusecase.AgentUsecase, serviceUsecase *ser
 // @Failure 500 {object} response.ErrorResponse "サーバーエラー"
 // @Router /api/v1/ai-agents [post]
 func (h *AIAgentHandler) CreateAgent(c *gin.Context) {
+	var err error
+
 	// 認証ミドルウェアからユーザーを取得
 	user, exists := middleware.GetUserFromContext(c)
 	if !exists {
@@ -56,13 +58,14 @@ func (h *AIAgentHandler) CreateAgent(c *gin.Context) {
 
 	// リクエストボディをパース
 	var req request.CreateAgentRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err = c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(err.Error()))
 		return
 	}
 
 	// UserIDをUUIDに変換
-	userID, err := uuid.Parse(string(user.ID))
+	var userID uuid.UUID
+	userID, err = uuid.Parse(string(user.ID))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid user ID"))
 		return
@@ -75,7 +78,8 @@ func (h *AIAgentHandler) CreateAgent(c *gin.Context) {
 	}
 
 	// AI Agentを作成
-	agent, err := h.agentUsecase.CreateAgent(
+	var agent *ai.Agent
+	agent, err = h.agentUsecase.CreateAgent(
 		c.Request.Context(),
 		userID,
 		req.Name,
@@ -102,7 +106,7 @@ func (h *AIAgentHandler) CreateAgent(c *gin.Context) {
 				Enabled:           true,
 			}
 
-			if err := h.aiAgentServiceRepo.Create(agentService); err != nil {
+			if err = h.aiAgentServiceRepo.Create(agentService); err != nil {
 				// サービス紐付けエラーは警告のみ（エージェント作成は成功させる）
 				// 本来はトランザクションでロールバックすべきだが、簡易実装として継続
 				c.JSON(http.StatusCreated, response.ToAgentResponse(agent))
@@ -126,6 +130,8 @@ func (h *AIAgentHandler) CreateAgent(c *gin.Context) {
 // @Failure 500 {object} response.ErrorResponse "サーバーエラー"
 // @Router /api/v1/ai-agents [get]
 func (h *AIAgentHandler) ListAgents(c *gin.Context) {
+	var err error
+
 	// 認証ミドルウェアからユーザーを取得
 	user, exists := middleware.GetUserFromContext(c)
 	if !exists {
@@ -134,14 +140,16 @@ func (h *AIAgentHandler) ListAgents(c *gin.Context) {
 	}
 
 	// UserIDをUUIDに変換
-	userID, err := uuid.Parse(string(user.ID))
+	var userID uuid.UUID
+	userID, err = uuid.Parse(string(user.ID))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid user ID"))
 		return
 	}
 
 	// AI Agentリストを取得
-	agents, err := h.agentUsecase.GetUserAgents(c.Request.Context(), userID)
+	var agents []*ai.Agent
+	agents, err = h.agentUsecase.GetUserAgents(c.Request.Context(), userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
 		return
@@ -164,16 +172,20 @@ func (h *AIAgentHandler) ListAgents(c *gin.Context) {
 // @Failure 404 {object} response.ErrorResponse "AI Agentが見つかりません"
 // @Router /api/v1/ai-agents/{id} [get]
 func (h *AIAgentHandler) GetAgent(c *gin.Context) {
+	var err error
+
 	// IDをパース
 	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
+	var id uuid.UUID
+	id, err = uuid.Parse(idStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid agent ID"))
 		return
 	}
 
 	// AI Agentを取得
-	agent, err := h.agentUsecase.GetAgentByID(c.Request.Context(), id)
+	var agent *ai.Agent
+	agent, err = h.agentUsecase.GetAgentByID(c.Request.Context(), id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, response.NewNotFoundErrorResponse("AI Agent not found"))
 		return
@@ -198,6 +210,8 @@ func (h *AIAgentHandler) GetAgent(c *gin.Context) {
 // @Failure 403 {object} response.ErrorResponse "権限エラー"
 // @Router /api/v1/ai-agents/{id} [put]
 func (h *AIAgentHandler) UpdateAgent(c *gin.Context) {
+	var err error
+
 	// 認証ミドルウェアからユーザーを取得
 	user, exists := middleware.GetUserFromContext(c)
 	if !exists {
@@ -207,14 +221,16 @@ func (h *AIAgentHandler) UpdateAgent(c *gin.Context) {
 
 	// IDをパース
 	idStr := c.Param("id")
-	agentID, err := uuid.Parse(idStr)
+	var agentID uuid.UUID
+	agentID, err = uuid.Parse(idStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid agent ID"))
 		return
 	}
 
 	// UserIDをUUIDに変換
-	userID, err := uuid.Parse(string(user.ID))
+	var userID uuid.UUID
+	userID, err = uuid.Parse(string(user.ID))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid user ID"))
 		return
@@ -222,13 +238,14 @@ func (h *AIAgentHandler) UpdateAgent(c *gin.Context) {
 
 	// リクエストボディをパース
 	var req request.UpdateAgentRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err = c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(err.Error()))
 		return
 	}
 
 	// AI Agentを取得
-	agent, err := h.agentUsecase.GetAgentByID(c.Request.Context(), agentID)
+	var agent *ai.Agent
+	agent, err = h.agentUsecase.GetAgentByID(c.Request.Context(), agentID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, response.NewNotFoundErrorResponse("AI Agent not found"))
 		return
@@ -251,7 +268,8 @@ func (h *AIAgentHandler) UpdateAgent(c *gin.Context) {
 		agent.AvatarURL = req.AvatarURL
 	}
 	if req.PersonaType != nil {
-		personaType, err := ai.ParsePersonaType(*req.PersonaType)
+		var personaType ai.PersonaType
+		personaType, err = ai.ParsePersonaType(*req.PersonaType)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid persona type"))
 			return
@@ -259,7 +277,8 @@ func (h *AIAgentHandler) UpdateAgent(c *gin.Context) {
 		agent.PersonaType = personaType
 	}
 	if req.Provider != nil {
-		provider, err := ai.ParseProvider(*req.Provider)
+		var provider ai.Provider
+		provider, err = ai.ParseProvider(*req.Provider)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid provider"))
 			return
@@ -286,13 +305,13 @@ func (h *AIAgentHandler) UpdateAgent(c *gin.Context) {
 	}
 
 	// バリデーション
-	if err := agent.Validate(); err != nil {
+	if err = agent.Validate(); err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(err.Error()))
 		return
 	}
 
 	// 更新
-	if err := h.agentUsecase.UpdateAgent(c.Request.Context(), agent); err != nil {
+	if err = h.agentUsecase.UpdateAgent(c.Request.Context(), agent); err != nil {
 		c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
 		return
 	}
@@ -315,6 +334,8 @@ func (h *AIAgentHandler) UpdateAgent(c *gin.Context) {
 // @Failure 403 {object} response.ErrorResponse "権限エラー"
 // @Router /api/v1/ai-agents/{id}/services [get]
 func (h *AIAgentHandler) GetAgentServices(c *gin.Context) {
+	var err error
+	
 	// 認証ミドルウェアからユーザーを取得
 	user, exists := middleware.GetUserFromContext(c)
 	if !exists {
@@ -324,21 +345,24 @@ func (h *AIAgentHandler) GetAgentServices(c *gin.Context) {
 
 	// IDをパース
 	idStr := c.Param("id")
-	agentID, err := uuid.Parse(idStr)
+	var agentID uuid.UUID
+	agentID, err = uuid.Parse(idStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid agent ID"))
 		return
 	}
 
 	// UserIDをUUIDに変換
-	userID, err := uuid.Parse(string(user.ID))
+	var userID uuid.UUID
+	userID, err = uuid.Parse(string(user.ID))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid user ID"))
 		return
 	}
 
 	// AI Agentを取得して所有者チェック
-	agent, err := h.agentUsecase.GetAgentByID(c.Request.Context(), agentID)
+	var agent *ai.Agent
+	agent, err = h.agentUsecase.GetAgentByID(c.Request.Context(), agentID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, response.NewNotFoundErrorResponse("AI Agent not found"))
 		return
@@ -350,7 +374,8 @@ func (h *AIAgentHandler) GetAgentServices(c *gin.Context) {
 	}
 
 	// サービス一覧を取得
-	services, err := h.aiAgentServiceRepo.FindByAgentID(agentID)
+	var services []*service.AIAgentService
+	services, err = h.aiAgentServiceRepo.FindByAgentID(agentID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
 		return
@@ -391,6 +416,8 @@ func (h *AIAgentHandler) GetAgentServices(c *gin.Context) {
 // @Failure 403 {object} response.ErrorResponse "権限エラー"
 // @Router /api/v1/ai-agents/{id}/services [post]
 func (h *AIAgentHandler) AddAgentService(c *gin.Context) {
+	var err error
+	
 	// 認証ミドルウェアからユーザーを取得
 	user, exists := middleware.GetUserFromContext(c)
 	if !exists {
@@ -400,21 +427,24 @@ func (h *AIAgentHandler) AddAgentService(c *gin.Context) {
 
 	// IDをパース
 	idStr := c.Param("id")
-	agentID, err := uuid.Parse(idStr)
+	var agentID uuid.UUID
+	agentID, err = uuid.Parse(idStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid agent ID"))
 		return
 	}
 
 	// UserIDをUUIDに変換
-	userID, err := uuid.Parse(string(user.ID))
+	var userID uuid.UUID
+	userID, err = uuid.Parse(string(user.ID))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid user ID"))
 		return
 	}
 
 	// AI Agentを取得して所有者チェック
-	agent, err := h.agentUsecase.GetAgentByID(c.Request.Context(), agentID)
+	var agent *ai.Agent
+	agent, err = h.agentUsecase.GetAgentByID(c.Request.Context(), agentID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, response.NewNotFoundErrorResponse("AI Agent not found"))
 		return
@@ -427,13 +457,14 @@ func (h *AIAgentHandler) AddAgentService(c *gin.Context) {
 
 	// リクエストボディをパース
 	var input service.CreateAIAgentServiceInput
-	if err := c.ShouldBindJSON(&input); err != nil {
+	if err = c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(err.Error()))
 		return
 	}
 
 	// サービスを追加
-	agentService, err := h.serviceUsecase.CreateAIAgentService(agentID, &input)
+	var agentService *service.AIAgentService
+	agentService, err = h.serviceUsecase.CreateAIAgentService(agentID, &input)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
 		return
@@ -470,6 +501,8 @@ func (h *AIAgentHandler) AddAgentService(c *gin.Context) {
 // @Failure 403 {object} response.ErrorResponse "権限エラー"
 // @Router /api/v1/ai-agents/{id}/services/{service_id} [put]
 func (h *AIAgentHandler) UpdateAgentService(c *gin.Context) {
+	var err error
+	
 	// 認証ミドルウェアからユーザーを取得
 	user, exists := middleware.GetUserFromContext(c)
 	if !exists {
@@ -479,28 +512,32 @@ func (h *AIAgentHandler) UpdateAgentService(c *gin.Context) {
 
 	// IDをパース
 	agentIDStr := c.Param("id")
-	agentID, err := uuid.Parse(agentIDStr)
+	var agentID uuid.UUID
+	agentID, err = uuid.Parse(agentIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid agent ID"))
 		return
 	}
 
 	serviceIDStr := c.Param("service_id")
-	serviceID, err := uuid.Parse(serviceIDStr)
+	var serviceID uuid.UUID
+	serviceID, err = uuid.Parse(serviceIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid service ID"))
 		return
 	}
 
 	// UserIDをUUIDに変換
-	userID, err := uuid.Parse(string(user.ID))
+	var userID uuid.UUID
+	userID, err = uuid.Parse(string(user.ID))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid user ID"))
 		return
 	}
 
 	// AI Agentを取得して所有者チェック
-	agent, err := h.agentUsecase.GetAgentByID(c.Request.Context(), agentID)
+	var agent *ai.Agent
+	agent, err = h.agentUsecase.GetAgentByID(c.Request.Context(), agentID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, response.NewNotFoundErrorResponse("AI Agent not found"))
 		return
@@ -513,13 +550,14 @@ func (h *AIAgentHandler) UpdateAgentService(c *gin.Context) {
 
 	// リクエストボディをパース
 	var input service.UpdateAIAgentServiceInput
-	if err := c.ShouldBindJSON(&input); err != nil {
+	if err = c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(err.Error()))
 		return
 	}
 
 	// サービスを取得（IDで検索する必要があるが、現在のRepositoryにはID検索がないため、エージェントの全サービスから検索）
-	services, err := h.aiAgentServiceRepo.FindByAgentID(agentID)
+	var services []*service.AIAgentService
+	services, err = h.aiAgentServiceRepo.FindByAgentID(agentID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
 		return
@@ -550,7 +588,7 @@ func (h *AIAgentHandler) UpdateAgentService(c *gin.Context) {
 	}
 
 	// 更新
-	if err := h.aiAgentServiceRepo.Update(agentService); err != nil {
+	if err = h.aiAgentServiceRepo.Update(agentService); err != nil {
 		c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
 		return
 	}
@@ -585,6 +623,8 @@ func (h *AIAgentHandler) UpdateAgentService(c *gin.Context) {
 // @Failure 403 {object} response.ErrorResponse "権限エラー"
 // @Router /api/v1/ai-agents/{id}/services/{service_id} [delete]
 func (h *AIAgentHandler) DeleteAgentService(c *gin.Context) {
+	var err error
+	
 	// 認証ミドルウェアからユーザーを取得
 	user, exists := middleware.GetUserFromContext(c)
 	if !exists {
@@ -594,28 +634,32 @@ func (h *AIAgentHandler) DeleteAgentService(c *gin.Context) {
 
 	// IDをパース
 	agentIDStr := c.Param("id")
-	agentID, err := uuid.Parse(agentIDStr)
+	var agentID uuid.UUID
+	agentID, err = uuid.Parse(agentIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid agent ID"))
 		return
 	}
 
 	serviceIDStr := c.Param("service_id")
-	serviceID, err := uuid.Parse(serviceIDStr)
+	var serviceID uuid.UUID
+	serviceID, err = uuid.Parse(serviceIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid service ID"))
 		return
 	}
 
 	// UserIDをUUIDに変換
-	userID, err := uuid.Parse(string(user.ID))
+	var userID uuid.UUID
+	userID, err = uuid.Parse(string(user.ID))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid user ID"))
 		return
 	}
 
 	// AI Agentを取得して所有者チェック
-	agent, err := h.agentUsecase.GetAgentByID(c.Request.Context(), agentID)
+	var agent *ai.Agent
+	agent, err = h.agentUsecase.GetAgentByID(c.Request.Context(), agentID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, response.NewNotFoundErrorResponse("AI Agent not found"))
 		return
@@ -627,7 +671,7 @@ func (h *AIAgentHandler) DeleteAgentService(c *gin.Context) {
 	}
 
 	// サービスを削除
-	if err := h.aiAgentServiceRepo.Delete(serviceID); err != nil {
+	if err = h.aiAgentServiceRepo.Delete(serviceID); err != nil {
 		c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
 		return
 	}
@@ -649,6 +693,8 @@ func (h *AIAgentHandler) DeleteAgentService(c *gin.Context) {
 // @Failure 403 {object} response.ErrorResponse "権限エラー"
 // @Router /api/v1/ai-agents/{id} [delete]
 func (h *AIAgentHandler) DeleteAgent(c *gin.Context) {
+	var err error
+	
 	// 認証ミドルウェアからユーザーを取得
 	user, exists := middleware.GetUserFromContext(c)
 	if !exists {
@@ -658,21 +704,24 @@ func (h *AIAgentHandler) DeleteAgent(c *gin.Context) {
 
 	// IDをパース
 	agentIDStr := c.Param("id")
-	agentID, err := uuid.Parse(agentIDStr)
+	var agentID uuid.UUID
+	agentID, err = uuid.Parse(agentIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid agent ID"))
 		return
 	}
 
 	// UserIDをUUIDに変換
-	userID, err := uuid.Parse(string(user.ID))
+	var userID uuid.UUID
+	userID, err = uuid.Parse(string(user.ID))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid user ID"))
 		return
 	}
 
 	// AI Agentを取得して所有者チェック
-	agent, err := h.agentUsecase.GetAgentByID(c.Request.Context(), agentID)
+	var agent *ai.Agent
+	agent, err = h.agentUsecase.GetAgentByID(c.Request.Context(), agentID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, response.NewNotFoundErrorResponse("AI Agent not found"))
 		return
@@ -684,7 +733,7 @@ func (h *AIAgentHandler) DeleteAgent(c *gin.Context) {
 	}
 
 	// AI Agentを削除
-	if err := h.agentUsecase.DeleteAgent(c.Request.Context(), agentID); err != nil {
+	if err = h.agentUsecase.DeleteAgent(c.Request.Context(), agentID); err != nil {
 		c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
 		return
 	}
