@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/lib/contexts/ThemeContext";
+import { ToastContainer } from "@/components/ui/ToastContainer";
 import { SEO_CONFIG, STRUCTURED_DATA } from "@/lib/constants/seo";
 
 // アプリケーション全体のメタデータ設定
@@ -136,7 +137,10 @@ export default function RootLayout({
         />
       </head>
       <body suppressHydrationWarning className="app-dvh">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          {children}
+          <ToastContainer />
+        </ThemeProvider>
       </body>
     </html>
   );

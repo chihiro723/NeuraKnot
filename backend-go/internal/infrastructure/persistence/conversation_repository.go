@@ -85,14 +85,28 @@ func (r *ConversationRepositoryImpl) FindByUserAndAgent(ctx context.Context, use
 	return conv, nil
 }
 
-// FindByUserID はユーザーIDで会話リストを取得
+// FindByUserID はユーザーIDで会話リストを取得（最後のメッセージを含む）
 func (r *ConversationRepositoryImpl) FindByUserID(ctx context.Context, userID uuid.UUID) ([]*conversation.Conversation, error) {
 	query := `
+		WITH latest_messages AS (
+			SELECT DISTINCT ON (conversation_id)
+				conversation_id,
+				id,
+				sender_type,
+				sender_id,
+				content,
+				created_at
+			FROM messages
+			WHERE content != ''
+			ORDER BY conversation_id, created_at DESC
+		)
 		SELECT 
-			id, user_id, ai_agent_id, message_count, last_message_at, created_at, updated_at
-		FROM conversations
-		WHERE user_id = $1
-		ORDER BY last_message_at DESC NULLS LAST, created_at DESC
+			c.id, c.user_id, c.ai_agent_id, c.message_count, c.last_message_at, c.created_at, c.updated_at,
+			lm.id, lm.sender_type, lm.sender_id, lm.content, lm.created_at
+		FROM conversations c
+		LEFT JOIN latest_messages lm ON c.id = lm.conversation_id
+		WHERE c.user_id = $1
+		ORDER BY c.last_message_at DESC NULLS LAST, c.created_at DESC
 	`
 
 	rows, err := r.db.QueryContext(ctx, query, userID)
@@ -104,12 +118,46 @@ func (r *ConversationRepositoryImpl) FindByUserID(ctx context.Context, userID uu
 	conversations := []*conversation.Conversation{}
 	for rows.Next() {
 		conv := &conversation.Conversation{}
+
+		// メッセージ用の変数（NULL許可）
+		var msgID, msgSenderID sql.NullString
+		var msgSenderType, msgContent sql.NullString
+		var msgCreatedAt sql.NullTime
+
 		err := rows.Scan(
 			&conv.ID, &conv.UserID, &conv.AIAgentID, &conv.MessageCount, &conv.LastMessageAt, &conv.CreatedAt, &conv.UpdatedAt,
+			&msgID, &msgSenderType, &msgSenderID, &msgContent, &msgCreatedAt,
 		)
 		if err != nil {
 			return nil, err
 		}
+
+		// 最後のメッセージが存在する場合は設定
+		if msgID.Valid {
+			parsedMsgID, err := uuid.Parse(msgID.String)
+			if err != nil {
+				return nil, err
+			}
+			parsedSenderID, err := uuid.Parse(msgSenderID.String)
+			if err != nil {
+				return nil, err
+			}
+
+			senderType, err := conversation.ParseSenderType(msgSenderType.String)
+			if err != nil {
+				return nil, err
+			}
+
+			conv.LastMessage = &conversation.Message{
+				ID:             parsedMsgID,
+				ConversationID: conv.ID,
+				SenderType:     senderType,
+				SenderID:       parsedSenderID,
+				Content:        msgContent.String,
+				CreatedAt:      msgCreatedAt.Time,
+			}
+		}
+
 		conversations = append(conversations, conv)
 	}
 

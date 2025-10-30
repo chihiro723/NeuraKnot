@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Send, Smile, Paperclip, Copy, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -15,6 +16,8 @@ import { StreamingMessage } from "./StreamingMessage";
 import { ToolUsageIndicator } from "./ToolUsageIndicator";
 import { StampPicker } from "./StampPicker";
 import { getCookie } from "@/lib/utils/cookies";
+import { formatDateSeparator, isSameDay } from "@/lib/utils/date";
+import { showToast } from "@/components/ui/ToastContainer";
 import type {
   StreamEvent,
   ToolUsageData,
@@ -53,6 +56,7 @@ export function ChatWindow({
   initialConversationId,
   initialUserProfile,
 }: ChatWindowProps) {
+  const router = useRouter();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -307,6 +311,11 @@ export function ChatWindow({
     };
     setMessages((prev) => [...prev, tempUserMessage]);
 
+    // サイドバーにユーザーメッセージを表示（少し遅延を入れてDBの書き込みを待つ）
+    setTimeout(() => {
+      router.refresh();
+    }, 500);
+
     // メッセージ送信後、新しいメッセージが画面の一番上に表示されるようにスクロール
     // DOMの更新を待つために複数のrequestAnimationFrameを使用
     requestAnimationFrame(() => {
@@ -459,6 +468,9 @@ export function ChatWindow({
                   if (result.success && result.data) {
                     const newMessages = result.data.messages || [];
 
+                    // サイドバーの会話リストを更新（リアルタイム反映）
+                    router.refresh();
+
                     // 最新のAIメッセージ（今ストリーミングしたもの）を見つけて、ツール位置情報をDBに保存
                     if (newMessages.length > 0) {
                       const latestAIMessage = newMessages.find(
@@ -537,9 +549,12 @@ export function ChatWindow({
                 setStreamingContent("");
                 setStreamingTools([]);
                 // ユーザーフレンドリーなエラーメッセージを表示
-                alert(
-                  "メッセージの送信中にエラーが発生しました。もう一度お試しください。"
-                );
+                showToast({
+                  message:
+                    "メッセージの送信中にエラーが発生しました。もう一度お試しください。",
+                  type: "error",
+                  duration: 5000,
+                });
                 break;
             }
           },
@@ -551,7 +566,11 @@ export function ChatWindow({
             setMessages((prev) =>
               prev.filter((m) => m.id !== tempUserMessage.id)
             );
-            alert("メッセージの送信に失敗しました: " + error);
+            showToast({
+              message: `メッセージの送信に失敗しました: ${error}`,
+              type: "error",
+              duration: 5000,
+            });
           }
         );
       } catch (error) {
@@ -559,8 +578,14 @@ export function ChatWindow({
         setIsStreaming(false);
         setStreamingContent("");
         setStreamingTools([]);
+        // オプティミスティックUIで追加したメッセージを削除
         setMessages((prev) => prev.filter((m) => m.id !== tempUserMessage.id));
-        alert("メッセージの送信に失敗しました");
+        // エラー通知を表示
+        showToast({
+          message: "メッセージの送信に失敗しました。もう一度お試しください。",
+          type: "error",
+          duration: 5000,
+        });
       }
     }
   }, [
@@ -587,10 +612,12 @@ export function ChatWindow({
 
   const formatTime = useCallback((dateString: string) => {
     const date = new Date(dateString);
-    // サーバーとクライアントで一貫した時刻表示のため、UTCベースで計算
-    const hours = date.getHours().toString().padStart(2, "0");
-    const minutes = date.getMinutes().toString().padStart(2, "0");
-    return `${hours}:${minutes}`;
+    // 午前/午後表記で時刻を表示
+    return date.toLocaleTimeString("ja-JP", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
   }, []);
 
   const handleStampSelect = (stamp: string) => {
@@ -607,131 +634,189 @@ export function ChatWindow({
         setTimeout(() => setCopiedMessageId(null), 2000);
       } catch (error) {
         console.error("Failed to copy message:", error);
-        alert("メッセージのコピーに失敗しました");
+        showToast({
+          message: "メッセージのコピーに失敗しました",
+          type: "error",
+          duration: 3000,
+        });
       }
     },
     []
   );
 
   return (
-    <div className="flex overflow-hidden flex-col flex-1 overscroll-none">
+    <div className="flex overflow-hidden overscroll-none flex-col flex-1">
       {/* メッセージエリア */}
       <div
         ref={messagesContainerRef}
+        role="log"
+        aria-live="polite"
+        aria-label="チャットメッセージ"
         className="overflow-y-auto overflow-x-hidden flex-1 pt-4 px-3 pb-0 md:px-4 w-full bg-gray-50 dark:bg-gray-900 lg:pt-6 lg:px-6 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] overscroll-contain touch-pan-y"
       >
         <div className="space-y-4 md:space-y-6">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              id={`message-${message.id}`}
-              className={`flex ${
-                message.sender_type === "user" ? "justify-end" : "justify-start"
-              }`}
-            >
-              <div
-                className={`flex items-end space-x-2 md:space-x-3 ${
-                  message.sender_type === "user"
-                    ? "flex-row-reverse space-x-reverse max-w-[90%] md:max-w-[75%]"
-                    : "max-w-[90%] md:max-w-[75%] overflow-hidden"
-                }`}
-              >
-                {message.sender_type === "user" ? (
-                  /* 自分のメッセージ（右側） */
-                  <div className="flex flex-row-reverse flex-1 items-start space-x-3 space-x-reverse min-w-0">
-                    {/* 自分のアイコン */}
-                    <div className="flex overflow-hidden flex-shrink-0 justify-center items-center w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full shadow-md md:w-10 md:h-10 shadow-green-500/40">
-                      {currentUser?.avatar_url ? (
-                        <img
-                          src={currentUser.avatar_url}
-                          alt={currentUser.display_name || currentUser.username}
-                          className="object-cover w-full h-full"
-                        />
-                      ) : (
-                        <span className="text-xs font-medium text-white md:text-sm">
-                          {(
-                            currentUser?.display_name ||
-                            currentUser?.username ||
-                            "U"
-                          ).charAt(0)}
-                        </span>
-                      )}
+          {messages.map((message, index) => {
+            // 前のメッセージと日付が異なる場合、日付セパレーターを表示
+            const showDateSeparator =
+              index === 0 ||
+              !isSameDay(
+                new Date(messages[index - 1].created_at),
+                new Date(message.created_at)
+              );
+
+            return (
+              <div key={message.id}>
+                {/* 日付セパレーター */}
+                {showDateSeparator && (
+                  <div
+                    className="flex justify-center items-center my-6 animate-fadeIn"
+                    role="separator"
+                    aria-label={`日付: ${formatDateSeparator(
+                      message.created_at
+                    )}`}
+                  >
+                    <div className="px-3 py-1 text-xs text-gray-500 rounded-full shadow-sm backdrop-blur-sm transition-all bg-gray-100/80 dark:text-gray-400 dark:bg-gray-800/80 hover:scale-105">
+                      {formatDateSeparator(message.created_at)}
                     </div>
+                  </div>
+                )}
 
-                    {/* 右側のコンテンツ */}
-                    <div className="flex overflow-hidden flex-col flex-1 items-end space-y-1 min-w-0 max-w-full">
-                      {/* 名前 */}
-                      <span className="text-xs font-medium text-gray-600 md:text-sm dark:text-gray-400">
-                        {currentUser?.display_name ||
-                          currentUser?.username ||
-                          "あなた"}
-                      </span>
-
-                      <div className="flex space-x-2 min-w-0 max-w-full">
-                        {/* タイムスタンプ（吹き出しの左側、下） */}
-                        <span className="flex-shrink-0 self-end pb-1 text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
-                          {isClient ? formatTime(message.created_at) : "--:--"}
-                        </span>
-
-                        {/* メッセージバブル */}
-                        <div
-                          className={cn(
-                            "overflow-hidden px-3 py-2 min-w-0 max-w-full break-words rounded-2xl rounded-tr-sm shadow-sm md:px-4 md:py-3",
-                            "text-white bg-gradient-to-br from-green-500 to-emerald-600 shadow-green-500/30"
+                {/* メッセージ */}
+                <div
+                  id={`message-${message.id}`}
+                  className={`flex ${
+                    message.sender_type === "user"
+                      ? "justify-end"
+                      : "justify-start"
+                  }`}
+                >
+                  <div
+                    className={`flex items-end space-x-2 md:space-x-3 ${
+                      message.sender_type === "user"
+                        ? "flex-row-reverse space-x-reverse max-w-[90%] md:max-w-[75%]"
+                        : "max-w-[90%] md:max-w-[75%] overflow-hidden"
+                    }`}
+                  >
+                    {message.sender_type === "user" ? (
+                      /* 自分のメッセージ（右側） */
+                      <div className="flex flex-row-reverse flex-1 items-start space-x-3 space-x-reverse min-w-0">
+                        {/* 自分のアイコン */}
+                        <div className="flex overflow-hidden flex-shrink-0 justify-center items-center w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full shadow-md md:w-10 md:h-10 shadow-green-500/40">
+                          {currentUser?.avatar_url ? (
+                            <img
+                              src={currentUser.avatar_url}
+                              alt={
+                                currentUser.display_name || currentUser.username
+                              }
+                              className="object-cover w-full h-full"
+                            />
+                          ) : (
+                            <span className="text-xs font-medium text-white md:text-sm">
+                              {(
+                                currentUser?.display_name ||
+                                currentUser?.username ||
+                                "U"
+                              ).charAt(0)}
+                            </span>
                           )}
-                        >
-                          <div className="max-w-full text-sm leading-relaxed break-words lg:text-base overflow-wrap-anywhere word-break-break-word markdown-chat">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                              {message.content}
-                            </ReactMarkdown>
+                        </div>
+
+                        {/* 右側のコンテンツ */}
+                        <div className="flex overflow-hidden flex-col flex-1 items-end space-y-1 min-w-0 max-w-full">
+                          {/* 名前 */}
+                          <span className="text-xs font-medium text-gray-600 md:text-sm dark:text-gray-400">
+                            {currentUser?.display_name ||
+                              currentUser?.username ||
+                              "あなた"}
+                          </span>
+
+                          <div className="flex space-x-1 min-w-0 max-w-full">
+                            {/* タイムスタンプ（吹き出しの左側、下） */}
+                            <span className="flex-shrink-0 self-end pb-1 text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
+                              {isClient
+                                ? formatTime(message.created_at)
+                                : "--:--"}
+                            </span>
+
+                            {/* メッセージバブル */}
+                            <div
+                              className={cn(
+                                "overflow-hidden px-3 py-2 min-w-0 max-w-full break-words rounded-2xl rounded-tr-sm shadow-sm md:px-4 md:py-3",
+                                "text-white bg-gradient-to-br from-green-500 to-emerald-600 shadow-green-500/30"
+                              )}
+                            >
+                              <div className="max-w-full text-sm leading-relaxed break-words lg:text-base overflow-wrap-anywhere word-break-break-word markdown-chat">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                  {message.content}
+                                </ReactMarkdown>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      /* AIメッセージ（左側） - StreamingMessageコンポーネントを使用 */
+                      <StreamingMessage
+                        content={message.content}
+                        tools={
+                          message.tool_usages
+                            ? message.tool_usages.map((toolUsage) => ({
+                                tool_id: toolUsage.id,
+                                tool_name: toolUsage.tool_name,
+                                status: toolUsage.status,
+                                input: JSON.parse(toolUsage.input_data),
+                                output: toolUsage.output_data,
+                                error: toolUsage.error_message,
+                                execution_time_ms: toolUsage.execution_time_ms,
+                                insertPosition: toolUsage.insert_position,
+                                expanded: false,
+                              }))
+                            : []
+                        }
+                        avatarUrl={selectedChat.avatar_url}
+                        name={selectedChat.name}
+                        showCursor={false}
+                        agentId={selectedChat.id}
+                      />
+                    )}
                   </div>
-                ) : (
-                  /* AIメッセージ（左側） - StreamingMessageコンポーネントを使用 */
-                  <StreamingMessage
-                    content={message.content}
-                    tools={
-                      message.tool_usages
-                        ? message.tool_usages.map((toolUsage) => ({
-                            tool_id: toolUsage.id,
-                            tool_name: toolUsage.tool_name,
-                            status: toolUsage.status,
-                            input: JSON.parse(toolUsage.input_data),
-                            output: toolUsage.output_data,
-                            error: toolUsage.error_message,
-                            execution_time_ms: toolUsage.execution_time_ms,
-                            insertPosition: toolUsage.insert_position,
-                            expanded: false,
-                          }))
-                        : []
-                    }
-                    avatarUrl={selectedChat.avatar_url}
-                    name={selectedChat.name}
-                    showCursor={false}
-                    agentId={selectedChat.id}
-                  />
-                )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {/* ストリーミングメッセージ（最初のトークンが来てから表示） */}
           {isStreaming && streamingContent && (
-            <div className="flex justify-start">
-              <div className="flex items-end space-x-2 md:space-x-3 max-w-[90%] md:max-w-[75%] overflow-hidden">
-                <StreamingMessage
-                  content={streamingContent}
-                  tools={streamingTools}
-                  avatarUrl={selectedChat.avatar_url}
-                  name={selectedChat.name}
-                  showCursor={true}
-                  agentId={selectedChat.id}
-                />
+            <>
+              {/* ストリーミングメッセージの日付セパレーター（最後のメッセージと日付が異なる場合） */}
+              {messages.length > 0 &&
+                !isSameDay(
+                  new Date(messages[messages.length - 1].created_at),
+                  new Date()
+                ) && (
+                  <div
+                    className="flex justify-center items-center my-6 animate-fadeIn"
+                    role="separator"
+                    aria-label="日付: 今日"
+                  >
+                    <div className="px-3 py-1 text-xs text-gray-500 rounded-full shadow-sm backdrop-blur-sm transition-all bg-gray-100/80 dark:text-gray-400 dark:bg-gray-800/80 hover:scale-105">
+                      今日
+                    </div>
+                  </div>
+                )}
+              <div className="flex justify-start">
+                <div className="flex items-end space-x-2 md:space-x-3 max-w-[90%] md:max-w-[75%] overflow-hidden">
+                  <StreamingMessage
+                    content={streamingContent}
+                    tools={streamingTools}
+                    avatarUrl={selectedChat.avatar_url}
+                    name={selectedChat.name}
+                    showCursor={true}
+                    agentId={selectedChat.id}
+                  />
+                </div>
               </div>
-            </div>
+            </>
           )}
 
           {/* ローディングインジケーター（ストリーミング開始前 or 非ストリーミング） */}
@@ -815,6 +900,7 @@ export function ChatWindow({
                 {/* ファイル添付ボタン */}
                 <button
                   className="p-1.5 text-gray-400 rounded-lg transition-colors dark:text-gray-500 hover:text-green-500 dark:hover:text-emerald-500 hover:bg-gray-100 dark:hover:bg-gray-600"
+                  aria-label="ファイルを添付"
                   title="ファイルを添付"
                 >
                   <Paperclip className="w-5 h-5" />
@@ -830,6 +916,11 @@ export function ChatWindow({
                       ? "text-green-500 bg-green-50 dark:text-emerald-500 dark:bg-green-500/10"
                       : "text-gray-400 dark:text-gray-500 hover:text-green-500 dark:hover:text-emerald-500 hover:bg-gray-100 dark:hover:bg-gray-600"
                   )}
+                  aria-label={
+                    showStampPicker
+                      ? "スタンプピッカーを閉じる"
+                      : "スタンプを選択"
+                  }
                   title="スタンプを選択"
                 >
                   <Smile className="w-5 h-5" />
@@ -840,6 +931,7 @@ export function ChatWindow({
               <button
                 onClick={handleSendMessage}
                 disabled={!newMessage.trim() || isLoading || isStreaming}
+                aria-label="メッセージを送信"
                 title="送信（Cmd/Ctrl+Enter）"
                 className={cn(
                   "px-4 py-1.5 rounded-xl transition-all duration-200 disabled:cursor-not-allowed flex items-center gap-1.5",
