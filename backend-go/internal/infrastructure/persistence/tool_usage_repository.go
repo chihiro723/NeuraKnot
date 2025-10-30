@@ -38,7 +38,7 @@ func (r *ToolUsageRepository) Save(toolUsage *conversation.ToolUsage) error {
 			insert_position = EXCLUDED.insert_position,
 			executed_at = EXCLUDED.executed_at
 	`
-	result, err := r.db.ExecContext(
+	_, err := r.db.ExecContext(
 		context.Background(),
 		query,
 		toolUsage.ID,
