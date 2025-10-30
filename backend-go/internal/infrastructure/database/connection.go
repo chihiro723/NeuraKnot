@@ -31,7 +31,7 @@ func NewConnection(cfg *config.Config) (*Connection, error) {
 	}
 
 	// 接続テスト
-	if err := db.Ping(); err != nil {
+	if err = db.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 

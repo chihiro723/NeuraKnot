@@ -76,13 +76,16 @@ func (r *AIAgentRepository) FindByID(ctx context.Context, id uuid.UUID) (*ai.Age
 	}
 
 	// Parse enums
-	personaType, err := ai.ParsePersonaType(personaTypeStr)
+	var personaType ai.PersonaType
+	var provider ai.Provider
+
+	personaType, err = ai.ParsePersonaType(personaTypeStr)
 	if err != nil {
 		return nil, err
 	}
 	agent.PersonaType = personaType
 
-	provider, err := ai.ParseProvider(providerStr)
+	provider, err = ai.ParseProvider(providerStr)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +118,7 @@ func (r *AIAgentRepository) FindByUserID(ctx context.Context, userID uuid.UUID) 
 		agent := &ai.Agent{}
 		var personaTypeStr, providerStr string
 
-		err := rows.Scan(
+		err = rows.Scan(
 			&agent.ID, &agent.UserID, &agent.Name, &agent.Description, &agent.AvatarURL,
 			&personaTypeStr, &providerStr, &agent.Model, &agent.Temperature, &agent.MaxTokens,
 			&agent.SystemPrompt, &agent.ToolsEnabled, &agent.StreamingEnabled, &agent.IsActive,
@@ -126,13 +129,16 @@ func (r *AIAgentRepository) FindByUserID(ctx context.Context, userID uuid.UUID) 
 		}
 
 		// Parse enums
-		personaType, err := ai.ParsePersonaType(personaTypeStr)
+		var personaType ai.PersonaType
+		var provider ai.Provider
+
+		personaType, err = ai.ParsePersonaType(personaTypeStr)
 		if err != nil {
 			return nil, err
 		}
 		agent.PersonaType = personaType
 
-		provider, err := ai.ParseProvider(providerStr)
+		provider, err = ai.ParseProvider(providerStr)
 		if err != nil {
 			return nil, err
 		}
@@ -188,6 +194,8 @@ func (r *AIAgentRepository) Delete(ctx context.Context, id uuid.UUID) error {
 		DELETE FROM ai_agents 
 		WHERE id = $1
 	`
+
+	var err error
 
 	result, err := r.db.ExecContext(ctx, query, id)
 	if err != nil {

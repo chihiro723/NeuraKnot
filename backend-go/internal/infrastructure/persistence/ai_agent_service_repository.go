@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"backend-go/internal/domain/service"
+
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
@@ -112,6 +113,8 @@ func (r *aiAgentServiceRepository) Update(agentService *service.AIAgentService) 
 		WHERE id = $4
 	`
 
+	var err error
+
 	result, err := r.db.Exec(
 		query,
 		agentService.ToolSelectionMode, pq.Array(agentService.SelectedTools),
@@ -137,6 +140,8 @@ func (r *aiAgentServiceRepository) Update(agentService *service.AIAgentService) 
 // Delete AI Agentとサービスの紐付けを削除
 func (r *aiAgentServiceRepository) Delete(id uuid.UUID) error {
 	query := `DELETE FROM ai_agent_services WHERE id = $1`
+
+	var err error
 
 	result, err := r.db.Exec(query, id)
 	if err != nil {
