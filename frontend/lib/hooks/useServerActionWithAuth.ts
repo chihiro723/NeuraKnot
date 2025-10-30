@@ -7,7 +7,7 @@ import { useCognitoAuth } from './useCognitoAuth'
 /**
  * Server Actionの結果型
  */
-type ServerActionResult<T = any> = {
+type ServerActionResult<T = unknown> = {
   success: boolean
   data?: T
   error?: string
@@ -16,7 +16,7 @@ type ServerActionResult<T = any> = {
 /**
  * Server Action関数型
  */
-type ServerActionFunction<T = any, Args extends any[] = any[]> = (
+type ServerActionFunction<T = unknown, Args extends unknown[] = unknown[]> = (
   ...args: Args
 ) => Promise<ServerActionResult<T>>
 
@@ -34,7 +34,7 @@ type ServerActionFunction<T = any, Args extends any[] = any[]> = (
  * })
  * ```
  */
-export function useServerActionWithAuth<T = any, Args extends any[] = any[]>(
+export function useServerActionWithAuth<T = unknown, Args extends unknown[] = unknown[]>(
   action: ServerActionFunction<T, Args>
 ): ServerActionFunction<T, Args> {
   const { refreshToken } = useCognitoAuth()

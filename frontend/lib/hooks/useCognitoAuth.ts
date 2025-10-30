@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { cognitoAuth } from '@/lib/auth/cognito'
-import { AuthState, AuthUser, SignInRequest, SignUpRequest, ForgotPasswordRequest, ConfirmForgotPasswordRequest } from '@/lib/types/auth'
+import { AuthState, SignInRequest, SignUpRequest, ForgotPasswordRequest, ConfirmForgotPasswordRequest } from '@/lib/types/auth'
 
 export function useCognitoAuth() {
   const [state, setState] = useState<AuthState>({
@@ -31,7 +31,7 @@ export function useCognitoAuth() {
               error: null
             })
           }
-        } catch (error) {
+        } catch {
           // トークンがない、または無効な場合は未認証として扱う
           if (isMounted) {
             setState({
