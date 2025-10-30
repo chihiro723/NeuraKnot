@@ -2,7 +2,7 @@
 
 import { StatsCard } from "./StatsCard";
 import type { ActivityStats } from "@/lib/types/analytics";
-import { MessageSquare, MessageCircle, Clock } from "lucide-react";
+// アイコンは削除されました（UIシンプル化のため）
 import {
   BarChart,
   Bar,

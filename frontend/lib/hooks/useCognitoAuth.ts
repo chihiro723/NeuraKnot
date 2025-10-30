@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { cognitoAuth } from '@/lib/auth/cognito'
-import { AuthState, SignInRequest, SignUpRequest, ForgotPasswordRequest, ConfirmForgotPasswordRequest } from '@/lib/types/auth'
+import { AuthState, SignInRequest, SignUpRequest } from '@/lib/types/auth'
 
 export function useCognitoAuth() {
   const [state, setState] = useState<AuthState>({
@@ -213,6 +213,7 @@ export function useCognitoAuth() {
   }, [])
 
   // OAuth callback handler（未実装）
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleOAuthCallback = useCallback(async (_code: string, _state: string | null, _provider: string) => {
     throw new Error('OAuth認証は現在実装されていません')
   }, [])

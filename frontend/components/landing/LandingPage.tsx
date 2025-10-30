@@ -292,7 +292,8 @@ export function LandingPage({
                   >
                     <DoorOpen
                       className={`w-5 h-5 text-slate-400 group-hover:text-red-400 transition-colors ${
-                        isLoggingOut ? "animate-pulse" : ""}`}
+                        isLoggingOut ? "animate-pulse" : ""
+                      }`}
                     />
                   </button>
                 </>
@@ -508,7 +509,8 @@ export function LandingPage({
                     <div className="flex justify-center items-center mr-3 w-8 h-8 rounded-lg transition-all duration-300 bg-red-500/20 group-hover:bg-red-500/30">
                       <DoorOpen
                         className={`w-5 h-5 transition-all duration-300 ${
-                          isLoggingOut ? "animate-pulse" : ""}`}
+                          isLoggingOut ? "animate-pulse" : ""
+                        }`}
                       />
                     </div>
                     <span className="transition-all duration-300 group-hover:font-semibold">

@@ -85,8 +85,7 @@ export function ToolUsageIndicator({
               <div className="flex-shrink-0 ml-2">
                 <div
                   className={`transition-transform duration-200 ${
-                    isExpanded ? "rotate-180" : ""
-                  }`}
+                    isExpanded ? "rotate-180" : ""}`}
                 >
                   <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 </div>
@@ -101,13 +100,13 @@ export function ToolUsageIndicator({
             >
               <div className="px-3 pb-2.5 pt-2.5 space-y-2 border-t border-current/10 bg-white/30 dark:bg-gray-900/30 max-h-screen overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
                 {/* 入力 */}
-                {tool.input && (
+                {tool.input !== undefined && tool.input !== null && (
                   <div className="space-y-1">
                     <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
                       入力
                     </span>
                     <div className="p-2 text-xs text-gray-700 bg-gray-50 rounded border border-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:border-gray-700">
-                      <pre className="font-mono leading-relaxed whitespace-pre-wrap break-words overflow-x-auto">
+                      <pre className="overflow-x-auto font-mono leading-relaxed whitespace-pre-wrap break-words">
                         {typeof tool.input === "string"
                           ? tool.input
                           : JSON.stringify(tool.input as Record<string, unknown>, null, 2)}
@@ -123,7 +122,7 @@ export function ToolUsageIndicator({
                       結果
                     </span>
                     <div className="p-2 text-xs text-gray-700 bg-gray-50 rounded border border-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:border-gray-700">
-                      <pre className="font-mono leading-relaxed whitespace-pre-wrap break-words overflow-x-auto max-w-none">
+                      <pre className="overflow-x-auto max-w-none font-mono leading-relaxed whitespace-pre-wrap break-words">
                         {typeof tool.output === "string"
                           ? tool.output
                           : JSON.stringify(tool.output, null, 2)}
@@ -139,7 +138,7 @@ export function ToolUsageIndicator({
                       エラー
                     </span>
                     <div className="p-2 text-xs text-red-800 bg-red-50 rounded border border-red-300 dark:text-red-200 dark:bg-red-900/30 dark:border-red-700">
-                      <pre className="font-mono leading-relaxed whitespace-pre-wrap break-words overflow-x-auto">
+                      <pre className="overflow-x-auto font-mono leading-relaxed whitespace-pre-wrap break-words">
                         {tool.error}
                       </pre>
                     </div>

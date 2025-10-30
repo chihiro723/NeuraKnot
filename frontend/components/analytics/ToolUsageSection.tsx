@@ -2,7 +2,7 @@
 
 import { StatsCard } from "./StatsCard";
 import type { ToolUsageStats } from "@/lib/types/analytics";
-import { Wrench, CheckCircle, XCircle } from "lucide-react";
+// アイコンは削除されました（UIシンプル化のため）
 import {
   PieChart,
   Pie,

@@ -2,7 +2,7 @@
 
 import { StatsCard } from "./StatsCard";
 import type { TokenStats } from "@/lib/types/analytics";
-import { Coins, DollarSign, TrendingUp } from "lucide-react";
+// アイコンは削除されました（UIシンプル化のため）
 import {
   PieChart,
   Pie,
