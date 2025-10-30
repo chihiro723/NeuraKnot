@@ -2,11 +2,10 @@
 
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
+import type { StreamEvent } from '@/lib/types'
 
 // サーバーサイド用（Server Actions用）
 const BACKEND_GO_URL = process.env.BACKEND_GO_URL || 'http://localhost:8080'
-// クライアントサイド用（クライアントコンポーネントから直接fetch）
-const CLIENT_BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:8080'
 
 /**
  * 会話一覧を取得
@@ -158,7 +157,7 @@ export async function sendMessageStream(
   conversationId: string,
   content: string,
   accessToken: string,
-  onEvent: (event: any) => void,
+  onEvent: (event: StreamEvent) => void,
   onError: (error: string) => void
 ) {
   try {
