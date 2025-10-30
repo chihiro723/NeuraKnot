@@ -16,6 +16,8 @@ type Conversation struct {
 	LastMessageAt *time.Time
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
+	// 最後のメッセージ（会話一覧取得時のみ使用）
+	LastMessage *Message
 }
 
 // NewConversation は新しい会話を作成
