@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { Users } from "lucide-react";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { EmptyState } from "@/components/ui/feedback/EmptyState";
@@ -31,8 +31,12 @@ interface RosterListClientProps {
  */
 export function RosterListClient({ initialAgents }: RosterListClientProps) {
   const router = useRouter();
+  const params = useParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FriendFilter>("all");
+
+  // URLパラメータから現在選択されている友だちIDを取得
+  const selectedFriendId = params?.id as string | undefined;
 
   // サーバーから渡されたデータを変換
   const friends = useMemo(() => {
@@ -158,13 +162,19 @@ export function RosterListClient({ initialAgents }: RosterListClientProps) {
           )
         ) : (
           <div className="pb-4 divide-y divide-gray-100 dark:divide-gray-800 lg:pb-0">
-            {filteredFriends.map((friend: FriendData) => (
-              <FriendItem
-                key={friend.id}
-                friend={friend}
-                onSelect={() => handleSelectFriend(friend)}
-              />
-            ))}
+            {filteredFriends.map((friend: FriendData) => {
+              // 選択状態の判定（URLベース）
+              const isSelected = selectedFriendId === friend.id;
+
+              return (
+                <FriendItem
+                  key={friend.id}
+                  friend={friend}
+                  onSelect={() => handleSelectFriend(friend)}
+                  isSelected={isSelected}
+                />
+              );
+            })}
           </div>
         )}
       </div>
@@ -175,9 +185,10 @@ export function RosterListClient({ initialAgents }: RosterListClientProps) {
 interface FriendItemProps {
   friend: FriendData;
   onSelect: () => void;
+  isSelected: boolean;
 }
 
-function FriendItem({ friend, onSelect }: FriendItemProps) {
+function FriendItem({ friend, onSelect, isSelected }: FriendItemProps) {
   return (
     <button
       onClick={onSelect}
@@ -190,7 +201,13 @@ function FriendItem({ friend, onSelect }: FriendItemProps) {
       aria-label={`${friend.name}の詳細を表示${
         friend.description ? `。${friend.description}` : ""
       }`}
-      className="relative p-3 w-full text-left transition-all lg:border-b lg:border-gray-100 dark:lg:border-gray-800 hover:bg-gray-50 last:border-b-0 dark:hover:bg-gray-800/50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+      aria-current={isSelected ? "true" : "false"}
+      className={cn(
+        "relative p-3 w-full text-left transition-all lg:border-b lg:border-gray-100 dark:lg:border-gray-800 last:border-b-0 focus:outline-none",
+        isSelected
+          ? "bg-green-50 border-l-2 border-green-500 dark:bg-green-900/20 dark:border-green-400"
+          : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
+      )}
     >
       {/* メッセージ数（右上） */}
       {friend.type === "ai" &&
@@ -216,7 +233,7 @@ function FriendItem({ friend, onSelect }: FriendItemProps) {
         </div>
 
         {/* 友だち情報 */}
-        <div className="flex-1 min-w-0 pr-16">
+        <div className="flex-1 pr-16 min-w-0">
           <div className="flex items-baseline mb-0.5">
             <h3 className="text-sm font-semibold text-gray-900 truncate dark:text-white">
               {friend.name}
