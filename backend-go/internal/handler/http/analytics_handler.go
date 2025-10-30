@@ -39,7 +39,7 @@ func NewAnalyticsHandler(analyticsUsecase *analyticsUsecase.AnalyticsUsecase) *A
 // @Router /analytics [get]
 func (h *AnalyticsHandler) GetUserAnalytics(c *gin.Context) {
 	var err error
-	
+
 	// 認証ミドルウェアからユーザーを取得
 	user, exists := middleware.GetUserFromContext(c)
 	if !exists {

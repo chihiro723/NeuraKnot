@@ -423,8 +423,11 @@ func (uc *ChatUsecase) SendMessageStream(
 	userID, conversationID uuid.UUID,
 	messageContent string,
 ) (<-chan external.StreamEvent, <-chan error, error) {
+	var err error
+
 	// 1. 会話を取得
-	conv, err := uc.convRepo.FindByID(ctx, conversationID)
+	var conv *conversation.Conversation
+	conv, err = uc.convRepo.FindByID(ctx, conversationID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to find conversation: %w", err)
 	}
@@ -435,7 +438,8 @@ func (uc *ChatUsecase) SendMessageStream(
 	}
 
 	// 2. ユーザーメッセージを保存
-	userMessage, err := conversation.NewMessage(
+	var userMessage *conversation.Message
+	userMessage, err = conversation.NewMessage(
 		conversationID,
 		conversation.SenderTypeUser,
 		userID,
@@ -445,19 +449,20 @@ func (uc *ChatUsecase) SendMessageStream(
 		return nil, nil, fmt.Errorf("failed to create user message: %w", err)
 	}
 
-	if err := uc.msgRepo.Save(ctx, userMessage); err != nil {
+	if err = uc.msgRepo.Save(ctx, userMessage); err != nil {
 		return nil, nil, fmt.Errorf("failed to save user message: %w", err)
 	}
 
 	// 2.5. ユーザーメッセージ保存時に会話の last_message_at を更新
 	conv.IncrementMessageCount()
-	if err := uc.convRepo.Update(ctx, conv); err != nil {
+	if err = uc.convRepo.Update(ctx, conv); err != nil {
 		log.Printf("ERROR: Failed to update conversation after user message: %v", err)
 		// エラーがあっても続行（ベストエフォート）
 	}
 
 	// 3. 会話履歴を取得（過去20件）
-	messages, err := uc.msgRepo.FindByConversationID(ctx, conversationID, 20)
+	var messages []*conversation.Message
+	messages, err = uc.msgRepo.FindByConversationID(ctx, conversationID, 20)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get conversation history: %w", err)
 	}
@@ -477,7 +482,8 @@ func (uc *ChatUsecase) SendMessageStream(
 	}
 
 	// 4. AI設定を取得
-	agent, err := uc.aiRepo.FindByID(ctx, conv.AIAgentID)
+	var agent *ai.Agent
+	agent, err = uc.aiRepo.FindByID(ctx, conv.AIAgentID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get AI agent: %w", err)
 	}
@@ -485,13 +491,15 @@ func (uc *ChatUsecase) SendMessageStream(
 	// 5. エージェントに紐付けられたサービス情報を取得
 	var services []external.ServiceConfig
 	if uc.aiAgentServiceRepo != nil {
-		agentServices, err := uc.aiAgentServiceRepo.FindByAgentID(conv.AIAgentID)
+		var agentServices []service.AIAgentService
+		agentServices, err = uc.aiAgentServiceRepo.FindByAgentID(conv.AIAgentID)
 		if err == nil && len(agentServices) > 0 {
 			services = make([]external.ServiceConfig, 0, len(agentServices))
 			for _, as := range agentServices {
 				if as.Enabled {
 					// ユーザーのサービス設定を取得して認証情報を含める
-					serviceConfig, _, _, _, _, err := uc.serviceConfigRepo.FindByUserAndClass(userID, as.ServiceClass)
+					var serviceConfig *service.ServiceConfig
+					serviceConfig, _, _, _, _, err = uc.serviceConfigRepo.FindByUserAndClass(userID, as.ServiceClass)
 					if err == nil && serviceConfig != nil {
 						// APIキーを取得
 						var apiKey *string
@@ -732,8 +740,11 @@ func (uc *ChatUsecase) SendAgentIntroduction(
 	userID, conversationID uuid.UUID,
 	messageContent string,
 ) (*ChatResult, error) {
+	var err error
+
 	// 1. 会話を取得
-	conv, err := uc.convRepo.FindByID(ctx, conversationID)
+	var conv *conversation.Conversation
+	conv, err = uc.convRepo.FindByID(ctx, conversationID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find conversation: %w", err)
 	}
@@ -744,7 +755,8 @@ func (uc *ChatUsecase) SendAgentIntroduction(
 	}
 
 	// 2. エージェントを取得
-	agent, err := uc.aiRepo.FindByID(ctx, conv.AIAgentID)
+	var agent *ai.Agent
+	agent, err = uc.aiRepo.FindByID(ctx, conv.AIAgentID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get AI agent: %w", err)
 	}
@@ -752,13 +764,15 @@ func (uc *ChatUsecase) SendAgentIntroduction(
 	// 3. エージェントのサービス設定を取得
 	var services []external.ServiceConfig
 	if uc.aiAgentServiceRepo != nil {
-		agentServices, err := uc.aiAgentServiceRepo.FindByAgentID(conv.AIAgentID)
+		var agentServices []service.AIAgentService
+		agentServices, err = uc.aiAgentServiceRepo.FindByAgentID(conv.AIAgentID)
 		if err == nil && len(agentServices) > 0 {
 			services = make([]external.ServiceConfig, 0, len(agentServices))
 			for _, as := range agentServices {
 				if as.Enabled {
 					// ユーザーのサービス設定を取得して認証情報を含める
-					serviceConfig, _, _, _, _, err := uc.serviceConfigRepo.FindByUserAndClass(userID, as.ServiceClass)
+					var serviceConfig *service.ServiceConfig
+					serviceConfig, _, _, _, _, err = uc.serviceConfigRepo.FindByUserAndClass(userID, as.ServiceClass)
 					if err == nil && serviceConfig != nil {
 						// APIキーを取得
 						var apiKey *string
