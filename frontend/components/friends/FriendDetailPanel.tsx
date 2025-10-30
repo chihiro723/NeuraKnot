@@ -447,7 +447,7 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
 
           {/* 友だちになった日 */}
           {friend.created_at && isClient && (
-            <div className="flex justify-center items-center p-4 space-x-2 text-sm text-gray-500 bg-gray-50 rounded-xl dark:bg-gray-800 dark:text-gray-400">
+            <div className="flex justify-center items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
               <Clock className="w-4 h-4" />
               <span>友だちになった日: {formatDate(friend.created_at)}</span>
             </div>
