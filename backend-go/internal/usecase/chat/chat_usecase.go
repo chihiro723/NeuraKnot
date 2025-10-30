@@ -449,6 +449,13 @@ func (uc *ChatUsecase) SendMessageStream(
 		return nil, nil, fmt.Errorf("failed to save user message: %w", err)
 	}
 
+	// 2.5. ユーザーメッセージ保存時に会話の last_message_at を更新
+	conv.IncrementMessageCount()
+	if err := uc.convRepo.Update(ctx, conv); err != nil {
+		log.Printf("ERROR: Failed to update conversation after user message: %v", err)
+		// エラーがあっても続行（ベストエフォート）
+	}
+
 	// 3. 会話履歴を取得（過去20件）
 	messages, err := uc.msgRepo.FindByConversationID(ctx, conversationID, 20)
 	if err != nil {
