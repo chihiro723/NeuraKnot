@@ -134,7 +134,9 @@ export function ServiceRegistrationModal({
       }
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "サービスの登録に失敗しました");
+      setError(
+        err instanceof Error ? err.message : "サービスの登録に失敗しました"
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -309,7 +311,15 @@ export function ServiceRegistrationModal({
                 </h3>
                 <div className="space-y-4">
                   {Object.entries(service.auth_schema.properties || {}).map(
-                    ([key, field]: [string, { title?: string; description?: string; type?: string; required?: boolean }]) => (
+                    ([key, field]: [
+                      string,
+                      {
+                        title?: string;
+                        description?: string;
+                        type?: string;
+                        required?: boolean;
+                      }
+                    ]) => (
                       <div key={key}>
                         <label className="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
                           {field.title || key}

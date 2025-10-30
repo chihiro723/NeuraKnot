@@ -46,7 +46,9 @@ export function ServiceList() {
       setUserServices((services || []) as UserServiceWithDetails[]);
       setError("");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "サービス一覧の取得に失敗しました");
+      setError(
+        err instanceof Error ? err.message : "サービス一覧の取得に失敗しました"
+      );
       setUserServices([]);
     } finally {
       setIsLoading(false);
@@ -78,7 +80,8 @@ export function ServiceList() {
       }
     } catch (err: unknown) {
       showToast({
-        message: err instanceof Error ? err.message : "状態の変更に失敗しました",
+        message:
+          err instanceof Error ? err.message : "状態の変更に失敗しました",
         type: "error",
         duration: 5000,
       });

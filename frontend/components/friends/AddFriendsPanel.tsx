@@ -820,7 +820,8 @@ export function AIAgentCreationPanel({
                     }}
                     className={cn(
                       "w-full p-4 rounded-lg border transition-all text-left",
-                      formData.model === model.id && !("disabled" in model && model.disabled)
+                      formData.model === model.id &&
+                        !("disabled" in model && model.disabled)
                         ? "bg-green-50 border-green-500 dark:bg-green-900/20 dark:border-green-500"
                         : "disabled" in model && model.disabled
                         ? "bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:border-gray-700 dark:text-gray-500"

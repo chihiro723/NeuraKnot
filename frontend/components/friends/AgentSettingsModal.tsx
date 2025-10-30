@@ -125,7 +125,10 @@ export function AgentSettingsModal({
     }
   };
 
-  const handleInputChange = (field: keyof UpdateAgentInput, value: string | number | boolean | undefined) => {
+  const handleInputChange = (
+    field: keyof UpdateAgentInput,
+    value: string | number | boolean | undefined
+  ) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,

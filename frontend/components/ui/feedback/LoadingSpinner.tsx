@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils/cn";
  * パルス型スピナー
  * 拡大しながらフェードアウトするアニメーション
  */
-function PulseSpinner({ className }: { className?: string }) {
+export function PulseSpinner({ className }: { className?: string }) {
   return (
     <div className={cn("relative w-16 h-16", className)}>
       {/* 外側のリング */}
