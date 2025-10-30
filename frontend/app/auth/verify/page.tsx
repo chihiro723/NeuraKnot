@@ -34,15 +34,6 @@ function VerifyEmailContent() {
     setEmail(email);
   }, [router, searchParams]);
 
-  // メールアドレスをマスク表示
-  const maskEmail = (email: string) => {
-    const [local, domain] = email.split("@");
-    if (local.length <= 4) {
-      return `${local[0]}***@${domain}`;
-    }
-    return `${local.substring(0, 4)}****@${domain}`;
-  };
-
   const handleCodeComplete = async (code: string) => {
     setLoading(true);
     setError("");

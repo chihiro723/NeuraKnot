@@ -9,7 +9,6 @@ import {
   Code,
   Zap,
   ArrowLeft,
-  Sparkles,
   Brain,
   Clock,
 } from "lucide-react";

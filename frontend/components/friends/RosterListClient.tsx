@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Users } from "lucide-react";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { EmptyState } from "@/components/ui/feedback/EmptyState";
@@ -31,12 +31,8 @@ interface RosterListClientProps {
  */
 export function RosterListClient({ initialAgents }: RosterListClientProps) {
   const router = useRouter();
-  const params = useParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FriendFilter>("all");
-
-  // URLパラメータから現在選択されている友だちIDを取得
-  const selectedFriendId = params?.id as string | undefined;
 
   // サーバーから渡されたデータを変換
   const friends = useMemo(() => {

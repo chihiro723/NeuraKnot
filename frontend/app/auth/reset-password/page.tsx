@@ -49,11 +49,8 @@ function ResetPasswordForm() {
     }
 
     try {
-      await confirmForgotPassword({
-        email,
-        confirmation_code: formData.confirmationCode,
-        new_password: formData.newPassword,
-      });
+      // 未実装機能（MVP後に実装予定）
+      await confirmForgotPassword();
       setSuccess(true);
     } catch (err) {
       console.error("Reset password error:", err);

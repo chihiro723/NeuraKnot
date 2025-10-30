@@ -217,7 +217,7 @@ export interface ToolUsageData {
   tool_id: string
   tool_name: string
   status: 'running' | 'completed' | 'failed'
-  input: any
+  input: unknown
   output?: string
   error?: string
   execution_time_ms?: number

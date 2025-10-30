@@ -22,7 +22,8 @@ export default function ForgotPasswordPage() {
     setError("");
 
     try {
-      await forgotPassword({ email: email.trim() });
+      // 未実装機能（MVP後に実装予定）
+      await forgotPassword();
       setSuccess(true);
     } catch (err) {
       console.error("Forgot password error:", err);

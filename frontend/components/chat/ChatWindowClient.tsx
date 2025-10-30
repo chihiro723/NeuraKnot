@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
 // useDashboard は不要（URLベースのナビゲーション）
 import { ChatWindow } from "@/components/chat/ChatWindow";

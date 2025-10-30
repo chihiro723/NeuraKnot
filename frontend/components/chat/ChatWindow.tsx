@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Send, Smile, Paperclip, Copy, Check } from "lucide-react";
+import { Send, Smile, Paperclip } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils/cn";
@@ -10,10 +10,9 @@ import {
   sendMessage as serverSendMessage,
 } from "@/lib/actions/conversation";
 import { sendMessageStream } from "@/lib/api/streaming";
-import { useServerActionsWithAuth } from "@/lib/hooks/useServerActionWithAuth";
+import { useServerActionWithAuth } from "@/lib/hooks/useServerActionWithAuth";
 import { getProfile } from "@/lib/actions/user";
 import { StreamingMessage } from "./StreamingMessage";
-import { ToolUsageIndicator } from "./ToolUsageIndicator";
 import { StampPicker } from "./StampPicker";
 import { getCookie } from "@/lib/utils/cookies";
 import { formatDateSeparator, isSameDay } from "@/lib/utils/date";
@@ -59,7 +58,6 @@ export function ChatWindow({
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [newMessage, setNewMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(
     initialConversationId || null
   );
@@ -72,11 +70,13 @@ export function ChatWindow({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const footerRef = useRef<HTMLDivElement>(null);
 
+  // ローディング状態（将来的に使用予定）
+  const [isLoading] = useState(false);
+
   // ストリーミング状態
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [streamingTools, setStreamingTools] = useState<ToolUsageData[]>([]);
-  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const streamingContentRef = useRef(""); // ストリーミング内容の最新値を追跡
 
   // スタンプピッカーの表示状態
@@ -91,18 +91,35 @@ export function ChatWindow({
   const MAX_TEXTAREA_LINES = 10;
   const LINE_HEIGHT = 24;
 
-  // 401エラー時に自動リフレッシュ（複数のServer Actionsをラップ）
-  const {
-    getOrCreateConversation: getOrCreateConversationWithAuth,
-    getMessages: getMessagesWithAuth,
-    sendMessage: sendMessageWithAuth,
-    getProfile: getProfileWithAuth,
-  } = useServerActionsWithAuth({
-    getOrCreateConversation,
-    getMessages,
-    sendMessage: serverSendMessage,
-    getProfile,
-  });
+  // 401エラー時に自動リフレッシュ（各Server Actionを個別にラップ）
+  const getOrCreateConversationWithAuth = useServerActionWithAuth(
+    getOrCreateConversation as (
+      aiAgentId: string
+    ) => Promise<{ success: boolean; data?: { id: string }; error?: string }>
+  );
+  const getMessagesWithAuth = useServerActionWithAuth(
+    getMessages as (
+      conversationId: string,
+      limit?: number
+    ) => Promise<{
+      success: boolean;
+      data?: { messages: Message[] };
+      error?: string;
+    }>
+  );
+  const sendMessageWithAuth = useServerActionWithAuth(
+    serverSendMessage as (
+      conversationId: string,
+      content: string
+    ) => Promise<{ success: boolean; data?: unknown; error?: string }>
+  );
+  const getProfileWithAuth = useServerActionWithAuth(
+    getProfile as () => Promise<{
+      success: boolean;
+      data?: { username: string; display_name: string; avatar_url: string };
+      error?: string;
+    }>
+  );
 
   // 現在のユーザー情報を取得（初期データがない場合のみ）
   useEffect(() => {
@@ -112,10 +129,15 @@ export function ChatWindow({
       try {
         const result = await getProfileWithAuth();
         if (result.success && result.data) {
+          const data = result.data as {
+            username: string;
+            display_name: string;
+            avatar_url: string;
+          };
           setCurrentUser({
-            username: result.data.username,
-            display_name: result.data.display_name,
-            avatar_url: result.data.avatar_url,
+            username: data.username,
+            display_name: data.display_name,
+            avatar_url: data.avatar_url,
           });
         }
       } catch (error) {
@@ -152,10 +174,11 @@ export function ChatWindow({
         );
 
         if (convResult.success && convResult.data) {
-          setConversationId(convResult.data.id);
+          const conversation = convResult.data as { id: string };
+          setConversationId(conversation.id);
 
           // メッセージ履歴を読み込む
-          await loadMessages(convResult.data.id);
+          await loadMessages(conversation.id);
         } else {
           console.error("会話の初期化に失敗しました:", convResult.error);
         }
@@ -169,7 +192,8 @@ export function ChatWindow({
         const result = await getMessagesWithAuth(convId, MESSAGE_LIMIT);
 
         if (result.success && result.data) {
-          const messages = result.data.messages || [];
+          const data = result.data as { messages: Message[] };
+          const messages = data.messages || [];
 
           // 開発環境でのみデバッグログを出力
           if (process.env.NODE_ENV === "development") {
@@ -466,7 +490,8 @@ export function ChatWindow({
                     MESSAGE_LIMIT
                   );
                   if (result.success && result.data) {
-                    const newMessages = result.data.messages || [];
+                    const data = result.data as { messages: Message[] };
+                    const newMessages = data.messages || [];
 
                     // サイドバーの会話リストを更新（リアルタイム反映）
                     router.refresh();
@@ -625,24 +650,6 @@ export function ChatWindow({
     setNewMessage((prev) => prev + stamp);
     // スタンプピッカーは開いたまま（ユーザーが✖️ボタンまたは外側をクリックするまで）
   };
-
-  const handleCopyMessage = useCallback(
-    async (messageId: string, content: string) => {
-      try {
-        await navigator.clipboard.writeText(content);
-        setCopiedMessageId(messageId);
-        setTimeout(() => setCopiedMessageId(null), 2000);
-      } catch (error) {
-        console.error("Failed to copy message:", error);
-        showToast({
-          message: "メッセージのコピーに失敗しました",
-          type: "error",
-          duration: 3000,
-        });
-      }
-    },
-    []
-  );
 
   return (
     <div className="flex overflow-hidden overscroll-none flex-col flex-1">

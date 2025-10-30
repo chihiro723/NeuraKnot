@@ -144,7 +144,7 @@ export class CognitoAuthClient {
    * ユーザー情報更新（未実装）
    * 将来的にAPI Routeまたはbackend-goのエンドポイント経由で実装
    */
-  async updateUser(displayName: string): Promise<AuthUser> {
+  async updateUser(): Promise<AuthUser> {
     throw new Error('ユーザー情報更新は現在実装されていません')
   }
 
@@ -152,7 +152,7 @@ export class CognitoAuthClient {
    * パスワードリセット（未実装）
    * 将来的にbackend-goのエンドポイント経由で実装
    */
-  async forgotPassword(email: string): Promise<void> {
+  async forgotPassword(): Promise<void> {
     throw new Error('パスワードリセットは現在実装されていません')
   }
 
@@ -160,7 +160,7 @@ export class CognitoAuthClient {
    * パスワードリセット確認（未実装）
    * 将来的にbackend-goのエンドポイント経由で実装
    */
-  async confirmForgotPassword(email: string, confirmationCode: string, newPassword: string): Promise<void> {
+  async confirmForgotPassword(): Promise<void> {
     throw new Error('パスワードリセット確認は現在実装されていません')
   }
 }

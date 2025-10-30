@@ -39,9 +39,12 @@ export default function AnalyticsPage() {
         setIsLoading(true);
         const data = await getAnalytics(timeRange);
         setAnalyticsData(data);
-      } catch (error: any) {
+      } catch (error: unknown) {
         showToast({
-          message: error.message || "統計データの取得に失敗しました",
+          message:
+            error instanceof Error
+              ? error.message
+              : "統計データの取得に失敗しました",
           type: "error",
         });
       } finally {

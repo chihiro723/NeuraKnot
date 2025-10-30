@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
 const BACKEND_GO_URL = process.env.BACKEND_GO_URL || 'http://localhost:8080'
@@ -8,7 +8,7 @@ const BACKEND_GO_URL = process.env.BACKEND_GO_URL || 'http://localhost:8080'
  * backend-goのリフレッシュトークンを使って新しいアクセストークンを取得し、
  * Cookieを更新する
  */
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     // Cookieからリフレッシュトークンを取得
     const cookieStore = await cookies()

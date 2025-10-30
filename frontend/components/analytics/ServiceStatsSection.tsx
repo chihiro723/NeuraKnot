@@ -2,7 +2,7 @@
 
 import { StatsCard } from "./StatsCard";
 import type { ServiceStats } from "@/lib/types/analytics";
-import { Package, Check, X } from "lucide-react";
+// アイコンは削除されました（UIシンプル化のため）
 
 interface ServiceStatsSectionProps {
   stats: ServiceStats;
@@ -24,21 +24,16 @@ export function ServiceStatsSection({ stats }: ServiceStatsSectionProps) {
           title="登録サービス数"
           value={stats.total_services.toLocaleString()}
           subtitle="連携しているサービス"
-          icon={Package}
         />
         <StatsCard
           title="有効サービス"
           value={stats.enabled_services.toLocaleString()}
           subtitle="現在使用中"
-          icon={Check}
-          iconColor="text-green-600 dark:text-green-400"
         />
         <StatsCard
           title="無効サービス"
           value={stats.disabled_services.toLocaleString()}
           subtitle="一時停止中"
-          icon={X}
-          iconColor="text-gray-600 dark:text-gray-400"
         />
       </div>
 
@@ -68,18 +63,16 @@ export function ServiceStatsSection({ stats }: ServiceStatsSectionProps) {
                     </td>
                     <td className="px-4 py-3 text-center">
                       {service.is_enabled ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-green-600 bg-green-100 rounded-full dark:text-green-400 dark:bg-green-500/20">
-                          <Check className="w-3 h-3" />
+                        <span className="inline-flex gap-1 items-center px-2 py-1 text-xs font-medium text-green-600 bg-green-100 rounded-full dark:text-green-400 dark:bg-green-500/20">
                           有効
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-full dark:text-gray-400 dark:bg-gray-500/20">
-                          <X className="w-3 h-3" />
+                        <span className="inline-flex gap-1 items-center px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-full dark:text-gray-400 dark:bg-gray-500/20">
                           無効
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right font-medium text-gray-900 dark:text-white">
+                    <td className="px-4 py-3 font-medium text-right text-gray-900 dark:text-white">
                       {service.agent_count.toLocaleString()}
                     </td>
                   </tr>

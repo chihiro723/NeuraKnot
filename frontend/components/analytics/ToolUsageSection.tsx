@@ -2,7 +2,7 @@
 
 import { StatsCard } from "./StatsCard";
 import type { ToolUsageStats } from "@/lib/types/analytics";
-import { Wrench, CheckCircle, XCircle } from "lucide-react";
+// アイコンは削除されました（UIシンプル化のため）
 import {
   PieChart,
   Pie,
@@ -40,21 +40,16 @@ export function ToolUsageSection({ stats }: ToolUsageSectionProps) {
           title="総ツール使用回数"
           value={stats.total_tool_calls.toLocaleString()}
           subtitle={`成功: ${stats.successful_calls.toLocaleString()} / 失敗: ${stats.failed_calls.toLocaleString()}`}
-          icon={Wrench}
         />
         <StatsCard
           title="成功率"
           value={`${stats.success_rate.toFixed(1)}%`}
           subtitle="ツール実行成功率"
-          icon={CheckCircle}
-          iconColor="text-green-600 dark:text-green-400"
         />
         <StatsCard
           title="失敗数"
           value={stats.failed_calls.toLocaleString()}
           subtitle="エラーが発生した回数"
-          icon={XCircle}
-          iconColor="text-red-600 dark:text-red-400"
         />
       </div>
 
@@ -73,12 +68,13 @@ export function ToolUsageSection({ stats }: ToolUsageSectionProps) {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={(entry: any) =>
-                      `${entry.name}: ${(
-                        (entry.value / stats.total_tool_calls) *
+                    label={(entry: unknown) => {
+                      const data = entry as { name: string; value: number };
+                      return `${data.name}: ${(
+                        (data.value / stats.total_tool_calls) *
                         100
-                      ).toFixed(1)}%`
-                    }
+                      ).toFixed(1)}%`;
+                    }}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"

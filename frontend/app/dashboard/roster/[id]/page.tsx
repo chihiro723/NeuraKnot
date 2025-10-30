@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { listAIAgents } from "@/lib/actions/ai-agent";
 import { FriendDetailPanel } from "@/components/friends/FriendDetailPanel";
 import { LoadingSpinner } from "@/components/ui/feedback/LoadingSpinner";
-import { devDelayCustom } from "@/lib/utils/dev-delay";
+import type { AIAgent } from "@/lib/types/agent";
 
 /**
  * 友だち詳細ページ（サーバーコンポーネント）
@@ -31,7 +31,7 @@ async function FriendDetailData({ friendId }: { friendId: string }) {
   const agents = agentsResult.success ? agentsResult.data?.agents || [] : [];
 
   // friendIdに該当するエージェントを検索
-  const agent = agents.find((a: any) => a.id === friendId);
+  const agent = agents.find((a: AIAgent) => a.id === friendId);
 
   // 友だちが見つからない場合は404
   if (!agent) {

@@ -12,7 +12,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
-import type { UserServiceWithDetails, Tool } from "@/lib/types/service";
+import type { UserServiceWithDetails } from "@/lib/types/service";
 
 interface SelectedService {
   service_class: string;

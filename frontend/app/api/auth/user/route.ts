@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
 const BACKEND_GO_URL = process.env.BACKEND_GO_URL || 'http://localhost:8080'
@@ -6,7 +6,7 @@ const BACKEND_GO_URL = process.env.BACKEND_GO_URL || 'http://localhost:8080'
 /**
  * 現在のユーザー情報取得
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Cookieからアクセストークンを取得
     const cookieStore = await cookies()

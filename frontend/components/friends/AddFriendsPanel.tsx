@@ -42,20 +42,6 @@ interface AddFriendsPanelProps {
 export function AddFriendsPanel({ user }: AddFriendsPanelProps) {
   const [selectedType, setSelectedType] = useState<AddType>(null);
 
-  // デスクトップかどうかを判定
-  const [isDesktop, setIsDesktop] = useState(false);
-
-  useEffect(() => {
-    const checkIsDesktop = () => {
-      setIsDesktop(window.innerWidth >= 1024);
-    };
-
-    checkIsDesktop();
-    window.addEventListener("resize", checkIsDesktop);
-
-    return () => window.removeEventListener("resize", checkIsDesktop);
-  }, []);
-
   // ローカル状態を使用
   const currentSelectedType = selectedType;
   const setCurrentSelectedType = setSelectedType;
@@ -491,7 +477,7 @@ export function AIAgentCreationPanel({
       }
 
       setFormData({ ...formData, system_prompt: result.data || "" });
-    } catch (err) {
+    } catch {
       setEnhanceError("プロンプト生成中にエラーが発生しました");
     } finally {
       setIsEnhancing(false);
@@ -829,14 +815,15 @@ export function AIAgentCreationPanel({
                     key={model.id}
                     type="button"
                     onClick={() => {
-                      if ((model as any).disabled) return;
+                      if ("disabled" in model && model.disabled) return;
                       setFormData({ ...formData, model: model.id });
                     }}
                     className={cn(
                       "w-full p-4 rounded-lg border transition-all text-left",
-                      formData.model === model.id && !(model as any).disabled
+                      formData.model === model.id &&
+                        !("disabled" in model && model.disabled)
                         ? "bg-green-50 border-green-500 dark:bg-green-900/20 dark:border-green-500"
-                        : (model as any).disabled
+                        : "disabled" in model && model.disabled
                         ? "bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:border-gray-700 dark:text-gray-500"
                         : "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-700 hover:border-gray-400 dark:hover:bg-gray-600"
                     )}
@@ -1174,7 +1161,7 @@ export function AIAgentCreationPanel({
               type="button"
               onClick={(e) => {
                 e.preventDefault();
-                handleSubmit(e as any);
+                handleSubmit(e as React.FormEvent);
               }}
               disabled={!formData.name || !formData.model || isPending}
               className={cn(

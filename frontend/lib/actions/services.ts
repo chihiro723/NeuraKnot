@@ -13,9 +13,6 @@ import type {
   ServiceConfig,
   CreateServiceConfigInput,
   UpdateServiceConfigInput,
-  AIAgentService,
-  CreateAIAgentServiceInput,
-  UpdateAIAgentServiceInput,
 } from '@/lib/types/service'
 
 const BACKEND_GO_URL = process.env.BACKEND_GO_URL || 'http://localhost:8080'
@@ -233,8 +230,8 @@ export async function getAvailableServices() {
  */
 export async function registerService(
   serviceClass: string,
-  config?: Record<string, any>,
-  auth?: Record<string, any>
+  config?: Record<string, unknown>,
+  auth?: Record<string, unknown>
 ): Promise<ServiceConfig> {
   return createServiceConfig({
     service_class: serviceClass,
@@ -260,7 +257,7 @@ export async function toggleServiceEnabled(
  */
 export async function validateServiceAuth(
   serviceClass: string,
-  auth: Record<string, any>
+  auth: Record<string, unknown>
 ): Promise<{ valid: boolean; error?: string }> {
   const headers = await getHeaders()
   

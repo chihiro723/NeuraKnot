@@ -42,9 +42,9 @@ export async function getAnalytics(
 
     const data = await response.json();
     return data;
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Failed to fetch analytics:", error);
-    throw new Error(error.message || "統計データの取得に失敗しました");
+    throw new Error(error instanceof Error ? error.message : "統計データの取得に失敗しました");
   }
 }
 
