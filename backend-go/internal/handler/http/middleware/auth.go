@@ -28,9 +28,11 @@ func NewAuthMiddleware(authService user.AuthService) *AuthMiddleware {
 // RequireAuth 認証が必要なエンドポイント用ミドルウェア
 func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var err error
 
 		// Cookieからアクセストークンを取得
-		token, err := c.Cookie(AccessTokenCookie)
+		var token string
+		token, err = c.Cookie(AccessTokenCookie)
 		if err != nil || token == "" {
 			// Cookieにトークンがない場合、Authorizationヘッダーから取得を試みる
 			authHeader := c.GetHeader("Authorization")
@@ -46,7 +48,8 @@ func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 		}
 
 		// トークンを検証
-		authResult, err := m.authService.ValidateToken(c.Request.Context(), token)
+		var authResult *user.AuthResult
+		authResult, err = m.authService.ValidateToken(c.Request.Context(), token)
 		if err != nil {
 			log.Printf("[AUTH ERROR] Token validation failed: %v", err)
 			c.JSON(http.StatusUnauthorized, response.NewUnauthorizedErrorResponse("Invalid token"))
@@ -65,8 +68,11 @@ func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 // OptionalAuth 認証がオプションのエンドポイント用ミドルウェア
 func (m *AuthMiddleware) OptionalAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var err error
+
 		// Cookieからアクセストークンを取得
-		token, err := c.Cookie(AccessTokenCookie)
+		var token string
+		token, err = c.Cookie(AccessTokenCookie)
 		if err != nil || token == "" {
 			// Cookieにトークンがない場合、Authorizationヘッダーから取得を試みる
 			authHeader := c.GetHeader("Authorization")
@@ -81,7 +87,8 @@ func (m *AuthMiddleware) OptionalAuth() gin.HandlerFunc {
 		}
 
 		// トークンを検証
-		authResult, err := m.authService.ValidateToken(c.Request.Context(), token)
+		var authResult *user.AuthResult
+		authResult, err = m.authService.ValidateToken(c.Request.Context(), token)
 		if err != nil {
 			c.Next()
 			return
