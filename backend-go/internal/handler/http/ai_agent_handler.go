@@ -47,6 +47,8 @@ func NewAIAgentHandler(agentUsecase *aiusecase.AgentUsecase, serviceUsecase *ser
 // @Failure 500 {object} response.ErrorResponse "サーバーエラー"
 // @Router /api/v1/ai-agents [post]
 func (h *AIAgentHandler) CreateAgent(c *gin.Context) {
+	var err error
+	
 	// 認証ミドルウェアからユーザーを取得
 	user, exists := middleware.GetUserFromContext(c)
 	if !exists {
@@ -56,13 +58,14 @@ func (h *AIAgentHandler) CreateAgent(c *gin.Context) {
 
 	// リクエストボディをパース
 	var req request.CreateAgentRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err = c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(err.Error()))
 		return
 	}
 
 	// UserIDをUUIDに変換
-	userID, err := uuid.Parse(string(user.ID))
+	var userID uuid.UUID
+	userID, err = uuid.Parse(string(user.ID))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid user ID"))
 		return
@@ -75,7 +78,8 @@ func (h *AIAgentHandler) CreateAgent(c *gin.Context) {
 	}
 
 	// AI Agentを作成
-	agent, err := h.agentUsecase.CreateAgent(
+	var agent *ai.Agent
+	agent, err = h.agentUsecase.CreateAgent(
 		c.Request.Context(),
 		userID,
 		req.Name,
@@ -100,14 +104,14 @@ func (h *AIAgentHandler) CreateAgent(c *gin.Context) {
 				ToolSelectionMode: reqService.ToolSelectionMode,
 				SelectedTools:     reqService.SelectedTools,
 				Enabled:           true,
-			}
+		}
 
-			if err := h.aiAgentServiceRepo.Create(agentService); err != nil {
-				// サービス紐付けエラーは警告のみ（エージェント作成は成功させる）
-				// 本来はトランザクションでロールバックすべきだが、簡易実装として継続
-				c.JSON(http.StatusCreated, response.ToAgentResponse(agent))
-				return
-			}
+		if err = h.aiAgentServiceRepo.Create(agentService); err != nil {
+			// サービス紐付けエラーは警告のみ（エージェント作成は成功させる）
+			// 本来はトランザクションでロールバックすべきだが、簡易実装として継続
+			c.JSON(http.StatusCreated, response.ToAgentResponse(agent))
+			return
+		}
 		}
 	}
 
