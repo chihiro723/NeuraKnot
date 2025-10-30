@@ -92,7 +92,7 @@ func (h *PromptHandler) EnhancePrompt(c *gin.Context) {
 	// エラーレスポンスの場合
 	if pythonResp.StatusCode != http.StatusOK {
 		var errorResp map[string]interface{}
-		if err := json.Unmarshal(body, &errorResp); err == nil {
+		if unmarshalErr := json.Unmarshal(body, &errorResp); unmarshalErr == nil {
 			c.JSON(pythonResp.StatusCode, errorResp)
 		} else {
 			c.JSON(pythonResp.StatusCode, gin.H{
@@ -104,8 +104,8 @@ func (h *PromptHandler) EnhancePrompt(c *gin.Context) {
 
 	// 成功レスポンス
 	var enhanceResp response.EnhancePromptResponse
-	if err := json.Unmarshal(body, &enhanceResp); err != nil {
-		c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
+	if unmarshalErr := json.Unmarshal(body, &enhanceResp); unmarshalErr != nil {
+		c.JSON(http.StatusInternalServerError, response.NewErrorResponse(unmarshalErr, http.StatusInternalServerError))
 		return
 	}
 
