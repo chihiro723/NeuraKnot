@@ -256,7 +256,7 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
       </div>
 
       {/* メインコンテンツ */}
-      <div className="overflow-y-auto flex-1 bg-white dark:bg-gray-900">
+      <div className="overflow-y-auto flex-1 bg-gray-50 dark:bg-gray-900">
         <div className="p-4 mx-auto space-y-6 max-w-3xl sm:p-6">
           {/* プロフィールカード */}
           <div className="overflow-hidden relative bg-white rounded-2xl border shadow-lg border-gray-200/50 dark:bg-gray-800 dark:border-gray-700/50">
