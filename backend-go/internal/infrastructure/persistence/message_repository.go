@@ -73,7 +73,8 @@ func (r *MessageRepositoryImpl) FindByID(ctx context.Context, id uuid.UUID) (*co
 	}
 
 	// Parse sender type
-	senderType, err := conversation.ParseSenderType(senderTypeStr)
+	var senderType conversation.SenderType
+	senderType, err = conversation.ParseSenderType(senderTypeStr)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +105,7 @@ func (r *MessageRepositoryImpl) FindByConversationID(ctx context.Context, conver
 		message := &conversation.Message{}
 		var senderTypeStr string
 
-		err := rows.Scan(
+		err = rows.Scan(
 			&message.ID, &message.ConversationID, &senderTypeStr, &message.SenderID, &message.Content, &message.AISessionID, &message.CreatedAt,
 		)
 		if err != nil {
@@ -112,7 +113,8 @@ func (r *MessageRepositoryImpl) FindByConversationID(ctx context.Context, conver
 		}
 
 		// Parse sender type
-		senderType, err := conversation.ParseSenderType(senderTypeStr)
+		var senderType conversation.SenderType
+		senderType, err = conversation.ParseSenderType(senderTypeStr)
 		if err != nil {
 			return nil, err
 		}

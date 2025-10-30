@@ -17,8 +17,8 @@ export interface Service {
   description: string
   icon: string
   type: ServiceType
-  config_schema: Record<string, any>
-  auth_schema: Record<string, any>
+  config_schema: Record<string, unknown>
+  auth_schema: Record<string, unknown>
 }
 
 /**
@@ -27,7 +27,7 @@ export interface Service {
 export interface Tool {
   name: string
   description: string
-  input_schema: Record<string, any>
+  input_schema: Record<string, unknown>
   category: string
   tags: string[]
 }
@@ -39,7 +39,7 @@ export interface ServiceConfig {
   id: string
   user_id: string
   service_class: string
-  config?: Record<string, any>
+  config?: Record<string, unknown>
   is_enabled: boolean
   created_at: string
   updated_at: string
@@ -50,16 +50,16 @@ export interface ServiceConfig {
  */
 export interface CreateServiceConfigInput {
   service_class: string
-  config?: Record<string, any>
-  auth?: Record<string, any>
+  config?: Record<string, unknown>
+  auth?: Record<string, unknown>
 }
 
 /**
  * サービス設定更新入力
  */
 export interface UpdateServiceConfigInput {
-  config?: Record<string, any>
-  auth?: Record<string, any>
+  config?: Record<string, unknown>
+  auth?: Record<string, unknown>
   is_enabled?: boolean
 }
 

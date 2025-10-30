@@ -3,6 +3,8 @@
  * クライアントコンポーネントから直接呼び出される
  */
 
+import type { StreamEvent } from '@/lib/types'
+
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api/v1', '') || 'http://localhost:8080'
 
 /**
@@ -12,7 +14,7 @@ export async function sendMessageStream(
   conversationId: string,
   content: string,
   accessToken: string | null,
-  onEvent: (event: any) => void,
+  onEvent: (event: StreamEvent) => void,
   onError: (error: string) => void
 ) {
   try {
@@ -99,8 +101,7 @@ export async function sendMessageStream(
 
       // ユーザーメッセージイベント
       onEvent({
-        type: 'message',
-        role: 'user',
+        type: 'token',
         content: data.user_message.content
       })
 

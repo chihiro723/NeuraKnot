@@ -38,6 +38,8 @@ func NewAnalyticsHandler(analyticsUsecase *analyticsUsecase.AnalyticsUsecase) *A
 // @Failure 500 {object} response.ErrorResponse "サーバーエラー"
 // @Router /analytics [get]
 func (h *AnalyticsHandler) GetUserAnalytics(c *gin.Context) {
+	var err error
+
 	// 認証ミドルウェアからユーザーを取得
 	user, exists := middleware.GetUserFromContext(c)
 	if !exists {
@@ -47,7 +49,7 @@ func (h *AnalyticsHandler) GetUserAnalytics(c *gin.Context) {
 
 	// クエリパラメータから期間フィルターを取得
 	var req request.AnalyticsRequest
-	if err := c.ShouldBindQuery(&req); err != nil {
+	if err = c.ShouldBindQuery(&req); err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(err.Error()))
 		return
 	}
@@ -61,14 +63,16 @@ func (h *AnalyticsHandler) GetUserAnalytics(c *gin.Context) {
 	timeRange := analytics.ParseTimeRange(req.TimeRange)
 
 	// UserIDをUUIDに変換
-	userUUID, err := uuid.Parse(user.ID.String())
+	var userUUID uuid.UUID
+	userUUID, err = uuid.Parse(user.ID.String())
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid user ID"))
 		return
 	}
 
 	// 統計データを取得
-	analyticsData, err := h.analyticsUsecase.GetUserAnalytics(c.Request.Context(), userUUID, timeRange)
+	var analyticsData *analytics.UserAnalytics
+	analyticsData, err = h.analyticsUsecase.GetUserAnalytics(c.Request.Context(), userUUID, timeRange)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
 		return

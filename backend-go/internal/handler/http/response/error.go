@@ -51,4 +51,3 @@ func NewInternalServerErrorResponse(message string) *ErrorResponse {
 		Code:    500,
 	}
 }
-

@@ -41,7 +41,9 @@ func (r *AnalyticsRepository) GetTokenStats(ctx context.Context, userID uuid.UUI
 		args = append(args, *startTime)
 	}
 
-	err := r.db.QueryRowContext(ctx, totalQuery, args...).Scan(&totalTokens, &promptTokens, &completionTokens)
+	var err error
+
+	err = r.db.QueryRowContext(ctx, totalQuery, args...).Scan(&totalTokens, &promptTokens, &completionTokens)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get total tokens: %w", err)
 	}
@@ -69,7 +71,7 @@ func (r *AnalyticsRepository) GetTokenStats(ctx context.Context, userID uuid.UUI
 	for providerRows.Next() {
 		var provider string
 		var total int64
-		if err := providerRows.Scan(&provider, &total); err != nil {
+		if err = providerRows.Scan(&provider, &total); err != nil {
 			return nil, fmt.Errorf("failed to scan provider stats: %w", err)
 		}
 
@@ -89,16 +91,16 @@ func (r *AnalyticsRepository) GetTokenStats(ctx context.Context, userID uuid.UUI
 		}
 		costQuery += ` GROUP BY model`
 
-		costRows, err := r.db.QueryContext(ctx, costQuery, costArgs...)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get model costs: %w", err)
+		costRows, err2 := r.db.QueryContext(ctx, costQuery, costArgs...)
+		if err2 != nil {
+			return nil, fmt.Errorf("failed to get model costs: %w", err2)
 		}
 
 		var providerCost float64
 		for costRows.Next() {
 			var model string
 			var prompt, completion int64
-			if err := costRows.Scan(&model, &prompt, &completion); err != nil {
+			if err = costRows.Scan(&model, &prompt, &completion); err != nil {
 				costRows.Close()
 				return nil, fmt.Errorf("failed to scan model costs: %w", err)
 			}
@@ -189,7 +191,9 @@ func (r *AnalyticsRepository) GetActivityStats(ctx context.Context, userID uuid.
 		args = append(args, *startTime)
 	}
 
-	err := r.db.QueryRowContext(ctx, messageQuery, args...).Scan(&totalMessages, &userMessages, &aiMessages)
+	var err error
+
+	err = r.db.QueryRowContext(ctx, messageQuery, args...).Scan(&totalMessages, &userMessages, &aiMessages)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get message stats: %w", err)
 	}
@@ -240,7 +244,7 @@ func (r *AnalyticsRepository) GetActivityStats(ctx context.Context, userID uuid.
 	for dailyRows.Next() {
 		var date time.Time
 		var total, userMsgs, aiMsgs int64
-		if err := dailyRows.Scan(&date, &total, &userMsgs, &aiMsgs); err != nil {
+		if err = dailyRows.Scan(&date, &total, &userMsgs, &aiMsgs); err != nil {
 			return nil, fmt.Errorf("failed to scan daily activity: %w", err)
 		}
 
@@ -355,7 +359,9 @@ func (r *AnalyticsRepository) GetToolUsageStats(ctx context.Context, userID uuid
 		args = append(args, *startTime)
 	}
 
-	err := r.db.QueryRowContext(ctx, totalQuery, args...).Scan(&totalCalls, &successfulCalls, &failedCalls)
+	var err error
+
+	err = r.db.QueryRowContext(ctx, totalQuery, args...).Scan(&totalCalls, &successfulCalls, &failedCalls)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tool usage stats: %w", err)
 	}
@@ -390,7 +396,7 @@ func (r *AnalyticsRepository) GetToolUsageStats(ctx context.Context, userID uuid
 	for categoryRows.Next() {
 		var category string
 		var total, successful int64
-		if err := categoryRows.Scan(&category, &total, &successful); err != nil {
+		if err = categoryRows.Scan(&category, &total, &successful); err != nil {
 			return nil, fmt.Errorf("failed to scan category stats: %w", err)
 		}
 

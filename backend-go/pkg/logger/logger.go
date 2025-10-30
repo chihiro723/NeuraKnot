@@ -50,4 +50,3 @@ func (l *SimpleLogger) Debug(msg string, args ...interface{}) {
 func (l *SimpleLogger) Warn(msg string, args ...interface{}) {
 	l.warnLogger.Printf(msg, args...)
 }
-

@@ -124,7 +124,7 @@ func (r *ConversationRepositoryImpl) FindByUserID(ctx context.Context, userID uu
 		var msgSenderType, msgContent sql.NullString
 		var msgCreatedAt sql.NullTime
 
-		err := rows.Scan(
+		err = rows.Scan(
 			&conv.ID, &conv.UserID, &conv.AIAgentID, &conv.MessageCount, &conv.LastMessageAt, &conv.CreatedAt, &conv.UpdatedAt,
 			&msgID, &msgSenderType, &msgSenderID, &msgContent, &msgCreatedAt,
 		)
@@ -134,16 +134,19 @@ func (r *ConversationRepositoryImpl) FindByUserID(ctx context.Context, userID uu
 
 		// 最後のメッセージが存在する場合は設定
 		if msgID.Valid {
-			parsedMsgID, err := uuid.Parse(msgID.String)
+			var parsedMsgID, parsedSenderID uuid.UUID
+			var senderType conversation.SenderType
+
+			parsedMsgID, err = uuid.Parse(msgID.String)
 			if err != nil {
 				return nil, err
 			}
-			parsedSenderID, err := uuid.Parse(msgSenderID.String)
+			parsedSenderID, err = uuid.Parse(msgSenderID.String)
 			if err != nil {
 				return nil, err
 			}
 
-			senderType, err := conversation.ParseSenderType(msgSenderType.String)
+			senderType, err = conversation.ParseSenderType(msgSenderType.String)
 			if err != nil {
 				return nil, err
 			}

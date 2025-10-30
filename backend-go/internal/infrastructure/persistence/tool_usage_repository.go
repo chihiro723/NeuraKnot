@@ -38,7 +38,7 @@ func (r *ToolUsageRepository) Save(toolUsage *conversation.ToolUsage) error {
 			insert_position = EXCLUDED.insert_position,
 			executed_at = EXCLUDED.executed_at
 	`
-	result, err := r.db.ExecContext(
+	_, err := r.db.ExecContext(
 		context.Background(),
 		query,
 		toolUsage.ID,
@@ -54,14 +54,6 @@ func (r *ToolUsageRepository) Save(toolUsage *conversation.ToolUsage) error {
 		toolUsage.InsertPosition,
 		toolUsage.ExecutedAt,
 	)
-	if err == nil {
-		// デバッグ: INSERT or UPDATE を検出
-		rowsAffected, _ := result.RowsAffected()
-		if rowsAffected > 0 {
-			// RowsAffected > 1 の場合はUPDATEが発生した可能性
-			// PostgreSQLのUPSERTではINSERTで1、UPDATEで2を返す
-		}
-	}
 	return err
 }
 

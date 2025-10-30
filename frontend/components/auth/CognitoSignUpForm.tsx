@@ -24,7 +24,7 @@ export function CognitoSignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<React.ReactNode>("");
 
   const { signUp, error: authError, clearError } = useCognitoAuth();
   const router = useRouter();

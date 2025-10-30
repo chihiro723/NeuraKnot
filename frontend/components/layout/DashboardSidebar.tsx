@@ -16,11 +16,7 @@ interface DashboardSidebarProps {
  * デスクトップ: リサイズ可能、固定幅
  * モバイル: 全幅表示
  */
-export function DashboardSidebar({
-  title,
-  children,
-  profile,
-}: DashboardSidebarProps) {
+export function DashboardSidebar({ title, children }: DashboardSidebarProps) {
   const isMobile = useIsMobile();
 
   // サイドバーの幅を管理（初期値は常に384、useEffectでlocalStorageから読み込む）

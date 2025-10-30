@@ -57,7 +57,10 @@ export function CognitoLoginForm() {
 
         // フェイルセーフ: 300ms後に遷移できていなければ強制遷移
         setTimeout(() => {
-          if (typeof window !== "undefined" && !window.location.pathname.startsWith("/dashboard")) {
+          if (
+            typeof window !== "undefined" &&
+            !window.location.pathname.startsWith("/dashboard")
+          ) {
             window.location.assign("/dashboard/chats");
           }
         }, 300);
@@ -77,7 +80,7 @@ export function CognitoLoginForm() {
         }
         setLoading(false);
       }
-    } catch (error) {
+    } catch {
       // 予期しないエラー
       setError("ログイン処理中にエラーが発生しました");
       setLoading(false);

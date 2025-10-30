@@ -2,7 +2,7 @@
 
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
-import type { AIAgent, UpdateAgentInput, AgentService, CreateAIAgentServiceInput, UpdateAIAgentServiceInput, AgentServicesResponse } from '@/lib/types/ai-agent'
+import type { UpdateAgentInput, CreateAIAgentServiceInput, UpdateAIAgentServiceInput, AgentServicesResponse } from '@/lib/types/ai-agent'
 
 const BACKEND_GO_URL = process.env.BACKEND_GO_URL || 'http://localhost:8080'
 

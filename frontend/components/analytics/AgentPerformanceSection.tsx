@@ -1,7 +1,7 @@
 "use client";
 
 import type { AgentPerformance } from "@/lib/types/analytics";
-import { Bot, MessageSquare, Coins, Clock, Wrench } from "lucide-react";
+import { Bot } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -58,9 +58,9 @@ export function AgentPerformanceSection({
                 key={agent.agent_id}
                 className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700"
               >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center justify-center w-8 h-8 bg-green-100 rounded-lg dark:bg-green-500/20">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex gap-2 items-center">
+                    <div className="flex justify-center items-center w-8 h-8 bg-green-100 rounded-lg dark:bg-green-500/20">
                       <Bot className="w-4 h-4 text-green-600 dark:text-green-400" />
                     </div>
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -73,36 +73,32 @@ export function AgentPerformanceSection({
                 </div>
 
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                      <MessageSquare className="w-4 h-4" />
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">
                       メッセージ
                     </span>
                     <span className="font-medium text-gray-900 dark:text-white">
                       {agent.message_count.toLocaleString()}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                      <Coins className="w-4 h-4" />
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">
                       トークン
                     </span>
                     <span className="font-medium text-gray-900 dark:text-white">
                       {agent.total_tokens.toLocaleString()}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                      <Clock className="w-4 h-4" />
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">
                       平均応答
                     </span>
                     <span className="font-medium text-gray-900 dark:text-white">
                       {(agent.average_response_time_ms / 1000).toFixed(2)}s
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                      <Wrench className="w-4 h-4" />
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">
                       ツール使用
                     </span>
                     <span className="font-medium text-gray-900 dark:text-white">

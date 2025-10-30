@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Server, Plus, Code, ChevronRight, ClipboardList } from "lucide-react";
+import { Server, Code, ChevronRight, ClipboardList } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
 /**

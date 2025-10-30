@@ -9,7 +9,7 @@ import { listAIAgents } from "@/lib/actions/ai-agent";
 import { getProfile } from "@/lib/actions/user";
 import { ChatWindowClient } from "@/components/chat/ChatWindowClient";
 import { LoadingSpinner } from "@/components/ui/feedback/LoadingSpinner";
-import { devDelayCustom } from "@/lib/utils/dev-delay";
+import type { Conversation, AIAgent } from "@/lib/types/agent";
 
 interface UserProfile {
   username: string;
@@ -51,28 +51,28 @@ async function ChatWindowData({ chatId }: { chatId: string }) {
   const agents = agentsResult.success ? agentsResult.data?.agents || [] : [];
 
   // AI Agentのマッピング
-  const agentsMap = new Map();
-  agents.forEach((agent: any) => {
+  const agentsMap = new Map<string, AIAgent>();
+  agents.forEach((agent: AIAgent) => {
     agentsMap.set(agent.id, agent);
   });
 
   // chatIdに該当する会話を検索
-  let selectedConversation = null;
-  let selectedAgent = null;
+  let selectedConversation: Conversation | null = null;
+  let selectedAgent: AIAgent | null = null;
 
   // まずconversation IDで検索
-  const conv = conversations.find((c: any) => c.id === chatId);
+  const conv = conversations.find((c: Conversation) => c.id === chatId);
   if (conv) {
     selectedConversation = conv;
-    selectedAgent = agentsMap.get(conv.ai_agent_id);
+    selectedAgent = agentsMap.get(conv.ai_agent_id) || null;
   } else {
     // AI Agent IDで検索（直接エージェントとの会話）
-    selectedAgent = agentsMap.get(chatId);
+    selectedAgent = agentsMap.get(chatId) || null;
     if (selectedAgent) {
       // 既存の会話を探す
-      selectedConversation = conversations.find(
-        (c: any) => c.ai_agent_id === chatId
-      );
+      selectedConversation =
+        conversations.find((c: Conversation) => c.ai_agent_id === chatId) ||
+        null;
 
       // 会話が見つからない場合は作成
       if (!selectedConversation) {

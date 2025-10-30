@@ -8,7 +8,6 @@ import type { Service } from "@/lib/types/service";
 interface ServiceCardProps {
   service: Service;
   onClick: () => void;
-  isConfigured?: boolean;
   isDisabled?: boolean;
   requiresAuth?: boolean;
   isUnlocked?: boolean;
@@ -22,7 +21,6 @@ interface ServiceCardProps {
 export function ServiceCard({
   service,
   onClick,
-  isConfigured = false,
   isDisabled = false,
   requiresAuth = false,
   isUnlocked = false,

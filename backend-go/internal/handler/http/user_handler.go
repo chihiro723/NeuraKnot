@@ -6,6 +6,7 @@ import (
 	"backend-go/internal/handler/http/request"
 	"backend-go/internal/handler/http/response"
 	userusecase "backend-go/internal/usecase/user"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -37,13 +38,16 @@ func NewUserHandler(userService *userusecase.Service) *UserHandler {
 // @Failure 500 {object} response.ErrorResponse "サーバーエラー"
 // @Router /auth/signup [post]
 func (h *UserHandler) SignUp(c *gin.Context) {
+	var err error
+
 	var req request.SignUpRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err = c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(err.Error()))
 		return
 	}
 
-	authResult, err := h.userService.SignUp(c.Request.Context(), req.Email, req.Password, req.DisplayName)
+	var authResult *user.AuthResult
+	authResult, err = h.userService.SignUp(c.Request.Context(), req.Email, req.Password, req.DisplayName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
 		return
@@ -69,13 +73,16 @@ func (h *UserHandler) SignUp(c *gin.Context) {
 // @Failure 401 {object} response.ErrorResponse "認証エラー"
 // @Router /auth/signin [post]
 func (h *UserHandler) SignIn(c *gin.Context) {
+	var err error
+
 	var req request.SignInRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err = c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(err.Error()))
 		return
 	}
 
-	authResult, err := h.userService.SignIn(c.Request.Context(), req.Email, req.Password)
+	var authResult *user.AuthResult
+	authResult, err = h.userService.SignIn(c.Request.Context(), req.Email, req.Password)
 	if err != nil {
 		// エラーメッセージに基づいて適切なHTTPステータスコードを返す
 		if strings.Contains(err.Error(), "登録されていません") {
@@ -103,13 +110,15 @@ func (h *UserHandler) SignIn(c *gin.Context) {
 // @Failure 400 {object} response.ErrorResponse "バリデーションエラー"
 // @Router /auth/confirm-signup [post]
 func (h *UserHandler) ConfirmSignUp(c *gin.Context) {
+	var err error
+
 	var req request.ConfirmSignUpRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err = c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(err.Error()))
 		return
 	}
 
-	err := h.userService.ConfirmSignUp(c.Request.Context(), req.Email, req.ConfirmationCode)
+	err = h.userService.ConfirmSignUp(c.Request.Context(), req.Email, req.ConfirmationCode)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewErrorResponse(err, http.StatusBadRequest))
 		return
@@ -129,14 +138,16 @@ func (h *UserHandler) ConfirmSignUp(c *gin.Context) {
 // @Failure 400 {object} response.ErrorResponse "バリデーションエラー"
 // @Router /auth/forgot-password [post]
 func (h *UserHandler) ForgotPassword(c *gin.Context) {
+	var err error
+
 	var req request.ForgotPasswordRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err = c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(err.Error()))
 		return
 	}
 
 	// パスワードリセット要求
-	err := h.userService.ForgotPassword(c.Request.Context(), req.Email)
+	err = h.userService.ForgotPassword(c.Request.Context(), req.Email)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewErrorResponse(err, http.StatusBadRequest))
 		return
@@ -156,14 +167,16 @@ func (h *UserHandler) ForgotPassword(c *gin.Context) {
 // @Failure 400 {object} response.ErrorResponse "バリデーションエラー"
 // @Router /auth/confirm-forgot-password [post]
 func (h *UserHandler) ConfirmForgotPassword(c *gin.Context) {
+	var err error
+
 	var req request.ConfirmForgotPasswordRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err = c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(err.Error()))
 		return
 	}
 
 	// パスワードリセット確認
-	err := h.userService.ConfirmForgotPassword(c.Request.Context(), req.Email, req.ConfirmationCode, req.NewPassword)
+	err = h.userService.ConfirmForgotPassword(c.Request.Context(), req.Email, req.ConfirmationCode, req.NewPassword)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewErrorResponse(err, http.StatusBadRequest))
 		return
@@ -183,14 +196,16 @@ func (h *UserHandler) ConfirmForgotPassword(c *gin.Context) {
 // @Failure 400 {object} response.ErrorResponse "バリデーションエラー"
 // @Router /auth/resend-confirmation-code [post]
 func (h *UserHandler) ResendConfirmationCode(c *gin.Context) {
+	var err error
+
 	var req request.ResendConfirmationCodeRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err = c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(err.Error()))
 		return
 	}
 
 	// 確認コード再送信
-	err := h.userService.ResendConfirmationCode(c.Request.Context(), req.Email)
+	err = h.userService.ResendConfirmationCode(c.Request.Context(), req.Email)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewErrorResponse(err, http.StatusBadRequest))
 		return
@@ -310,15 +325,19 @@ func (h *UserHandler) ChangeEmail(c *gin.Context) {
 // @Failure 404 {object} response.ErrorResponse "ユーザーが見つかりません"
 // @Router /users/{id} [get]
 func (h *UserHandler) GetUserByID(c *gin.Context) {
+	var err error
+
 	userIDStr := c.Param("id")
-	userID, err := user.ParseUserID(userIDStr)
+	var userID user.UserID
+	userID, err = user.ParseUserID(userIDStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid user ID"))
 		return
 	}
 
 	// ユーザー取得
-	userObj, err := h.userService.GetUserByID(c.Request.Context(), userID)
+	var userObj *user.User
+	userObj, err = h.userService.GetUserByID(c.Request.Context(), userID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, response.NewNotFoundErrorResponse("User not found"))
 		return
@@ -341,22 +360,27 @@ func (h *UserHandler) GetUserByID(c *gin.Context) {
 // @Failure 500 {object} response.ErrorResponse "サーバーエラー"
 // @Router /users [get]
 func (h *UserHandler) ListUsers(c *gin.Context) {
+	var err error
+
 	// クエリパラメータからlimitとoffsetを取得
 	limitStr := c.DefaultQuery("limit", "10")
 	offsetStr := c.DefaultQuery("offset", "0")
 
-	limit, err := strconv.Atoi(limitStr)
+	var limit int
+	limit, err = strconv.Atoi(limitStr)
 	if err != nil || limit <= 0 {
 		limit = 10
 	}
 
-	offset, err := strconv.Atoi(offsetStr)
+	var offset int
+	offset, err = strconv.Atoi(offsetStr)
 	if err != nil || offset < 0 {
 		offset = 0
 	}
 
 	// ユーザー一覧取得
-	users, err := h.userService.ListUsers(c.Request.Context(), limit, offset)
+	var users []*user.User
+	users, err = h.userService.ListUsers(c.Request.Context(), limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
 		return
@@ -376,13 +400,17 @@ func (h *UserHandler) ListUsers(c *gin.Context) {
 // @Failure 500 {object} response.ErrorResponse "サーバーエラー"
 // @Router /auth/refresh [post]
 func (h *UserHandler) RefreshToken(c *gin.Context) {
-	refreshToken, err := GetRefreshTokenFromCookie(c)
+	var err error
+
+	var refreshToken string
+	refreshToken, err = GetRefreshTokenFromCookie(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, response.NewUnauthorizedErrorResponse("Refresh token not found"))
 		return
 	}
 
-	authResult, err := h.userService.RefreshToken(c.Request.Context(), refreshToken)
+	var authResult *user.AuthResult
+	authResult, err = h.userService.RefreshToken(c.Request.Context(), refreshToken)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, response.NewErrorResponse(err, http.StatusUnauthorized))
 		return
@@ -407,8 +435,9 @@ func (h *UserHandler) SignOut(c *gin.Context) {
 
 	// トークンがある場合はCognitoのGlobalSignOutを実行
 	if err == nil && token != "" {
-		if err := h.userService.SignOut(c.Request.Context(), token); err != nil {
-			// GlobalSignOutエラーは無視（トークンが既に無効の可能性）
+		if signOutErr := h.userService.SignOut(c.Request.Context(), token); signOutErr != nil {
+			// GlobalSignOutエラーをログに記録（トークンが既に無効の可能性があるため処理は継続）
+			log.Printf("WARN: Failed to sign out from Cognito: %v", signOutErr)
 		}
 	}
 

@@ -41,6 +41,8 @@ func NewChatHandler(chatUsecase *chatusecase.ChatUsecase) *ChatHandler {
 // @Failure 500 {object} response.ErrorResponse "サーバーエラー"
 // @Router /api/v1/conversations [post]
 func (h *ChatHandler) GetOrCreateConversation(c *gin.Context) {
+	var err error
+
 	// 認証ミドルウェアからユーザーを取得
 	user, exists := middleware.GetUserFromContext(c)
 	if !exists {
@@ -50,7 +52,7 @@ func (h *ChatHandler) GetOrCreateConversation(c *gin.Context) {
 
 	// リクエストボディをパース
 	var req request.GetOrCreateConversationRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err = c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(err.Error()))
 		return
 	}
@@ -126,19 +128,19 @@ func (h *ChatHandler) SendMessage(c *gin.Context) {
 
 	// リクエストボディをパース
 	var req request.SendMessageRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Printf("ERROR: Failed to parse request body: %v", err)
-		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(err.Error()))
+	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
+		log.Printf("ERROR: Failed to parse request body: %v", bindErr)
+		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(bindErr.Error()))
 		return
 	}
 
 	// ストリーミングが有効な場合はストリーミングレスポンスを返す
 	if agent.StreamingEnabled {
 		// ストリーミング開始
-		eventChan, _, err := h.chatUsecase.SendMessageStream(c.Request.Context(), userID, conversationID, req.Content)
-		if err != nil {
-			log.Printf("ERROR: Failed to start streaming: %v", err)
-			c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
+		eventChan, _, streamErr := h.chatUsecase.SendMessageStream(c.Request.Context(), userID, conversationID, req.Content)
+		if streamErr != nil {
+			log.Printf("ERROR: Failed to start streaming: %v", streamErr)
+			c.JSON(http.StatusInternalServerError, response.NewErrorResponse(streamErr, http.StatusInternalServerError))
 			return
 		}
 
@@ -160,9 +162,9 @@ func (h *ChatHandler) SendMessage(c *gin.Context) {
 		// イベントチャネルからすべてのイベントを読み取る
 		for event := range eventChan {
 			// JSON形式でイベントをシリアライズ
-			eventJSON, err := json.Marshal(event)
-			if err != nil {
-				log.Printf("ERROR: Failed to marshal event: %v", err)
+			eventJSON, marshalErr := json.Marshal(event)
+			if marshalErr != nil {
+				log.Printf("ERROR: Failed to marshal event: %v", marshalErr)
 				continue
 			}
 
@@ -204,6 +206,8 @@ func (h *ChatHandler) SendMessage(c *gin.Context) {
 // @Failure 500 {object} response.ErrorResponse "サーバーエラー"
 // @Router /api/v1/conversations/agent-introduction [post]
 func (h *ChatHandler) SendAgentIntroduction(c *gin.Context) {
+	var err error
+
 	// 認証ミドルウェアからユーザーを取得
 	user, exists := middleware.GetUserFromContext(c)
 	if !exists {
@@ -220,7 +224,7 @@ func (h *ChatHandler) SendAgentIntroduction(c *gin.Context) {
 
 	// リクエストボディをパース
 	var req request.SendAgentIntroductionRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err = c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(err.Error()))
 		return
 	}
@@ -266,6 +270,8 @@ func (h *ChatHandler) SendAgentIntroduction(c *gin.Context) {
 // @Failure 500 {object} response.ErrorResponse "サーバーエラー"
 // @Router /api/v1/conversations [get]
 func (h *ChatHandler) ListConversations(c *gin.Context) {
+	var err error
+
 	// 認証ミドルウェアからユーザーを取得
 	user, exists := middleware.GetUserFromContext(c)
 	if !exists {
@@ -305,6 +311,8 @@ func (h *ChatHandler) ListConversations(c *gin.Context) {
 // @Failure 500 {object} response.ErrorResponse "サーバーエラー"
 // @Router /api/v1/conversations/{id}/messages [get]
 func (h *ChatHandler) GetMessages(c *gin.Context) {
+	var err error
+
 	// 認証ミドルウェアからユーザーを取得
 	user, exists := middleware.GetUserFromContext(c)
 	if !exists {
@@ -329,7 +337,7 @@ func (h *ChatHandler) GetMessages(c *gin.Context) {
 
 	// クエリパラメータを取得
 	var params request.GetMessagesParams
-	if err := c.ShouldBindQuery(&params); err != nil {
+	if err = c.ShouldBindQuery(&params); err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(err.Error()))
 		return
 	}
@@ -375,6 +383,8 @@ func (h *ChatHandler) GetMessages(c *gin.Context) {
 // @Failure 500 {object} response.ErrorResponse "サーバーエラー"
 // @Router /api/v1/conversations/{conversation_id}/messages/{message_id}/tools/positions [patch]
 func (h *ChatHandler) UpdateToolPositions(c *gin.Context) {
+	var err error
+
 	// 認証ミドルウェアからユーザーを取得
 	user, exists := middleware.GetUserFromContext(c)
 	if !exists {
@@ -400,7 +410,7 @@ func (h *ChatHandler) UpdateToolPositions(c *gin.Context) {
 
 	// リクエストボディをパース
 	var req request.UpdateToolPositionsRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err = c.ShouldBindJSON(&req); err != nil {
 		log.Printf("ERROR: Failed to bind request body: %v", err)
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid request body"))
 		return
@@ -413,7 +423,7 @@ func (h *ChatHandler) UpdateToolPositions(c *gin.Context) {
 		return
 	}
 
-	if err := h.chatUsecase.UpdateToolPositions(c.Request.Context(), userUUID, conversationID, messageID, req.Positions); err != nil {
+	if err = h.chatUsecase.UpdateToolPositions(c.Request.Context(), userUUID, conversationID, messageID, req.Positions); err != nil {
 		log.Printf("ERROR: Failed to update tool positions: %v", err)
 		c.JSON(http.StatusInternalServerError, response.NewInternalServerErrorResponse("Failed to update tool positions"))
 		return

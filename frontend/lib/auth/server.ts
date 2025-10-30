@@ -101,11 +101,11 @@ export async function requireAuth() {
  * 認証済みユーザーのみアクセス可能なページで使用
  * 未認証の場合はログインページにリダイレクト
  */
-export async function withAuth<T extends any[]>(
-  handler: (...args: T) => Promise<any>
+export async function withAuth<T extends unknown[], R = unknown>(
+  handler: (...args: T) => Promise<R>
 ) {
   return async (...args: T) => {
-    const user = await requireAuth()
+    await requireAuth()
     return handler(...args)
   }
 }

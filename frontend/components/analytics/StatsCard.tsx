@@ -1,13 +1,9 @@
 "use client";
 
-import { LucideIcon } from "lucide-react";
-
 interface StatsCardProps {
   title: string;
   value: string | number;
   subtitle?: string;
-  icon: LucideIcon;
-  iconColor?: string;
   trend?: {
     value: number;
     isPositive: boolean;
@@ -17,14 +13,7 @@ interface StatsCardProps {
 /**
  * 統計値を表示するカードコンポーネント
  */
-export function StatsCard({
-  title,
-  value,
-  subtitle,
-  icon: Icon,
-  iconColor = "text-green-600 dark:text-green-400",
-  trend,
-}: StatsCardProps) {
+export function StatsCard({ title, value, subtitle, trend }: StatsCardProps) {
   return (
     <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm md:p-6 dark:bg-gray-800 dark:border-gray-700">
       <div className="flex-1">
