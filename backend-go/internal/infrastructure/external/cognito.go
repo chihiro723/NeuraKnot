@@ -138,6 +138,8 @@ func (c *CognitoService) ValidateToken(ctx context.Context, token string) (*user
 
 // SignUp ユーザー登録
 func (c *CognitoService) SignUp(ctx context.Context, email, password, displayName string) (*user.AuthResult, error) {
+	var err error
+
 	input := &cognitoidentityprovider.SignUpInput{
 		ClientId: aws.String(c.clientID),
 		Username: aws.String(email),
@@ -180,16 +182,20 @@ func (c *CognitoService) SignUp(ctx context.Context, email, password, displayNam
 
 	// ユーザーエンティティを作成
 	// 新しいUUIDを生成
-	userID, err := user.NewUserID(uuid.New().String())
+	var userID user.UserID
+	var userEmail user.Email
+	var userObj *user.User
+
+	userID, err = user.NewUserID(uuid.New().String())
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate user ID: %w", err)
 	}
-	userEmail, err := user.NewEmail(email)
+	userEmail, err = user.NewEmail(email)
 	if err != nil {
 		return nil, fmt.Errorf("invalid email: %w", err)
 	}
 
-	userObj, err := user.NewUser(userID, *result.UserSub, userEmail, displayName)
+	userObj, err = user.NewUser(userID, *result.UserSub, userEmail, displayName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
