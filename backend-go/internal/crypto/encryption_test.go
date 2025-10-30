@@ -180,10 +180,10 @@ func TestEncryptDecryptBase64(t *testing.T) {
 	}
 
 	// Base64であることを確認
-	if _, err := base64.StdEncoding.DecodeString(ciphertextB64); err != nil {
+	if _, decodeErr := base64.StdEncoding.DecodeString(ciphertextB64); decodeErr != nil {
 		t.Error("Ciphertext is not valid Base64")
 	}
-	if _, err := base64.StdEncoding.DecodeString(nonceB64); err != nil {
+	if _, decodeErr := base64.StdEncoding.DecodeString(nonceB64); decodeErr != nil {
 		t.Error("Nonce is not valid Base64")
 	}
 

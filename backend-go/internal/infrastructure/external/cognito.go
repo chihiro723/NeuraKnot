@@ -94,8 +94,10 @@ func (c *CognitoService) computeSecretHash(username string) string {
 
 // ValidateToken トークンを検証
 func (c *CognitoService) ValidateToken(ctx context.Context, token string) (*user.AuthResult, error) {
+	var err error
+
 	// JWKSを遅延取得
-	if err := c.ensureJWKS(ctx); err != nil {
+	if err = c.ensureJWKS(ctx); err != nil {
 		return nil, fmt.Errorf("failed to ensure JWKS: %w", err)
 	}
 
@@ -106,7 +108,7 @@ func (c *CognitoService) ValidateToken(ctx context.Context, token string) (*user
 	}
 
 	// トークンの有効性を確認
-	if err := jwt.Validate(parsedToken); err != nil {
+	if err = jwt.Validate(parsedToken); err != nil {
 		return nil, fmt.Errorf("token validation failed: %w", err)
 	}
 
