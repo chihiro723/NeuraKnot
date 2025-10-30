@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { MessageCircle, Handshake } from "lucide-react";
 import { SearchInput } from "@/components/ui/SearchInput";
@@ -8,11 +8,25 @@ import { Avatar } from "@/components/ui/Avatar";
 import { EmptyState } from "@/components/ui/feedback/EmptyState";
 import { formatTime } from "@/lib/utils/date";
 import { cn } from "@/lib/utils/cn";
-import type { ConversationData, ChatFilter } from "@/lib/types";
+import type { ConversationData, ChatFilter, Agent } from "@/lib/types";
 
 interface ChatListClientProps {
-  initialConversations: any;
-  initialAgents: any;
+  initialConversations: {
+    conversations: Array<{
+      id: string;
+      ai_agent_id: string;
+      created_at: string;
+      updated_at: string;
+      last_message?: {
+        content: string;
+        created_at: string;
+        sender_type: "user" | "ai";
+      };
+    }>;
+  } | null;
+  initialAgents: {
+    agents: Agent[];
+  } | null;
 }
 
 /**
@@ -31,47 +45,60 @@ export function ChatListClient({
   // URLパラメータから現在選択されているチャットIDを取得
   const selectedChatId = params?.id as string | undefined;
 
-  // サーバーから渡されたデータを変換
+  // AI Agentのマッピング（パフォーマンス最適化）
+  const agentsMap = useMemo(() => {
+    if (!initialAgents?.agents) return new Map<string, Agent>();
+
+    const map = new Map<string, Agent>();
+    initialAgents.agents.forEach((agent) => {
+      map.set(agent.id, agent);
+    });
+    return map;
+  }, [initialAgents?.agents]);
+
+  // サーバーから渡されたデータを変換し、最後のメッセージ時刻でソート
   const conversations = useMemo(() => {
-    if (!initialConversations?.conversations || !initialAgents?.agents) {
+    if (!initialConversations?.conversations) {
       return [];
     }
 
-    // AI Agentの情報をマッピング
-    const agentsMap = new Map();
-    initialAgents.agents.forEach((agent: any) => {
-      agentsMap.set(agent.id, agent);
-    });
+    const conversationsList: ConversationData[] =
+      initialConversations.conversations.map((conv) => {
+        const agent = agentsMap.get(conv.ai_agent_id);
+        return {
+          id: conv.id,
+          type: "direct" as const,
+          created_at: conv.created_at,
+          updated_at: conv.updated_at,
+          lastMessage: conv.last_message
+            ? {
+                content: conv.last_message.content,
+                created_at: conv.last_message.created_at,
+                sender_type: conv.last_message.sender_type,
+                sender_name:
+                  conv.last_message.sender_type === "user"
+                    ? "あなた"
+                    : agent?.name,
+              }
+            : null,
+          otherParticipant: {
+            id: conv.ai_agent_id,
+            name: agent?.name || "Unknown AI",
+            avatar_url: agent?.avatar_url,
+            type: "ai" as const,
+            status: "online" as const,
+            personality_preset: agent?.persona_type,
+          },
+        };
+      });
 
-    return initialConversations.conversations.map((conv: any) => {
-      const agent = agentsMap.get(conv.ai_agent_id);
-      return {
-        id: conv.id,
-        type: "direct" as const,
-        created_at: conv.created_at,
-        updated_at: conv.updated_at,
-        lastMessage: conv.last_message
-          ? {
-              content: conv.last_message.content,
-              created_at: conv.last_message.created_at,
-              sender_type: conv.last_message.sender_type,
-              sender_name:
-                conv.last_message.sender_type === "user"
-                  ? "あなた"
-                  : agent?.name,
-            }
-          : null,
-        otherParticipant: {
-          id: conv.ai_agent_id,
-          name: agent?.name || "Unknown AI",
-          avatar_url: agent?.avatar_url,
-          type: "ai" as const,
-          status: "online" as const,
-          personality_preset: agent?.persona_type,
-        },
-      };
+    // 最後のメッセージの時刻でソート（新しい順）
+    return conversationsList.sort((a, b) => {
+      const aTime = a.lastMessage?.created_at || a.created_at;
+      const bTime = b.lastMessage?.created_at || b.created_at;
+      return new Date(bTime).getTime() - new Date(aTime).getTime();
     });
-  }, [initialConversations, initialAgents]);
+  }, [initialConversations?.conversations, agentsMap]);
 
   const handleChatSelect = (conversation: ConversationData) => {
     // URLベースのナビゲーション（状態管理なし）
@@ -241,6 +268,12 @@ function ConversationItem({
   onSelect,
   isSelected,
 }: ConversationItemProps) {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const isGroup = conversation.type === "group";
   const displayName = isGroup
     ? conversation.groupInfo?.name || "グループ"
@@ -254,13 +287,38 @@ function ConversationItem({
   return (
     <button
       onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      aria-label={`${displayName}との会話を開く${
+        conversation.lastMessage
+          ? `。最後のメッセージ: ${conversation.lastMessage.content.substring(
+              0,
+              50
+            )}`
+          : ""
+      }`}
+      aria-current={isSelected ? "true" : "false"}
       className={cn(
-        "p-3 w-full text-left transition-all lg:border-b lg:border-gray-100 dark:lg:border-gray-800 last:border-b-0",
+        "relative p-3 w-full text-left transition-all lg:border-b lg:border-gray-100 dark:lg:border-gray-800 last:border-b-0 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900",
         isSelected
           ? "bg-green-50 border-l-2 border-green-500 dark:bg-green-900/20 dark:border-green-400"
           : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
       )}
     >
+      {/* 時刻表示（右上角） */}
+      {conversation.lastMessage && (
+        <span
+          className="absolute top-3 right-3 text-xs text-gray-500 dark:text-gray-400"
+          suppressHydrationWarning
+        >
+          {isClient ? formatTime(conversation.lastMessage.created_at) : ""}
+        </span>
+      )}
+
       <div className="flex items-center space-x-3">
         {/* アバター */}
         <div className="relative flex-shrink-0">
@@ -281,27 +339,13 @@ function ConversationItem({
         </div>
 
         {/* メッセージプレビュー */}
-        <div className="flex-1 min-w-0">
-          <div className="flex justify-between items-baseline mb-0.5">
-            <h3 className="text-sm font-semibold text-gray-900 truncate dark:text-white">
-              {displayName}
-            </h3>
-            {conversation.lastMessage && (
-              <span className="ml-2 text-xs text-gray-500 whitespace-nowrap dark:text-gray-400">
-                {formatTime(conversation.lastMessage.created_at)}
-              </span>
-            )}
-          </div>
+        <div className="flex-1 pr-16 min-w-0">
+          <h3 className="mb-1 text-sm font-semibold text-gray-900 truncate dark:text-white">
+            {displayName}
+          </h3>
           <p className="text-xs text-gray-600 truncate dark:text-gray-400">
             {conversation.lastMessage ? (
-              <>
-                {conversation.lastMessage.sender_name && (
-                  <span className="font-medium">
-                    {conversation.lastMessage.sender_name}:{" "}
-                  </span>
-                )}
-                {conversation.lastMessage.content}
-              </>
+              conversation.lastMessage.content
             ) : (
               <span className="italic">まだメッセージがありません</span>
             )}

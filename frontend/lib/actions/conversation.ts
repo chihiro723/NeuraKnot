@@ -140,8 +140,8 @@ export async function sendMessage(conversationId: string, content: string) {
 
     const data = await response.json()
 
-    // メッセージ一覧を再検証
-    revalidatePath('/dashboard')
+    // チャット一覧を再検証（メッセージ送信後に並び順を更新）
+    revalidatePath('/dashboard/chats')
 
     return { success: true, data }
   } catch (error) {

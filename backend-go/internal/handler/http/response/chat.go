@@ -154,7 +154,7 @@ type ConversationsListResponse struct {
 func ToConversationsListResponse(conversations []*conversation.Conversation) *ConversationsListResponse {
 	resp := make([]*ConversationWithDetailsResponse, len(conversations))
 	for i, conv := range conversations {
-		resp[i] = &ConversationWithDetailsResponse{
+		convResp := &ConversationWithDetailsResponse{
 			ID:           conv.ID.String(),
 			UserID:       conv.UserID.String(),
 			AIAgentID:    conv.AIAgentID.String(),
@@ -162,6 +162,13 @@ func ToConversationsListResponse(conversations []*conversation.Conversation) *Co
 			CreatedAt:    conv.CreatedAt.Format(time.RFC3339),
 			UpdatedAt:    conv.UpdatedAt.Format(time.RFC3339),
 		}
+
+		// 最後のメッセージを設定
+		if conv.LastMessage != nil {
+			convResp.LastMessage = ToMessageResponse(conv.LastMessage)
+		}
+
+		resp[i] = convResp
 	}
 	return &ConversationsListResponse{
 		Conversations: resp,

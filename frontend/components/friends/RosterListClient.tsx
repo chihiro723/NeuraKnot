@@ -11,7 +11,18 @@ import { cn } from "@/lib/utils/cn";
 import type { FriendData, FriendFilter } from "@/lib/types";
 
 interface RosterListClientProps {
-  initialAgents: any;
+  initialAgents: {
+    agents: Array<{
+      id: string;
+      name: string;
+      avatar_url?: string;
+      persona_type?: string;
+      description?: string;
+      message_count?: number;
+      last_chat_at?: string;
+      created_at: string;
+    }>;
+  } | null;
 }
 
 /**
@@ -34,7 +45,7 @@ export function RosterListClient({ initialAgents }: RosterListClientProps) {
     }
 
     return initialAgents.agents.map(
-      (agent: any): FriendData => ({
+      (agent): FriendData => ({
         id: agent.id,
         type: "ai" as const,
         name: agent.name,
@@ -43,7 +54,7 @@ export function RosterListClient({ initialAgents }: RosterListClientProps) {
         personality_preset: agent.persona_type,
         description: agent.description,
         last_message:
-          agent.message_count > 0
+          agent.message_count && agent.message_count > 0
             ? `メッセージ数: ${agent.message_count}`
             : "まだメッセージがありません",
         last_message_at: agent.last_chat_at || agent.created_at,
@@ -174,8 +185,26 @@ function FriendItem({ friend, onSelect }: FriendItemProps) {
   return (
     <button
       onClick={onSelect}
-      className="p-3 w-full text-left transition-all lg:border-b lg:border-gray-100 dark:lg:border-gray-800 hover:bg-gray-50 last:border-b-0 dark:hover:bg-gray-800/50"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      aria-label={`${friend.name}の詳細を表示${
+        friend.description ? `。${friend.description}` : ""
+      }`}
+      className="relative p-3 w-full text-left transition-all lg:border-b lg:border-gray-100 dark:lg:border-gray-800 hover:bg-gray-50 last:border-b-0 dark:hover:bg-gray-800/50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
     >
+      {/* メッセージ数（右上） */}
+      {friend.type === "ai" &&
+        friend.last_message &&
+        friend.last_message.includes("メッセージ数:") && (
+          <span className="absolute top-3 right-3 px-2 py-1 text-xs font-medium text-green-600 bg-green-50 rounded-full dark:text-green-400 dark:bg-green-900/20">
+            {friend.last_message.replace("メッセージ数: ", "")}件
+          </span>
+        )}
+
       <div className="flex items-center space-x-3">
         {/* アバター */}
         <div className="relative flex-shrink-0">
@@ -191,8 +220,8 @@ function FriendItem({ friend, onSelect }: FriendItemProps) {
         </div>
 
         {/* 友だち情報 */}
-        <div className="flex-1 min-w-0">
-          <div className="flex justify-between items-baseline mb-0.5">
+        <div className="flex-1 min-w-0 pr-16">
+          <div className="flex items-baseline mb-0.5">
             <h3 className="text-sm font-semibold text-gray-900 truncate dark:text-white">
               {friend.name}
             </h3>
@@ -203,7 +232,7 @@ function FriendItem({ friend, onSelect }: FriendItemProps) {
             )}
           </div>
           <p className="text-xs text-gray-600 truncate dark:text-gray-400">
-            {friend.description || friend.last_message || "説明がありません"}
+            {friend.description || "説明がありません"}
           </p>
         </div>
       </div>

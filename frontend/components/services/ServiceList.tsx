@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { ServiceCard } from "./ServiceCard";
 import { ServiceDetailModal } from "./ServiceDetailModal";
 import { LoadingSpinner } from "@/components/ui/feedback/LoadingSpinner";
+import { showToast } from "@/components/ui/ToastContainer";
 import {
   getUserServicesWithDetails,
   toggleServiceEnabled,
@@ -76,7 +77,11 @@ export function ServiceList() {
         });
       }
     } catch (err: any) {
-      alert(err.message || "状態の変更に失敗しました");
+      showToast({
+        message: err.message || "状態の変更に失敗しました",
+        type: "error",
+        duration: 5000,
+      });
     }
   };
 
@@ -87,7 +92,11 @@ export function ServiceList() {
       await loadServices();
       setIsModalOpen(false);
     } catch (err: any) {
-      alert(err.message || "削除に失敗しました");
+      showToast({
+        message: err.message || "削除に失敗しました",
+        type: "error",
+        duration: 5000,
+      });
     }
   };
 
