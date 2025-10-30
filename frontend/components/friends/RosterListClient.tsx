@@ -190,7 +190,7 @@ function FriendItem({ friend, onSelect }: FriendItemProps) {
       aria-label={`${friend.name}の詳細を表示${
         friend.description ? `。${friend.description}` : ""
       }`}
-      className="relative p-3 w-full text-left transition-all lg:border-b lg:border-gray-100 dark:lg:border-gray-800 hover:bg-gray-50 last:border-b-0 dark:hover:bg-gray-800/50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+      className="relative p-3 w-full text-left transition-all lg:border-b lg:border-gray-100 dark:lg:border-gray-800 hover:bg-gray-50 last:border-b-0 dark:hover:bg-gray-800/50 focus:outline-none"
     >
       {/* メッセージ数（右上） */}
       {friend.type === "ai" &&

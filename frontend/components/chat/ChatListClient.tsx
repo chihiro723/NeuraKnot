@@ -303,7 +303,7 @@ function ConversationItem({
       }`}
       aria-current={isSelected ? "true" : "false"}
       className={cn(
-        "relative p-3 w-full text-left transition-all lg:border-b lg:border-gray-100 dark:lg:border-gray-800 last:border-b-0 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900",
+        "relative p-3 w-full text-left transition-all lg:border-b lg:border-gray-100 dark:lg:border-gray-800 last:border-b-0 focus:outline-none",
         isSelected
           ? "bg-green-50 border-l-2 border-green-500 dark:bg-green-900/20 dark:border-green-400"
           : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
