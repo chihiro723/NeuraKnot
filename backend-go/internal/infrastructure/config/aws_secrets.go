@@ -73,10 +73,8 @@ func LoadWithSecretsManager(ctx context.Context) (*Config, error) {
 		cfg.Security.EncryptionMasterKey = secrets.EncryptionMasterKey
 
 		// オプション: データベースURLもSecrets Managerから取得する場合
-		if secrets.DatabaseURL != "" {
-			// データベースURL全体を使用する場合は、個別のフィールドをパースする必要がある
-			// 今回はシンプルに既存の設定を維持
-		}
+		// データベースURL全体を使用する場合は、個別のフィールドをパースする必要がある
+		// 今回はシンプルに既存の設定を維持（DatabaseURLは使用しない）
 
 		// オプション: Cognitoクライアントシークレットも取得
 		if secrets.CognitoClientSecret != "" {
