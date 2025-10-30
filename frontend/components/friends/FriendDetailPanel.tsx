@@ -2,17 +2,16 @@
 
 import {
   MessageCircle,
-  Phone,
-  Video,
   Settings,
-  Calendar,
   Bot,
   User,
-  Loader2,
   AlertCircle,
   Code,
   Zap,
   ArrowLeft,
+  Sparkles,
+  Brain,
+  Clock,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -36,7 +35,7 @@ interface ServiceWithTools {
 }
 
 /**
- * 友だち詳細パネル
+ * 友だち詳細パネル - モダンUI
  */
 export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
   const router = useRouter();
@@ -59,7 +58,6 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
         setLoading(true);
         setError(null);
 
-        // エージェント詳細とサービス情報を並行取得
         const [agentResult, servicesResult] = await Promise.all([
           getAgent(friend.id),
           getAgentServices(friend.id),
@@ -77,7 +75,6 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
           servicesResult.data?.services &&
           servicesResult.data.services.length > 0
         ) {
-          // 全サービス一覧を取得
           const allServices = await listServices();
 
           const servicesWithTools = await Promise.all(
@@ -124,10 +121,7 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
   };
 
   const handleStartChat = () => {
-    // グループの場合は会話開始できないようにするか、別の処理を行う
     if (friend.type === "group") return;
-
-    // URLベースのナビゲーション（状態管理なし）
     router.push(`/dashboard/chats/${friend.id}`);
   };
 
@@ -140,7 +134,6 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
   };
 
   const handleSettingsSave = () => {
-    // データを再取得
     const fetchData = async () => {
       if (friend.type !== "ai") return;
 
@@ -187,49 +180,15 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
     fetchData();
   };
 
-  const getPersonalityInfo = (preset: string) => {
-    const personalities = {
-      support: {
-        name: "サポート",
-        icon: Bot,
-        description:
-          "技術的な質問や問題解決をサポートします。困ったことがあれば何でもお聞かせください。",
-      },
-      friendly: {
-        name: "フレンドリー",
-        icon: Bot,
-        description:
-          "親しみやすく楽しい会話を提供します。日常の出来事や趣味について話しましょう。",
-      },
-      business: {
-        name: "ビジネス",
-        icon: Bot,
-        description:
-          "仕事や業務効率化をサポートします。プロジェクト管理や戦略立案をお手伝いします。",
-      },
-      casual: {
-        name: "カジュアル",
-        icon: Bot,
-        description:
-          "のんびりとリラックスした会話を楽しみます。気軽に何でもお話しください。",
-      },
-      humor: {
-        name: "ユーモア",
-        icon: Bot,
-        description:
-          "笑いと楽しさを提供します。面白い話題で一緒に笑いましょう。",
-      },
+  const getPersonaLabel = (personaType: string): string => {
+    const personaMap: Record<string, string> = {
+      assistant: "アシスタント",
+      creative: "クリエイティブ",
+      analytical: "アナリティカル",
+      concise: "簡潔",
     };
-    return (
-      personalities[preset as keyof typeof personalities] ||
-      personalities.friendly
-    );
+    return personaMap[personaType.toLowerCase()] || personaType;
   };
-
-  const personalityInfo = friend.personality_preset
-    ? getPersonalityInfo(friend.personality_preset)
-    : null;
-  const PersonalityIcon = personalityInfo?.icon;
 
   const [isClient, setIsClient] = useState(false);
 
@@ -239,10 +198,11 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    return `${year}年${month}月${day}日`;
+    return date.toLocaleDateString("ja-JP", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   };
 
   // ローディング状態
@@ -255,7 +215,7 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
     return (
       <div className="flex justify-center items-center h-full">
         <div className="flex flex-col items-center space-y-4">
-          <AlertCircle className="w-8 h-8 text-red-400" />
+          <AlertCircle className="w-12 h-12 text-red-400" />
           <p className="text-sm text-red-500">{error}</p>
         </div>
       </div>
@@ -297,298 +257,202 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
       </div>
 
       {/* メインコンテンツ */}
-      <div className="overflow-y-auto flex-1 bg-gray-50 dark:bg-gray-900">
-        <div className="p-4 mx-auto space-y-8 max-w-2xl sm:p-8 sm:space-y-10">
-          {/* プロフィール情報 */}
-          <div className="space-y-6">
-            <div className="flex items-center space-x-6">
-              <div className="relative">
-                <div className="flex overflow-hidden justify-center items-center w-20 h-20 bg-gray-100 rounded-full dark:bg-gray-800">
-                  {friend.avatar_url ? (
-                    <img
-                      src={friend.avatar_url}
-                      alt={friend.name}
-                      className="object-cover w-full h-full"
-                    />
-                  ) : friend.type === "ai" ? (
-                    <Bot className="w-10 h-10 text-gray-400" />
-                  ) : (
-                    <span className="text-2xl font-medium text-gray-400">
-                      {friend.name.charAt(0)}
-                    </span>
+      <div className="overflow-y-auto flex-1 bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+        <div className="p-4 mx-auto space-y-6 max-w-3xl sm:p-6">
+          {/* プロフィールカード */}
+          <div className="overflow-hidden relative bg-gradient-to-br from-white rounded-2xl border shadow-xl backdrop-blur-xl to-gray-50/50 border-gray-200/50 dark:from-gray-900 dark:to-gray-800/50 dark:border-gray-700/50">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br rounded-full blur-3xl from-green-500/10 to-emerald-500/10" />
+
+            <div className="relative p-6 space-y-6 sm:p-8">
+              {/* アバターとメイン情報 */}
+              <div className="flex flex-col items-center space-y-4 sm:flex-row sm:items-start sm:space-x-6 sm:space-y-0">
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full opacity-30 blur-xl transition-opacity group-hover:opacity-50" />
+                  <div className="flex overflow-hidden relative justify-center items-center w-24 h-24 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full border-4 border-white shadow-lg dark:from-gray-800 dark:to-gray-700 dark:border-gray-900">
+                    {friend.avatar_url ? (
+                      <img
+                        src={friend.avatar_url}
+                        alt={friend.name}
+                        className="object-cover w-full h-full"
+                      />
+                    ) : friend.type === "ai" ? (
+                      <Bot className="w-12 h-12 text-green-600 dark:text-green-400" />
+                    ) : (
+                      <span className="text-3xl font-bold text-green-600 dark:text-green-400">
+                        {friend.name.charAt(0)}
+                      </span>
+                    )}
+                  </div>
+                  {friend.status === "online" && (
+                    <div className="flex absolute -right-1 -bottom-1 justify-center items-center w-7 h-7 bg-green-500 rounded-full border-4 border-white shadow-lg dark:border-gray-900">
+                      <div className="w-2.5 h-2.5 bg-white rounded-full animate-pulse" />
+                    </div>
                   )}
                 </div>
-                {friend.status === "online" && (
-                  <div className="absolute -right-1 -bottom-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white dark:border-gray-900"></div>
-                )}
-              </div>
-              <div className="flex-1">
-                <h1 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">
-                  {friend.name}
-                </h1>
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    {friend.type === "ai" ? (
-                      <Bot className="w-4 h-4 text-gray-500" />
-                    ) : (
-                      <User className="w-4 h-4 text-gray-500" />
-                    )}
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {friend.type === "ai" ? "エージェント" : "ユーザー"}
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div
-                      className={`w-2 h-2 rounded-full ${
-                        friend.status === "online"
-                          ? "bg-green-500"
-                          : "bg-gray-400"
-                      }`}
-                    ></div>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {friend.status === "online" ? "オンライン" : "オフライン"}
-                    </span>
-                  </div>
+
+                <div className="flex-1 text-center sm:text-left">
+                  <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
+                    {friend.name}
+                  </h1>
+                  {agent?.persona_type && (
+                    <div className="inline-flex items-center px-3 py-1 space-x-2 text-sm font-medium text-green-700 bg-green-100 rounded-full dark:text-green-300 dark:bg-green-900/30">
+                      <Bot className="w-4 h-4" />
+                      <span>{getPersonaLabel(agent.persona_type)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
 
-            {/* アクションボタン */}
-            <div className="flex flex-wrap gap-3 pt-4">
-              <button
-                onClick={handleStartChat}
-                className="flex justify-center items-center px-6 py-3 space-x-2 font-medium text-white bg-green-600 rounded-lg transition-all hover:bg-green-700"
-              >
-                <MessageCircle className="w-5 h-5" />
-                <span>トークを開始</span>
-              </button>
-              {friend.type === "human" && (
-                <>
-                  <button className="flex justify-center items-center px-6 py-3 space-x-2 font-medium text-gray-700 bg-white rounded-lg border border-gray-300 transition-all hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300 dark:border-gray-600">
-                    <Phone className="w-5 h-5" />
-                    <span>音声通話</span>
-                  </button>
-                  <button className="flex justify-center items-center px-6 py-3 space-x-2 font-medium text-gray-700 bg-white rounded-lg border border-gray-300 transition-all hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300 dark:border-gray-600">
-                    <Video className="w-5 h-5" />
-                    <span>ビデオ通話</span>
-                  </button>
-                </>
-              )}
-              <button
-                onClick={handleSettingsClick}
-                className="flex justify-center items-center px-6 py-3 space-x-2 font-medium text-gray-700 bg-white rounded-lg border border-gray-300 transition-all hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300 dark:border-gray-600"
-              >
-                <Settings className="w-5 h-5" />
-                <span>設定</span>
-              </button>
-            </div>
-
-            {/* 説明 */}
-            {(agent?.description || friend.description) && (
-              <div>
-                <h3 className="mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                  説明
-                </h3>
-                <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-                  {agent?.description || friend.description}
+              {/* 説明 */}
+              {agent?.description && (
+                <p className="text-base leading-relaxed text-gray-600 dark:text-gray-300">
+                  {agent.description}
                 </p>
-              </div>
-            )}
+              )}
 
-            {/* LLM設定 */}
-            {agent && (
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    プロバイダー:
-                  </span>
-                  <span className="ml-2 text-gray-600 dark:text-gray-400">
-                    {agent.provider}
-                  </span>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    モデル:
-                  </span>
-                  <span className="ml-2 text-gray-600 dark:text-gray-400">
-                    {agent.model}
-                  </span>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    創造性:
-                  </span>
-                  <span className="ml-2 text-gray-600 dark:text-gray-400">
-                    {agent.temperature}
-                  </span>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-900 dark:text-white">
-                    最大トークン:
-                  </span>
-                  <span className="ml-2 text-gray-600 dark:text-gray-400">
-                    {agent.max_tokens}
-                  </span>
-                </div>
+              {/* アクションボタン */}
+              <div className="flex flex-wrap gap-3 pt-2">
+                <button
+                  onClick={handleStartChat}
+                  className="flex justify-center items-center flex-1 px-6 py-3 space-x-2 font-semibold text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl transition-all shadow-lg min-w-fit hover:from-green-700 hover:to-emerald-700 hover:shadow-xl hover:shadow-green-500/30 hover:-translate-y-0.5"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  <span>トークを開始</span>
+                </button>
+                <button
+                  onClick={handleSettingsClick}
+                  className="flex justify-center items-center px-6 py-3 space-x-2 font-medium text-gray-700 bg-white rounded-xl border border-gray-200 transition-all hover:bg-gray-50 hover:border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700"
+                >
+                  <Settings className="w-5 h-5" />
+                  <span>設定</span>
+                </button>
               </div>
-            )}
-
-            {/* 友だちになった日 */}
-            {friend.created_at && (
-              <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                <Calendar className="w-4 h-4" />
-                <span>
-                  友だちになった日:{" "}
-                  {isClient ? formatDate(friend.created_at) : "--"}
-                </span>
-              </div>
-            )}
+            </div>
           </div>
 
-          {/* エージェントの場合のパーソナリティ情報 */}
-          {friend.type === "ai" && personalityInfo && PersonalityIcon && (
-            <div className="space-y-6">
-              <div className="pb-3 border-b border-gray-200 dark:border-gray-800">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  パーソナリティ
-                </h2>
-              </div>
-              <div className="flex items-start space-x-4">
-                <div className="flex justify-center items-center w-12 h-12 bg-green-100 rounded-lg shadow-lg dark:bg-green-500/20 shadow-green-500/20">
-                  <PersonalityIcon className="w-6 h-6 text-green-600 drop-shadow-[0_0_6px_rgba(34,197,94,0.4)] dark:text-green-400" />
+          {/* AI設定カード */}
+          {agent && (
+            <div className="p-6 space-y-4 bg-white rounded-2xl border shadow-lg border-gray-200/50 dark:bg-gray-900 dark:border-gray-700/50">
+              <div className="flex items-center space-x-3">
+                <div className="flex justify-center items-center w-10 h-10 bg-gradient-to-br from-purple-100 to-blue-100 rounded-xl dark:from-purple-900/30 dark:to-blue-900/30">
+                  <Brain className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                 </div>
-                <div className="flex-1">
-                  <h4 className="mb-2 font-medium text-gray-900 dark:text-white">
-                    {personalityInfo.name}
-                  </h4>
-                  <p className="text-sm leading-relaxed text-gray-600 dark:text-gray-400">
-                    {personalityInfo.description}
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  AI設定
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-3 bg-gray-50 rounded-xl dark:bg-gray-800">
+                  <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">
+                    プロバイダー
+                  </p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {agent.provider}
+                  </p>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-xl dark:bg-gray-800">
+                  <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">
+                    モデル
+                  </p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {agent.model}
+                  </p>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-xl dark:bg-gray-800">
+                  <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">
+                    創造性
+                  </p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {agent.temperature}
+                  </p>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-xl dark:bg-gray-800">
+                  <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">
+                    最大トークン
+                  </p>
+                  <p className="font-medium text-gray-900 dark:text-white">
+                    {agent.max_tokens?.toLocaleString()}
                   </p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* システムプロンプト */}
+          {/* システムプロンプトカード */}
           {agent?.system_prompt && (
-            <div className="space-y-6">
-              <div className="pb-3 border-b border-gray-200 dark:border-gray-800">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                  カスタム指示
-                </h2>
-              </div>
-              <div className="p-4 bg-gray-100 rounded-lg dark:bg-gray-800">
-                <div className="flex items-center mb-2 space-x-2">
-                  <Code className="w-4 h-4 text-gray-500" />
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    システムプロンプト
-                  </span>
+            <div className="p-6 space-y-4 bg-white rounded-2xl border shadow-lg border-gray-200/50 dark:bg-gray-900 dark:border-gray-700/50">
+              <div className="flex items-center space-x-3">
+                <div className="flex justify-center items-center w-10 h-10 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl dark:from-indigo-900/30 dark:to-purple-900/30">
+                  <Code className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                 </div>
-                <p className="text-sm leading-relaxed text-gray-600 whitespace-pre-wrap dark:text-gray-400">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  カスタム指示
+                </h3>
+              </div>
+              <div className="p-4 bg-gray-50 rounded-xl dark:bg-gray-800">
+                <p className="text-sm leading-relaxed text-gray-700 whitespace-pre-wrap dark:text-gray-300">
                   {agent.system_prompt}
                 </p>
               </div>
             </div>
           )}
 
-          {/* 連携サービス */}
+          {/* 連携サービスカード */}
           {services.length > 0 && (
-            <div className="space-y-6">
-              <div className="pb-3 border-b border-gray-200 dark:border-gray-800">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <div className="p-6 space-y-4 bg-white rounded-2xl border shadow-lg border-gray-200/50 dark:bg-gray-900 dark:border-gray-700/50">
+              <div className="flex items-center space-x-3">
+                <div className="flex justify-center items-center w-10 h-10 bg-gradient-to-br from-yellow-100 to-orange-100 rounded-xl dark:from-yellow-900/30 dark:to-orange-900/30">
+                  <Zap className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                   連携サービス
-                </h2>
+                </h3>
               </div>
-              <div className="space-y-4">
+
+              <div className="space-y-3">
                 {services.map((serviceWithTools) => (
                   <div
                     key={serviceWithTools.agentService.id}
-                    className="p-4 bg-white rounded-lg border border-gray-200 dark:bg-gray-800 dark:border-gray-700"
+                    className="p-4 bg-gray-50 rounded-xl dark:bg-gray-800"
                   >
-                    <div className="flex justify-between items-center mb-3">
-                      <div className="flex items-center space-x-3">
-                        <div className="flex justify-center items-center w-10 h-10 bg-gray-100 rounded-lg dark:bg-gray-800">
-                          <Zap className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-gray-900 dark:text-white">
-                            {serviceWithTools.service.name}
-                          </h4>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {serviceWithTools.service.description}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span
-                          className={`px-2 py-1 text-xs rounded-full ${
-                            serviceWithTools.agentService.enabled
-                              ? "bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-400"
-                              : "bg-gray-100 text-gray-800 dark:bg-gray-500/20 dark:text-gray-400"
-                          }`}
-                        >
-                          {serviceWithTools.agentService.enabled
-                            ? "有効"
-                            : "無効"}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          ツール設定
-                        </span>
-                        <span
-                          className={`px-2 py-1 text-xs rounded-full ${
-                            serviceWithTools.agentService
-                              .tool_selection_mode === "all"
-                              ? "bg-green-100 text-green-800 dark:bg-green-500/20 dark:text-green-400"
-                              : "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-400"
-                          }`}
-                        >
-                          {serviceWithTools.agentService.tool_selection_mode ===
-                          "all"
-                            ? "全ツール利用"
-                            : "個別選択"}
-                        </span>
-                      </div>
-
-                      <div>
-                        <p className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                          利用可能なツール ({serviceWithTools.tools.length}個):
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <h4 className="mb-1 font-medium text-gray-900 dark:text-white">
+                          {serviceWithTools.service.name}
+                        </h4>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {serviceWithTools.service.description}
                         </p>
-                        {serviceWithTools.tools.length > 0 ? (
-                          <div className="flex flex-wrap gap-1">
-                            {serviceWithTools.tools.map((tool) => (
-                              <span
-                                key={tool.name}
-                                className="px-2 py-1 text-xs text-gray-700 bg-gray-100 rounded dark:bg-gray-700 dark:text-gray-300"
-                              >
-                                {tool.name}
-                              </span>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            利用可能なツールがありません
-                          </p>
-                        )}
                       </div>
-
-                      {serviceWithTools.agentService.tool_selection_mode ===
-                        "selected" && (
-                        <div className="p-3 bg-blue-50 rounded-lg dark:bg-blue-900/20">
-                          <p className="text-xs text-blue-700 dark:text-blue-300">
-                            <strong>個別選択モード:</strong>{" "}
-                            上記のツールの中から選択されたツールのみが利用されます
-                          </p>
-                        </div>
-                      )}
+                      <span className="px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-full dark:text-green-300 dark:bg-green-900/30">
+                        {serviceWithTools.tools.length}個のツール
+                      </span>
                     </div>
+
+                    {serviceWithTools.tools.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {serviceWithTools.tools.map((tool) => (
+                          <span
+                            key={tool.name}
+                            className="px-2 py-1 text-xs text-gray-600 bg-white rounded-md dark:bg-gray-700 dark:text-gray-300"
+                          >
+                            {tool.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* 友だちになった日 */}
+          {friend.created_at && isClient && (
+            <div className="flex justify-center items-center p-4 space-x-2 text-sm text-gray-500 rounded-xl backdrop-blur-sm bg-white/50 dark:bg-gray-900/50 dark:text-gray-400">
+              <Clock className="w-4 h-4" />
+              <span>友だちになった日: {formatDate(friend.created_at)}</span>
             </div>
           )}
         </div>
