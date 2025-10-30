@@ -10,7 +10,7 @@
 
 - **本番環境**: [https://neuraknot.net](https://neuraknot.net)
 
-### システム構成図
+## システム構成図
 
 NeuraKnot は、Vercel（フロントエンド）と AWS（バックエンド）を組み合わせたクラウドネイティブなアーキテクチャで動作しています。
 
