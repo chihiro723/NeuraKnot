@@ -37,10 +37,12 @@ export function StreamingMessage({
 
   const formatTime = () => {
     const now = new Date();
-    // サーバーとクライアントで一貫した時刻表示のため、UTCベースで計算
-    const hours = now.getHours().toString().padStart(2, "0");
-    const minutes = now.getMinutes().toString().padStart(2, "0");
-    return `${hours}:${minutes}`;
+    // 午前/午後表記で時刻を表示
+    return now.toLocaleTimeString("ja-JP", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
   };
 
   const handleCopy = async () => {
@@ -162,75 +164,75 @@ export function StreamingMessage({
   };
 
   return (
-    <div className="flex items-start space-x-2 md:space-x-3 w-full">
+    <div className="flex items-start space-x-2 w-full md:space-x-3">
       {/* アイコン（クリック可能） */}
-        <button
-          onClick={handleAvatarClick}
-          disabled={!agentId}
-          className={`flex overflow-hidden flex-shrink-0 justify-center items-center w-8 h-8 md:w-10 md:h-10 bg-green-500 rounded-full transition-all duration-200 ${
-            agentId
-              ? "shadow-md cursor-pointer hover:bg-green-600 hover:scale-105 hover:shadow-lg"
-              : "cursor-default"
-          }`}
-          title={agentId ? "エージェントの詳細を表示" : ""}
-        >
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt={name}
-              className="object-cover w-full h-full"
-            />
-          ) : (
-            <span className="text-xs font-medium text-white md:text-sm">
-              {name.charAt(0)}
-            </span>
-          )}
-        </button>
-
-        {/* 右側のコンテンツ */}
-        <div className="flex overflow-hidden flex-col space-y-1 min-w-0 max-w-full">
-          {/* 名前 */}
-          <span className="text-xs font-medium text-gray-600 md:text-sm dark:text-gray-400">
-            {name}
+      <button
+        onClick={handleAvatarClick}
+        disabled={!agentId}
+        className={`flex overflow-hidden flex-shrink-0 justify-center items-center w-8 h-8 md:w-10 md:h-10 bg-green-500 rounded-full transition-all duration-200 ${
+          agentId
+            ? "shadow-md cursor-pointer hover:bg-green-600 hover:scale-105 hover:shadow-lg"
+            : "cursor-default"
+        }`}
+        title={agentId ? "エージェントの詳細を表示" : ""}
+      >
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt={name}
+            className="object-cover w-full h-full"
+          />
+        ) : (
+          <span className="text-xs font-medium text-white md:text-sm">
+            {name.charAt(0)}
           </span>
+        )}
+      </button>
 
-          <div className="flex flex-col space-y-2 min-w-0 max-w-full">
-            <div className="flex space-x-2 min-w-0 max-w-full">
-              {/* メッセージバブル */}
-              <div
-                className="overflow-hidden px-3 py-2 min-w-0 max-w-full text-gray-900 break-words bg-white rounded-2xl rounded-tl-sm border border-gray-200 shadow-sm md:px-4 md:py-3 dark:text-gray-100 dark:bg-gray-800 dark:border-gray-700"
-                style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}
-              >
-                {/* メッセージとツールを時系列順に表示 */}
-                {renderContentWithTools()}
-              </div>
+      {/* 右側のコンテンツ */}
+      <div className="flex overflow-hidden flex-col space-y-1 min-w-0 max-w-full">
+        {/* 名前 */}
+        <span className="text-xs font-medium text-gray-600 md:text-sm dark:text-gray-400">
+          {name}
+        </span>
 
-              {/* コピーボタンとタイムスタンプ（生成中は透明、生成後は通常表示） */}
-              <div
-                className={`flex flex-col flex-shrink-0 items-center self-end pb-1 ${
-                  showCursor ? "opacity-0" : "opacity-100"
-                }`}
-                style={{ gap: "4px" }}
+        <div className="flex flex-col space-y-2 min-w-0 max-w-full">
+          <div className="flex space-x-1 min-w-0 max-w-full">
+            {/* メッセージバブル */}
+            <div
+              className="overflow-hidden px-3 py-2 min-w-0 max-w-full text-gray-900 break-words bg-white rounded-2xl rounded-tl-sm border border-gray-200 shadow-sm md:px-4 md:py-3 dark:text-gray-100 dark:bg-gray-800 dark:border-gray-700"
+              style={{ wordBreak: "break-word", overflowWrap: "anywhere" }}
+            >
+              {/* メッセージとツールを時系列順に表示 */}
+              {renderContentWithTools()}
+            </div>
+
+            {/* コピーボタンとタイムスタンプ（生成中は透明、生成後は通常表示） */}
+            <div
+              className={`flex flex-col flex-shrink-0 items-start self-end pb-1 ${
+                showCursor ? "opacity-0" : "opacity-100"
+              }`}
+              style={{ gap: "4px" }}
+            >
+              <button
+                onClick={handleCopy}
+                disabled={showCursor}
+                className="p-1 text-gray-400 rounded transition-colors hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                title={showCursor ? "生成中..." : "コピー"}
               >
-                <button
-                  onClick={handleCopy}
-                  disabled={showCursor}
-                  className="p-1 text-gray-400 rounded transition-colors hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  title={showCursor ? "生成中..." : "コピー"}
-                >
-                  {copied ? (
-                    <Check className="w-3 h-3 md:w-4 md:h-4" />
-                  ) : (
-                    <Copy className="w-3 h-3 md:w-4 md:h-4" />
-                  )}
-                </button>
-                <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
-                  {isClient ? formatTime() : "--:--"}
-                </span>
-              </div>
+                {copied ? (
+                  <Check className="w-3 h-3 md:w-4 md:h-4" />
+                ) : (
+                  <Copy className="w-3 h-3 md:w-4 md:h-4" />
+                )}
+              </button>
+              <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
+                {isClient ? formatTime() : "--:--"}
+              </span>
             </div>
           </div>
         </div>
+      </div>
     </div>
   );
 }
