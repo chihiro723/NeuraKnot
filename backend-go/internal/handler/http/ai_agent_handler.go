@@ -335,7 +335,7 @@ func (h *AIAgentHandler) UpdateAgent(c *gin.Context) {
 // @Router /api/v1/ai-agents/{id}/services [get]
 func (h *AIAgentHandler) GetAgentServices(c *gin.Context) {
 	var err error
-	
+
 	// 認証ミドルウェアからユーザーを取得
 	user, exists := middleware.GetUserFromContext(c)
 	if !exists {
@@ -374,7 +374,7 @@ func (h *AIAgentHandler) GetAgentServices(c *gin.Context) {
 	}
 
 	// サービス一覧を取得
-	var services []*service.AIAgentService
+	var services []service.AIAgentService
 	services, err = h.aiAgentServiceRepo.FindByAgentID(agentID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
@@ -417,7 +417,7 @@ func (h *AIAgentHandler) GetAgentServices(c *gin.Context) {
 // @Router /api/v1/ai-agents/{id}/services [post]
 func (h *AIAgentHandler) AddAgentService(c *gin.Context) {
 	var err error
-	
+
 	// 認証ミドルウェアからユーザーを取得
 	user, exists := middleware.GetUserFromContext(c)
 	if !exists {
@@ -502,7 +502,7 @@ func (h *AIAgentHandler) AddAgentService(c *gin.Context) {
 // @Router /api/v1/ai-agents/{id}/services/{service_id} [put]
 func (h *AIAgentHandler) UpdateAgentService(c *gin.Context) {
 	var err error
-	
+
 	// 認証ミドルウェアからユーザーを取得
 	user, exists := middleware.GetUserFromContext(c)
 	if !exists {
@@ -556,7 +556,7 @@ func (h *AIAgentHandler) UpdateAgentService(c *gin.Context) {
 	}
 
 	// サービスを取得（IDで検索する必要があるが、現在のRepositoryにはID検索がないため、エージェントの全サービスから検索）
-	var services []*service.AIAgentService
+	var services []service.AIAgentService
 	services, err = h.aiAgentServiceRepo.FindByAgentID(agentID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
@@ -564,9 +564,9 @@ func (h *AIAgentHandler) UpdateAgentService(c *gin.Context) {
 	}
 
 	var agentService *service.AIAgentService
-	for _, s := range services {
-		if s.ID == serviceID {
-			agentService = &s
+	for i := range services {
+		if services[i].ID == serviceID {
+			agentService = &services[i]
 			break
 		}
 	}
@@ -624,7 +624,7 @@ func (h *AIAgentHandler) UpdateAgentService(c *gin.Context) {
 // @Router /api/v1/ai-agents/{id}/services/{service_id} [delete]
 func (h *AIAgentHandler) DeleteAgentService(c *gin.Context) {
 	var err error
-	
+
 	// 認証ミドルウェアからユーザーを取得
 	user, exists := middleware.GetUserFromContext(c)
 	if !exists {
@@ -694,7 +694,7 @@ func (h *AIAgentHandler) DeleteAgentService(c *gin.Context) {
 // @Router /api/v1/ai-agents/{id} [delete]
 func (h *AIAgentHandler) DeleteAgent(c *gin.Context) {
 	var err error
-	
+
 	// 認証ミドルウェアからユーザーを取得
 	user, exists := middleware.GetUserFromContext(c)
 	if !exists {
