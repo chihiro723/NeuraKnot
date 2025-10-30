@@ -7,6 +7,7 @@ import { ChatWindow } from "@/components/chat/ChatWindow";
 import { Avatar } from "@/components/ui/Avatar";
 import { Phone, ArrowLeft } from "lucide-react";
 import { useIsMobile } from "@/lib/hooks/useResponsive";
+import type { ToolUsage } from "@/lib/types";
 
 export interface Message {
   id: string;
@@ -14,7 +15,7 @@ export interface Message {
   sender_type: "user" | "ai";
   sender_id: string;
   created_at: string;
-  tool_usages?: any[];
+  tool_usages?: ToolUsage[];
 }
 
 export interface UserProfile {

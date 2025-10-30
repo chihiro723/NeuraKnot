@@ -78,7 +78,7 @@ export interface ConversationData {
   lastMessage: {
     content: string
     created_at: string
-    sender_type: string
+    sender_type: 'user' | 'ai'
     sender_name?: string
   } | null
 }
@@ -101,10 +101,26 @@ export interface ToolUsage {
 export interface Message {
   id: string
   content: string
-  sender_type: 'human' | 'ai'
+  sender_type: 'user' | 'ai'
   sender_id: string
   created_at: string
   tool_usages?: ToolUsage[]
+}
+
+// AI Agent の型定義
+export interface Agent {
+  id: string
+  name: string
+  description?: string
+  avatar_url?: string
+  persona_type?: string
+  provider?: string
+  model?: string
+  temperature?: number
+  max_tokens?: number
+  streaming_enabled?: boolean
+  created_at: string
+  updated_at: string
 }
 
 // AIパーソナリティの型定義
