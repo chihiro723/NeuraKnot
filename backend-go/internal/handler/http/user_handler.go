@@ -37,13 +37,16 @@ func NewUserHandler(userService *userusecase.Service) *UserHandler {
 // @Failure 500 {object} response.ErrorResponse "サーバーエラー"
 // @Router /auth/signup [post]
 func (h *UserHandler) SignUp(c *gin.Context) {
+	var err error
+
 	var req request.SignUpRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err = c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(err.Error()))
 		return
 	}
 
-	authResult, err := h.userService.SignUp(c.Request.Context(), req.Email, req.Password, req.DisplayName)
+	var authResult *user.AuthResult
+	authResult, err = h.userService.SignUp(c.Request.Context(), req.Email, req.Password, req.DisplayName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
 		return

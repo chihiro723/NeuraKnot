@@ -77,6 +77,8 @@ func (h *ServiceHandler) GetServiceTools(c *gin.Context) {
 // @Success 201 {object} service.ServiceConfig
 // @Router /api/v1/services/config [post]
 func (h *ServiceHandler) CreateServiceConfig(c *gin.Context) {
+	var err error
+
 	user, exists := middleware.GetUserFromContext(c)
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "認証が必要です"})
@@ -84,19 +86,21 @@ func (h *ServiceHandler) CreateServiceConfig(c *gin.Context) {
 	}
 
 	var input service.CreateServiceConfigInput
-	if err := c.ShouldBindJSON(&input); err != nil {
+	if err = c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "入力が不正です", "details": err.Error()})
 		return
 	}
 
-	userID, err := uuid.Parse(string(user.ID))
+	var userID uuid.UUID
+	userID, err = uuid.Parse(string(user.ID))
 	if err != nil {
 		h.logger.Error("Failed to parse user ID", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "無効なユーザーIDです"})
 		return
 	}
 
-	config, err := h.serviceUsecase.CreateServiceConfig(userID, &input)
+	var config *service.ServiceConfig
+	config, err = h.serviceUsecase.CreateServiceConfig(userID, &input)
 	if err != nil {
 		h.logger.Error("Failed to create service config", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -115,20 +119,24 @@ func (h *ServiceHandler) CreateServiceConfig(c *gin.Context) {
 // @Success 200 {array} service.ServiceConfig
 // @Router /api/v1/services/config [get]
 func (h *ServiceHandler) GetUserServiceConfigs(c *gin.Context) {
+	var err error
+
 	user, exists := middleware.GetUserFromContext(c)
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "認証が必要です"})
 		return
 	}
 
-	userID, err := uuid.Parse(string(user.ID))
+	var userID uuid.UUID
+	userID, err = uuid.Parse(string(user.ID))
 	if err != nil {
 		h.logger.Error("Failed to parse user ID", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "無効なユーザーIDです"})
 		return
 	}
 
-	configs, err := h.serviceUsecase.GetUserServiceConfigs(userID)
+	var configs []service.ServiceConfig
+	configs, err = h.serviceUsecase.GetUserServiceConfigs(userID)
 	if err != nil {
 		h.logger.Error("Failed to get user service configs", "error", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -148,13 +156,17 @@ func (h *ServiceHandler) GetUserServiceConfigs(c *gin.Context) {
 // @Success 200 {object} service.ServiceConfig
 // @Router /api/v1/services/config/{id} [get]
 func (h *ServiceHandler) GetServiceConfigByID(c *gin.Context) {
-	configID, err := uuid.Parse(c.Param("id"))
+	var err error
+
+	var configID uuid.UUID
+	configID, err = uuid.Parse(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "無効なIDです"})
 		return
 	}
 
-	config, err := h.serviceUsecase.GetServiceConfigByID(configID)
+	var config *service.ServiceConfig
+	config, err = h.serviceUsecase.GetServiceConfigByID(configID)
 	if err != nil {
 		h.logger.Error("Failed to get service config", "error", err, "config_id", configID)
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -175,19 +187,23 @@ func (h *ServiceHandler) GetServiceConfigByID(c *gin.Context) {
 // @Success 200 {object} service.ServiceConfig
 // @Router /api/v1/services/config/{id} [put]
 func (h *ServiceHandler) UpdateServiceConfig(c *gin.Context) {
-	configID, err := uuid.Parse(c.Param("id"))
+	var err error
+
+	var configID uuid.UUID
+	configID, err = uuid.Parse(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "無効なIDです"})
 		return
 	}
 
 	var input service.UpdateServiceConfigInput
-	if err := c.ShouldBindJSON(&input); err != nil {
+	if err = c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "入力が不正です", "details": err.Error()})
 		return
 	}
 
-	config, err := h.serviceUsecase.UpdateServiceConfig(configID, &input)
+	var config *service.ServiceConfig
+	config, err = h.serviceUsecase.UpdateServiceConfig(configID, &input)
 	if err != nil {
 		h.logger.Error("Failed to update service config", "error", err, "config_id", configID)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -207,13 +223,16 @@ func (h *ServiceHandler) UpdateServiceConfig(c *gin.Context) {
 // @Success 204
 // @Router /api/v1/services/config/{id} [delete]
 func (h *ServiceHandler) DeleteServiceConfig(c *gin.Context) {
-	configID, err := uuid.Parse(c.Param("id"))
+	var err error
+
+	var configID uuid.UUID
+	configID, err = uuid.Parse(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "無効なIDです"})
 		return
 	}
 
-	if err := h.serviceUsecase.DeleteServiceConfig(configID); err != nil {
+	if err = h.serviceUsecase.DeleteServiceConfig(configID); err != nil {
 		h.logger.Error("Failed to delete service config", "error", err, "config_id", configID)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -232,13 +251,15 @@ func (h *ServiceHandler) DeleteServiceConfig(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/services/validate [post]
 func (h *ServiceHandler) ValidateServiceAuth(c *gin.Context) {
+	var err error
+	
 	var input service.ValidateServiceAuthInput
-	if err := c.ShouldBindJSON(&input); err != nil {
+	if err = c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "入力が不正です", "details": err.Error()})
 		return
 	}
 
-	if err := h.serviceUsecase.ValidateServiceAuth(input.ServiceClass, input.Auth); err != nil {
+	if err = h.serviceUsecase.ValidateServiceAuth(input.ServiceClass, input.Auth); err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"valid": false,
 			"error": err.Error(),
