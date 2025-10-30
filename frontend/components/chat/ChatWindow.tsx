@@ -674,7 +674,7 @@ export function ChatWindow({
             return (
               <div key={message.id}>
                 {/* 日付セパレーター */}
-                {showDateSeparator && (
+                {showDateSeparator && isClient && (
                   <div
                     className="flex justify-center items-center my-6 animate-fadeIn"
                     role="separator"
@@ -796,7 +796,8 @@ export function ChatWindow({
           {isStreaming && streamingContent && (
             <>
               {/* ストリーミングメッセージの日付セパレーター（最後のメッセージと日付が異なる場合） */}
-              {messages.length > 0 &&
+              {isClient &&
+                messages.length > 0 &&
                 !isSameDay(
                   new Date(messages[messages.length - 1].created_at),
                   new Date()
@@ -804,10 +805,12 @@ export function ChatWindow({
                   <div
                     className="flex justify-center items-center my-6 animate-fadeIn"
                     role="separator"
-                    aria-label="日付: 今日"
+                    aria-label={`日付: ${formatDateSeparator(
+                      new Date().toISOString()
+                    )}`}
                   >
                     <div className="px-3 py-1 text-xs text-gray-500 rounded-full shadow-sm backdrop-blur-sm transition-all bg-gray-100/80 dark:text-gray-400 dark:bg-gray-800/80 hover:scale-105">
-                      今日
+                      {formatDateSeparator(new Date().toISOString())}
                     </div>
                   </div>
                 )}
