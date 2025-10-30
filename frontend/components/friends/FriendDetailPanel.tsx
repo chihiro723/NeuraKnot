@@ -260,9 +260,7 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
         <div className="p-4 mx-auto space-y-6 max-w-3xl sm:p-6">
           {/* プロフィールカード */}
           <div className="overflow-hidden relative bg-white rounded-2xl border shadow-lg border-gray-200/50 dark:bg-gray-800 dark:border-gray-700/50">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br rounded-full blur-3xl from-green-500/10 to-emerald-500/10" />
-
-            <div className="relative p-6 space-y-6 sm:p-8">
+            <div className="p-6 space-y-6 sm:p-8">
               {/* アバターとメイン情報 */}
               <div className="flex flex-col items-center space-y-4 sm:flex-row sm:items-start sm:space-x-6 sm:space-y-0">
                 <div className="relative group">
