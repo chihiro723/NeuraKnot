@@ -272,40 +272,6 @@ definitions:
     required:
     - positions
     type: object
-  backend-go_internal_handler_http_response.ActivityStatsResponse:
-    properties:
-      active_conversations:
-        type: integer
-      ai_messages:
-        type: integer
-      average_response_time_ms:
-        type: number
-      daily_activity:
-        items:
-          $ref: '#/definitions/backend-go_internal_handler_http_response.DailyActivityPointResponse'
-        type: array
-      total_conversations:
-        type: integer
-      total_messages:
-        type: integer
-      user_messages:
-        type: integer
-    type: object
-  backend-go_internal_handler_http_response.AgentPerformanceResponse:
-    properties:
-      agent_id:
-        type: string
-      agent_name:
-        type: string
-      average_response_time_ms:
-        type: number
-      message_count:
-        type: integer
-      tools_used:
-        type: integer
-      total_tokens:
-        type: integer
-    type: object
   backend-go_internal_handler_http_response.AgentResponse:
     properties:
       avatar_url:
@@ -376,21 +342,6 @@ definitions:
       total:
         type: integer
     type: object
-  backend-go_internal_handler_http_response.AnalyticsResponse:
-    properties:
-      activity_stats:
-        $ref: '#/definitions/backend-go_internal_handler_http_response.ActivityStatsResponse'
-      agent_performance:
-        items:
-          $ref: '#/definitions/backend-go_internal_handler_http_response.AgentPerformanceResponse'
-        type: array
-      service_stats:
-        $ref: '#/definitions/backend-go_internal_handler_http_response.ServiceStatsResponse'
-      token_stats:
-        $ref: '#/definitions/backend-go_internal_handler_http_response.TokenStatsResponse'
-      tool_usage_stats:
-        $ref: '#/definitions/backend-go_internal_handler_http_response.ToolUsageStatsResponse'
-    type: object
   backend-go_internal_handler_http_response.AuthResultResponse:
     properties:
       expires_in:
@@ -443,17 +394,6 @@ definitions:
           $ref: '#/definitions/backend-go_internal_handler_http_response.ConversationWithDetailsResponse'
         type: array
       total:
-        type: integer
-    type: object
-  backend-go_internal_handler_http_response.DailyActivityPointResponse:
-    properties:
-      ai_messages:
-        type: integer
-      date:
-        type: string
-      message_count:
-        type: integer
-      user_messages:
         type: integer
     type: object
   backend-go_internal_handler_http_response.EnhancePromptResponse:
@@ -511,90 +451,6 @@ definitions:
       user_message:
         $ref: '#/definitions/backend-go_internal_handler_http_response.MessageResponse'
     type: object
-  backend-go_internal_handler_http_response.ServiceStatsResponse:
-    properties:
-      by_service:
-        items:
-          $ref: '#/definitions/backend-go_internal_handler_http_response.ServiceUsageStatsResponse'
-        type: array
-      disabled_services:
-        type: integer
-      enabled_services:
-        type: integer
-      total_services:
-        type: integer
-    type: object
-  backend-go_internal_handler_http_response.ServiceUsageStatsResponse:
-    properties:
-      agent_count:
-        type: integer
-      is_enabled:
-        type: boolean
-      service_class:
-        type: string
-    type: object
-  backend-go_internal_handler_http_response.TokenStatsResponse:
-    properties:
-      by_model:
-        items:
-          $ref: '#/definitions/backend-go_internal_handler_http_response.TokensByModelResponse'
-        type: array
-      by_provider:
-        items:
-          $ref: '#/definitions/backend-go_internal_handler_http_response.TokensByProviderResponse'
-        type: array
-      completion_tokens:
-        type: integer
-      estimated_cost_jpy:
-        type: number
-      estimated_cost_usd:
-        type: number
-      prompt_tokens:
-        type: integer
-      total_tokens:
-        type: integer
-    type: object
-  backend-go_internal_handler_http_response.TokensByModelResponse:
-    properties:
-      completion_tokens:
-        type: integer
-      estimated_cost_usd:
-        type: number
-      model:
-        type: string
-      prompt_tokens:
-        type: integer
-      provider:
-        type: string
-      total_tokens:
-        type: integer
-    type: object
-  backend-go_internal_handler_http_response.TokensByProviderResponse:
-    properties:
-      estimated_cost_usd:
-        type: number
-      provider:
-        type: string
-      total_tokens:
-        type: integer
-    type: object
-  backend-go_internal_handler_http_response.ToolStatsResponse:
-    properties:
-      average_execution_time_ms:
-        type: number
-      call_count:
-        type: integer
-      category:
-        type: string
-      failure_count:
-        type: integer
-      success_count:
-        type: integer
-      success_rate:
-        type: number
-      tool_name:
-        type: string
-    type: object
   backend-go_internal_handler_http_response.ToolUsageResponse:
     properties:
       error_message:
@@ -617,34 +473,6 @@ definitions:
         type: string
       tool_name:
         type: string
-    type: object
-  backend-go_internal_handler_http_response.ToolUsageStatsResponse:
-    properties:
-      by_category:
-        items:
-          $ref: '#/definitions/backend-go_internal_handler_http_response.ToolsByCategoryResponse'
-        type: array
-      by_tool:
-        items:
-          $ref: '#/definitions/backend-go_internal_handler_http_response.ToolStatsResponse'
-        type: array
-      failed_calls:
-        type: integer
-      success_rate:
-        type: number
-      successful_calls:
-        type: integer
-      total_tool_calls:
-        type: integer
-    type: object
-  backend-go_internal_handler_http_response.ToolsByCategoryResponse:
-    properties:
-      call_count:
-        type: integer
-      category:
-        type: string
-      success_rate:
-        type: number
     type: object
   backend-go_internal_handler_http_response.UserResponse:
     properties:
@@ -686,41 +514,6 @@ info:
   title: NeuraKnot API
   version: "1.0"
 paths:
-  /analytics:
-    get:
-      consumes:
-      - application/json
-      description: 認証済みユーザーの統計データ（トークン使用量、活動量、エージェントパフォーマンス、ツール使用統計、サービス連携状況）を取得します
-      parameters:
-      - default: all
-        description: 期間フィルター (today, week, month, all)
-        in: query
-        name: time_range
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: 統計データ取得成功
-          schema:
-            $ref: '#/definitions/backend-go_internal_handler_http_response.AnalyticsResponse'
-        "400":
-          description: バリデーションエラー
-          schema:
-            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
-        "401":
-          description: 認証エラー
-          schema:
-            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
-        "500":
-          description: サーバーエラー
-          schema:
-            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: ユーザーの統計データを取得
-      tags:
-      - Analytics
   /api/v1/ai-agents:
     get:
       consumes:
