@@ -58,21 +58,16 @@ export function ActivityStatsSection({ stats }: ActivityStatsSectionProps) {
           title="総メッセージ数"
           value={stats.total_messages.toLocaleString()}
           subtitle={`ユーザー: ${stats.user_messages.toLocaleString()} / AI: ${stats.ai_messages.toLocaleString()}`}
-          icon={MessageSquare}
         />
         <StatsCard
           title="総会話数"
           value={stats.total_conversations.toLocaleString()}
           subtitle={`アクティブ: ${stats.active_conversations.toLocaleString()}`}
-          icon={MessageCircle}
-          iconColor="text-blue-600 dark:text-blue-400"
         />
         <StatsCard
           title="平均応答時間"
           value={`${(stats.average_response_time_ms / 1000).toFixed(2)}s`}
           subtitle="AI処理時間"
-          icon={Clock}
-          iconColor="text-purple-600 dark:text-purple-400"
         />
       </div>
 
@@ -113,12 +108,13 @@ export function ActivityStatsSection({ stats }: ActivityStatsSectionProps) {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={(entry: { name: string; value: number }) =>
-                    `${entry.name}: ${(
-                      ((entry.value as number) / stats.total_messages) *
+                  label={(entry: unknown) => {
+                    const data = entry as { name: string; value: number };
+                    return `${data.name}: ${(
+                      (data.value / stats.total_messages) *
                       100
-                    ).toFixed(1)}%`
-                  }
+                    ).toFixed(1)}%`;
+                  }}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"

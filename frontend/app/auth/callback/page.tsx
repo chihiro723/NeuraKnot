@@ -29,7 +29,7 @@ function AuthCallbackContent() {
           throw new Error("認証パラメータが不足しています");
         }
 
-        await handleOAuthCallback(provider, code, state || undefined);
+        await handleOAuthCallback(code, state, provider);
 
         setStatus("success");
         setTimeout(() => {

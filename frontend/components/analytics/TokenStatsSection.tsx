@@ -41,21 +41,16 @@ export function TokenStatsSection({ stats }: TokenStatsSectionProps) {
           title="総トークン数"
           value={stats.total_tokens.toLocaleString()}
           subtitle={`入力: ${stats.prompt_tokens.toLocaleString()} / 出力: ${stats.completion_tokens.toLocaleString()}`}
-          icon={Coins}
         />
         <StatsCard
           title="推定コスト (USD)"
           value={`$${stats.estimated_cost_usd.toFixed(2)}`}
           subtitle="LLM API使用料"
-          icon={DollarSign}
-          iconColor="text-blue-600 dark:text-blue-400"
         />
         <StatsCard
           title="推定コスト (JPY)"
           value={`¥${Math.round(stats.estimated_cost_jpy).toLocaleString()}`}
           subtitle="1 USD = 150 JPY"
-          icon={TrendingUp}
-          iconColor="text-purple-600 dark:text-purple-400"
         />
       </div>
 
@@ -73,12 +68,13 @@ export function TokenStatsSection({ stats }: TokenStatsSectionProps) {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={(entry: { name: string; value: number }) =>
-                    `${entry.name}: ${(
-                      (entry.value / stats.total_tokens) *
+                  label={(entry: unknown) => {
+                    const data = entry as { name: string; value: number };
+                    return `${data.name}: ${(
+                      (data.value / stats.total_tokens) *
                       100
-                    ).toFixed(1)}%`
-                  }
+                    ).toFixed(1)}%`;
+                  }}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"

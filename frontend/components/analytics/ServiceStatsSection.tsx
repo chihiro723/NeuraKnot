@@ -24,21 +24,16 @@ export function ServiceStatsSection({ stats }: ServiceStatsSectionProps) {
           title="登録サービス数"
           value={stats.total_services.toLocaleString()}
           subtitle="連携しているサービス"
-          icon={Package}
         />
         <StatsCard
           title="有効サービス"
           value={stats.enabled_services.toLocaleString()}
           subtitle="現在使用中"
-          icon={Check}
-          iconColor="text-green-600 dark:text-green-400"
         />
         <StatsCard
           title="無効サービス"
           value={stats.disabled_services.toLocaleString()}
           subtitle="一時停止中"
-          icon={X}
-          iconColor="text-gray-600 dark:text-gray-400"
         />
       </div>
 

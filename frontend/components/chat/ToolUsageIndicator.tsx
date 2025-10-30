@@ -110,7 +110,7 @@ export function ToolUsageIndicator({
                       <pre className="font-mono leading-relaxed whitespace-pre-wrap break-words overflow-x-auto">
                         {typeof tool.input === "string"
                           ? tool.input
-                          : JSON.stringify(tool.input, null, 2)}
+                          : JSON.stringify(tool.input as Record<string, unknown>, null, 2)}
                       </pre>
                     </div>
                   </div>

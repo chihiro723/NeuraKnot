@@ -174,11 +174,11 @@ export function useCognitoAuth() {
   }, [])
 
 
-  const forgotPassword = useCallback(async (emailData: ForgotPasswordRequest): Promise<void> => {
+  const forgotPassword = useCallback(async (): Promise<void> => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }))
       
-      await cognitoAuth.forgotPassword(emailData.email)
+      await cognitoAuth.forgotPassword()
       
       setState(prev => ({ ...prev, loading: false, error: null }))
     } catch (error) {
@@ -191,15 +191,11 @@ export function useCognitoAuth() {
     }
   }, [])
 
-  const confirmForgotPassword = useCallback(async (confirmData: ConfirmForgotPasswordRequest): Promise<void> => {
+  const confirmForgotPassword = useCallback(async (): Promise<void> => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }))
       
-      await cognitoAuth.confirmForgotPassword(
-        confirmData.email,
-        confirmData.confirmation_code,
-        confirmData.new_password
-      )
+      await cognitoAuth.confirmForgotPassword()
       
       setState(prev => ({ ...prev, loading: false, error: null }))
     } catch (error) {
@@ -216,6 +212,11 @@ export function useCognitoAuth() {
     setState(prev => ({ ...prev, error: null }))
   }, [])
 
+  // OAuth callback handler（未実装）
+  const handleOAuthCallback = useCallback(async (_code: string, _state: string | null, _provider: string) => {
+    throw new Error('OAuth認証は現在実装されていません')
+  }, [])
+
   return {
     ...state,
     signIn,
@@ -226,6 +227,7 @@ export function useCognitoAuth() {
     forgotPassword,
     confirmForgotPassword,
     clearError,
+    handleOAuthCallback,
     isAuthenticated: !!state.user
   }
 }

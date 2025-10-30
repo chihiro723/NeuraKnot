@@ -176,11 +176,9 @@ export function ServiceRegistrationForm({
                         handleServiceClick(service);
                       }
                     }}
-                    isConfigured={isRegistered}
                     isDisabled={isRegistered}
                     requiresAuth={needsAuth}
                     isUnlocked={isRegistered}
-                    isEnabled={true}
                   />
                 );
               })}

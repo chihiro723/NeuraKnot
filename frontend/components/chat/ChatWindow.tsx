@@ -70,8 +70,8 @@ export function ChatWindow({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const footerRef = useRef<HTMLDivElement>(null);
 
-  // ローディング状態
-  const [isLoading, setIsLoading] = useState(false);
+  // ローディング状態（将来的に使用予定）
+  const [isLoading] = useState(false);
 
   // ストリーミング状態
   const [isStreaming, setIsStreaming] = useState(false);
@@ -93,16 +93,32 @@ export function ChatWindow({
 
   // 401エラー時に自動リフレッシュ（各Server Actionを個別にラップ）
   const getOrCreateConversationWithAuth = useServerActionWithAuth(
-    getOrCreateConversation as (aiAgentId: string) => Promise<{ success: boolean; data?: { id: string }; error?: string }>
+    getOrCreateConversation as (
+      aiAgentId: string
+    ) => Promise<{ success: boolean; data?: { id: string }; error?: string }>
   );
   const getMessagesWithAuth = useServerActionWithAuth(
-    getMessages as (conversationId: string, limit?: number) => Promise<{ success: boolean; data?: { messages: Message[] }; error?: string }>
+    getMessages as (
+      conversationId: string,
+      limit?: number
+    ) => Promise<{
+      success: boolean;
+      data?: { messages: Message[] };
+      error?: string;
+    }>
   );
   const sendMessageWithAuth = useServerActionWithAuth(
-    serverSendMessage as (conversationId: string, content: string) => Promise<{ success: boolean; data?: unknown; error?: string }>
+    serverSendMessage as (
+      conversationId: string,
+      content: string
+    ) => Promise<{ success: boolean; data?: unknown; error?: string }>
   );
   const getProfileWithAuth = useServerActionWithAuth(
-    getProfile as () => Promise<{ success: boolean; data?: { username: string; display_name: string; avatar_url: string }; error?: string }>
+    getProfile as () => Promise<{
+      success: boolean;
+      data?: { username: string; display_name: string; avatar_url: string };
+      error?: string;
+    }>
   );
 
   // 現在のユーザー情報を取得（初期データがない場合のみ）
@@ -113,7 +129,11 @@ export function ChatWindow({
       try {
         const result = await getProfileWithAuth();
         if (result.success && result.data) {
-          const data = result.data as { username: string; display_name: string; avatar_url: string };
+          const data = result.data as {
+            username: string;
+            display_name: string;
+            avatar_url: string;
+          };
           setCurrentUser({
             username: data.username,
             display_name: data.display_name,

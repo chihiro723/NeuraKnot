@@ -143,9 +143,7 @@ export function ServiceList() {
             key={userService.config.id}
             service={userService.service}
             onClick={() => handleServiceClick(userService)}
-            isConfigured={true}
             isUnlocked={userService.config.is_enabled}
-            isEnabled={userService.config.is_enabled}
           />
         ))}
       </div>

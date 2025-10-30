@@ -101,8 +101,7 @@ export async function sendMessageStream(
 
       // ユーザーメッセージイベント
       onEvent({
-        type: 'message',
-        role: 'user',
+        type: 'token',
         content: data.user_message.content
       })
 
