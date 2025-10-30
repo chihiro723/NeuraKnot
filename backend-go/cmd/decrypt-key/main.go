@@ -27,6 +27,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	var err error
+
 	configID, err := uuid.Parse(os.Args[1])
 	if err != nil {
 		fmt.Printf("❌ Invalid service config ID: %v\n", err)
@@ -35,7 +37,7 @@ func main() {
 
 	// .envファイルを読み込み（開発環境）
 	// エラーは無視（.envファイルがない場合は環境変数を使用）
-	if err := godotenv.Load(); err != nil {
+	if err = godotenv.Load(); err != nil {
 		fmt.Printf("Warning: .env file not found, using environment variables\n")
 	}
 
@@ -75,7 +77,7 @@ func main() {
 	defer db.Close()
 
 	// 接続テスト
-	if err := db.Ping(); err != nil {
+	if err = db.Ping(); err != nil {
 		fmt.Printf("❌ Failed to ping database: %v\n", err)
 		os.Exit(1)
 	}

@@ -81,17 +81,21 @@ func (r *Repository) GetByID(ctx context.Context, id user.UserID) (*user.User, e
 	}
 
 	// 値オブジェクトを作成
-	parsedUserID, err := user.ParseUserID(userID)
+	var parsedUserID user.UserID
+	var parsedEmail user.Email
+	var parsedStatus user.UserStatus
+
+	parsedUserID, err = user.ParseUserID(userID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user ID: %w", err)
 	}
 
-	parsedEmail, err := user.NewEmail(email)
+	parsedEmail, err = user.NewEmail(email)
 	if err != nil {
 		return nil, fmt.Errorf("invalid email: %w", err)
 	}
 
-	parsedStatus, err := user.ParseUserStatus(status)
+	parsedStatus, err = user.ParseUserStatus(status)
 	if err != nil {
 		return nil, fmt.Errorf("invalid status: %w", err)
 	}
@@ -135,17 +139,21 @@ func (r *Repository) GetByCognitoUserID(ctx context.Context, cognitoUserID strin
 	}
 
 	// 値オブジェクトを作成
-	parsedUserID, err := user.ParseUserID(userID)
+	var parsedUserID user.UserID
+	var parsedEmail user.Email
+	var parsedStatus user.UserStatus
+
+	parsedUserID, err = user.ParseUserID(userID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user ID: %w", err)
 	}
 
-	parsedEmail, err := user.NewEmail(email)
+	parsedEmail, err = user.NewEmail(email)
 	if err != nil {
 		return nil, fmt.Errorf("invalid email: %w", err)
 	}
 
-	parsedStatus, err := user.ParseUserStatus(status)
+	parsedStatus, err = user.ParseUserStatus(status)
 	if err != nil {
 		return nil, fmt.Errorf("invalid status: %w", err)
 	}
@@ -189,17 +197,21 @@ func (r *Repository) GetByEmail(ctx context.Context, email user.Email) (*user.Us
 	}
 
 	// 値オブジェクトを作成
-	parsedUserID, err := user.ParseUserID(userID)
+	var parsedUserID user.UserID
+	var parsedEmail user.Email
+	var parsedStatus user.UserStatus
+
+	parsedUserID, err = user.ParseUserID(userID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user ID: %w", err)
 	}
 
-	parsedEmail, err := user.NewEmail(emailStr)
+	parsedEmail, err = user.NewEmail(emailStr)
 	if err != nil {
 		return nil, fmt.Errorf("invalid email: %w", err)
 	}
 
-	parsedStatus, err := user.ParseUserStatus(status)
+	parsedStatus, err = user.ParseUserStatus(status)
 	if err != nil {
 		return nil, fmt.Errorf("invalid status: %w", err)
 	}
@@ -219,6 +231,8 @@ func (r *Repository) GetByEmail(ctx context.Context, email user.Email) (*user.Us
 // Delete ユーザーを削除
 func (r *Repository) Delete(ctx context.Context, id user.UserID) error {
 	query := `DELETE FROM users WHERE id = $1`
+
+	var err error
 
 	result, err := r.db.ExecContext(ctx, query, id.String())
 	if err != nil {
@@ -258,7 +272,7 @@ func (r *Repository) List(ctx context.Context, limit, offset int) ([]*user.User,
 		var userID, email, status string
 		var createdAt, updatedAt time.Time
 
-		err := rows.Scan(
+		err = rows.Scan(
 			&userID,
 			&u.CognitoUserID,
 			&email,
@@ -272,17 +286,21 @@ func (r *Repository) List(ctx context.Context, limit, offset int) ([]*user.User,
 		}
 
 		// 値オブジェクトを作成
-		parsedUserID, err := user.ParseUserID(userID)
+		var parsedUserID user.UserID
+		var parsedEmail user.Email
+		var parsedStatus user.UserStatus
+
+		parsedUserID, err = user.ParseUserID(userID)
 		if err != nil {
 			return nil, fmt.Errorf("invalid user ID: %w", err)
 		}
 
-		parsedEmail, err := user.NewEmail(email)
+		parsedEmail, err = user.NewEmail(email)
 		if err != nil {
 			return nil, fmt.Errorf("invalid email: %w", err)
 		}
 
-		parsedStatus, err := user.ParseUserStatus(status)
+		parsedStatus, err = user.ParseUserStatus(status)
 		if err != nil {
 			return nil, fmt.Errorf("invalid status: %w", err)
 		}
