@@ -70,6 +70,9 @@ export function ChatWindow({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const footerRef = useRef<HTMLDivElement>(null);
 
+  // ローディング状態
+  const [isLoading, setIsLoading] = useState(false);
+
   // ストリーミング状態
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
