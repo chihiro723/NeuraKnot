@@ -642,11 +642,15 @@ func (uc *ChatUsecase) relayAndHandleStream(
 				if err == nil {
 					conv.IncrementMessageCount()
 					conv.IncrementMessageCount()
-					_ = uc.convRepo.Update(ctx, conv)
+					if updateErr := uc.convRepo.Update(ctx, conv); updateErr != nil {
+						fmt.Printf("Warning: failed to update conversation: %v\n", updateErr)
+					}
 				}
 
 				agent.IncrementMessageCount()
-				_ = uc.aiRepo.Update(ctx, agent)
+				if updateErr := uc.aiRepo.Update(ctx, agent); updateErr != nil {
+					fmt.Printf("Warning: failed to update agent: %v\n", updateErr)
+				}
 
 				// ChatSessionを保存（doneイベントにメタデータが含まれる場合）
 				if event.Metadata != nil {

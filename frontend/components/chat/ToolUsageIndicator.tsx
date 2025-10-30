@@ -85,7 +85,8 @@ export function ToolUsageIndicator({
               <div className="flex-shrink-0 ml-2">
                 <div
                   className={`transition-transform duration-200 ${
-                    isExpanded ? "rotate-180" : ""}`}
+                    isExpanded ? "rotate-180" : ""
+                  }`}
                 >
                   <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 </div>
@@ -109,7 +110,11 @@ export function ToolUsageIndicator({
                       <pre className="overflow-x-auto font-mono leading-relaxed whitespace-pre-wrap break-words">
                         {typeof tool.input === "string"
                           ? tool.input
-                          : JSON.stringify(tool.input as Record<string, unknown>, null, 2)}
+                          : JSON.stringify(
+                              tool.input as Record<string, unknown>,
+                              null,
+                              2
+                            )}
                       </pre>
                     </div>
                   </div>

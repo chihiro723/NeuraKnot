@@ -442,33 +442,3 @@ func (c *CognitoService) SignOut(ctx context.Context, accessToken string) error 
 
 	return nil
 }
-
-// getUserInfo ユーザー情報を取得
-func (c *CognitoService) getUserInfo(ctx context.Context, accessToken string) (*user.UserInfo, error) {
-	input := &cognitoidentityprovider.GetUserInput{
-		AccessToken: aws.String(accessToken),
-	}
-
-	result, err := c.client.GetUser(ctx, input)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user info: %w", err)
-	}
-
-	userInfo := &user.UserInfo{
-		CognitoUserID: *result.Username,
-	}
-
-	// 属性から情報を取得
-	for _, attr := range result.UserAttributes {
-		switch *attr.Name {
-		case "email":
-			userInfo.Email = *attr.Value
-		case "name":
-			userInfo.DisplayName = *attr.Value
-		case "cognito:user_status":
-			userInfo.Status = *attr.Value
-		}
-	}
-
-	return userInfo, nil
-}

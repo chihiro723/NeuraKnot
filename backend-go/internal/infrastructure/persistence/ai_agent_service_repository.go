@@ -5,9 +5,9 @@ import (
 	"errors"
 	"time"
 
+	"backend-go/internal/domain/service"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
-	"backend-go/internal/domain/service"
 )
 
 type aiAgentServiceRepository struct {
@@ -161,15 +161,3 @@ func (r *aiAgentServiceRepository) DeleteByAgentID(agentID uuid.UUID) error {
 	_, err := r.db.Exec(query, agentID)
 	return err
 }
-
-
-
-
-
-
-
-
-
-
-
-

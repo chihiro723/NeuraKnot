@@ -34,7 +34,10 @@ func main() {
 	}
 
 	// .envファイルを読み込み（開発環境）
-	_ = godotenv.Load()
+	// エラーは無視（.envファイルがない場合は環境変数を使用）
+	if err := godotenv.Load(); err != nil {
+		fmt.Printf("Warning: .env file not found, using environment variables\n")
+	}
 
 	// 設定読み込み
 	cfg := config.Load()
