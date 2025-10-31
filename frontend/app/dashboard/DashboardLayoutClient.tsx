@@ -2,6 +2,7 @@
 
 import { AppNavigation } from "@/components/layout/AppNavigation";
 import { useIsMobile, useIsDetailPage } from "@/lib/hooks/useResponsive";
+import { useAutoTokenRefresh } from "@/lib/hooks/useAutoTokenRefresh";
 import { cn } from "@/lib/utils/cn";
 import type { Profile } from "@/lib/types";
 import type { AuthUser } from "@/lib/types/auth";
@@ -23,6 +24,9 @@ export function DashboardLayoutClient({
 }: DashboardLayoutClientProps) {
   const isMobile = useIsMobile();
   const isDetailPage = useIsDetailPage();
+  
+  // トークンの自動リフレッシュを有効化
+  useAutoTokenRefresh();
 
   // モバイル詳細画面ではナビゲーションを非表示
   const showNavigation = !(isMobile && isDetailPage);
