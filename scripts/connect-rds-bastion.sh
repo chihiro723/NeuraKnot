@@ -8,9 +8,10 @@
 # RDS にポートフォワーディング接続します。
 #
 # 使い方:
-#   ./scripts/connect-rds-bastion.sh start   # ポートフォワーディングを開始
-#   ./scripts/connect-rds-bastion.sh stop    # セッションを終了
-#   ./scripts/connect-rds-bastion.sh status  # 状態を確認
+#   ./scripts/connect-rds-bastion.sh start                # ポートフォワーディングを開始（Bastion 自動起動）
+#   ./scripts/connect-rds-bastion.sh stop                 # セッションを終了（Bastion は起動したまま）
+#   ./scripts/connect-rds-bastion.sh stop --stop-bastion  # セッションを終了 + Bastion を停止
+#   ./scripts/connect-rds-bastion.sh status               # 状態を確認
 #
 # 接続後は以下のコマンドでRDSに接続できます:
 #   psql -h localhost -p 15432 -U postgres -d neuraKnot
@@ -52,26 +53,148 @@ log_error() {
     echo -e "${RED}[ERROR] $1${NC}"
 }
 
-# Bastion インスタンス ID を取得
+# Bastion インスタンス情報を取得（停止中も含む）
+get_bastion_info() {
+    local INSTANCE_INFO=$(aws ec2 describe-instances \
+        --filters \
+            "Name=tag:Name,Values=${PROJECT_NAME}-${ENVIRONMENT}-bastion" \
+        --region ${REGION} \
+        --query 'Reservations[0].Instances[0].[InstanceId,State.Name]' \
+        --output text 2>/dev/null)
+    
+    if [ "$INSTANCE_INFO" == "None None" ] || [ -z "$INSTANCE_INFO" ]; then
+        return 1
+    fi
+    
+    echo "$INSTANCE_INFO"
+    return 0
+}
+
+# Bastion インスタンス ID を取得（running 状態のみ）
 get_bastion_instance_id() {
     log_info "Bastion インスタンス ID を取得中..." >&2
     
-    local INSTANCE_ID=$(aws ec2 describe-instances \
-        --filters \
-            "Name=tag:Name,Values=${PROJECT_NAME}-${ENVIRONMENT}-bastion" \
-            "Name=instance-state-name,Values=running" \
-        --region ${REGION} \
-        --query 'Reservations[0].Instances[0].InstanceId' \
-        --output text)
-    
-    if [ "$INSTANCE_ID" == "None" ] || [ -z "$INSTANCE_ID" ]; then
+    local INSTANCE_INFO=$(get_bastion_info)
+    if [ $? -ne 0 ]; then
         log_error "Bastion インスタンスが見つかりません" >&2
         log_error "Terraform で Bastion Host をデプロイしてください" >&2
         exit 1
     fi
     
+    local INSTANCE_ID=$(echo $INSTANCE_INFO | awk '{print $1}')
+    local STATE=$(echo $INSTANCE_INFO | awk '{print $2}')
+    
+    if [ "$STATE" != "running" ]; then
+        log_warn "Bastion は現在 ${STATE} 状態です" >&2
+        return 1
+    fi
+    
     log_info "Bastion Instance ID: ${INSTANCE_ID}" >&2
     echo "$INSTANCE_ID"
+    return 0
+}
+
+# Bastion インスタンスを起動
+start_bastion_instance() {
+    log_info "=== Bastion インスタンスを起動します ==="
+    
+    local INSTANCE_INFO=$(get_bastion_info)
+    if [ $? -ne 0 ]; then
+        log_error "Bastion インスタンスが見つかりません"
+        log_error "Terraform で Bastion Host をデプロイしてください:"
+        log_error "  cd terraform/environments/${ENVIRONMENT}"
+        log_error "  terraform apply -target=module.bastion"
+        exit 1
+    fi
+    
+    local INSTANCE_ID=$(echo $INSTANCE_INFO | awk '{print $1}')
+    local STATE=$(echo $INSTANCE_INFO | awk '{print $2}')
+    
+    log_info "Instance ID: ${INSTANCE_ID}"
+    log_info "Current State: ${STATE}"
+    
+    if [ "$STATE" == "running" ]; then
+        log_info "✓ Bastion は既に起動しています"
+        return 0
+    fi
+    
+    if [ "$STATE" == "pending" ]; then
+        log_info "Bastion は起動中です。完了を待機しています..."
+    elif [ "$STATE" == "stopped" ]; then
+        log_info "Bastion を起動しています..."
+        aws ec2 start-instances --instance-ids "${INSTANCE_ID}" --region ${REGION} > /dev/null
+    elif [ "$STATE" == "stopping" ]; then
+        log_info "Bastion は停止中です。完了を待機してから起動します..."
+        aws ec2 wait instance-stopped --instance-ids "${INSTANCE_ID}" --region ${REGION}
+        log_info "停止完了。起動を開始します..."
+        aws ec2 start-instances --instance-ids "${INSTANCE_ID}" --region ${REGION} > /dev/null
+    else
+        log_error "Bastion の状態が不正です: ${STATE}"
+        exit 1
+    fi
+    
+    log_info "起動完了を待機中（通常 1-2 分かかります）..."
+    aws ec2 wait instance-running --instance-ids "${INSTANCE_ID}" --region ${REGION}
+    
+    log_info "✓ Bastion が起動しました"
+    
+    # SSM Agent が起動するまで少し待機
+    log_info "SSM Agent の起動を待機中..."
+    sleep 10
+    
+    # SSM 接続が可能か確認
+    for i in {1..12}; do
+        if aws ssm describe-instance-information \
+            --filters "Key=InstanceIds,Values=${INSTANCE_ID}" \
+            --region ${REGION} \
+            --query 'InstanceInformationList[0].PingStatus' \
+            --output text 2>/dev/null | grep -q "Online"; then
+            log_info "✓ SSM Agent がオンラインになりました"
+            return 0
+        fi
+        log_info "  SSM Agent の起動を待機中... (${i}/12)"
+        sleep 5
+    done
+    
+    log_warn "SSM Agent のオンライン確認がタイムアウトしました"
+    log_warn "接続を試みますが、失敗する可能性があります"
+    return 0
+}
+
+# Bastion インスタンスを停止
+stop_bastion_instance() {
+    log_info "=== Bastion インスタンスを停止します ==="
+    
+    local INSTANCE_INFO=$(get_bastion_info)
+    if [ $? -ne 0 ]; then
+        log_warn "Bastion インスタンスが見つかりません"
+        return 0
+    fi
+    
+    local INSTANCE_ID=$(echo $INSTANCE_INFO | awk '{print $1}')
+    local STATE=$(echo $INSTANCE_INFO | awk '{print $2}')
+    
+    log_info "Instance ID: ${INSTANCE_ID}"
+    log_info "Current State: ${STATE}"
+    
+    if [ "$STATE" == "stopped" ]; then
+        log_info "✓ Bastion は既に停止しています"
+        return 0
+    fi
+    
+    if [ "$STATE" == "running" ]; then
+        log_info "Bastion を停止しています..."
+        aws ec2 stop-instances --instance-ids "${INSTANCE_ID}" --region ${REGION} > /dev/null
+        log_info "停止完了を待機中..."
+        aws ec2 wait instance-stopped --instance-ids "${INSTANCE_ID}" --region ${REGION}
+        log_info "✓ Bastion を停止しました"
+        log_info "💰 コスト削減: EC2 実行料金 ~$3.00/月 が停止（EBS $0.64/月 は継続）"
+    else
+        log_warn "Bastion の状態: ${STATE}"
+        log_warn "停止はスキップします"
+    fi
+    
+    return 0
 }
 
 # RDS エンドポイントを取得
@@ -119,8 +242,22 @@ start_port_forwarding() {
         exit 1
     fi
     
-    # 必要な情報を取得
+    # Bastion インスタンスの状態を確認し、必要なら起動
+    echo ""
     INSTANCE_ID=$(get_bastion_instance_id)
+    if [ $? -ne 0 ]; then
+        log_info "Bastion インスタンスが停止しています。起動します..."
+        echo ""
+        start_bastion_instance
+        echo ""
+        INSTANCE_ID=$(get_bastion_instance_id)
+        if [ $? -ne 0 ]; then
+            log_error "Bastion インスタンスの起動に失敗しました"
+            exit 1
+        fi
+    fi
+    
+    # 必要な情報を取得
     RDS_ENDPOINT=$(get_rds_endpoint)
     
     echo ""
@@ -187,31 +324,48 @@ start_port_forwarding() {
 
 # セッションを停止
 stop_port_forwarding() {
+    local STOP_BASTION=false
+    
+    # --stop-bastion フラグをチェック
+    if [ "${2:-}" == "--stop-bastion" ]; then
+        STOP_BASTION=true
+    fi
+    
     log_info "=== セッションを停止します ==="
     
     if [ ! -f "$SESSION_INFO_FILE" ]; then
         log_warn "アクティブなセッションが見つかりません"
-        exit 0
-    fi
-    
-    SSM_PID=$(cat $SESSION_INFO_FILE)
-    
-    if ps -p $SSM_PID > /dev/null 2>&1; then
-        log_info "セッション (PID: ${SSM_PID}) を終了しています..."
-        kill $SSM_PID 2>/dev/null || true
-        sleep 2
+    else
+        SSM_PID=$(cat $SESSION_INFO_FILE)
         
         if ps -p $SSM_PID > /dev/null 2>&1; then
-            log_warn "強制終了します..."
-            kill -9 $SSM_PID 2>/dev/null || true
+            log_info "セッション (PID: ${SSM_PID}) を終了しています..."
+            kill $SSM_PID 2>/dev/null || true
+            sleep 2
+            
+            if ps -p $SSM_PID > /dev/null 2>&1; then
+                log_warn "強制終了します..."
+                kill -9 $SSM_PID 2>/dev/null || true
+            fi
+            
+            log_info "✓ セッションを停止しました"
+        else
+            log_warn "セッションは既に停止しています"
         fi
         
-        log_info "✓ セッションを停止しました"
-    else
-        log_warn "セッションは既に停止しています"
+        rm -f $SESSION_INFO_FILE
     fi
     
-    rm -f $SESSION_INFO_FILE
+    # Bastion を停止するかチェック
+    if [ "$STOP_BASTION" == true ]; then
+        echo ""
+        stop_bastion_instance
+    else
+        echo ""
+        log_info "Bastion インスタンスは起動したままです"
+        log_info "Bastion も停止する場合: $0 stop --stop-bastion"
+        log_info "💡 停止することで月額 ~$3.00 のコスト削減（EBS $0.64/月 は継続）"
+    fi
 }
 
 # 状態を確認
@@ -303,7 +457,7 @@ case "${1:-}" in
         start_port_forwarding
         ;;
     stop)
-        stop_port_forwarding
+        stop_port_forwarding "$@"
         ;;
     status)
         check_status
@@ -311,12 +465,17 @@ case "${1:-}" in
     *)
         echo "使い方: $0 {start|stop|status}"
         echo ""
-        echo "  start   - ポートフォワーディングを開始"
-        echo "  stop    - セッションを停止"
-        echo "  status  - 状態を確認"
+        echo "  start                 - ポートフォワーディングを開始（Bastion 自動起動）"
+        echo "  stop                  - セッションを停止（Bastion は起動したまま）"
+        echo "  stop --stop-bastion   - セッションを停止 + Bastion を停止"
+        echo "  status                - 状態を確認"
         echo ""
         echo "接続後のコマンド例:"
         echo "  psql -h localhost -p 15432 -U postgres -d neuraKnot"
+        echo ""
+        echo "💡 コスト削減のヒント:"
+        echo "  使用後に 'stop --stop-bastion' で Bastion を停止すると"
+        echo "  月額 ~$3.00 のコスト削減になります（EBS $0.64/月 は継続）"
         exit 1
         ;;
 esac
