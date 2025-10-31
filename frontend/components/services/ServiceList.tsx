@@ -105,7 +105,7 @@ export function ServiceList() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col flex-1 justify-center items-center min-h-full">
+      <div className="flex justify-center items-center h-full">
         <LoadingSpinner />
       </div>
     );

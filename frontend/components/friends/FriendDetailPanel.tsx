@@ -206,7 +206,11 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
 
   // ローディング状態
   if (loading) {
-    return <LoadingSpinner />;
+    return (
+      <div className="flex justify-center items-center h-full">
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   // エラー状態

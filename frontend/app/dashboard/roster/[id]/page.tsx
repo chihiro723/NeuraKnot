@@ -61,7 +61,13 @@ export default async function FriendDetailPage({
   const { id: friendId } = await params;
 
   return (
-    <Suspense fallback={<LoadingSpinner />}>
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center h-full">
+          <LoadingSpinner />
+        </div>
+      }
+    >
       <FriendDetailData friendId={friendId} />
     </Suspense>
   );

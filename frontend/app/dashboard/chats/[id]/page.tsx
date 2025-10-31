@@ -133,7 +133,13 @@ export default async function ChatDetailPage({ params }: ChatDetailPageProps) {
   const { id: chatId } = await params;
 
   return (
-    <Suspense fallback={<LoadingSpinner />}>
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center h-full">
+          <LoadingSpinner />
+        </div>
+      }
+    >
       <ChatWindowData chatId={chatId} />
     </Suspense>
   );
