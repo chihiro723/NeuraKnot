@@ -346,8 +346,9 @@ resource "aws_ecs_service" "backend_go" {
   depends_on = [aws_ecs_task_definition.backend_go]
 
   # CI/CDでタスク定義が更新されるため、Terraformでは無視
+  # Auto Scalingが管理するためdesired_countも無視
   lifecycle {
-    ignore_changes = [task_definition]
+    ignore_changes = [task_definition, desired_count]
   }
 
   tags = merge(var.tags, {
@@ -378,10 +379,114 @@ resource "aws_ecs_service" "backend_python" {
 
   # CI/CDでタスク定義が更新されるため、Terraformでは無視
   lifecycle {
-    ignore_changes = [task_definition]
+    ignore_changes = [task_definition, desired_count]
   }
 
   tags = merge(var.tags, {
     Name = "${var.project_name}-${var.environment}-backend-python"
   })
+}
+
+# ============================================================
+# Auto Scaling Configuration
+# ============================================================
+
+# Auto Scaling Target for Backend Go
+resource "aws_appautoscaling_target" "backend_go" {
+  count              = var.enable_autoscaling ? 1 : 0
+  max_capacity       = var.backend_go_autoscaling_max_capacity
+  min_capacity       = var.backend_go_autoscaling_min_capacity
+  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.backend_go.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+
+  depends_on = [aws_ecs_service.backend_go]
+}
+
+# Auto Scaling Policy for Backend Go - CPU
+resource "aws_appautoscaling_policy" "backend_go_cpu" {
+  count              = var.enable_autoscaling ? 1 : 0
+  name               = "${var.project_name}-${var.environment}-backend-go-cpu-scaling"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.backend_go[0].resource_id
+  scalable_dimension = aws_appautoscaling_target.backend_go[0].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.backend_go[0].service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+    target_value       = var.backend_go_cpu_target_value
+    scale_in_cooldown  = 300
+    scale_out_cooldown = 60
+  }
+}
+
+# Auto Scaling Policy for Backend Go - Memory
+resource "aws_appautoscaling_policy" "backend_go_memory" {
+  count              = var.enable_autoscaling ? 1 : 0
+  name               = "${var.project_name}-${var.environment}-backend-go-memory-scaling"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.backend_go[0].resource_id
+  scalable_dimension = aws_appautoscaling_target.backend_go[0].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.backend_go[0].service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageMemoryUtilization"
+    }
+    target_value       = var.backend_go_memory_target_value
+    scale_in_cooldown  = 300
+    scale_out_cooldown = 60
+  }
+}
+
+# Auto Scaling Target for Backend Python
+resource "aws_appautoscaling_target" "backend_python" {
+  count              = var.enable_autoscaling ? 1 : 0
+  max_capacity       = var.backend_python_autoscaling_max_capacity
+  min_capacity       = var.backend_python_autoscaling_min_capacity
+  resource_id        = "service/${aws_ecs_cluster.main.name}/${aws_ecs_service.backend_python.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+
+  depends_on = [aws_ecs_service.backend_python]
+}
+
+# Auto Scaling Policy for Backend Python - CPU
+resource "aws_appautoscaling_policy" "backend_python_cpu" {
+  count              = var.enable_autoscaling ? 1 : 0
+  name               = "${var.project_name}-${var.environment}-backend-python-cpu-scaling"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.backend_python[0].resource_id
+  scalable_dimension = aws_appautoscaling_target.backend_python[0].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.backend_python[0].service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+    target_value       = var.backend_python_cpu_target_value
+    scale_in_cooldown  = 300
+    scale_out_cooldown = 60
+  }
+}
+
+# Auto Scaling Policy for Backend Python - Memory
+resource "aws_appautoscaling_policy" "backend_python_memory" {
+  count              = var.enable_autoscaling ? 1 : 0
+  name               = "${var.project_name}-${var.environment}-backend-python-memory-scaling"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.backend_python[0].resource_id
+  scalable_dimension = aws_appautoscaling_target.backend_python[0].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.backend_python[0].service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageMemoryUtilization"
+    }
+    target_value       = var.backend_python_memory_target_value
+    scale_in_cooldown  = 300
+    scale_out_cooldown = 60
+  }
 }
