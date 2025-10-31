@@ -199,38 +199,40 @@ variable "backend_python_image" {
 }
 
 
+# ECS Task Resources - Minimal Configuration (Fargate minimum)
 variable "backend_go_cpu" {
-  description = "Backend Go CPU units"
+  description = "Backend Go CPU units (256 = 0.25 vCPU, Fargate minimum)"
   type        = number
   default     = 256
 }
 
 variable "backend_go_memory" {
-  description = "Backend Go memory in MB"
+  description = "Backend Go memory in MB (512 MB, Fargate minimum)"
   type        = number
   default     = 512
 }
 
 variable "backend_python_cpu" {
-  description = "Backend Python CPU units"
+  description = "Backend Python CPU units (256 = 0.25 vCPU, Fargate minimum)"
+  type        = number
+  default     = 256
+}
+
+variable "backend_python_memory" {
+  description = "Backend Python memory in MB (512 MB, Fargate minimum)"
   type        = number
   default     = 512
 }
 
-variable "backend_python_memory" {
-  description = "Backend Python memory in MB"
-  type        = number
-  default     = 1024
-}
-
+# Initial desired count (Auto Scaling will manage this dynamically)
 variable "backend_go_desired_count" {
-  description = "Desired count for Backend Go service"
+  description = "Initial desired count for Backend Go service (Auto Scaling manages dynamically)"
   type        = number
-  default     = 2
+  default     = 1
 }
 
 variable "backend_python_desired_count" {
-  description = "Desired count for Backend Python service"
+  description = "Initial desired count for Backend Python service (Auto Scaling manages dynamically)"
   type        = number
   default     = 1
 }
