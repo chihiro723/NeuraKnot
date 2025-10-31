@@ -14,7 +14,7 @@
 
 NeuraKnot は、Vercel（フロントエンド）と AWS（バックエンド）を組み合わせたクラウドネイティブなアーキテクチャで動作しています。
 
-![システム構成図](docs/images/infrastructure.png)
+![システム構成図](docs/images/infra.png)
 
 ---
 
