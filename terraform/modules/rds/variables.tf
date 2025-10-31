@@ -52,7 +52,7 @@ variable "instance_class" {
 variable "engine_version" {
   description = "PostgreSQL engine version"
   type        = string
-  default     = "15.8"
+  default     = "15" # Let AWS manage minor version automatically
 }
 
 variable "allocated_storage" {
