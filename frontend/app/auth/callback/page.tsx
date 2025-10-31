@@ -46,7 +46,7 @@ function AuthCallbackContent() {
   }, [searchParams, handleOAuthCallback, router]);
 
   if (status === "loading") {
-    return <LoadingSpinner />;
+    return <LoadingSpinner centerScreen variant="auth" />;
   }
 
   if (status === "error") {
@@ -84,7 +84,7 @@ function AuthCallbackContent() {
 
 export default function AuthCallbackPage() {
   return (
-    <Suspense fallback={<LoadingSpinner />}>
+    <Suspense fallback={<LoadingSpinner centerScreen variant="auth" />}>
       <AuthCallbackContent />
     </Suspense>
   );

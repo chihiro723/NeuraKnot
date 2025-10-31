@@ -38,7 +38,7 @@ export default function AddGroupPage() {
 
   if (loading || !user) {
     return (
-      <div className="flex flex-col flex-1 justify-center items-center">
+      <div className="flex justify-center items-center h-full">
         <LoadingSpinner />
       </div>
     );

@@ -298,7 +298,7 @@ export function AgentSettingsModal({
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-gray-900 rounded-2xl md:rounded-3xl border border-gray-200 dark:border-gray-700 shadow-2xl w-full max-w-4xl h-[95vh] md:h-[90vh] flex flex-col"
+        className="bg-white dark:bg-gray-900 rounded-2xl md:rounded-3xl border border-gray-200 dark:border-gray-700 shadow-2xl w-full max-w-4xl h-[75vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* ヘッダー */}
@@ -361,8 +361,8 @@ export function AgentSettingsModal({
 
           {/* 基本情報タブ */}
           {activeTab === "basic" && (
-            <div className="space-y-4 md:space-y-6">
-              <div>
+            <div className="flex flex-col h-full space-y-4 md:space-y-6">
+              <div className="flex-shrink-0">
                 <label className="block mb-1.5 md:mb-2 text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300">
                   名前
                 </label>
@@ -374,8 +374,8 @@ export function AgentSettingsModal({
                 />
               </div>
 
-              <div>
-                <label className="block mb-1.5 md:mb-2 text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300">
+              <div className="flex flex-col flex-1 min-h-0">
+                <label className="block mb-1.5 md:mb-2 text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
                   説明
                 </label>
                 <textarea
@@ -383,8 +383,8 @@ export function AgentSettingsModal({
                   onChange={(e) =>
                     handleInputChange("description", e.target.value)
                   }
-                  rows={3}
-                  className="w-full px-3 md:px-4 py-2 md:py-2.5 text-sm md:text-base text-gray-900 dark:text-white bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all placeholder-gray-500 dark:placeholder-gray-400"
+                  placeholder="エージェントの説明を入力してください（例: 親しみやすい口調で質問に答えてくれるアシスタント）"
+                  className="flex-1 w-full px-3 md:px-4 py-2 md:py-2.5 text-sm md:text-base text-gray-900 dark:text-white bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all placeholder-gray-500 dark:placeholder-gray-400 resize-none"
                 />
               </div>
             </div>
@@ -392,8 +392,8 @@ export function AgentSettingsModal({
 
           {/* パーソナリティタブ */}
           {activeTab === "personality" && (
-            <div className="space-y-4 md:space-y-6">
-              <div>
+            <div className="flex flex-col h-full space-y-4 md:space-y-6">
+              <div className="flex-shrink-0">
                 <label className="block mb-1.5 md:mb-2 text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300">
                   パーソナリティタイプ
                 </label>
@@ -410,8 +410,8 @@ export function AgentSettingsModal({
                 </select>
               </div>
 
-              <div>
-                <label className="block mb-1.5 md:mb-2 text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300">
+              <div className="flex flex-col flex-1 min-h-0">
+                <label className="block mb-1.5 md:mb-2 text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
                   カスタム指示
                 </label>
                 <textarea
@@ -419,9 +419,8 @@ export function AgentSettingsModal({
                   onChange={(e) =>
                     handleInputChange("system_prompt", e.target.value)
                   }
-                  rows={6}
                   placeholder="エージェントの振る舞いや特徴を具体的指示（キーワード入力→AI強化を使ってみよう）"
-                  className="w-full px-3 md:px-4 py-2 md:py-2.5 text-xs md:text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all placeholder-gray-500 dark:placeholder-gray-400 font-mono"
+                  className="flex-1 w-full px-3 md:px-4 py-2 md:py-2.5 text-sm md:text-base text-gray-900 dark:text-white bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all placeholder-gray-500 dark:placeholder-gray-400 resize-none"
                 />
               </div>
             </div>
