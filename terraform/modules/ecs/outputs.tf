@@ -65,3 +65,34 @@ output "ecs_security_group_id" {
   description = "Security group ID of ECS tasks"
   value       = aws_security_group.ecs.id
 }
+
+# Auto Scaling Outputs
+output "backend_go_autoscaling_target_id" {
+  description = "ID of Backend Go auto scaling target"
+  value       = var.enable_autoscaling ? aws_appautoscaling_target.backend_go[0].id : null
+}
+
+output "backend_python_autoscaling_target_id" {
+  description = "ID of Backend Python auto scaling target"
+  value       = var.enable_autoscaling ? aws_appautoscaling_target.backend_python[0].id : null
+}
+
+output "backend_go_cpu_scaling_policy_arn" {
+  description = "ARN of Backend Go CPU scaling policy"
+  value       = var.enable_autoscaling ? aws_appautoscaling_policy.backend_go_cpu[0].arn : null
+}
+
+output "backend_go_memory_scaling_policy_arn" {
+  description = "ARN of Backend Go memory scaling policy"
+  value       = var.enable_autoscaling ? aws_appautoscaling_policy.backend_go_memory[0].arn : null
+}
+
+output "backend_python_cpu_scaling_policy_arn" {
+  description = "ARN of Backend Python CPU scaling policy"
+  value       = var.enable_autoscaling ? aws_appautoscaling_policy.backend_python_cpu[0].arn : null
+}
+
+output "backend_python_memory_scaling_policy_arn" {
+  description = "ARN of Backend Python memory scaling policy"
+  value       = var.enable_autoscaling ? aws_appautoscaling_policy.backend_python_memory[0].arn : null
+}
