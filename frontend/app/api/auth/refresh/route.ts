@@ -56,8 +56,22 @@ export async function POST() {
     const setCookieHeaders = response.headers.getSetCookie()
     console.log('[REFRESH] Set-Cookie headers from backend-go:', setCookieHeaders)
 
-    // レスポンスを作成
-    const nextResponse = NextResponse.json(data)
+    // アクセストークンを抽出してレスポンスに含める（クライアント側でLocalStorageに保存するため）
+    let accessToken = null
+    for (const cookieHeader of setCookieHeaders) {
+      if (cookieHeader.startsWith('access_token=')) {
+        const [nameValue] = cookieHeader.split(';')
+        const [, value] = nameValue.split('=')
+        accessToken = value
+        break
+      }
+    }
+
+    // レスポンスを作成（トークンを含める）
+    const nextResponse = NextResponse.json({
+      ...data,
+      access_token: accessToken // クライアント側で使用するためにトークンを追加
+    })
 
     // 各Cookieを個別に設定
     for (const cookieHeader of setCookieHeaders) {
