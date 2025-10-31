@@ -114,6 +114,14 @@ export class CognitoAuthClient {
       const error = await response.json().catch(() => ({ error: 'トークンリフレッシュに失敗しました' }))
       throw new Error(error.error || 'トークンリフレッシュに失敗しました')
     }
+
+    const data = await response.json()
+    
+    // アクセストークンをLocalStorageに保存（クロスドメインでも使用可能にするため）
+    if (data.access_token && typeof window !== 'undefined') {
+      localStorage.setItem('access_token', data.access_token)
+      console.log('[AUTH] Access token updated in localStorage after refresh')
+    }
   }
 
   /**
