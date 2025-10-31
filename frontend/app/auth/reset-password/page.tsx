@@ -201,7 +201,7 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<LoadingSpinner />}>
+    <Suspense fallback={<LoadingSpinner centerScreen variant="auth" />}>
       <ResetPasswordForm />
     </Suspense>
   );
