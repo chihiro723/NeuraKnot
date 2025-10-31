@@ -145,26 +145,81 @@ variable "backend_go_memory" {
 variable "backend_python_cpu" {
   description = "Backend Python CPU units"
   type        = number
-  default     = 512
+  default     = 256
 }
 
 variable "backend_python_memory" {
   description = "Backend Python memory in MB"
   type        = number
-  default     = 1024
+  default     = 512
 }
 
 # Service desired counts
 variable "backend_go_desired_count" {
   description = "Desired count for Backend Go service"
   type        = number
-  default     = 2
+  default     = 1
 }
 
 variable "backend_python_desired_count" {
   description = "Desired count for Backend Python service"
   type        = number
   default     = 1
+}
+
+# Auto Scaling configuration
+variable "enable_autoscaling" {
+  description = "Enable auto scaling for ECS services"
+  type        = bool
+  default     = true
+}
+
+variable "backend_go_autoscaling_min_capacity" {
+  description = "Minimum number of tasks for Backend Go"
+  type        = number
+  default     = 1
+}
+
+variable "backend_go_autoscaling_max_capacity" {
+  description = "Maximum number of tasks for Backend Go"
+  type        = number
+  default     = 5
+}
+
+variable "backend_python_autoscaling_min_capacity" {
+  description = "Minimum number of tasks for Backend Python"
+  type        = number
+  default     = 1
+}
+
+variable "backend_python_autoscaling_max_capacity" {
+  description = "Maximum number of tasks for Backend Python"
+  type        = number
+  default     = 5
+}
+
+variable "backend_go_cpu_target_value" {
+  description = "Target CPU utilization for Backend Go auto scaling"
+  type        = number
+  default     = 70
+}
+
+variable "backend_go_memory_target_value" {
+  description = "Target memory utilization for Backend Go auto scaling"
+  type        = number
+  default     = 80
+}
+
+variable "backend_python_cpu_target_value" {
+  description = "Target CPU utilization for Backend Python auto scaling"
+  type        = number
+  default     = 70
+}
+
+variable "backend_python_memory_target_value" {
+  description = "Target memory utilization for Backend Python auto scaling"
+  type        = number
+  default     = 80
 }
 
 variable "allowed_origins" {

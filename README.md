@@ -1018,6 +1018,7 @@ NeuraKnot のインフラストラクチャは **Terraform** を使用して Inf
 | **ACM**               | SSL/TLS 証明書管理           | Certificate, DNS Validation                                       |
 | **ECR**               | コンテナイメージ管理         | ECR Repositories (backend-go, backend-python), Lifecycle Policies |
 | **ECS**               | コンテナオーケストレーション | ECS Cluster, Task Definition, Service (バックエンド API のみ)     |
+| **Auto Scaling**      | ECS タスクの自動スケーリング | Scaling Target, Scaling Policy (CPU/Memory Target Tracking)       |
 | **RDS**               | データベース                 | PostgreSQL 15, Multi-AZ, Encryption                               |
 | **ALB**               | ロードバランシング           | Application Load Balancer, Target Groups, HTTPS Listener          |
 | **Service Discovery** | 内部サービス通信             | Cloud Map, Private DNS Namespace                                  |
@@ -1035,6 +1036,26 @@ NeuraKnot のインフラストラクチャは **Terraform** を使用して Inf
 | [neuraknot.net](https://neuraknot.net)         | フロントエンド（リダイレクト） | Vercel  | Let's Encrypt |
 | [www.neuraknot.net](https://www.neuraknot.net) | フロントエンド（メイン）       | Vercel  | Let's Encrypt |
 | [api.neuraknot.net](https://api.neuraknot.net) | バックエンド API               | AWS ALB | ACM           |
+
+### ECS Auto Scaling
+
+ECS サービスに **ターゲット追跡スケーリング** を導入し、負荷に応じた自動スケーリングを実現しています。
+
+**スケーリング設定**:
+
+| サービス       | 最小タスク数 | 最大タスク数 | CPU/メモリ | CPU 閾値 | メモリ閾値 | コスト削減率 |
+| -------------- | ------------ | ------------ | ---------- | -------- | ---------- | ------------ |
+| Backend Go     | 1            | 5            | 0.25/512MB | 70%      | 80%        | 〜50%        |
+| Backend Python | 1            | 5            | 0.25/512MB | 70%      | 80%        | 〜50%        |
+
+**主な特徴**:
+
+- **コスト最適化**: 低トラフィック時は最小 1 タスクで運用し、従来比最大 50%のコスト削減
+- **自動スケールアウト**: CPU/メモリ使用率が閾値を超えると 60 秒以内にタスク増加
+- **自動スケールイン**: 負荷が下がると 5 分後にタスク減少（安定性重視）
+- **コスト上限設定**: 最大タスク数制限により予期しないコスト増加を防止
+
+詳細は [ECS Auto Scaling ガイド](docs/aws/ECS_AUTO_SCALING.md) を参照してください。
 
 **Route 53 DNS レコード**:
 
@@ -1123,6 +1144,7 @@ terraform apply
 - [Terraform インフラ管理](./terraform/README.md) - **Infrastructure as Code**
 - [AWS インフラ構築](./docs/aws/INFRASTRUCTURE.md)
 - [AWS Cognito 設定](./docs/aws/COGNITO_SETUP.md)
+- [ECS Auto Scaling ガイド](./docs/aws/ECS_AUTO_SCALING.md) - **自動スケーリング設定とコスト最適化**
 - [AWS ドキュメント一覧](./docs/aws/)
 
 **データベース管理**
