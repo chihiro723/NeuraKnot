@@ -850,9 +850,17 @@ export function ChatWindow({
               <div className="flex items-start space-x-2 md:space-x-3 max-w-[90%] md:max-w-[75%] overflow-hidden">
                 {/* アイコン */}
                 <div className="flex overflow-hidden flex-shrink-0 justify-center items-center w-8 h-8 bg-green-500 rounded-full md:w-10 md:h-10">
-                  <span className="text-xs font-medium text-white md:text-sm">
-                    {selectedChat.name.charAt(0)}
-                  </span>
+                  {selectedChat.avatar_url && avatarTimestamp ? (
+                    <img
+                      src={`${selectedChat.avatar_url.split('?')[0]}?t=${avatarTimestamp}`}
+                      alt={selectedChat.name}
+                      className="object-cover w-full h-full"
+                    />
+                  ) : (
+                    <span className="text-xs font-medium text-white md:text-sm">
+                      {selectedChat.name.charAt(0)}
+                    </span>
+                  )}
                 </div>
 
                 {/* 名前 + バブル（通常AIメッセージと合わせる） */}
