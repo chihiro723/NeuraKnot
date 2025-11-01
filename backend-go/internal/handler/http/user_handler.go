@@ -264,7 +264,7 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 
 	// プロフィール更新
 	token, _ := middleware.GetTokenFromContext(c)
-	updatedUser, err := h.userService.UpdateProfile(c.Request.Context(), token, req.DisplayName)
+	updatedUser, err := h.userService.UpdateProfile(c.Request.Context(), token, req.DisplayName, req.AvatarURL)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
 		return
