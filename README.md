@@ -693,7 +693,7 @@ AWS Cognito (DEV User Pool) - 認証専用
 **特徴:**
 
 - PostgreSQL: アプリケーションデータのみ保存
-- MinIO: S3互換のオブジェクトストレージ（アバター画像保存）
+- MinIO: S3 互換のオブジェクトストレージ（アバター画像保存）
 - ユーザー管理: AWS Cognito DEV User Pool
 - 認証方式: メール + パスワード
 
@@ -772,15 +772,15 @@ docker-compose -f docker-compose/dev.yml logs -f
 
 ### 動作確認
 
-| サービス         | URL                                      | 説明                       |
-| ---------------- | ---------------------------------------- | -------------------------- |
-| フロントエンド   | http://localhost:3000                    | Next.js Web UI             |
-| Backend Go       | http://localhost:8080                    | REST API                   |
-| Swagger UI       | http://localhost:8080/swagger/index.html | API ドキュメント           |
-| Backend Python   | http://localhost:8001                    | AI 処理サーバー            |
-| PostgreSQL       | localhost:5432                           | データベース               |
-| MinIO Console    | http://localhost:9001                    | オブジェクトストレージ管理 |
-| MinIO API        | http://localhost:9000                    | S3互換API                  |
+| サービス       | URL                                      | 説明                       |
+| -------------- | ---------------------------------------- | -------------------------- |
+| フロントエンド | http://localhost:3000                    | Next.js Web UI             |
+| Backend Go     | http://localhost:8080                    | REST API                   |
+| Swagger UI     | http://localhost:8080/swagger/index.html | API ドキュメント           |
+| Backend Python | http://localhost:8001                    | AI 処理サーバー            |
+| PostgreSQL     | localhost:5432                           | データベース               |
+| MinIO Console  | http://localhost:9001                    | オブジェクトストレージ管理 |
+| MinIO API      | http://localhost:9000                    | S3 互換 API                |
 
 ```bash
 # ヘルスチェック

@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import ReactCrop, { Crop, PixelCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
-import { Button } from "./button";
+import { Button } from "./Button";
 
 interface ImageCropperProps {
   src: string;
