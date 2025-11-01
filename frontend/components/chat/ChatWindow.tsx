@@ -893,7 +893,7 @@ export function ChatWindow({
               placeholder="メッセージを入力...（Cmd/Ctrl+Enterで送信）"
               className={cn(
                 "px-0 py-0 w-full bg-transparent border-0 resize-none",
-                "overflow-y-auto focus:outline-none",
+                "overflow-y-auto overflow-x-hidden focus:outline-none",
                 // iOS自動ズーム防止のためモバイルで16px以上
                 "text-base placeholder-gray-500 text-gray-900 dark:placeholder-gray-400 dark:text-gray-100"
               )}
