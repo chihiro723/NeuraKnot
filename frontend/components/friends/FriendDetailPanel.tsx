@@ -270,11 +270,12 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
                 <div className="relative group">
                   <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full opacity-30 blur-xl transition-opacity group-hover:opacity-50" />
                   <div className="flex overflow-hidden relative justify-center items-center w-24 h-24 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full border-4 border-white shadow-lg dark:from-gray-800 dark:to-gray-700 dark:border-gray-900">
-                    {friend.avatar_url ? (
+                    {(agent?.avatar_url || friend.avatar_url) ? (
                       <img
-                        src={friend.avatar_url}
+                        src={agent?.avatar_url || friend.avatar_url}
                         alt={friend.name}
                         className="object-cover w-full h-full"
+                        key={agent?.avatar_url || friend.avatar_url}
                       />
                     ) : friend.type === "ai" ? (
                       <Bot className="w-12 h-12 text-green-600 dark:text-green-400" />

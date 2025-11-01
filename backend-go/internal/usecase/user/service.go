@@ -2,24 +2,30 @@ package user
 
 import (
 	"backend-go/internal/domain/user"
+	"backend-go/internal/infrastructure/storage"
 	"context"
 	"fmt"
+	"io"
+	"time"
 )
 
 // Service ユーザーサービス（ユースケース）
 type Service struct {
 	userRepo    user.UserRepository
 	authService user.AuthService
+	s3Client    *storage.S3Client
 }
 
 // NewService ユーザーサービスを作成
 func NewService(
 	userRepo user.UserRepository,
 	authService user.AuthService,
+	s3Client *storage.S3Client,
 ) *Service {
 	return &Service{
 		userRepo:    userRepo,
 		authService: authService,
+		s3Client:    s3Client,
 	}
 }
 
@@ -41,7 +47,7 @@ func (s *Service) GetProfile(ctx context.Context, token string) (*user.User, err
 }
 
 // UpdateProfile ユーザープロフィールを更新
-func (s *Service) UpdateProfile(ctx context.Context, token string, displayName string) (*user.User, error) {
+func (s *Service) UpdateProfile(ctx context.Context, token string, displayName string, avatarURL *string) (*user.User, error) {
 	// トークンを検証
 	authResult, err := s.authService.ValidateToken(ctx, token)
 	if err != nil {
@@ -57,6 +63,13 @@ func (s *Service) UpdateProfile(ctx context.Context, token string, displayName s
 	// 表示名を更新
 	if err := userObj.ChangeDisplayName(displayName); err != nil {
 		return nil, fmt.Errorf("failed to update display name: %w", err)
+	}
+
+	// アバターURLを更新（指定された場合）
+	if avatarURL != nil {
+		if err := userObj.ChangeAvatarURL(avatarURL); err != nil {
+			return nil, fmt.Errorf("failed to update avatar URL: %w", err)
+		}
 	}
 
 	// データベースに保存
@@ -215,4 +228,48 @@ func (s *Service) SignOut(ctx context.Context, accessToken string) error {
 	}
 
 	return nil
+}
+
+// UploadAvatar ユーザーアバターをアップロード
+func (s *Service) UploadAvatar(ctx context.Context, token string, file io.Reader, contentType, filename string) (*user.User, error) {
+	// トークンを検証
+	authResult, err := s.authService.ValidateToken(ctx, token)
+	if err != nil {
+		return nil, fmt.Errorf("token validation failed: %w", err)
+	}
+
+	// ユーザー情報を取得
+	userObj, err := s.userRepo.GetByCognitoUserID(ctx, authResult.User.CognitoUserID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	// 古いアバターがあれば削除
+	if userObj.AvatarURL != nil && *userObj.AvatarURL != "" {
+		if err := s.s3Client.DeleteAvatar(ctx, *userObj.AvatarURL); err != nil {
+			// 削除失敗してもログだけ出して続行
+			fmt.Printf("failed to delete old avatar: %v\n", err)
+		}
+	}
+
+	// S3/MinIOにアップロード
+	avatarURL, err := s.s3Client.UploadAvatar(ctx, "users", userObj.ID.String(), file, contentType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to upload avatar: %w", err)
+	}
+
+	// キャッシュバスティング用のタイムスタンプを追加
+	avatarURLWithTimestamp := fmt.Sprintf("%s?t=%d", avatarURL, time.Now().Unix())
+
+	// アバターURLを更新
+	if err := userObj.ChangeAvatarURL(&avatarURLWithTimestamp); err != nil {
+		return nil, fmt.Errorf("failed to update avatar URL: %w", err)
+	}
+
+	// データベースに保存
+	if err := s.userRepo.Update(ctx, userObj); err != nil {
+		return nil, fmt.Errorf("failed to save user: %w", err)
+	}
+
+	return userObj, nil
 }

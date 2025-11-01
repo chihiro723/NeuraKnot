@@ -37,6 +37,8 @@ services:
       - DB_HOST=postgres
       - DB_NAME=go_backend
       - AI_SERVICE_URL=http://backend-python:8001
+      # S3/MinIO設定（Docker内部のホスト名）
+      - S3_ENDPOINT=http://minio:9000
     volumes:
       - ../backend-go:/app
       - /app/tmp
@@ -44,6 +46,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     networks:
       - app-network
@@ -132,10 +136,48 @@ services:
       - app-network
     restart: unless-stopped
 
+  # MinIO - S3互換オブジェクトストレージ（開発用）
+  minio:
+    image: minio/minio:latest
+    ports:
+      - "9000:9000"  # API
+      - "9001:9001"  # Console UI
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    volumes:
+      - minio_data:/data
+    networks:
+      - app-network
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: unless-stopped
+
+  # MinIO Client - バケット初期化用
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    networks:
+      - app-network
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      mc mb myminio/neuraknot-dev-media --ignore-existing;
+      mc anonymous set download myminio/neuraknot-dev-media;
+      exit 0;
+      "
+
 volumes:
   postgres_data:
   redis_data:
   pgadmin_data:
+  minio_data:
 
 networks:
   app-network:

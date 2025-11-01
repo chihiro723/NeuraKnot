@@ -26,6 +26,7 @@ NeuraKnot は、Vercel（フロントエンド）と AWS（バックエンド）
 - **リアルタイムストリーミング**: レスポンスを即座に表示
 - **セキュアな認証**: AWS Cognito によるユーザー管理
 - **詳細な履歴管理**: チャット履歴、AI ツール使用履歴を完全記録
+- **アバター画像設定**: ユーザーとエージェントのアバター画像をアップロード・トリミング可能
 
 ---
 
@@ -211,6 +212,7 @@ AI エージェントとの対話画面です。ストリーミング表示に�
 
 **主な設定項目**
 
+- アバター画像（円形トリミング機能付き）
 - エージェント名
 - 性格タイプ（アシスタント / クリエイティブ / 分析的 / 簡潔）
 - AI モデル（OpenAI / Anthropic / Google から選択）
@@ -279,7 +281,7 @@ API キーを入力した後、テストボタンで実際に API 接続を確�
 
 **主な設定項目**
 
-- **プロフィール** - ユーザー情報の編集、メールアドレスの変更
+- **プロフィール** - ユーザー情報の編集、アバター画像の変更、メールアドレスの変更
 - **外観設定** - ライトモード・ダークモードの切り替え
 - **統計・分析** - AI 利用統計、トークン使用量、コスト分析
 - **ホーム** - ダッシュボードへの戻り
@@ -560,6 +562,9 @@ Internet
 - PostgreSQL 15 - アプリケーションデータ（Backend-go のみアクセス）
   - 8 テーブル構成 - 詳細は [データベース設計](#データベース設計) セクション参照
   - 完全なドキュメント: [データベース設計書](./docs/DATABASE_DESIGN_CURRENT.md)
+- S3 / MinIO - 画像ストレージ（アバター画像）
+  - 開発環境: MinIO（Docker）
+  - 本番環境: AWS S3
 
 **認証**
 
@@ -571,6 +576,8 @@ Internet
 - AWS ECS Fargate (バックエンド API)
 - Vercel (フロントエンド)
 - AWS RDS (PostgreSQL)
+- AWS S3 (画像ストレージ)
+- MinIO (開発環境の画像ストレージ)
 - Terraform (IaC) - [詳細はこちら](./terraform/README.md)
 
 ### データベース設計
@@ -626,6 +633,7 @@ neuraKnot/
 │   │   ├── usecase/           # ユースケース層
 │   │   ├── handler/           # ハンドラー層
 │   │   └── infrastructure/    # インフラ層
+│   │       └── storage/       # S3/MinIOクライアント
 │   ├── migrations/            # DBマイグレーション
 │   └── docs/                  # Swagger ドキュメント
 │
@@ -649,6 +657,7 @@ neuraKnot/
 │   │   ├── ecs/              # ECS クラスター（バックエンドのみ）
 │   │   ├── rds/              # RDS PostgreSQL
 │   │   ├── alb/              # Application Load Balancer
+│   │   ├── s3/               # S3バケット（画像ストレージ）
 │   │   ├── bastion/          # EC2 Bastion Host (SSM経由RDS接続用)
 │   │   ├── vpc-endpoints/    # VPC Endpoints (SSM用)
 │   │   ├── service-discovery/ # Cloud Map
@@ -675,7 +684,8 @@ neuraKnot/
 ├── Next.js (localhost:3000)
 ├── Backend Go (localhost:8080)
 ├── Backend Python (localhost:8001)
-└── PostgreSQL (Docker/localhost:5432)
+├── PostgreSQL (Docker/localhost:5432)
+└── MinIO (Docker/localhost:9000, 9001)
 
 AWS Cognito (DEV User Pool) - 認証専用
 ```
@@ -683,6 +693,7 @@ AWS Cognito (DEV User Pool) - 認証専用
 **特徴:**
 
 - PostgreSQL: アプリケーションデータのみ保存
+- MinIO: S3 互換のオブジェクトストレージ（アバター画像保存）
 - ユーザー管理: AWS Cognito DEV User Pool
 - 認証方式: メール + パスワード
 
@@ -713,6 +724,7 @@ AWS Cognito (DEV User Pool) - 認証専用
 - **バックエンド API**: AWS ECS Fargate - `https://api.neuraknot.net`
 - **Backend Python サーバー**: ECS Fargate（内部通信のみ、ALB から直接アクセス不可）
 - **データベース**: RDS PostgreSQL（Multi-AZ）
+- **画像ストレージ**: AWS S3（アバター画像）
 - **Service Discovery**: Cloud Map（`backend-python.neuraKnot.local`）
 - **ユーザー管理**: AWS Cognito PROD User Pool
 - **DNS 管理**: Route 53（`neuraknot.net`）
@@ -760,18 +772,25 @@ docker-compose -f docker-compose/dev.yml logs -f
 
 ### 動作確認
 
-| サービス       | URL                                      | 説明             |
-| -------------- | ---------------------------------------- | ---------------- |
-| フロントエンド | http://localhost:3000                    | Next.js Web UI   |
-| Backend Go     | http://localhost:8080                    | REST API         |
-| Swagger UI     | http://localhost:8080/swagger/index.html | API ドキュメント |
-| Backend Python | http://localhost:8001                    | AI 処理サーバー  |
-| PostgreSQL     | localhost:5432                           | データベース     |
+| サービス       | URL                                      | 説明                       |
+| -------------- | ---------------------------------------- | -------------------------- |
+| フロントエンド | http://localhost:3000                    | Next.js Web UI             |
+| Backend Go     | http://localhost:8080                    | REST API                   |
+| Swagger UI     | http://localhost:8080/swagger/index.html | API ドキュメント           |
+| Backend Python | http://localhost:8001                    | AI 処理サーバー            |
+| PostgreSQL     | localhost:5432                           | データベース               |
+| MinIO Console  | http://localhost:9001                    | オブジェクトストレージ管理 |
+| MinIO API      | http://localhost:9000                    | S3 互換 API                |
 
 ```bash
 # ヘルスチェック
 curl http://localhost:8080/health
 curl http://localhost:8001/api/health
+
+# MinIO管理画面
+# URL: http://localhost:9001
+# ユーザー名: minioadmin
+# パスワード: minioadmin
 ```
 
 ## 開発
@@ -916,6 +935,11 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 - `PUT /api/v1/ai-agents/:id` - AI エージェント更新
 - `DELETE /api/v1/ai-agents/:id` - AI エージェント削除
 
+**アップロード（認証必要）**
+
+- `POST /api/v1/upload/avatar/user` - ユーザーアバターアップロード
+- `POST /api/v1/upload/avatar/agent/:id` - エージェントアバターアップロード
+
 **システム**
 
 - `GET /health` - ヘルスチェック
@@ -1020,6 +1044,7 @@ NeuraKnot のインフラストラクチャは **Terraform** を使用して Inf
 | **ECS**               | コンテナオーケストレーション | ECS Cluster, Task Definition, Service (バックエンド API のみ)     |
 | **Auto Scaling**      | ECS タスクの自動スケーリング | Scaling Target, Scaling Policy (CPU/Memory Target Tracking)       |
 | **RDS**               | データベース                 | PostgreSQL 15, Multi-AZ, Encryption                               |
+| **S3**                | オブジェクトストレージ       | S3 Bucket, Bucket Policy, VPC Endpoint                            |
 | **ALB**               | ロードバランシング           | Application Load Balancer, Target Groups, HTTPS Listener          |
 | **Service Discovery** | 内部サービス通信             | Cloud Map, Private DNS Namespace                                  |
 | **Secrets Manager**   | 機密情報管理                 | Secrets, Secret Versions                                          |
