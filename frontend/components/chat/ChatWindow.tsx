@@ -782,7 +782,7 @@ export function ChatWindow({
                               }))
                             : []
                         }
-                        avatarUrl={selectedChat.avatar_url}
+                        avatarUrl={selectedChat.avatar_url ? `${selectedChat.avatar_url.split('?')[0]}?t=${Date.now()}` : selectedChat.avatar_url}
                         name={selectedChat.name}
                         showCursor={false}
                         agentId={selectedChat.id}
@@ -821,7 +821,7 @@ export function ChatWindow({
                   <StreamingMessage
                     content={streamingContent}
                     tools={streamingTools}
-                    avatarUrl={selectedChat.avatar_url}
+                    avatarUrl={selectedChat.avatar_url ? `${selectedChat.avatar_url.split('?')[0]}?t=${Date.now()}` : selectedChat.avatar_url}
                     name={selectedChat.name}
                     showCursor={true}
                     agentId={selectedChat.id}
