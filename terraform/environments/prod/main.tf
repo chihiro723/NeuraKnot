@@ -64,6 +64,16 @@ module "ecr" {
   }
 }
 
+# S3 Module (Media Storage)
+module "s3" {
+  source = "../../modules/s3"
+
+  environment               = var.environment
+  vpc_id                    = module.vpc.vpc_id
+  private_route_table_ids   = module.vpc.private_route_table_ids
+  region                    = var.aws_region
+}
+
 # Cognito Module
 module "cognito" {
   source = "../../modules/cognito"
@@ -100,6 +110,7 @@ module "iam" {
   secrets_manager_arns           = []
   cognito_user_pool_arn          = module.cognito.user_pool_arn
   service_discovery_arn          = module.service_discovery.backend_python_service_arn
+  s3_bucket_arn                  = module.s3.bucket_arn
   enable_rds_enhanced_monitoring = var.enable_rds_enhanced_monitoring
 
   tags = {

@@ -171,6 +171,42 @@ resource "aws_iam_role_policy_attachment" "ecs_task_service_discovery_policy" {
   policy_arn = aws_iam_policy.ecs_task_service_discovery_policy.arn
 }
 
+# ECS Task Role Policy for S3
+resource "aws_iam_policy" "ecs_task_s3_policy" {
+  count = var.s3_bucket_arn != "" ? 1 : 0
+
+  name        = "${var.project_name}-${var.environment}-ecs-task-s3-policy"
+  description = "Policy for ECS tasks to access S3 bucket"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:DeleteObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          var.s3_bucket_arn,
+          "${var.s3_bucket_arn}/*"
+        ]
+      }
+    ]
+  })
+
+  tags = var.tags
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_task_s3_policy" {
+  count = var.s3_bucket_arn != "" ? 1 : 0
+
+  role       = aws_iam_role.ecs_task_role.name
+  policy_arn = aws_iam_policy.ecs_task_s3_policy[0].arn
+}
+
 # SSM Session Manager用のポリシーアタッチメント
 resource "aws_iam_role_policy_attachment" "ecs_task_ssm_policy" {
   role       = aws_iam_role.ecs_task_role.name
