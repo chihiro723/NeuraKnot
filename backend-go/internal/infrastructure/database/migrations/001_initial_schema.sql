@@ -64,7 +64,7 @@ CREATE TABLE ai_agents (
     -- LLM 設定
     provider VARCHAR(50) NOT NULL DEFAULT 'openai',
     -- openai, anthropic, google
-    model VARCHAR(100) NOT NULL DEFAULT 'gpt-4o',
+    model VARCHAR(100) NOT NULL DEFAULT 'gpt-4.1',
     temperature DECIMAL(3, 2) NOT NULL DEFAULT 0.7,
     max_tokens INTEGER NOT NULL DEFAULT 2000,
     
@@ -96,14 +96,6 @@ CREATE TABLE ai_agents (
     -- 制約
     CONSTRAINT chk_persona_type CHECK (persona_type IN ('', 'assistant', 'creative', 'analytical', 'concise')),
     CONSTRAINT chk_provider CHECK (provider IN ('openai', 'anthropic', 'google')),
-    CONSTRAINT chk_model CHECK (model IN (
-        -- OpenAI Models
-        'gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo',
-        -- Anthropic Models (API format)
-        'claude-3-5-sonnet-20241022', 'claude-3.5-sonnet', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229', 'claude-3-haiku-20240307',
-        -- Google Models
-        'gemini-pro', 'gemini-1.5-pro', 'gemini-1.5-flash'
-    )),
     CONSTRAINT chk_temperature CHECK (temperature >= 0 AND temperature <= 2),
     CONSTRAINT chk_max_tokens CHECK (max_tokens >= 100 AND max_tokens <= 8000)
 );
@@ -463,7 +455,7 @@ COMMENT ON COLUMN users.status IS 'ユーザーステータス（active/inactive
 
 COMMENT ON COLUMN ai_agents.persona_type IS '振る舞いタイプ（assistant/creative/analytical）';
 COMMENT ON COLUMN ai_agents.provider IS 'LLMプロバイダー（openai/anthropic/google）';
-COMMENT ON COLUMN ai_agents.model IS 'LLMモデル名（CHECK制約により許可されたモデルのみ使用可能）';
+COMMENT ON COLUMN ai_agents.model IS 'LLMモデル名（バリデーションはアプリケーション層で実施）';
 COMMENT ON COLUMN ai_agents.system_prompt IS 'カスタムシステムプロンプト（NULLの場合はpersona_typeから自動生成）';
 COMMENT ON COLUMN ai_agents.tools_enabled IS '基本ツール（日時、計算など）の有効/無効';
 COMMENT ON COLUMN ai_agents.streaming_enabled IS 'ストリーミングチャットを有効にするかどうか';

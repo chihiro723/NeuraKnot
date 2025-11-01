@@ -31,14 +31,51 @@ class SSEStreamingCallback(AsyncCallbackHandler):
         新しいトークンが生成された時
 
         Args:
-            token: 生成されたトークン
+            token: 生成されたトークン（文字列またはリスト形式）
         """
-        logger.info(f"Token received: {repr(token)}")
-        self.accumulated_tokens.append(token)
+        # トークンを文字列に変換
+        # Claudeなどの新しいLLMではリスト形式で渡される場合がある
+        token_str = self._extract_text_from_token(token)
+        
+        logger.info(f"Token received: {repr(token)} -> {repr(token_str)}")
+        self.accumulated_tokens.append(token_str)
         await self.queue.put({
             "type": "token",
-            "content": token
+            "content": token_str
         })
+    
+    def _extract_text_from_token(self, token: Any) -> str:
+        """
+        トークンから文字列を抽出
+        
+        Args:
+            token: トークン（文字列、リスト、辞書など）
+            
+        Returns:
+            抽出された文字列
+        """
+        if isinstance(token, str):
+            return token
+        elif isinstance(token, list):
+            # リスト形式の場合、各要素からテキストを抽出
+            texts = []
+            for item in token:
+                if isinstance(item, str):
+                    texts.append(item)
+                elif isinstance(item, dict) and 'text' in item:
+                    texts.append(item['text'])
+                elif isinstance(item, dict) and 'type' in item and item['type'] == 'text':
+                    texts.append(item.get('text', ''))
+            return "".join(texts)
+        elif isinstance(token, dict):
+            # 辞書形式の場合
+            if 'text' in token:
+                return token['text']
+            elif 'content' in token:
+                return str(token['content'])
+        
+        # その他の場合は文字列に変換
+        return str(token)
     
     async def on_tool_start(
         self,
@@ -57,7 +94,8 @@ class SSEStreamingCallback(AsyncCallbackHandler):
         self.tool_start_times[tool_name] = time.time()
         
         # 現在のメッセージ位置を記録（UI表示用）
-        insert_position = len("".join(self.accumulated_tokens))
+        # 全て文字列であることを保証
+        insert_position = len("".join(str(token) for token in self.accumulated_tokens))
         self.tool_insert_positions[tool_name] = insert_position
         
         logger.info(f"🔧 on_tool_start called! Tool: {tool_name}, Input: {input_str}, Position: {insert_position}")

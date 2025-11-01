@@ -2,7 +2,7 @@
 
 import { StatsCard } from "./StatsCard";
 import type { ToolUsageStats } from "@/lib/types/analytics";
-// アイコンは削除されました（UIシンプル化のため）
+import { CustomTooltip } from "./CustomTooltip";
 import {
   PieChart,
   Pie,
@@ -86,9 +86,7 @@ export function ToolUsageSection({ stats }: ToolUsageSectionProps) {
                       />
                     ))}
                   </Pie>
-                  <Tooltip
-                    formatter={(value: number) => value.toLocaleString()}
-                  />
+                  <Tooltip content={<CustomTooltip />} />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
@@ -98,11 +96,11 @@ export function ToolUsageSection({ stats }: ToolUsageSectionProps) {
           {/* ツール別使用統計 */}
           <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm md:p-6 dark:bg-gray-800 dark:border-gray-700">
             <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
-              ツール別使用回数 Top 10
+              ツール別使用回数
             </h3>
-            <div className="overflow-x-auto">
+            <div className="overflow-y-auto" style={{ maxHeight: '250px' }}>
               <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+                <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 sticky top-0">
                   <tr>
                     <th className="px-3 py-2">ツール名</th>
                     <th className="px-3 py-2 text-right">使用回数</th>
@@ -110,7 +108,7 @@ export function ToolUsageSection({ stats }: ToolUsageSectionProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {stats.by_tool.slice(0, 10).map((tool, index) => (
+                  {stats.by_tool.map((tool, index) => (
                     <tr
                       key={index}
                       className="bg-white border-b dark:bg-gray-800 dark:border-gray-700"

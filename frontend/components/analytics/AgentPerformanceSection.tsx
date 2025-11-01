@@ -11,6 +11,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { CustomTooltip } from "./CustomTooltip";
 
 interface AgentPerformanceSectionProps {
   agents: AgentPerformance[];
@@ -22,24 +23,18 @@ interface AgentPerformanceSectionProps {
 export function AgentPerformanceSection({
   agents,
 }: AgentPerformanceSectionProps) {
-  // Top 5エージェント
-  const topAgents = agents.slice(0, 5);
+  // 全エージェント
+  const allAgents = agents;
 
   // メッセージ数ランキングデータ
-  const messageData = topAgents.map((agent) => ({
-    name:
-      agent.agent_name.length > 10
-        ? agent.agent_name.substring(0, 10) + "..."
-        : agent.agent_name,
+  const messageData = allAgents.map((agent) => ({
+    name: agent.agent_name,
     メッセージ数: agent.message_count,
   }));
 
   // トークン使用量ランキングデータ
-  const tokenData = topAgents.map((agent) => ({
-    name:
-      agent.agent_name.length > 10
-        ? agent.agent_name.substring(0, 10) + "..."
-        : agent.agent_name,
+  const tokenData = allAgents.map((agent) => ({
+    name: agent.agent_name,
     トークン数: agent.total_tokens,
   }));
 
@@ -49,11 +44,11 @@ export function AgentPerformanceSection({
         エージェント別パフォーマンス
       </h2>
 
-      {topAgents.length > 0 ? (
+      {allAgents.length > 0 ? (
         <>
           {/* エージェントカード */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {topAgents.map((agent, index) => (
+            {allAgents.map((agent, index) => (
               <div
                 key={agent.agent_id}
                 className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm dark:bg-gray-800 dark:border-gray-700"
@@ -115,9 +110,9 @@ export function AgentPerformanceSection({
             {/* メッセージ数ランキング */}
             <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm md:p-6 dark:bg-gray-800 dark:border-gray-700">
               <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
-                メッセージ数 Top 5
+                メッセージ数ランキング
               </h3>
-              <ResponsiveContainer width="100%" height={250}>
+              <ResponsiveContainer width="100%" height={Math.max(250, allAgents.length * 50)}>
                 <BarChart data={messageData} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
@@ -128,11 +123,11 @@ export function AgentPerformanceSection({
                   <YAxis
                     dataKey="name"
                     type="category"
-                    tick={{ fontSize: 12 }}
+                    tick={{ fontSize: 11 }}
                     stroke="#9ca3af"
-                    width={80}
+                    width={120}
                   />
-                  <Tooltip />
+                  <Tooltip content={<CustomTooltip />} />
                   <Bar dataKey="メッセージ数" fill="#10b981" />
                 </BarChart>
               </ResponsiveContainer>
@@ -141,9 +136,9 @@ export function AgentPerformanceSection({
             {/* トークン使用量ランキング */}
             <div className="p-4 bg-white rounded-lg border border-gray-200 shadow-sm md:p-6 dark:bg-gray-800 dark:border-gray-700">
               <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
-                トークン使用量 Top 5
+                トークン使用量ランキング
               </h3>
-              <ResponsiveContainer width="100%" height={250}>
+              <ResponsiveContainer width="100%" height={Math.max(250, allAgents.length * 50)}>
                 <BarChart data={tokenData} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
@@ -154,11 +149,11 @@ export function AgentPerformanceSection({
                   <YAxis
                     dataKey="name"
                     type="category"
-                    tick={{ fontSize: 12 }}
+                    tick={{ fontSize: 11 }}
                     stroke="#9ca3af"
-                    width={80}
+                    width={120}
                   />
-                  <Tooltip />
+                  <Tooltip content={<CustomTooltip />} />
                   <Bar dataKey="トークン数" fill="#3b82f6" />
                 </BarChart>
               </ResponsiveContainer>

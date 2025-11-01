@@ -101,9 +101,19 @@ class AgentService:
             
         Returns:
             LangChainメッセージのリスト
+            
+        Note:
+            空のコンテンツを持つメッセージはフィルタリングされます。
+            これはAnthropicなどのプロバイダーが空メッセージを許可しないためです。
         """
         messages = []
         for msg in history:
+            # 空のコンテンツをフィルタリング
+            # Anthropicは空のメッセージを許可しないため、必ずチェックする
+            if not msg.content or not msg.content.strip():
+                logger.warning(f"Skipping message with empty content: role={msg.role}")
+                continue
+            
             if msg.role == "user":
                 messages.append(HumanMessage(content=msg.content))
             elif msg.role == "assistant":

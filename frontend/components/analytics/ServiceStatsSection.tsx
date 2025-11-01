@@ -43,9 +43,9 @@ export function ServiceStatsSection({ stats }: ServiceStatsSectionProps) {
           <h3 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">
             サービス別利用状況
           </h3>
-          <div className="overflow-x-auto">
+          <div className="overflow-y-auto" style={{ maxHeight: '400px' }}>
             <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-              <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+              <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400 sticky top-0">
                 <tr>
                   <th className="px-4 py-3">サービス名</th>
                   <th className="px-4 py-3 text-center">状態</th>
