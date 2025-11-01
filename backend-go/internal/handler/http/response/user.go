@@ -4,13 +4,14 @@ import "backend-go/internal/domain/user"
 
 // UserResponse ユーザーレスポンス
 type UserResponse struct {
-	ID            string `json:"id"`
-	CognitoUserID string `json:"cognito_user_id"`
-	Email         string `json:"email"`
-	DisplayName   string `json:"display_name"`
-	Status        string `json:"status"`
-	CreatedAt     string `json:"created_at"`
-	UpdatedAt     string `json:"updated_at"`
+	ID            string  `json:"id"`
+	CognitoUserID string  `json:"cognito_user_id"`
+	Email         string  `json:"email"`
+	DisplayName   string  `json:"display_name"`
+	AvatarURL     *string `json:"avatar_url,omitempty"`
+	Status        string  `json:"status"`
+	CreatedAt     string  `json:"created_at"`
+	UpdatedAt     string  `json:"updated_at"`
 }
 
 // ToUserResponse ドメインオブジェクトからレスポンスに変換
@@ -20,6 +21,7 @@ func ToUserResponse(u *user.User) *UserResponse {
 		CognitoUserID: u.CognitoUserID,
 		Email:         u.Email.String(),
 		DisplayName:   u.DisplayName,
+		AvatarURL:     u.AvatarURL,
 		Status:        u.Status.String(),
 		CreatedAt:     u.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt:     u.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
