@@ -87,6 +87,9 @@ export function ChatWindow({
   // クライアントサイドレンダリング用の状態
   const [isClient, setIsClient] = useState(false);
 
+  // アバターURLのキャッシュバスティング用タイムスタンプ
+  const [avatarTimestamp, setAvatarTimestamp] = useState<number | null>(null);
+
   // 定数
   const MESSAGE_LIMIT = 50;
   const STREAMING_DELAY = 500;
@@ -122,6 +125,11 @@ export function ChatWindow({
       error?: string;
     }>
   );
+
+  // クライアントサイドでタイムスタンプを設定
+  useEffect(() => {
+    setAvatarTimestamp(Date.now());
+  }, []);
 
   // 現在のユーザー情報を取得（初期データがない場合のみ）
   useEffect(() => {
@@ -782,7 +790,7 @@ export function ChatWindow({
                               }))
                             : []
                         }
-                        avatarUrl={selectedChat.avatar_url ? `${selectedChat.avatar_url.split('?')[0]}?t=${Date.now()}` : selectedChat.avatar_url}
+                        avatarUrl={selectedChat.avatar_url}
                         name={selectedChat.name}
                         showCursor={false}
                         agentId={selectedChat.id}
@@ -821,7 +829,11 @@ export function ChatWindow({
                   <StreamingMessage
                     content={streamingContent}
                     tools={streamingTools}
-                    avatarUrl={selectedChat.avatar_url ? `${selectedChat.avatar_url.split('?')[0]}?t=${Date.now()}` : selectedChat.avatar_url}
+                    avatarUrl={
+                      selectedChat.avatar_url && avatarTimestamp
+                        ? `${selectedChat.avatar_url.split('?')[0]}?t=${avatarTimestamp}`
+                        : selectedChat.avatar_url
+                    }
                     name={selectedChat.name}
                     showCursor={true}
                     agentId={selectedChat.id}
