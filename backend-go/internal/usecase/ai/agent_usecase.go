@@ -61,7 +61,7 @@ func (uc *AgentUsecase) CreateAgent(
 
 	// Modelのデフォルト
 	if model == "" {
-		model = "gpt-4o"
+		model = "gpt-4.1"
 	}
 
 	// AI Agentを作成
