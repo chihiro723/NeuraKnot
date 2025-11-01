@@ -272,23 +272,25 @@ export function LandingPage({
             >
               {!isLoading && user ? (
                 <>
-                  {/* ユーザーアイコン */}
-                  <div className="flex overflow-hidden justify-center items-center w-10 h-10 bg-gradient-to-br from-emerald-400 via-emerald-500 to-cyan-600 rounded-full ring-2 ring-emerald-500/30 transition-all duration-300 hover:ring-4 hover:ring-emerald-400/50">
-                    {profile?.avatar_url ? (
-                      <img
-                        src={profile.avatar_url}
-                        alt={getDisplayName()}
-                        className="object-cover w-full h-full"
-                      />
-                    ) : (
-                      <span className="text-base font-bold text-white">
-                        {getDisplayName().charAt(0)}
-                      </span>
-                    )}
+                  <div className="flex items-center px-4 py-2 space-x-3 rounded-lg border bg-emerald-500/10 border-emerald-500/30">
+                    <span className="font-medium text-emerald-300">
+                      {getDisplayName()}
+                    </span>
+                    {/* ユーザーアイコン */}
+                    <div className="flex overflow-hidden justify-center items-center w-8 h-8 bg-gradient-to-br from-emerald-400 via-emerald-500 to-cyan-600 rounded-full ring-2 ring-emerald-500/30">
+                      {profile?.avatar_url ? (
+                        <img
+                          src={profile.avatar_url}
+                          alt={getDisplayName()}
+                          className="object-cover w-full h-full"
+                        />
+                      ) : (
+                        <span className="text-sm font-bold text-white">
+                          {getDisplayName().charAt(0)}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <span className="font-medium text-emerald-300">
-                    {getDisplayName()}
-                  </span>
                   <Link
                     href="/dashboard"
                     className="px-4 py-2 font-medium text-white bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-lg transition-colors hover:from-emerald-600 hover:to-cyan-600"
