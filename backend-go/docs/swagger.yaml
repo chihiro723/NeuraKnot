@@ -255,6 +255,8 @@ definitions:
     type: object
   backend-go_internal_handler_http_request.UpdateProfileRequest:
     properties:
+      avatar_url:
+        type: string
       display_name:
         maxLength: 50
         minLength: 1
@@ -648,6 +650,8 @@ definitions:
     type: object
   backend-go_internal_handler_http_response.UserResponse:
     properties:
+      avatar_url:
+        type: string
       cognito_user_id:
         type: string
       created_at:
@@ -1504,6 +1508,99 @@ paths:
       summary: サービス認証情報検証
       tags:
       - Services
+  /api/v1/upload/avatar/agent/{id}:
+    post:
+      consumes:
+      - multipart/form-data
+      description: エージェントのアバター画像をアップロードします（所有者のみ）
+      parameters:
+      - description: エージェントID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: アバター画像ファイル
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: アップロード成功
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "403":
+          description: 権限エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "404":
+          description: エージェントが見つかりません
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "413":
+          description: ファイルサイズ超過
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: エージェントアバターアップロード
+      tags:
+      - Upload
+  /api/v1/upload/avatar/user:
+    post:
+      consumes:
+      - multipart/form-data
+      description: 認証済みユーザーのアバター画像をアップロードします
+      parameters:
+      - description: アバター画像ファイル
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: アップロード成功
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.UserResponse'
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "413":
+          description: ファイルサイズ超過
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: ユーザーアバターアップロード
+      tags:
+      - Upload
   /auth/confirm-forgot-password:
     post:
       consumes:

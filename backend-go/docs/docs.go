@@ -1291,6 +1291,150 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/upload/avatar/agent/{id}": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "エージェントのアバター画像をアップロードします（所有者のみ）",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Upload"
+                ],
+                "summary": "エージェントアバターアップロード",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "エージェントID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "アバター画像ファイル",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "アップロード成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "権限エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "エージェントが見つかりません",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "ファイルサイズ超過",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/upload/avatar/user": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "認証済みユーザーのアバター画像をアップロードします",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Upload"
+                ],
+                "summary": "ユーザーアバターアップロード",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "アバター画像ファイル",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "アップロード成功",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "ファイルサイズ超過",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/confirm-forgot-password": {
             "post": {
                 "description": "確認コードを使って新しいパスワードを設定します",
@@ -2257,6 +2401,9 @@ const docTemplate = `{
                 "display_name"
             ],
             "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
                 "display_name": {
                     "type": "string",
                     "maxLength": 50,
@@ -2855,6 +3002,9 @@ const docTemplate = `{
         "backend-go_internal_handler_http_response.UserResponse": {
             "type": "object",
             "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
                 "cognito_user_id": {
                     "type": "string"
                 },
