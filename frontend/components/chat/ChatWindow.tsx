@@ -17,6 +17,7 @@ import { StampPicker } from "./StampPicker";
 import { getCookie } from "@/lib/utils/cookies";
 import { formatDateSeparator, isSameDay } from "@/lib/utils/date";
 import { showToast } from "@/components/ui/ToastContainer";
+import { useIsMobile } from "@/lib/hooks/useResponsive";
 import type {
   StreamEvent,
   ToolUsageData,
@@ -56,6 +57,7 @@ export function ChatWindow({
   initialUserProfile,
 }: ChatWindowProps) {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [newMessage, setNewMessage] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(
@@ -890,7 +892,11 @@ export function ChatWindow({
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyDown={handleKeyDown}
               onFocus={handleInputFocus}
-              placeholder="メッセージを入力...（Cmd/Ctrl+Enterで送信）"
+              placeholder={
+                isMobile
+                  ? "メッセージを入力..."
+                  : "メッセージを入力...（Cmd/Ctrl+Enterで送信）"
+              }
               className={cn(
                 "px-0 py-0 w-full bg-transparent border-0 resize-none",
                 "overflow-y-auto overflow-x-hidden focus:outline-none",
