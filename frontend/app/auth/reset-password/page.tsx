@@ -49,9 +49,16 @@ function ResetPasswordForm() {
     }
 
     try {
-      // 未実装機能（MVP後に実装予定）
-      await confirmForgotPassword();
-      setSuccess(true);
+      const result = await confirmForgotPassword(
+        email.toLowerCase(),
+        formData.confirmationCode,
+        formData.newPassword
+      );
+      if (result.success) {
+        setSuccess(true);
+      } else {
+        setError("パスワードリセットに失敗しました");
+      }
     } catch (err) {
       console.error("Reset password error:", err);
       setError(getAuthErrorMessage(err));
@@ -63,7 +70,7 @@ function ResetPasswordForm() {
   if (success) {
     return (
       <div className="flex justify-center items-center min-h-[var(--app-dvh)] overflow-y-auto bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
-        <div className="space-y-6 md:space-y-8 w-full max-w-sm md:max-w-md p-5 md:p-8 rounded-2xl border shadow-2xl backdrop-blur-md bg-white/10 border-white/20">
+        <div className="p-5 space-y-6 w-full max-w-sm rounded-2xl border shadow-2xl backdrop-blur-md md:space-y-8 md:max-w-md md:p-8 bg-white/10 border-white/20">
           <div className="text-center">
             <div className="mb-4 text-xl text-emerald-400">
               パスワードリセット完了
@@ -90,25 +97,21 @@ function ResetPasswordForm() {
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-1/2 left-1/2 w-96 h-96 rounded-full blur-3xl transform -translate-x-1/2 -translate-y-1/2 bg-emerald-400/30"></div>
       </div>
-      <div className="relative z-10 space-y-6 md:space-y-8 w-full max-w-sm md:max-w-md p-5 md:p-8 rounded-2xl border shadow-2xl backdrop-blur-md bg-white/10 border-white/20">
-        <div>
-          <h2 className="mt-6 text-3xl font-extrabold text-center text-white">
+      <div className="relative z-10 p-5 w-full max-w-sm rounded-2xl border shadow-2xl backdrop-blur-md md:max-w-md md:p-8 bg-white/10 border-white/20">
+        <div className="mb-4">
+          <h2 className="text-3xl font-extrabold text-center text-white">
             新しいパスワード設定
           </h2>
           <p className="mt-2 text-sm text-center text-white/70">
             メールに送信された確認コードと新しいパスワードを入力してください。
-            <br />
-            <span className="text-xs text-white/50">
-              ※確認コードは24時間以内に入力してください
-            </span>
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-white/90"
             >
               メールアドレス
             </label>
@@ -117,14 +120,14 @@ function ResetPasswordForm() {
               type="email"
               value={email}
               disabled
-              className="mt-1 bg-gray-100"
+              className="mt-1 bg-white/5 border-white/20 text-white/50"
             />
           </div>
 
           <div>
             <label
               htmlFor="confirmationCode"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-white/90"
             >
               確認コード
             </label>
@@ -135,7 +138,7 @@ function ResetPasswordForm() {
               value={formData.confirmationCode}
               onChange={handleChange}
               required
-              className="mt-1"
+              className="mt-1 bg-white/10 border-white/20 text-white placeholder-white/50 focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400"
               placeholder="6桁の確認コード"
             />
           </div>
@@ -143,7 +146,7 @@ function ResetPasswordForm() {
           <div>
             <label
               htmlFor="newPassword"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-white/90"
             >
               新しいパスワード
             </label>
@@ -154,7 +157,7 @@ function ResetPasswordForm() {
               value={formData.newPassword}
               onChange={handleChange}
               required
-              className="mt-1"
+              className="mt-1 bg-white/10 border-white/20 text-white placeholder-white/50 focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400"
               placeholder="8文字以上のパスワード"
             />
           </div>
@@ -162,7 +165,7 @@ function ResetPasswordForm() {
           <div>
             <label
               htmlFor="confirmPassword"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-medium text-white/90"
             >
               パスワード確認
             </label>
@@ -173,22 +176,28 @@ function ResetPasswordForm() {
               value={formData.confirmPassword}
               onChange={handleChange}
               required
-              className="mt-1"
+              className="mt-1 bg-white/10 border-white/20 text-white placeholder-white/50 focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400"
               placeholder="パスワードを再入力"
             />
           </div>
 
-          {error && <div className="text-sm text-red-600">{error}</div>}
+          {error && (
+            <div className="p-3 text-sm text-center text-red-300 rounded-lg border bg-red-500/20 border-red-500/30">
+              {error}
+            </div>
+          )}
 
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? "処理中..." : "パスワードをリセット"}
-          </Button>
+          <div style={{ marginTop: "2rem" }}>
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? "処理中..." : "パスワードをリセット"}
+            </Button>
+          </div>
 
-          <div className="text-center">
+          <div className="mt-4 text-center">
             <button
               type="button"
               onClick={() => router.push("/auth/login")}
-              className="text-sm text-blue-600 hover:text-blue-500"
+              className="text-sm text-blue-400 hover:text-blue-300 underline transition-colors"
             >
               ログインページに戻る
             </button>

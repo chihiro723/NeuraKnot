@@ -114,3 +114,59 @@ export async function signOut() {
     return { success: true }
   }
 }
+
+/**
+ * パスワードリセット要求
+ * Cookie設定が不要なため、Server Actionで実装
+ */
+export async function forgotPassword(email: string) {
+  try {
+    const response = await fetch(`${BACKEND_GO_URL}/api/v1/auth/forgot-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'パスワードリセットメールの送信に失敗しました' }))
+      return { success: false, error: error.error || 'パスワードリセットメールの送信に失敗しました' }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('[AUTH] Forgot password error:', error)
+    return { success: false, error: 'パスワードリセットメールの送信に失敗しました' }
+  }
+}
+
+/**
+ * パスワードリセット確認
+ * Cookie設定が不要なため、Server Actionで実装
+ */
+export async function confirmForgotPassword(email: string, confirmationCode: string, newPassword: string) {
+  try {
+    const response = await fetch(`${BACKEND_GO_URL}/api/v1/auth/confirm-forgot-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        confirmation_code: confirmationCode,
+        new_password: newPassword,
+      }),
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'パスワードリセットに失敗しました' }))
+      return { success: false, error: error.error || 'パスワードリセットに失敗しました' }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error('[AUTH] Confirm forgot password error:', error)
+    return { success: false, error: 'パスワードリセットに失敗しました' }
+  }
+}
