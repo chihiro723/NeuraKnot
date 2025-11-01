@@ -25,6 +25,9 @@ CREATE TABLE users (
     -- ユーザーが自由に変更できる表示用の名前
     display_name VARCHAR(255) NOT NULL,
     
+    -- プロフィール画像URL（S3/MinIO）
+    avatar_url TEXT,
+    
     -- ユーザーステータス（active, inactive, suspended, deleted）
     status VARCHAR(50) NOT NULL DEFAULT 'active',
     
@@ -51,10 +54,12 @@ CREATE TABLE ai_agents (
     -- === ペルソナ設定（統合） ===
     
     -- 振る舞いタイプ
-    persona_type VARCHAR(50) NOT NULL DEFAULT 'assistant',
+    persona_type VARCHAR(50) DEFAULT '',
+    -- '': 未選択（ペルソナなし）
     -- assistant: 親切で丁寧なアシスタント
     -- creative: 創造的で発想豊かな対話
     -- analytical: 論理的で分析的な対話
+    -- concise: 簡潔で要点を絞った応答
     
     -- LLM 設定
     provider VARCHAR(50) NOT NULL DEFAULT 'openai',
@@ -453,6 +458,7 @@ COMMENT ON TABLE ai_agent_services IS 'AI Agentとサービスの紐付けを管
 COMMENT ON COLUMN users.cognito_user_id IS 'AWS CognitoのユーザーID（一意）';
 COMMENT ON COLUMN users.email IS 'メールアドレス（Cognitoのusername）';
 COMMENT ON COLUMN users.display_name IS '表示名（ユーザーが自由に変更可能）';
+COMMENT ON COLUMN users.avatar_url IS 'ユーザーのプロフィール画像URL（S3/MinIO）';
 COMMENT ON COLUMN users.status IS 'ユーザーステータス（active/inactive/suspended/deleted）';
 
 COMMENT ON COLUMN ai_agents.persona_type IS '振る舞いタイプ（assistant/creative/analytical）';
