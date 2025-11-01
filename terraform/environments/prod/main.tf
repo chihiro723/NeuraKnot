@@ -68,10 +68,10 @@ module "ecr" {
 module "s3" {
   source = "../../modules/s3"
 
-  environment               = var.environment
-  vpc_id                    = module.vpc.vpc_id
-  private_route_table_ids   = module.vpc.private_route_table_ids
-  region                    = var.aws_region
+  environment             = var.environment
+  vpc_id                  = module.vpc.vpc_id
+  private_route_table_ids = module.vpc.private_route_table_ids
+  region                  = var.aws_region
 }
 
 # Cognito Module
