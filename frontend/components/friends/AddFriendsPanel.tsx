@@ -290,7 +290,7 @@ export function AIAgentCreationPanel({
 
     // LLM設定
     provider: "openai",
-    model: "gpt-4o",
+    model: "gpt-4.1",
     temperature: 0.7,
     max_tokens: 2000,
 
@@ -375,45 +375,75 @@ export function AIAgentCreationPanel({
       name: "OpenAI",
       models: [
         {
-          id: "gpt-4o",
-          name: "GPT-4o",
-          description: "最新の高性能モデル",
+          id: "gpt-4.1",
+          name: "GPT-4.1",
+          description: "高性能モデル｜$2.50 / $10.00 (入力/出力 per 1M)",
           disabled: false,
         },
         {
-          id: "gpt-4o-mini",
-          name: "GPT-4o Mini (近日追加予定)",
-          description: "高速で経済的",
-          disabled: true,
+          id: "gpt-4.1-mini",
+          name: "GPT-4.1 mini",
+          description: "性能とコストのバランス型｜$0.15 / $0.60",
+          disabled: false,
+        },
+        {
+          id: "gpt-4.1-nano",
+          name: "GPT-4.1 nano",
+          description: "超高速・最安価｜$0.05 / $0.20",
+          disabled: false,
         },
       ],
       disabled: false,
     },
     {
       id: "anthropic",
-      name: "Anthropic (近日追加予定)",
+      name: "Anthropic",
       models: [
         {
-          id: "claude-3.5-sonnet",
-          name: "Claude 3.5 Sonnet",
-          description: "高度な推論能力",
-          disabled: true,
+          id: "claude-sonnet-4-5-20250929",
+          name: "Claude Sonnet 4.5",
+          description: "コーディング支援に優れた｜$3.00 / $15.00",
+          disabled: false,
+        },
+        {
+          id: "claude-haiku-4-5-20251001",
+          name: "Claude Haiku 4.5",
+          description: "軽量で高速｜$0.25 / $1.25",
+          disabled: false,
+        },
+        {
+          id: "claude-opus-4-1-20250805",
+          name: "Claude Opus 4.1",
+          description: "最高性能な汎用モデル｜$15.00 / $75.00",
+          disabled: false,
         },
       ],
-      disabled: true,
+      disabled: false,
     },
     {
       id: "google",
-      name: "Google (近日追加予定)",
+      name: "Google",
       models: [
         {
-          id: "gemini-pro",
-          name: "Gemini Pro",
-          description: "マルチモーダル対応",
-          disabled: true,
+          id: "gemini-2.5-pro",
+          name: "Gemini 2.5 Pro",
+          description: "高度な推論能力｜$3.50 / $10.50",
+          disabled: false,
+        },
+        {
+          id: "gemini-2.5-flash",
+          name: "Gemini 2.5 Flash",
+          description: "高速処理に特化｜$0.075 / $0.30",
+          disabled: false,
+        },
+        {
+          id: "gemini-2.5-flash-lite",
+          name: "Gemini 2.5 Flash-Lite",
+          description: "超軽量・最安価｜$0.04 / $0.16",
+          disabled: false,
         },
       ],
-      disabled: true,
+      disabled: false,
     },
   ];
 
@@ -600,7 +630,7 @@ export function AIAgentCreationPanel({
           persona_type: "assistant",
           system_prompt: "",
           provider: "openai",
-          model: "gpt-4o",
+          model: "gpt-4.1",
           temperature: 0.7,
           max_tokens: 2000,
           tools_enabled: true,

@@ -19,22 +19,19 @@ class LLMFactory:
     # プロバイダーごとの利用可能モデル
     AVAILABLE_MODELS = {
         "openai": [
-            "gpt-4o",
-            "gpt-4-turbo",
-            "gpt-4-turbo-preview",
-            "gpt-4",
-            "gpt-3.5-turbo"
+            "gpt-4.1",
+            "gpt-4.1-mini",
+            "gpt-4.1-nano"
         ],
         "anthropic": [
-            "claude-3-5-sonnet-20241022",
-            "claude-3-opus-20240229",
-            "claude-3-sonnet-20240229",
-            "claude-3-haiku-20240307"
+            "claude-sonnet-4-5-20250929",
+            "claude-haiku-4-5-20251001",
+            "claude-opus-4-1-20250805"
         ],
         "google": [
-            "gemini-1.5-pro",
-            "gemini-1.5-flash",
-            "gemini-pro"
+            "gemini-2.5-pro",
+            "gemini-2.5-flash",
+            "gemini-2.5-flash-lite"
         ]
     }
     

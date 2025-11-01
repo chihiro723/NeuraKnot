@@ -273,8 +273,8 @@ async def chat_stream(request: ChatRequest):
                             else:
                                 service_tools_count += len([t for t in callback.tool_calls if t['tool_name'] in [tool.name for tool in service.get_langchain_tools()]])
                     
-                    # 生成されたメッセージ
-                    completion_text = "".join(callback.accumulated_tokens)
+                    # 生成されたメッセージ（全て文字列のリストであることを保証）
+                    completion_text = "".join(str(token) for token in callback.accumulated_tokens)
                     
                     # トークン使用量を取得（callback.token_usageから）
                     tokens_used = callback.token_usage

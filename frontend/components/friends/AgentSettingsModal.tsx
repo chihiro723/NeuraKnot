@@ -577,18 +577,22 @@ export function AgentSettingsModal({
                     </label>
                     <select
                       value={formData.provider || ""}
-                      onChange={(e) =>
-                        handleInputChange("provider", e.target.value)
-                      }
+                      onChange={(e) => {
+                        handleInputChange("provider", e.target.value);
+                        // プロバイダー変更時、最初のモデルをデフォルトに設定
+                        const newProvider = e.target.value;
+                        const defaultModels: Record<string, string> = {
+                          openai: "gpt-4.1",
+                          anthropic: "claude-sonnet-4-5-20250929",
+                          google: "gemini-2.5-pro",
+                        };
+                        handleInputChange("model", defaultModels[newProvider] || "gpt-4.1");
+                      }}
                       className="w-full px-3 md:px-4 py-2 md:py-2.5 text-sm md:text-base text-gray-900 dark:text-white bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     >
                       <option value="openai">OpenAI</option>
-                      <option value="anthropic" disabled>
-                        Anthropic（近日追加予定）
-                      </option>
-                      <option value="google" disabled>
-                        Google（近日追加予定）
-                      </option>
+                      <option value="anthropic">Anthropic</option>
+                      <option value="google">Google</option>
                     </select>
                   </div>
 
@@ -596,14 +600,38 @@ export function AgentSettingsModal({
                     <label className="block mb-1.5 md:mb-2 text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300">
                       モデル
                     </label>
-                    <input
-                      type="text"
+                    <select
                       value={formData.model || ""}
                       onChange={(e) =>
                         handleInputChange("model", e.target.value)
                       }
-                      className="w-full px-3 md:px-4 py-2 md:py-2.5 text-sm md:text-base text-gray-900 dark:text-white bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all placeholder-gray-500 dark:placeholder-gray-400"
-                    />
+                      className="w-full px-3 md:px-4 py-2 md:py-2.5 text-sm md:text-base text-gray-900 dark:text-white bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    >
+                      {formData.provider === "openai" && (
+                        <>
+                          <option value="gpt-4.1">GPT-4.1 ($2.50 / $10.00)</option>
+                          <option value="gpt-4.1-mini">GPT-4.1 mini ($0.15 / $0.60)</option>
+                          <option value="gpt-4.1-nano">GPT-4.1 nano ($0.05 / $0.20)</option>
+                        </>
+                      )}
+                      {formData.provider === "anthropic" && (
+                        <>
+                          <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5 ($3.00 / $15.00)</option>
+                          <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 ($0.25 / $1.25)</option>
+                          <option value="claude-opus-4-1-20250805">Claude Opus 4.1 ($15.00 / $75.00)</option>
+                        </>
+                      )}
+                      {formData.provider === "google" && (
+                        <>
+                          <option value="gemini-2.5-pro">Gemini 2.5 Pro ($3.50 / $10.50)</option>
+                          <option value="gemini-2.5-flash">Gemini 2.5 Flash ($0.075 / $0.30)</option>
+                          <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite ($0.04 / $0.16)</option>
+                        </>
+                      )}
+                      {!formData.provider && (
+                        <option value="">プロバイダーを選択してください</option>
+                      )}
+                    </select>
                   </div>
                 </div>
 

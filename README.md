@@ -216,6 +216,8 @@ AI エージェントとの対話画面です。ストリーミング表示に�
 - エージェント名
 - 性格タイプ（アシスタント / クリエイティブ / 分析的 / 簡潔）
 - AI モデル（OpenAI / Anthropic / Google から選択）
+  - 各モデルの料金情報を表示（入力/出力トークンあたりのコスト）
+  - プルダウン形式で選択
 - システムプロンプト（AI の動作を細かく調整）
 - 連携サービス（必要なツールだけを選択）
 
@@ -315,11 +317,15 @@ AI 利用に関する統計データを可視化して確認できます。ト�
 
 **主な統計項目**
 
-- **トークン使用量とコスト分析** - プロバイダー/モデル別のトークン使用量、推定コスト（USD/JPY）
+- **トークン使用量とコスト分析**
+  - プロバイダー/モデル別のトークン使用量、推定コスト（USD/JPY）
+  - コスト計算式の透明な表示
+  - モデル別料金表の参照
+  - 入力/出力トークンの詳細な内訳
 - **メッセージ/会話の活動量** - 総メッセージ数、会話数、日別活動推移
-- **AI エージェント別パフォーマンス** - エージェントごとの使用状況、平均応答時間
-- **ツール使用統計** - ツール別の使用回数、成功率、実行時間
-- **サービス連携状況** - 登録サービス数、利用状況
+- **AI エージェント別パフォーマンス** - 全エージェントの使用状況、平均応答時間、ランキング
+- **ツール使用統計** - 全ツールの使用回数、成功率、実行時間
+- **サービス連携状況** - 全登録サービスの状態と利用状況
 
 **期間フィルター**
 
@@ -396,19 +402,31 @@ NeuraKnot は、様々な外部サービスやツールと連携できます。�
 
 ### 対応 AI モデル
 
-複数の AI プロバイダーのモデルから選択できます。タスクの種類や目的に応じて最適なモデルを使い分けることができます。
+複数の AI プロバイダーの最新モデルから選択できます。タスクの種類や目的に応じて最適なモデルを使い分けることができます。
 
 #### OpenAI
 
 汎用性が高く、コーディングや論理的な推論が得意です。
 
+- **GPT-4.1** - 最新の高性能モデル（100万トークン対応）
+- **GPT-4.1 mini** - 性能とコストのバランス型
+- **GPT-4.1 nano** - 超高速・最安価
+
 #### Anthropic
 
 自然で流暢な会話が特徴。長文の理解と生成に優れています。
 
+- **Claude Sonnet 4.5** - コーディング支援に優れた
+- **Claude Haiku 4.5** - 軽量で高速
+- **Claude Opus 4.1** - 最高性能な汎用モデル
+
 #### Google
 
 大量の情報処理と高速レスポンスが強みです。
+
+- **Gemini 2.5 Pro** - 高度な推論能力
+- **Gemini 2.5 Flash** - 高速処理に特化
+- **Gemini 2.5 Flash-Lite** - 超軽量・最安価
 
 ---
 
@@ -552,10 +570,10 @@ Internet
 
 **AI / LLM**
 
-- OpenAI
-- Anthropic
-- Google
-- LangChain Agent
+- OpenAI (GPT-4.1, GPT-4.1 mini, GPT-4.1 nano)
+- Anthropic (Claude Sonnet 4.5, Claude Haiku 4.5, Claude Opus 4.1)
+- Google (Gemini 2.5 Pro, Gemini 2.5 Flash, Gemini 2.5 Flash-Lite)
+- LangChain Agent (最新版: 0.3.15)
 
 **データストア**
 
@@ -599,10 +617,11 @@ NeuraKnot は **PostgreSQL 15** を使用し、**Backend-go のみ**がデータ
 
 #### 主な機能
 
-- **LLM サポート**: OpenAI、Anthropic、Google の各種モデル
+- **LLM サポート**: OpenAI（GPT-4.1系）、Anthropic（Claude 4.5系）、Google（Gemini 2.5系）の最新モデル
 - **ペルソナ**: assistant, creative, analytical, concise
 - **ツール連携**: Notion, Slack, GitHub, Weather など
 - **セキュリティ**: 認証情報は AES-256-GCM で暗号化
+- **拡張性**: モデルバリデーションはアプリケーション層で実施（新モデル追加が容易）
 
 #### 設計原則
 
@@ -758,6 +777,7 @@ cp frontend/.env frontend/.env.local
 - **認証**: `COGNITO_USER_POOL_ID`, `COGNITO_CLIENT_ID`, `COGNITO_CLIENT_SECRET`
 - **データベース**: `DB_PASSWORD`
 - **AI API**: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`
+- **モデル設定**: デフォルトモデルは `gpt-4.1`（プロンプト強化にも使用）
 - **外部サービス** (オプション): Slack, Notion, Weather API 等
 
 ### サービス起動
@@ -890,7 +910,7 @@ go run cmd/api/main.go
 cd backend-python
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
+pip install -r requirements.txt  # LangChain 0.3.15含む
 uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 # http://localhost:8001
 ```
@@ -953,11 +973,24 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 - `POST /api/ai/chat/stream` - ストリーミングチャット (SSE)
 - `POST /api/tools/available` - 利用可能ツール一覧
 
-**対応 LLM プロバイダー**
+**対応 LLM モデル**
 
-- OpenAI
-- Anthropic
-- Google
+**OpenAI**
+- GPT-4.1 ($2.50 / $10.00 per 1M tokens)
+- GPT-4.1 mini ($0.15 / $0.60 per 1M tokens)
+- GPT-4.1 nano ($0.05 / $0.20 per 1M tokens)
+
+**Anthropic**
+- Claude Sonnet 4.5 ($3.00 / $15.00 per 1M tokens)
+- Claude Haiku 4.5 ($0.25 / $1.25 per 1M tokens)
+- Claude Opus 4.1 ($15.00 / $75.00 per 1M tokens)
+
+**Google**
+- Gemini 2.5 Pro ($3.50 / $10.50 per 1M tokens)
+- Gemini 2.5 Flash ($0.075 / $0.30 per 1M tokens)
+- Gemini 2.5 Flash-Lite ($0.04 / $0.16 per 1M tokens)
+
+*価格は入力/出力トークンあたり（100万トークンあたりUSD）*
 
 **利用可能なサービス**
 

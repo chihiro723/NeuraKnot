@@ -2,7 +2,7 @@
 
 import { StatsCard } from "./StatsCard";
 import type { ActivityStats } from "@/lib/types/analytics";
-// アイコンは削除されました（UIシンプル化のため）
+import { CustomTooltip } from "./CustomTooltip";
 import {
   BarChart,
   Bar,
@@ -88,7 +88,7 @@ export function ActivityStatsSection({ stats }: ActivityStatsSectionProps) {
                   stroke="#9ca3af"
                 />
                 <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" />
-                <Tooltip />
+                <Tooltip content={<CustomTooltip />} />
                 <Legend />
                 <Bar dataKey="ユーザー" fill="#10b981" />
                 <Bar dataKey="AI" fill="#3b82f6" />
@@ -126,9 +126,7 @@ export function ActivityStatsSection({ stats }: ActivityStatsSectionProps) {
                     />
                   ))}
                 </Pie>
-                <Tooltip
-                  formatter={(value: number) => value.toLocaleString()}
-                />
+                <Tooltip content={<CustomTooltip />} />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
