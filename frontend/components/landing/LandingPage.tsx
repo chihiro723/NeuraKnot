@@ -273,7 +273,20 @@ export function LandingPage({
               {!isLoading && user ? (
                 <>
                   <div className="flex items-center px-4 py-2 space-x-3 rounded-lg border bg-emerald-500/10 border-emerald-500/30">
-                    <User className="w-4 h-4 text-emerald-400" />
+                    {/* ユーザーアイコン */}
+                    <div className="flex overflow-hidden justify-center items-center w-8 h-8 bg-gradient-to-br from-emerald-400 via-emerald-500 to-cyan-600 rounded-full ring-2 ring-emerald-500/30">
+                      {profile?.avatar_url ? (
+                        <img
+                          src={profile.avatar_url}
+                          alt={getDisplayName()}
+                          className="object-cover w-full h-full"
+                        />
+                      ) : (
+                        <span className="text-sm font-bold text-white">
+                          {getDisplayName().charAt(0)}
+                        </span>
+                      )}
+                    </div>
                     <span className="font-medium text-emerald-300">
                       {getDisplayName()}
                     </span>
@@ -411,8 +424,18 @@ export function LandingPage({
                 >
                   <div className="flex items-center mb-5 space-x-4">
                     <div className="relative">
-                      <div className="flex justify-center items-center w-14 h-14 bg-gradient-to-br from-emerald-500 via-emerald-400 to-cyan-500 rounded-2xl shadow-lg">
-                        <User className="w-7 h-7 text-white" />
+                      <div className="flex overflow-hidden justify-center items-center w-14 h-14 bg-gradient-to-br from-emerald-500 via-emerald-400 to-cyan-500 rounded-2xl shadow-lg">
+                        {profile?.avatar_url ? (
+                          <img
+                            src={profile.avatar_url}
+                            alt={getDisplayName()}
+                            className="object-cover w-full h-full"
+                          />
+                        ) : (
+                          <span className="text-xl font-bold text-white">
+                            {getDisplayName().charAt(0)}
+                          </span>
+                        )}
                       </div>
                       <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 animate-pulse border-slate-800"></div>
                     </div>
