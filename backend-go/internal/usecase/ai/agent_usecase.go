@@ -3,21 +3,29 @@ package ai
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"backend-go/internal/domain/ai"
 
 	"github.com/google/uuid"
 )
 
+// S3Client S3操作のインターフェース
+type S3Client interface {
+	DeleteAvatar(ctx context.Context, avatarURL string) error
+}
+
 // AgentUsecase はAI Agentのユースケース
 type AgentUsecase struct {
-	repo ai.Repository
+	repo     ai.Repository
+	s3Client S3Client
 }
 
 // NewAgentUsecase はAI Agentユースケースを作成
-func NewAgentUsecase(repo ai.Repository) *AgentUsecase {
+func NewAgentUsecase(repo ai.Repository, s3Client S3Client) *AgentUsecase {
 	return &AgentUsecase{
-		repo: repo,
+		repo:     repo,
+		s3Client: s3Client,
 	}
 }
 
@@ -116,5 +124,20 @@ func (uc *AgentUsecase) UpdateAgent(ctx context.Context, agent *ai.Agent) error 
 
 // DeleteAgent はAI Agentを削除
 func (uc *AgentUsecase) DeleteAgent(ctx context.Context, agentID uuid.UUID) error {
+	// エージェントを取得してアバターURLを確認
+	agent, err := uc.repo.FindByID(ctx, agentID)
+	if err != nil {
+		return err
+	}
+
+	// アバターがあればS3から削除
+	if agent.AvatarURL != nil && *agent.AvatarURL != "" {
+		if err := uc.s3Client.DeleteAvatar(ctx, *agent.AvatarURL); err != nil {
+			// S3削除失敗してもログだけ出して続行
+			fmt.Printf("failed to delete agent avatar from S3: %v\n", err)
+		}
+	}
+
+	// データベースから削除
 	return uc.repo.Delete(ctx, agentID)
 }

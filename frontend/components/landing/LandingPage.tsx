@@ -278,10 +278,7 @@ export function LandingPage({
                   >
                     ダッシュボード
                   </Link>
-                  <div className="flex items-center px-4 py-2 space-x-3 rounded-lg border bg-emerald-500/10 border-emerald-500/30">
-                    <span className="font-medium text-emerald-300">
-                      {getDisplayName()}
-                    </span>
+                  <div className="flex items-center pl-3 pr-4 py-2 space-x-3 rounded-lg border bg-emerald-500/10 border-emerald-500/30">
                     {/* ユーザーアイコン */}
                     <div className="flex overflow-hidden justify-center items-center w-8 h-8 bg-gradient-to-br from-emerald-400 via-emerald-500 to-cyan-600 rounded-full ring-2 ring-emerald-500/30">
                       {profile?.avatar_url ? (
@@ -296,6 +293,9 @@ export function LandingPage({
                         </span>
                       )}
                     </div>
+                    <span className="font-medium text-emerald-300">
+                      {getDisplayName()}
+                    </span>
                   </div>
                   <button
                     onClick={handleLogout}
@@ -424,7 +424,7 @@ export function LandingPage({
                 >
                   <div className="flex items-center mb-5 space-x-4">
                     <div className="relative">
-                      <div className="flex overflow-hidden justify-center items-center w-14 h-14 bg-gradient-to-br from-emerald-500 via-emerald-400 to-cyan-500 rounded-2xl shadow-lg">
+                      <div className="flex overflow-hidden justify-center items-center w-14 h-14 bg-gradient-to-br from-emerald-500 via-emerald-400 to-cyan-500 rounded-full shadow-lg">
                         {profile?.avatar_url ? (
                           <img
                             src={profile.avatar_url}
