@@ -95,7 +95,7 @@ curl -X POST http://localhost:8001/api/ai/chat \
     "message": "東京の天気をSlackで共有して",
     "agent_config": {
       "provider": "openai",
-      "model": "gpt-4o",
+      "model": "gpt-4.1-mini",
       "temperature": 0.7,
       "persona": "assistant"
     },

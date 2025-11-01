@@ -100,7 +100,7 @@ class PromptEnhancementService:
             # LLMを使用してプロンプト生成（詳細性を重視するため max_tokens を増加）
             llm = LLMFactory.create_llm(
                 provider="openai",
-                model="gpt-4o",
+                model="gpt-4.1",
                 temperature=0.7,
                 max_tokens=2000,
                 streaming=False

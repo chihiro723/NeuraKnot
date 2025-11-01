@@ -30,7 +30,7 @@ class ConversationMessage(BaseModel):
 class AgentConfig(BaseModel):
     """エージェント設定"""
     provider: str = "openai"
-    model: str = "gpt-4o"
+    model: str = "gpt-4.1"
     temperature: float = Field(0.7, ge=0.0, le=2.0)
     max_tokens: int = Field(2000, ge=1, le=8000)
     persona: str = "assistant"
