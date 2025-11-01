@@ -272,6 +272,12 @@ export function LandingPage({
             >
               {!isLoading && user ? (
                 <>
+                  <Link
+                    href="/dashboard"
+                    className="px-4 py-2 font-medium text-white bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-lg transition-colors hover:from-emerald-600 hover:to-cyan-600"
+                  >
+                    ダッシュボード
+                  </Link>
                   <div className="flex items-center px-4 py-2 space-x-3 rounded-lg border bg-emerald-500/10 border-emerald-500/30">
                     <span className="font-medium text-emerald-300">
                       {getDisplayName()}
@@ -291,12 +297,6 @@ export function LandingPage({
                       )}
                     </div>
                   </div>
-                  <Link
-                    href="/dashboard"
-                    className="px-4 py-2 font-medium text-white bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-lg transition-colors hover:from-emerald-600 hover:to-cyan-600"
-                  >
-                    ダッシュボード
-                  </Link>
                   <button
                     onClick={handleLogout}
                     disabled={isLoggingOut}
