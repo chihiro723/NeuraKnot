@@ -174,37 +174,41 @@ export function useCognitoAuth() {
   }, [])
 
 
-  const forgotPassword = useCallback(async (): Promise<void> => {
+  const forgotPassword = useCallback(async (email: string): Promise<{ success: boolean }> => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }))
       
-      await cognitoAuth.forgotPassword()
+      await cognitoAuth.forgotPassword(email)
       
       setState(prev => ({ ...prev, loading: false, error: null }))
+      return { success: true }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'パスワードリセットメールの送信に失敗しました'
       setState(prev => ({
         ...prev,
         loading: false,
-        error: error instanceof Error ? error.message : 'パスワードリセットメールの送信に失敗しました'
+        error: errorMessage
       }))
-      // エラーをthrowしない - フック内でエラーメッセージを管理
+      return { success: false }
     }
   }, [])
 
-  const confirmForgotPassword = useCallback(async (): Promise<void> => {
+  const confirmForgotPassword = useCallback(async (email: string, confirmationCode: string, newPassword: string): Promise<{ success: boolean }> => {
     try {
       setState(prev => ({ ...prev, loading: true, error: null }))
       
-      await cognitoAuth.confirmForgotPassword()
+      await cognitoAuth.confirmForgotPassword(email, confirmationCode, newPassword)
       
       setState(prev => ({ ...prev, loading: false, error: null }))
+      return { success: true }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'パスワードリセットに失敗しました'
       setState(prev => ({
         ...prev,
         loading: false,
-        error: error instanceof Error ? error.message : 'パスワードリセットの確認に失敗しました'
+        error: errorMessage
       }))
-      // エラーをthrowしない - フック内でエラーメッセージを管理
+      return { success: false }
     }
   }, [])
 
