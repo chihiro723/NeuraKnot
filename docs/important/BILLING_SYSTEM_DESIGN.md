@@ -1172,31 +1172,172 @@ func (h *WebhookHandler) handleSubscriptionCreated(event stripe.Event) {
 
 ```go
 // internal/usecase/ai/ai_usecase.go
-func (u *AIUsecase) ProcessMessage(ctx context.Context, userID uuid.UUID, message string) error {
-    // 1. ユーザー情報取得
-    user, _ := u.userRepo.GetByID(ctx, userID)
+package ai
 
-    // 2. Stripeでサブスク状態確認
-    subscription, _ := u.stripeClient.GetSubscription(user.StripeSubscriptionID)
-    if subscription.Status != "active" {
-        return errors.New("サブスクリプションが無効です")
-    }
+import (
+    "context"
+    "fmt"
+    "strconv"
+    "github.com/stripe/stripe-go/v76"
+    "github.com/stripe/stripe-go/v76/subscription"
+    "github.com/stripe/stripe-go/v76/price"
+)
 
-    // 3. プラン情報取得（metadata）
-    price, _ := u.stripeClient.GetPrice(user.StripePriceID)
-    monthlyTokenLimit := price.Product.Metadata["monthly_token_limit"]
-
-    // 4. 現在のトークン使用量取得
-    usage, _ := u.billingRepo.GetCurrentTokenUsage(ctx, userID)
-
-    // 5. 制限チェック
-    if usage.TokensUsed >= monthlyTokenLimit {
-        return errors.New("月間トークン制限に達しました")
-    }
-
-    // 6. AI処理実行...
-    // 7. トークン使用量更新...
+type AIUsecase struct {
+    userRepo       domain.UserRepository
+    billingRepo    domain.BillingRepository
+    llmRepo        domain.LLMRepository
+    logger         *logger.Logger
 }
+
+func (u *AIUsecase) ProcessMessage(ctx context.Context, userID uuid.UUID, provider, model, message string) (*AIResponse, error) {
+    // 1. ユーザー情報取得
+    user, err := u.userRepo.GetByID(ctx, userID)
+    if err != nil {
+        return nil, fmt.Errorf("user not found: %w", err)
+    }
+
+    // 2. Stripe サブスクリプション状態確認
+    if user.StripeSubscriptionID == "" {
+        return nil, domain.ErrNoActiveSubscription
+    }
+
+    sub, err := subscription.Get(user.StripeSubscriptionID, nil)
+    if err != nil {
+        if stripeErr, ok := err.(*stripe.Error); ok {
+            if stripeErr.Code == stripe.ErrorCodeResourceMissing {
+                return nil, domain.ErrSubscriptionNotFound
+            }
+        }
+        return nil, fmt.Errorf("failed to get subscription: %w", err)
+    }
+
+    // サブスク状態チェック
+    if sub.Status != "active" {
+        switch sub.Status {
+        case "past_due":
+            return nil, domain.ErrPaymentPastDue
+        case "canceled":
+            return nil, domain.ErrSubscriptionCanceled
+        case "unpaid":
+            return nil, domain.ErrSubscriptionUnpaid
+        default:
+            return nil, fmt.Errorf("subscription status is %s", sub.Status)
+        }
+    }
+
+    // 3. プラン情報取得（metadata から）
+    priceObj, err := price.Get(user.StripePriceID, &stripe.PriceParams{
+        Params: stripe.Params{
+            Expand: []*string{stripe.String("product")},
+        },
+    })
+    if err != nil {
+        return nil, fmt.Errorf("failed to get price: %w", err)
+    }
+
+    metadata := priceObj.Product.Metadata
+    monthlyTokenLimit, _ := strconv.Atoi(metadata["monthly_token_limit"])
+    allowedProviders := metadata["allowed_providers"]
+    overageAllowed := metadata["overage_allowed"] == "true"
+
+    // 4. プロバイダー制限チェック
+    if !u.isProviderAllowed(provider, allowedProviders) {
+        return nil, domain.ErrProviderNotAllowed
+    }
+
+    // 5. 現在のトークン使用量取得
+    usage, err := u.billingRepo.GetCurrentTokenUsage(ctx, userID)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get token usage: %w", err)
+    }
+
+    // 6. トークン制限チェック
+    if usage.TokensUsed >= monthlyTokenLimit {
+        if !overageAllowed {
+            return nil, domain.ErrTokenLimitReached
+        }
+        // 超過可能な場合は継続（後で追加課金される）
+        u.logger.Warn("Token limit exceeded", "user_id", userID, "tokens_used", usage.TokensUsed)
+    }
+
+    // 7. LLM 料金情報取得
+    pricing, err := u.llmRepo.GetActivePricing(ctx, provider, model)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get LLM pricing: %w", err)
+    }
+
+    // 8. AI 処理実行
+    response, err := u.llmRepo.ProcessMessage(ctx, provider, model, message)
+    if err != nil {
+        return nil, fmt.Errorf("failed to process AI message: %w", err)
+    }
+
+    // 9. コスト・価格計算
+    costUSD := pricing.CalculateCost(response.PromptTokens, response.CompletionTokens)
+    priceUSD := pricing.CalculatePrice(response.PromptTokens, response.CompletionTokens)
+
+    // 10. ai_chat_sessions に記録
+    session := &domain.AIChatSession{
+        UserID:            userID,
+        Provider:          provider,
+        Model:             model,
+        TokensPrompt:      response.PromptTokens,
+        TokensCompletion:  response.CompletionTokens,
+        TokensTotal:       response.PromptTokens + response.CompletionTokens,
+        CostUSD:           costUSD,
+        PriceUSD:          priceUSD,
+        PricingID:         pricing.ID,
+    }
+
+    if err := u.billingRepo.RecordChatSession(ctx, session); err != nil {
+        u.logger.Error("Failed to record chat session", "error", err)
+        // 記録失敗してもレスポンスは返す
+    }
+
+    // 11. token_usage を更新
+    if err := u.billingRepo.IncrementTokenUsage(ctx, userID, session.TokensTotal); err != nil {
+        u.logger.Error("Failed to increment token usage", "error", err)
+    }
+
+    return response, nil
+}
+
+func (u *AIUsecase) isProviderAllowed(provider, allowedProviders string) bool {
+    // "openai,anthropic,google" のような文字列から判定
+    for _, p := range strings.Split(allowedProviders, ",") {
+        if strings.TrimSpace(p) == provider {
+            return true
+        }
+    }
+    return false
+}
+```
+
+#### カスタムエラーの定義
+
+```go
+// internal/domain/errors.go
+package domain
+
+import "errors"
+
+var (
+    // サブスク関連
+    ErrNoActiveSubscription   = errors.New("アクティブなサブスクリプションがありません")
+    ErrSubscriptionNotFound   = errors.New("サブスクリプションが見つかりません")
+    ErrSubscriptionCanceled   = errors.New("サブスクリプションは解約されています")
+    ErrSubscriptionUnpaid     = errors.New("お支払いが完了していません")
+    ErrPaymentPastDue         = errors.New("お支払いが遅延しています。カード情報を確認してください")
+
+    // 制限関連
+    ErrTokenLimitReached      = errors.New("月間トークン制限に達しました。プランをアップグレードしてください")
+    ErrProviderNotAllowed     = errors.New("このプランでは利用できないプロバイダーです")
+    ErrMaxAgentsReached       = errors.New("AI分身の作成上限に達しました")
+
+    // その他
+    ErrAlreadyExists          = errors.New("既に存在します")
+)
 ```
 
 ---
@@ -1238,6 +1379,413 @@ func (h *BillingHandler) CreateCheckoutSession(c *gin.Context) {
 
     c.JSON(200, gin.H{"session_url": session.URL})
 }
+
+---
+
+## エラーハンドリング
+
+### Stripe API のエラー
+
+#### エラーの種類
+
+```go
+import "github.com/stripe/stripe-go/v76"
+
+func createSubscription(params *stripe.SubscriptionParams) (*stripe.Subscription, error) {
+    sub, err := subscription.New(params)
+    if err != nil {
+        // Stripe エラーの判定
+        if stripeErr, ok := err.(*stripe.Error); ok {
+            switch stripeErr.Code {
+            case stripe.ErrorCodeCardDeclined:
+                return nil, fmt.Errorf("カードが拒否されました: %s", stripeErr.DeclineCode)
+
+            case stripe.ErrorCodeExpiredCard:
+                return nil, errors.New("カードの有効期限が切れています")
+
+            case stripe.ErrorCodeInsufficientFunds:
+                return nil, errors.New("残高不足です")
+
+            case stripe.ErrorCodeResourceMissing:
+                return nil, errors.New("指定されたリソースが見つかりません")
+
+            case stripe.ErrorCodeInvalidRequest:
+                return nil, fmt.Errorf("リクエストが無効です: %s", stripeErr.Msg)
+
+            default:
+                return nil, fmt.Errorf("決済エラー: %s", stripeErr.Msg)
+            }
+        }
+
+        return nil, fmt.Errorf("unexpected error: %w", err)
+    }
+
+    return sub, nil
+}
+```
+
+#### よくあるエラー
+
+| エラーコード              | 原因                 | 対処法                                 |
+| ------------------------- | -------------------- | -------------------------------------- |
+| `card_declined`           | カード拒否           | 別のカードを試す、カード会社に連絡     |
+| `expired_card`            | 期限切れ             | カード情報を更新                       |
+| `insufficient_funds`      | 残高不足             | 入金を依頼                             |
+| `invalid_request_error`   | API 呼び出しミス     | パラメータを確認                       |
+| `rate_limit_error`        | レート制限           | リトライ（指数バックオフ）             |
+| `authentication_error`    | API キーが無効       | API キーを確認                         |
+| `resource_missing`        | リソースが存在しない | ID を確認、または削除済みリソースの確認 |
+
+### エラーレスポンスの統一
+
+```go
+// internal/handler/http/error.go
+package http
+
+type ErrorResponse struct {
+    Error   string `json:"error"`
+    Code    string `json:"code"`
+    Message string `json:"message"`
+}
+
+func HandleError(c *gin.Context, err error) {
+    var statusCode int
+    var code string
+    var message string
+
+    switch {
+    case errors.Is(err, domain.ErrTokenLimitReached):
+        statusCode = 403
+        code = "TOKEN_LIMIT_REACHED"
+        message = "月間トークン制限に達しました"
+
+    case errors.Is(err, domain.ErrSubscriptionCanceled):
+        statusCode = 402
+        code = "SUBSCRIPTION_CANCELED"
+        message = "サブスクリプションが解約されています"
+
+    case errors.Is(err, domain.ErrPaymentPastDue):
+        statusCode = 402
+        code = "PAYMENT_PAST_DUE"
+        message = "お支払いが遅延しています"
+
+    default:
+        statusCode = 500
+        code = "INTERNAL_ERROR"
+        message = "サーバーエラーが発生しました"
+    }
+
+    c.JSON(statusCode, ErrorResponse{
+        Error:   err.Error(),
+        Code:    code,
+        Message: message,
+    })
+}
+```
+
+---
+
+## セキュリティ
+
+### 1. API キーの管理
+
+#### ❌ 絶対にダメな例
+
+```go
+// コードに直書き
+const stripeKey = "sk_live_xxxxx"  // 絶対NG！
+
+// リポジトリにコミット
+// .env ファイルをコミット  // 絶対NG！
+```
+
+#### ✅ 正しい方法
+
+```bash
+# .env（ローカル開発用）
+STRIPE_SECRET_KEY=sk_test_xxxxx
+STRIPE_WEBHOOK_SECRET=whsec_xxxxx
+
+# .gitignore に追加
+.env
+.env.local
+.env.production
+```
+
+```go
+// 環境変数から読み込む
+func main() {
+    stripeKey := os.Getenv("STRIPE_SECRET_KEY")
+    if stripeKey == "" {
+        log.Fatal("STRIPE_SECRET_KEY is not set")
+    }
+
+    stripe.Key = stripeKey
+}
+```
+
+#### 本番環境
+
+```bash
+# AWS Secrets Manager、Parameter Store など使用
+# または環境変数として設定
+
+# Vercel の場合
+vercel env add STRIPE_SECRET_KEY production
+
+# Docker の場合
+docker run -e STRIPE_SECRET_KEY=sk_live_xxxxx ...
+```
+
+---
+
+### 2. Webhook 署名検証
+
+#### ❌ 検証なし（危険！）
+
+```go
+// なりすまし可能！
+func HandleWebhook(c *gin.Context) {
+    var event stripe.Event
+    json.NewDecoder(c.Request.Body).Decode(&event)  // NG！
+
+    // 処理...
+}
+```
+
+#### ✅ 署名検証（必須）
+
+```go
+func HandleWebhook(c *gin.Context) {
+    payload, _ := io.ReadAll(c.Request.Body)
+    signature := c.GetHeader("Stripe-Signature")
+
+    // 署名検証
+    event, err := webhook.ConstructEvent(
+        payload,
+        signature,
+        webhookSecret,
+    )
+    if err != nil {
+        c.JSON(400, gin.H{"error": "Invalid signature"})
+        return  // 不正なリクエストは拒否
+    }
+
+    // 処理...
+}
+```
+
+---
+
+### 3. HTTPS 必須
+
+```
+❌ http://yourdomain.com/webhooks/stripe   # 傍受される
+✅ https://yourdomain.com/webhooks/stripe  # 安全
+```
+
+**本番環境では必ず HTTPS を使用**
+
+---
+
+### 4. レート制限
+
+```go
+// Webhook 用のレート制限
+import "golang.org/x/time/rate"
+
+var webhookLimiter = rate.NewLimiter(100, 200) // 秒間100リクエスト
+
+func WebhookRateLimitMiddleware() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        if !webhookLimiter.Allow() {
+            c.JSON(429, gin.H{"error": "Too many requests"})
+            c.Abort()
+            return
+        }
+        c.Next()
+    }
+}
+```
+
+---
+
+### 5. 機密情報のログ出力
+
+#### ❌ カード情報を絶対にログに出さない
+
+```go
+// NG！
+log.Printf("Card: %s", cardNumber)
+```
+
+#### ✅ マスキングする
+
+```go
+// OK
+log.Printf("Card: ****%s", last4)
+```
+
+---
+
+### 6. SQL インジェクション対策
+
+#### ❌ 文字列結合（危険）
+
+```go
+// SQL インジェクション可能！
+query := fmt.Sprintf("SELECT * FROM users WHERE email = '%s'", email)
+```
+
+#### ✅ プレースホルダー使用
+
+```go
+// 安全
+query := "SELECT * FROM users WHERE email = $1"
+row := db.QueryRow(query, email)
+```
+
+---
+
+### 7. べき等性の保証（Webhook）
+
+Webhook は重複して送信される可能性があるため、べき等性を保証する：
+
+```go
+// イベント ID をテーブルに記録
+CREATE TABLE webhook_events (
+    event_id VARCHAR(255) PRIMARY KEY,
+    processed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+func HandleWebhook(c *gin.Context) {
+    event, _ := webhook.ConstructEvent(...)
+
+    // 1. 既に処理済みかチェック
+    var exists bool
+    db.QueryRow("SELECT EXISTS(SELECT 1 FROM webhook_events WHERE event_id = $1)", event.ID).Scan(&exists)
+
+    if exists {
+        // 既に処理済み
+        c.JSON(200, gin.H{"received": true})
+        return
+    }
+
+    // 2. 処理実行
+    // ...
+
+    // 3. イベント ID を記録
+    db.Exec("INSERT INTO webhook_events (event_id) VALUES ($1)", event.ID)
+
+    c.JSON(200, gin.H{"received": true})
+}
+```
+
+---
+
+## 実装チェックリスト
+
+### フェーズ 1：セットアップ ✓
+
+- [ ] Stripe アカウント作成
+- [ ] テストモードの API キー取得
+- [ ] 環境変数に保存（`.env`）
+- [ ] `.gitignore`に`.env`を追加
+- [ ] Stripe Go SDK をインストール
+  ```bash
+  go get github.com/stripe/stripe-go/v76
+  ```
+
+---
+
+### フェーズ 2：プラン作成 ✓
+
+- [ ] Free、Basic、Pro の 3 プランを Stripe Dashboard で作成
+- [ ] Price ID を環境変数に保存
+- [ ] metadata にトークン制限などを設定
+
+---
+
+### フェーズ 3：DB マイグレーション ✓
+
+- [ ] マイグレーションファイル作成
+- [ ] `llm_pricing`テーブル作成
+- [ ] `token_usage`テーブル作成
+- [ ] `users`テーブルに Stripe カラム追加
+- [ ] `ai_chat_sessions`テーブルに原価カラム追加
+- [ ] 初期データ投入（LLM 料金）
+- [ ] マイグレーション実行
+
+---
+
+### フェーズ 4：Backend 実装 ✓
+
+- [ ] Stripe クライアント初期化
+- [ ] ユーザー登録時に Customer 作成
+- [ ] カード登録 API 実装
+- [ ] Subscription 作成 API 実装
+- [ ] Webhook ハンドラー実装
+  - [ ] `customer.subscription.created`
+  - [ ] `customer.subscription.updated`
+  - [ ] `customer.subscription.deleted`
+  - [ ] `invoice.payment_succeeded`
+  - [ ] `invoice.payment_failed`
+- [ ] AI 処理時のトークン制限チェック
+- [ ] トークン使用量更新処理
+- [ ] エラーハンドリング実装
+- [ ] カスタムエラー定義
+
+---
+
+### フェーズ 5：ローカルテスト ✓
+
+- [ ] Stripe CLI インストール
+  ```bash
+  brew install stripe/stripe-cli/stripe
+  ```
+- [ ] Webhook 転送開始
+  ```bash
+  stripe listen --forward-to localhost:8080/webhooks/stripe
+  ```
+- [ ] テストカードで決済テスト
+  ```
+  4242 4242 4242 4242
+  ```
+- [ ] Webhook イベントテスト
+  ```bash
+  stripe trigger invoice.payment_succeeded
+  ```
+
+---
+
+### フェーズ 6：Frontend 実装 ✓
+
+- [ ] Stripe.js 導入
+- [ ] カード登録フォーム
+- [ ] プラン選択画面
+- [ ] 使用量ダッシュボード
+- [ ] エラー表示
+
+---
+
+### フェーズ 7：本番移行 ✓
+
+- [ ] 本番モードの API キー取得
+- [ ] 本番環境に環境変数設定
+- [ ] Webhook URL を本番環境に登録
+  ```
+  https://yourdomain.com/webhooks/stripe
+  ```
+- [ ] Webhook 署名シークレット取得（本番用）
+- [ ] 実際のカードでテスト
+- [ ] エラーモニタリング設定
+- [ ] ログ出力の確認
+- [ ] セキュリティチェック
+  - [ ] HTTPS 使用
+  - [ ] API キーが環境変数
+  - [ ] Webhook 署名検証
+  - [ ] SQL インジェクション対策
+  - [ ] べき等性の保証
 
 ---
 
@@ -1523,15 +2071,48 @@ stripe.subscriptions.update(subscriptionID, &stripe.SubscriptionParams{
 ✅ **利益保証**：DB 制約で販売価格 ≥ 原価を強制  
 ✅ **透明性**：原価と売上を完全に分離して記録  
 ✅ **Webhook 駆動**：リアルタイム同期  
-✅ **PCI DSS 準拠**：決済は Stripe 任せで安全
+✅ **PCI DSS 準拠**：決済は Stripe 任せで安全  
+✅ **エラーハンドリング**：すべてのエラーケースに対応  
+✅ **セキュリティ**：API キー管理、署名検証、べき等性を保証
 
-### 実装優先度
+### 実装の流れ
 
-1. **フェーズ 1（必須）**：Stripe アカウント設定、Product/Price 作成
-2. **フェーズ 2（必須）**：テーブル作成、マイグレーション実行
-3. **フェーズ 3（必須）**：Webhook 実装、DB 同期
-4. **フェーズ 4（必須）**：AI 処理時の制限チェック
-5. **フェーズ 5（推奨）**：Frontend 実装、Stripe Checkout 連携
+上記の[実装チェックリスト](#実装チェックリスト)に沿って、順番に実装を進めてください：
+
+1. **フェーズ 1（必須）**：Stripe アカウント設定、API キー取得
+2. **フェーズ 2（必須）**：Product/Price 作成（Stripe Dashboard）
+3. **フェーズ 3（必須）**：DB マイグレーション実行
+4. **フェーズ 4（必須）**：Backend 実装（Customer/Subscription/Webhook）
+5. **フェーズ 5（必須）**：ローカルテスト（Stripe CLI 使用）
+6. **フェーズ 6（推奨）**：Frontend 実装（Stripe Checkout 連携）
+7. **フェーズ 7（本番）**：本番環境への移行、セキュリティチェック
+
+### 開発時の注意点
+
+1. **常にテストモードで開発**
+
+   - 本番モードのキーは最後まで使わない
+   - テストカード `4242 4242 4242 4242` を使用
+
+2. **Webhook は Stripe CLI でテスト**
+
+   ```bash
+   stripe listen --forward-to localhost:8080/webhooks/stripe
+   ```
+
+3. **エラーハンドリングを徹底**
+
+   - Stripe API のエラーを適切に処理
+   - ユーザーフレンドリーなエラーメッセージ
+
+4. **ログを必ず出力**
+
+   - すべての Webhook イベントをログに記録
+   - トラブルシューティングに必須
+
+5. **べき等性を保証**
+   - Webhook は重複送信される可能性あり
+   - イベント ID をテーブルに記録
 
 ### 関連ドキュメント
 

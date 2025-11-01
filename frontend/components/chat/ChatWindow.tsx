@@ -17,6 +17,7 @@ import { StampPicker } from "./StampPicker";
 import { getCookie } from "@/lib/utils/cookies";
 import { formatDateSeparator, isSameDay } from "@/lib/utils/date";
 import { showToast } from "@/components/ui/ToastContainer";
+import { useIsMobile } from "@/lib/hooks/useResponsive";
 import type {
   StreamEvent,
   ToolUsageData,
@@ -56,6 +57,7 @@ export function ChatWindow({
   initialUserProfile,
 }: ChatWindowProps) {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [newMessage, setNewMessage] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(
@@ -84,6 +86,9 @@ export function ChatWindow({
 
   // クライアントサイドレンダリング用の状態
   const [isClient, setIsClient] = useState(false);
+
+  // アバターURLのキャッシュバスティング用タイムスタンプ
+  const [avatarTimestamp, setAvatarTimestamp] = useState<number | null>(null);
 
   // 定数
   const MESSAGE_LIMIT = 50;
@@ -120,6 +125,11 @@ export function ChatWindow({
       error?: string;
     }>
   );
+
+  // クライアントサイドでタイムスタンプを設定
+  useEffect(() => {
+    setAvatarTimestamp(Date.now());
+  }, []);
 
   // 現在のユーザー情報を取得（初期データがない場合のみ）
   useEffect(() => {
@@ -819,7 +829,11 @@ export function ChatWindow({
                   <StreamingMessage
                     content={streamingContent}
                     tools={streamingTools}
-                    avatarUrl={selectedChat.avatar_url}
+                    avatarUrl={
+                      selectedChat.avatar_url && avatarTimestamp
+                        ? `${selectedChat.avatar_url.split('?')[0]}?t=${avatarTimestamp}`
+                        : selectedChat.avatar_url
+                    }
                     name={selectedChat.name}
                     showCursor={true}
                     agentId={selectedChat.id}
@@ -836,9 +850,17 @@ export function ChatWindow({
               <div className="flex items-start space-x-2 md:space-x-3 max-w-[90%] md:max-w-[75%] overflow-hidden">
                 {/* アイコン */}
                 <div className="flex overflow-hidden flex-shrink-0 justify-center items-center w-8 h-8 bg-green-500 rounded-full md:w-10 md:h-10">
-                  <span className="text-xs font-medium text-white md:text-sm">
-                    {selectedChat.name.charAt(0)}
-                  </span>
+                  {selectedChat.avatar_url && avatarTimestamp ? (
+                    <img
+                      src={`${selectedChat.avatar_url.split('?')[0]}?t=${avatarTimestamp}`}
+                      alt={selectedChat.name}
+                      className="object-cover w-full h-full"
+                    />
+                  ) : (
+                    <span className="text-xs font-medium text-white md:text-sm">
+                      {selectedChat.name.charAt(0)}
+                    </span>
+                  )}
                 </div>
 
                 {/* 名前 + バブル（通常AIメッセージと合わせる） */}
@@ -890,10 +912,14 @@ export function ChatWindow({
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyDown={handleKeyDown}
               onFocus={handleInputFocus}
-              placeholder="メッセージを入力...（Cmd/Ctrl+Enterで送信）"
+              placeholder={
+                isMobile
+                  ? "メッセージを入力..."
+                  : "メッセージを入力...（Cmd/Ctrl+Enterで送信）"
+              }
               className={cn(
                 "px-0 py-0 w-full bg-transparent border-0 resize-none",
-                "overflow-y-auto focus:outline-none",
+                "overflow-y-auto overflow-x-hidden focus:outline-none",
                 // iOS自動ズーム防止のためモバイルで16px以上
                 "text-base placeholder-gray-500 text-gray-900 dark:placeholder-gray-400 dark:text-gray-100"
               )}
