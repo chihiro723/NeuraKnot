@@ -16,6 +16,7 @@ import {
   X,
   CheckSquare,
   Square,
+  Camera,
 } from "lucide-react";
 import { getPersonalityLabel } from "@/lib/constants/personalities";
 import { cn } from "@/lib/utils/cn";
@@ -29,6 +30,8 @@ import { ServiceSelectorModal } from "@/components/services/ServiceSelectorModal
 import { generateAgentIntroduction } from "@/lib/actions/agent-introduction";
 import { enhanceSystemPrompt } from "@/lib/actions/prompt-enhancement";
 import { useRouter } from "next/navigation";
+import { ImageCropper } from "@/components/ui/ImageCropper";
+import { uploadAgentAvatar } from "@/lib/api/upload";
 
 type AddType = "user" | "ai" | "group" | null;
 
@@ -298,6 +301,12 @@ export function AIAgentCreationPanel({
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
+  // 画像アップロード用の状態
+  const [showCropper, setShowCropper] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [pendingAvatarBlob, setPendingAvatarBlob] = useState<Blob | null>(null);
+
   // プロンプト強化機能の状態
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [enhanceError, setEnhanceError] = useState<string>("");
@@ -484,6 +493,45 @@ export function AIAgentCreationPanel({
     }
   };
 
+  // 画像アップロードハンドラー
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // ファイルサイズチェック（5MB）
+    if (file.size > 5 * 1024 * 1024) {
+      setError("画像サイズは5MB以下にしてください");
+      return;
+    }
+
+    // ファイルタイプチェック
+    if (!file.type.startsWith("image/")) {
+      setError("画像ファイルを選択してください");
+      return;
+    }
+
+    // プレビュー用にFileReaderで読み込み
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSelectedImage(reader.result as string);
+      setShowCropper(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    // エージェント作成時は、プレビュー用のURLを生成（保存時にアップロード）
+    // 古いプレビューURLがあればクリーンアップ
+    if (formData.avatar_url && formData.avatar_url.startsWith("blob:")) {
+      URL.revokeObjectURL(formData.avatar_url);
+    }
+    const previewUrl = URL.createObjectURL(croppedBlob);
+    setFormData({ ...formData, avatar_url: previewUrl });
+    setPendingAvatarBlob(croppedBlob);
+    setShowCropper(false);
+    setSelectedImage(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -496,7 +544,7 @@ export function AIAgentCreationPanel({
           persona_type: formData.persona_type,
           model: formData.model,
           description: formData.description || undefined,
-          avatar_url: formData.avatar_url || undefined,
+          avatar_url: undefined, // 一旦undefinedで作成
           system_prompt: formData.system_prompt || undefined,
           provider: formData.provider,
           temperature: formData.temperature,
@@ -515,6 +563,16 @@ export function AIAgentCreationPanel({
         }
 
         const agentId = result.data.id;
+
+        // アバターがある場合はアップロード
+        if (pendingAvatarBlob) {
+          try {
+            await uploadAgentAvatar(agentId, pendingAvatarBlob);
+          } catch (err) {
+            console.error("Failed to upload avatar:", err);
+            // アバターのアップロードに失敗してもエージェント作成は成功
+          }
+        }
 
         // バックグラウンドで自己紹介を生成（遅延実行）
         setTimeout(() => {
@@ -548,6 +606,7 @@ export function AIAgentCreationPanel({
           tools_enabled: true,
           streaming_enabled: true,
         });
+        setPendingAvatarBlob(null);
 
         // デスクトップの場合もモバイルの場合も、rosterページに遷移するため
         // isDesktopフラグによる分岐を削除
@@ -644,6 +703,53 @@ export function AIAgentCreationPanel({
                   "placeholder-gray-400 text-gray-900 resize-none dark:text-white dark:placeholder-gray-500"
                 )}
               />
+            </div>
+
+            {/* アイコン設定 */}
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-900 dark:text-white">
+                アイコン <span className="text-xs text-gray-400">任意</span>
+              </label>
+              <div className="flex items-center space-x-4">
+                {/* アバタープレビュー */}
+                <div className="relative">
+                  <div className="flex overflow-hidden justify-center items-center w-20 h-20 bg-gray-300 rounded-full ring-2 ring-gray-200 shadow-lg dark:bg-gray-700 dark:ring-gray-800">
+                    {isUploadingAvatar ? (
+                      <div className="w-6 h-6 rounded-full border-2 border-white animate-spin border-t-transparent" />
+                    ) : formData.avatar_url ? (
+                      <img
+                        src={formData.avatar_url}
+                        alt="アイコンプレビュー"
+                        className="object-cover w-full h-full"
+                      />
+                    ) : (
+                      <Bot className="w-8 h-8 text-white" />
+                    )}
+                  </div>
+                  <input
+                    type="file"
+                    id="agent-avatar-upload"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileChange}
+                    disabled={isUploadingAvatar || isPending}
+                  />
+                  <label
+                    htmlFor="agent-avatar-upload"
+                    className="flex absolute -right-1 -bottom-1 justify-center items-center w-8 h-8 text-white bg-green-500 rounded-full ring-2 ring-white shadow-lg transition-all duration-200 cursor-pointer hover:bg-green-600 hover:scale-110 dark:ring-gray-900"
+                  >
+                    <Camera className="w-4 h-4" />
+                  </label>
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
+                    クリックして画像を選択してください
+                  </p>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">
+                    推奨: 正方形の画像、最大5MB
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1191,6 +1297,18 @@ export function AIAgentCreationPanel({
           userServices={userServices}
           onAddServices={handleAddServices}
         />
+
+        {/* 画像トリミングモーダル */}
+        {showCropper && selectedImage && (
+          <ImageCropper
+            src={selectedImage}
+            onCropComplete={handleCropComplete}
+            onCancel={() => {
+              setShowCropper(false);
+              setSelectedImage(null);
+            }}
+          />
+        )}
       </div>
     </div>
   );
