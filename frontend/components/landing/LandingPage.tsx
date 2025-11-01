@@ -70,10 +70,10 @@ const STATS = [
     description: "休まないアシスタント",
   },
   {
-    value: 3,
+    value: 9,
     suffix: "",
-    label: "LLM対応",
-    description: "OpenAI・Anthropic・Google",
+    label: "最新LLM",
+    description: "GPT-4.1・Claude 4.5・Gemini 2.5",
   },
 ];
 
@@ -915,9 +915,9 @@ export function LandingPage({
                 <span className="text-emerald-400">命を吹き込む</span>
               </h2>
               <p className="mx-auto max-w-4xl text-2xl leading-relaxed text-slate-300">
-                マルチLLM対応（OpenAI・Anthropic・Google）と
+                最新LLM（GPT-4.1・Claude 4.5・Gemini 2.5）と
                 <span className="font-bold text-emerald-400">
-                  20種類のサービス
+                  20種類のサービス連携
                 </span>
                 で 人間とAIの神経を結ぶ新しい絆を創造
               </p>
@@ -982,8 +982,27 @@ export function LandingPage({
             {/* 連携サービス */}
             <div className="mb-24 text-center">
               <h3 className="mb-8 text-2xl font-bold text-white">
-                マルチLLM対応 + 外部API連携
+                最新LLMモデル対応 + 外部API連携
               </h3>
+              <div className="mb-6">
+                <p className="mb-4 text-lg text-emerald-400 font-semibold">
+                  ✨ 9つの最新LLMモデル
+                </p>
+                <div className="flex flex-wrap gap-3 justify-center mb-8">
+                  <span className="px-5 py-2.5 rounded-full border transition-colors bg-blue-500/10 text-blue-300 border-blue-500/30 hover:border-blue-400/50 font-medium">
+                    GPT-4.1 / mini / nano
+                  </span>
+                  <span className="px-5 py-2.5 rounded-full border transition-colors bg-purple-500/10 text-purple-300 border-purple-500/30 hover:border-purple-400/50 font-medium">
+                    Claude Sonnet 4.5 / Haiku 4.5 / Opus 4.1
+                  </span>
+                  <span className="px-5 py-2.5 rounded-full border transition-colors bg-pink-500/10 text-pink-300 border-pink-500/30 hover:border-pink-400/50 font-medium">
+                    Gemini 2.5 Pro / Flash / Flash-Lite
+                  </span>
+                </div>
+              </div>
+              <p className="mb-4 text-lg text-slate-300">
+                🔗 20種類以上のサービス連携
+              </p>
               <div className="flex flex-wrap gap-4 justify-center">
                 {SERVICES.map((service) => (
                   <span
