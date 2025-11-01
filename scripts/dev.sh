@@ -61,6 +61,7 @@ show_help() {
     echo "  postgres          - PostgreSQLデータベース        (ポート: 5432)"
     echo "  redis             - Redisキャッシュ               (ポート: 6379)"
     echo "  pgadmin           - PostgreSQL GUI管理ツール      (ポート: 5050)"
+    echo "  minio             - MinIO (S3互換ストレージ)      (ポート: 9000, 9001)"
     echo ""
     echo "例:"
     echo "  ./dev.sh start                    # 全サービスを起動"
@@ -78,7 +79,7 @@ show_help() {
 # サービス名の検証
 validate_service() {
     local service="$1"
-    local valid_services=("frontend" "backend-go" "backend-python" "postgres" "redis" "pgadmin")
+    local valid_services=("frontend" "backend-go" "backend-python" "postgres" "redis" "pgadmin" "minio")
     
     if [ -n "$service" ]; then
         for valid_service in "${valid_services[@]}"; do
@@ -115,6 +116,8 @@ show_access_urls() {
     log_info "  - PostgreSQL: localhost:5432"
     log_info "  - Redis: localhost:6379"
     log_info "  - pgAdmin: http://localhost:5050 (admin@example.com / admin)"
+    log_info "  - MinIO Console: http://localhost:9001 (minioadmin / minioadmin)"
+    log_info "  - MinIO API: http://localhost:9000"
     log_info ""
     log_info "ファイルを編集すると自動で再起動されます。"
     log_info "ログを確認するには: ./dev.sh logs"
@@ -317,6 +320,7 @@ show_env_vars() {
         echo "  - postgres"
         echo "  - redis"
         echo "  - pgadmin"
+        echo "  - minio"
         echo ""
         echo "使用例: ./dev.sh env backend-go"
         exit 1
