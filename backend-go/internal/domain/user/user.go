@@ -11,6 +11,7 @@ type User struct {
 	CognitoUserID string
 	Email         Email
 	DisplayName   string
+	AvatarURL     *string
 	Status        UserStatus
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
@@ -57,6 +58,13 @@ func (u *User) ChangeDisplayName(newDisplayName string) error {
 		u.DisplayName = newDisplayName
 		u.UpdatedAt = time.Now()
 	}
+	return nil
+}
+
+// ChangeAvatarURL アバターURLを変更
+func (u *User) ChangeAvatarURL(newAvatarURL *string) error {
+	u.AvatarURL = newAvatarURL
+	u.UpdatedAt = time.Now()
 	return nil
 }
 

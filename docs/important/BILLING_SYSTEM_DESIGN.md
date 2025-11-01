@@ -1,14 +1,16 @@
-# NeuraKnot 課金システム設計書
+# NeuraKnot 課金システム設計書（Stripe 連携版）
 
 ## 📋 目次
 
 1. [概要](#概要)
 2. [課金モデル](#課金モデル)
-3. [テーブル設計](#テーブル設計)
-4. [データフロー](#データフロー)
-5. [重要なクエリ](#重要なクエリ)
-6. [実装ガイド](#実装ガイド)
-7. [運用ガイド](#運用ガイド)
+3. [アーキテクチャ](#アーキテクチャ)
+4. [テーブル設計](#テーブル設計)
+5. [Stripe 設定](#stripe設定)
+6. [データフロー](#データフロー)
+7. [重要なクエリ](#重要なクエリ)
+8. [実装ガイド](#実装ガイド)
+9. [運用ガイド](#運用ガイド)
 
 ---
 
@@ -19,16 +21,18 @@
 NeuraKnot の課金システムは、以下の要件を満たすように設計されています：
 
 - ✅ **利益率の確保**：LLM API の原価を上回る収益を保証
-- ✅ **シンプルな運用**：複雑な機能を排除し、保守しやすい設計
+- ✅ **シンプルな運用**：Stripe に任せて保守しやすい設計
 - ✅ **ユーザー体験**：明確な料金体系で安心して利用できる
 - ✅ **スケーラビリティ**：将来的な機能拡張に対応可能
+- ✅ **信頼性**：Stripe の実績ある決済インフラを活用
 
 ### 設計方針
 
-1. **既存テーブルの活用**：新規テーブルは最小限に抑える
-2. **トークンベース**：すべての課金計算をトークン数で統一
-3. **リアルタイム追跡**：使用量をリアルタイムで記録・集計
+1. **Stripe ファースト**：サブスク管理は Stripe に完全に任せる
+2. **最小限の独自実装**：トークン使用量のみ自前で管理
+3. **Webhook 駆動**：Stripe イベントでリアルタイム同期
 4. **透明性**：原価と販売価格を明確に分離して記録
+5. **バッチレス**：バッチ処理不要のシンプル設計
 
 ---
 
@@ -88,21 +92,71 @@ NeuraKnot の課金システムは、以下の要件を満たすように設計�
 
 ---
 
+## アーキテクチャ
+
+### 責任分離
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ Stripe（サブスク管理の真実の情報源）                      │
+├─────────────────────────────────────────────────────────┤
+│ ✅ Product（プラン定義：Free, Basic, Pro）               │
+│ ✅ Price（料金設定：月額、トークン制限をmetadataに）      │
+│ ✅ Customer（顧客情報）                                  │
+│ ✅ Subscription（契約状態、期間、ステータス）             │
+│ ✅ Invoice（請求履歴、決済結果）                          │
+│ ✅ 自動課金（月次処理）                                   │
+│ ✅ 決済リトライ                                          │
+└─────────────────────────────────────────────────────────┘
+                           ↕ Webhook
+┌─────────────────────────────────────────────────────────┐
+│ 自前DB（Stripe連携＋独自データ）                          │
+├─────────────────────────────────────────────────────────┤
+│ ✅ users（Stripe Customer IDの保存）                      │
+│ ✅ token_usage（トークン使用量の追跡）                    │
+│ ✅ llm_pricing（LLM原価計算用マスタ）                     │
+│ ✅ ai_chat_sessions（AI処理履歴＋原価記録）              │
+└─────────────────────────────────────────────────────────┘
+```
+
+### なぜこの設計？
+
+#### Stripe に任せるもの
+
+| 機能                 | 理由                                  |
+| -------------------- | ------------------------------------- |
+| プラン管理           | Stripe Dashboard で簡単に変更可能     |
+| 契約状態             | active/canceled/past_due など自動管理 |
+| 自動課金             | 毎月自動実行、バッチ不要              |
+| 決済処理             | PCI DSS 準拠、セキュリティ万全        |
+| 請求書発行           | 自動生成、メール送信                  |
+| 決済失敗時のリトライ | Smart Retry で自動実行                |
+
+#### 自前で管理するもの
+
+| 機能           | 理由                             |
+| -------------- | -------------------------------- |
+| トークン使用量 | NeuraKnot 独自のビジネスロジック |
+| LLM 原価計算   | 利益率分析に必要                 |
+| AI 処理履歴    | 詳細なログが必要                 |
+
+---
+
 ## テーブル設計
 
-### アーキテクチャ概要
+### 全体像
 
 ```
-既存テーブル（活用）:
-├── users（ユーザー情報）
-├── ai_agents（AI分身）
-└── ai_chat_sessions（AI処理履歴）← カラム追加
+既存テーブル（拡張）:
+├── users（ユーザー情報）← Stripe ID追加
+└── ai_chat_sessions（AI処理履歴）← 原価カラム追加
 
 新規テーブル（最小限）:
-├── llm_pricing（LLMモデル料金マスタ）
-├── subscription_plans（プラン定義）
-└── user_subscriptions（ユーザー契約状態）
+├── token_usage（トークン使用量）← 唯一の新規サブスク関連テーブル
+└── llm_pricing（LLMモデル料金マスタ）← 内部計算用
 ```
+
+**重要**：`subscription_plans`と`user_subscriptions`テーブルは**不要**です。Stripe が管理します。
 
 ### 1. llm_pricing（LLM モデル料金マスタ）
 
@@ -171,140 +225,91 @@ INSERT INTO llm_pricing (
 
 ---
 
-### 2. subscription_plans（プラン定義）
+### 2. users（既存テーブルの拡張）
 
-**目的**：Free、Basic、Pro の 3 プランを定義
+**目的**：Stripe Customer と Subscription の ID を保存
 
 ```sql
-CREATE TABLE subscription_plans (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+-- 既存のusersテーブルに以下のカラムを追加
+ALTER TABLE users
+    -- Stripe Customer ID
+    ADD COLUMN stripe_customer_id VARCHAR(255) UNIQUE,
 
-    -- プラン識別子
-    plan_code VARCHAR(50) UNIQUE NOT NULL,      -- 'free', 'basic', 'pro'
+    -- Stripe Subscription ID（現在アクティブなサブスク）
+    ADD COLUMN stripe_subscription_id VARCHAR(255),
 
-    -- 表示名
-    name VARCHAR(100) NOT NULL,                 -- 'Free', 'Basic', 'Pro'
-    description TEXT,                           -- プランの説明
-
-    -- 料金（円）
-    monthly_price_jpy INTEGER NOT NULL,         -- 月額料金
-
-    -- トークン制限
-    monthly_token_limit INTEGER NOT NULL,       -- 月間トークン上限（-1=無制限）
-
-    -- 超過料金（円/1000トークン、0なら超過不可）
-    overage_price_per_1k_tokens DECIMAL(8, 4) DEFAULT 0,
-
-    -- 機能制限
-    max_ai_agents INTEGER NOT NULL DEFAULT 1,   -- 作成可能なAI分身数
-    allowed_providers TEXT[] NOT NULL DEFAULT ARRAY['openai'],  -- 利用可能なプロバイダー
-
-    -- 有効フラグ
-    is_active BOOLEAN DEFAULT true,
-
-    -- 表示順序
-    display_order INTEGER DEFAULT 0,
-
-    -- タイムスタンプ
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
+    -- Stripe Price ID（現在のプラン）
+    ADD COLUMN stripe_price_id VARCHAR(255);
 
 -- インデックス
-CREATE INDEX idx_subscription_plans_active ON subscription_plans(is_active, display_order);
-```
+CREATE INDEX idx_users_stripe_customer ON users(stripe_customer_id);
+CREATE INDEX idx_users_stripe_subscription ON users(stripe_subscription_id);
 
-#### 初期データ（3 プラン）
-
-```sql
-INSERT INTO subscription_plans (
-    plan_code, name, description,
-    monthly_price_jpy, monthly_token_limit, overage_price_per_1k_tokens,
-    max_ai_agents, allowed_providers, display_order
-) VALUES
--- Freeプラン
-('free', 'Free', '無料で始める',
- 0, 100000, 0,  -- 超過不可
- 1, ARRAY['openai'], 1),
-
--- Basicプラン
-('basic', 'Basic', '個人利用向け',
- 980, 1000000, 0.5,  -- 超過時：1000トークン=0.5円
- 3, ARRAY['openai'], 2),
-
--- Proプラン
-('pro', 'Pro', 'ヘビーユーザー向け',
- 2980, 5000000, 0.3,  -- 超過時：1000トークン=0.3円
- 10, ARRAY['openai', 'anthropic', 'google'], 3);
+-- コメント
+COMMENT ON COLUMN users.stripe_customer_id IS 'Stripe Customer ID（顧客の一意識別子）';
+COMMENT ON COLUMN users.stripe_subscription_id IS 'Stripe Subscription ID（現在アクティブなサブスク）';
+COMMENT ON COLUMN users.stripe_price_id IS 'Stripe Price ID（現在のプラン料金）';
 ```
 
 #### 重要ポイント
 
-- **シンプル**：3 プランのみで管理しやすい
-- **拡張性**：後から Enterprise プランを追加可能
-- **制限管理**：プランごとに機能制限を柔軟に設定
+- **単一の真実の情報源**：Stripe が契約状態の真実を持つ
+- **キャッシュ**：頻繁な Stripe API 呼び出しを避けるため、ID をキャッシュ
+- **同期**：Webhook で常に最新状態に保つ
 
 ---
 
-### 3. user_subscriptions（ユーザー契約状態）
+### 3. token_usage（トークン使用量追跡）
 
-**目的**：各ユーザーの現在の契約とトークン使用量を追跡
+**目的**：ユーザーの期間ごとのトークン使用量を記録
 
 ```sql
-CREATE TABLE user_subscriptions (
+CREATE TABLE token_usage (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
     -- ユーザー
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
 
-    -- プラン
-    plan_id UUID NOT NULL REFERENCES subscription_plans(id),
+    -- Stripe Subscription ID（どのサブスク期間か）
+    stripe_subscription_id VARCHAR(255) NOT NULL,
 
-    -- ステータス
-    status VARCHAR(50) NOT NULL DEFAULT 'active',
-    -- 'active': 利用中
-    -- 'cancelled': 解約済み（期間終了まで利用可能）
-    -- 'expired': 期限切れ
+    -- サブスク期間（Stripeから取得）
+    subscription_period_start TIMESTAMP NOT NULL,
+    subscription_period_end TIMESTAMP NOT NULL,
 
-    -- 契約期間
-    period_start TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    period_end TIMESTAMP NOT NULL,              -- この日時に次期間へ更新
-
-    -- 今期の使用量（トークン数）
-    tokens_used_current_period INTEGER DEFAULT 0,
-
-    -- 解約情報
-    cancelled_at TIMESTAMP,
+    -- トークン使用量
+    tokens_used INTEGER DEFAULT 0,
 
     -- タイムスタンプ
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT chk_subscription_status CHECK (
-        status IN ('active', 'cancelled', 'expired')
-    )
+    -- 1ユーザー・1期間につき1レコード
+    CONSTRAINT unique_user_period UNIQUE(user_id, subscription_period_start)
 );
 
 -- インデックス
-CREATE INDEX idx_user_subscriptions_user ON user_subscriptions(user_id, status);
-CREATE INDEX idx_user_subscriptions_period_end ON user_subscriptions(period_end)
-    WHERE status = 'active';
-
--- 1ユーザー1アクティブサブスクリプション
-CREATE UNIQUE INDEX unique_active_subscription ON user_subscriptions(user_id)
-    WHERE status = 'active';
+CREATE INDEX idx_token_usage_user ON token_usage(user_id);
+CREATE INDEX idx_token_usage_subscription ON token_usage(stripe_subscription_id);
+CREATE INDEX idx_token_usage_period_end ON token_usage(subscription_period_end);
 
 -- トリガー：updated_at自動更新
-CREATE TRIGGER update_user_subscriptions_updated_at
-    BEFORE UPDATE ON user_subscriptions
+CREATE TRIGGER update_token_usage_updated_at
+    BEFORE UPDATE ON token_usage
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- コメント
+COMMENT ON TABLE token_usage IS 'ユーザーのサブスク期間ごとのトークン使用量';
+COMMENT ON COLUMN token_usage.stripe_subscription_id IS 'Stripe SubscriptionのID';
+COMMENT ON COLUMN token_usage.subscription_period_start IS 'サブスク期間開始（Stripeから取得）';
+COMMENT ON COLUMN token_usage.subscription_period_end IS 'サブスク期間終了（Stripeから取得）';
 ```
 
 #### 重要ポイント
 
-- **リアルタイム使用量**：`tokens_used_current_period`で現在の使用量を追跡
-- **期間管理**：`period_end`で自動更新のタイミングを管理
-- **制約**：1 ユーザーは 1 つのアクティブサブスクリプションのみ
+- **期間追跡**：Stripe のサブスク期間と完全に同期
+- **履歴保持**：過去の期間も保持（分析用）
+- **シンプル**：トークン数だけを記録（プラン情報は Stripe にある）
 
 ---
 
@@ -354,6 +359,124 @@ ai_chat_sessions（既存）:
 
 ---
 
+## Stripe 設定
+
+### Product & Price 作成
+
+#### 1. Free プラン
+
+```javascript
+// Stripe Dashboard または API で作成
+const freeProduct = await stripe.products.create({
+  name: "Free",
+  description: "無料で始める - GPT-4o-miniのみ利用可能",
+  metadata: {
+    plan_code: "free",
+    monthly_token_limit: "100000",
+    max_ai_agents: "1",
+    allowed_providers: "openai",
+    allowed_models: "gpt-4o-mini",
+    overage_allowed: "false",
+  },
+});
+
+const freePrice = await stripe.prices.create({
+  product: freeProduct.id,
+  unit_amount: 0, // 0円
+  currency: "jpy",
+  recurring: { interval: "month" },
+  metadata: {
+    plan_code: "free",
+  },
+});
+```
+
+#### 2. Basic プラン
+
+```javascript
+const basicProduct = await stripe.products.create({
+  name: "Basic",
+  description: "個人利用向け - OpenAI系モデル利用可能",
+  metadata: {
+    plan_code: "basic",
+    monthly_token_limit: "1000000",
+    max_ai_agents: "3",
+    allowed_providers: "openai",
+    overage_allowed: "true",
+    overage_price_per_1k_tokens: "0.5", // 0.5円/1000トークン
+  },
+});
+
+const basicPrice = await stripe.prices.create({
+  product: basicProduct.id,
+  unit_amount: 98000, // 980円
+  currency: "jpy",
+  recurring: { interval: "month" },
+  metadata: {
+    plan_code: "basic",
+  },
+});
+```
+
+#### 3. Pro プラン
+
+```javascript
+const proProduct = await stripe.products.create({
+  name: "Pro",
+  description: "ヘビーユーザー向け - すべてのモデル利用可能",
+  metadata: {
+    plan_code: "pro",
+    monthly_token_limit: "5000000",
+    max_ai_agents: "10",
+    allowed_providers: "openai,anthropic,google",
+    overage_allowed: "true",
+    overage_price_per_1k_tokens: "0.3", // 0.3円/1000トークン
+  },
+});
+
+const proPrice = await stripe.prices.create({
+  product: proProduct.id,
+  unit_amount: 298000, // 2980円
+  currency: "jpy",
+  recurring: { interval: "month" },
+  metadata: {
+    plan_code: "pro",
+  },
+});
+```
+
+### 重要ポイント
+
+- **metadata 活用**：プラン固有の設定（トークン制限など）を metadata に保存
+- **Price ID を記録**：アプリケーション側で Price ID を環境変数で管理
+
+```bash
+# .env
+STRIPE_PRICE_FREE=price_xxxxx
+STRIPE_PRICE_BASIC=price_xxxxx
+STRIPE_PRICE_PRO=price_xxxxx
+```
+
+### Webhook 設定
+
+#### 必要なイベント
+
+```
+customer.subscription.created      # サブスク開始
+customer.subscription.updated      # プラン変更
+customer.subscription.deleted      # 解約
+invoice.payment_succeeded          # 課金成功
+invoice.payment_failed             # 課金失敗
+```
+
+#### Webhook URL の設定
+
+```
+https://your-api.com/api/v1/webhooks/stripe
+```
+
+---
+
 ## データフロー
 
 ### 1. ユーザー登録時
@@ -361,97 +484,225 @@ ai_chat_sessions（既存）:
 ```
 ユーザー登録
     ↓
-usersテーブルに追加
-    ↓
-user_subscriptionsにFreeプランを自動作成
-    ├── plan_id: Free プランのID
-    ├── status: 'active'
-    ├── period_start: 現在時刻
-    ├── period_end: 1ヶ月後
-    └── tokens_used_current_period: 0
+【Backend-go】
+├── 1. usersテーブルに追加
+│
+├── 2. Stripe Customerを作成
+│   └── stripe.customers.create({
+│       email: user.email,
+│       name: user.display_name,
+│       metadata: { user_id: user.id }
+│   })
+│
+├── 3. DB更新（Stripe Customer IDを保存）
+│   └── UPDATE users SET stripe_customer_id = ? WHERE id = ?
+│
+└── 4. Freeプランを自動付与
+    ├── stripe.subscriptions.create({
+    │   customer: stripe_customer_id,
+    │   items: [{ price: STRIPE_PRICE_FREE }]
+    │ })
+    │
+    └── Webhook（customer.subscription.created）が飛んでくる
+        ├── users.stripe_subscription_id を更新
+        ├── users.stripe_price_id を更新
+        └── token_usageレコード作成（tokens_used=0）
 ```
 
-### 2. AI 処理実行時
+### 2. サブスク開始時（Webhook: customer.subscription.created）
+
+```
+Webhookを受信
+    ↓
+【Backend-go /api/v1/webhooks/stripe】
+├── 1. Webhook署名検証
+│   └── stripe.webhooks.constructEvent(payload, signature, secret)
+│
+├── 2. Subscriptionデータを取得
+│   ├── subscription_id
+│   ├── customer_id
+│   ├── price_id
+│   ├── current_period_start
+│   ├── current_period_end
+│   └── status
+│
+├── 3. DB更新
+│   ├── UPDATE users
+│   │   SET stripe_subscription_id = ?,
+│   │       stripe_price_id = ?
+│   │   WHERE stripe_customer_id = ?
+│   │
+│   └── INSERT INTO token_usage (
+│       user_id,
+│       stripe_subscription_id,
+│       subscription_period_start,
+│       subscription_period_end,
+│       tokens_used
+│     ) VALUES (?, ?, ?, ?, 0)
+│
+└── 4. 完了（Stripeが自動課金を続ける）
+```
+
+### 3. AI 処理実行時
 
 ```
 ユーザーがAIにメッセージ送信
     ↓
 【Backend-go】
-├── 1. アクティブなサブスクリプションを取得
-│   └── user_subscriptions WHERE user_id = ? AND status = 'active'
+├── 1. ユーザー情報とStripe Subscription IDを取得
+│   └── SELECT stripe_subscription_id, stripe_price_id FROM users WHERE id = ?
 │
-├── 2. トークン制限チェック
-│   └── IF tokens_used >= monthly_token_limit THEN
-│       ├── overage_price > 0 なら継続（超過課金）
-│       └── overage_price = 0 なら制限エラー
+├── 2. Stripe APIでサブスク状態を確認
+│   ├── subscription = stripe.subscriptions.retrieve(stripe_subscription_id)
+│   └── IF subscription.status != 'active' THEN エラー
 │
-├── 3. プラン制限チェック
-│   └── IF provider NOT IN allowed_providers THEN エラー
+├── 3. プラン情報を取得（Stripe Priceのmetadata）
+│   ├── price = stripe.prices.retrieve(stripe_price_id, { expand: ['product'] })
+│   ├── monthly_token_limit = price.product.metadata.monthly_token_limit
+│   ├── allowed_providers = price.product.metadata.allowed_providers
+│   └── overage_allowed = price.product.metadata.overage_allowed
 │
-├── 4. AI処理実行（Backend-pythonへ）
+├── 4. 現在のトークン使用量を取得
+│   └── SELECT tokens_used FROM token_usage
+│       WHERE user_id = ? AND stripe_subscription_id = ?
+│
+├── 5. トークン制限チェック
+│   └── IF tokens_used >= monthly_token_limit AND overage_allowed = 'false' THEN
+│       └── エラー：「月間制限に達しました。プランをアップグレードしてください」
+│
+├── 6. プロバイダー制限チェック
+│   └── IF requested_provider NOT IN allowed_providers THEN
+│       └── エラー：「このプランでは利用できないプロバイダーです」
+│
+├── 7. AI処理実行（Backend-pythonへ）
 │   └── LLM API呼び出し → トークン数取得
 │
-├── 5. 料金計算
-│   ├── llm_pricing から料金情報取得
-│   │   └── WHERE provider = ? AND model = ? AND is_active = true
+├── 8. 料金計算
+│   ├── pricing = SELECT * FROM llm_pricing
+│   │            WHERE provider = ? AND model = ? AND is_active = true
 │   │
-│   ├── 原価計算
-│   │   └── cost = (tokens_prompt / 1000 * cost_per_1k_prompt_tokens) +
+│   ├── cost_usd = (tokens_prompt / 1000 * cost_per_1k_prompt_tokens) +
 │   │              (tokens_completion / 1000 * cost_per_1k_completion_tokens)
 │   │
-│   └── 販売価格計算
-│       └── price = (tokens_prompt / 1000 * price_per_1k_prompt_tokens) +
-│                   (tokens_completion / 1000 * price_per_1k_completion_tokens)
+│   └── price_usd = (tokens_prompt / 1000 * price_per_1k_prompt_tokens) +
+│                    (tokens_completion / 1000 * price_per_1k_completion_tokens)
 │
-├── 6. ai_chat_sessionsに記録
-│   ├── tokens_prompt, tokens_completion, tokens_total
-│   ├── cost_usd, price_usd
-│   └── pricing_id
+├── 9. ai_chat_sessionsに記録
+│   └── INSERT INTO ai_chat_sessions (
+│       user_id, provider, model,
+│       tokens_prompt, tokens_completion, tokens_total,
+│       cost_usd, price_usd, pricing_id
+│     )
 │
-└── 7. user_subscriptionsの使用量更新
-    └── UPDATE user_subscriptions
-        SET tokens_used_current_period = tokens_used_current_period + tokens_total
-        WHERE id = ?
+└── 10. token_usageを更新
+    └── UPDATE token_usage
+        SET tokens_used = tokens_used + tokens_total
+        WHERE user_id = ? AND stripe_subscription_id = ?
 ```
 
-### 3. 月次処理（バッチ）
+### 4. 月次課金成功時（Webhook: invoice.payment_succeeded）
 
 ```
-【毎日実行するバッチ】
-
-期限切れサブスクリプションの検出
+Stripeが自動課金を実行（月初）
     ↓
-WHERE period_end < CURRENT_TIMESTAMP AND status = 'active'
+課金成功
     ↓
-各サブスクリプションについて:
-    ├── cancelled_at が NULL なら
-    │   ├── 次の期間を作成
-    │   │   ├── period_start = 旧period_end
-    │   │   ├── period_end = period_start + 1ヶ月
-    │   │   └── tokens_used_current_period = 0（リセット）
-    │   │
-    │   └── （決済処理）
-    │       ├── 基本料金：monthly_price_jpy
-    │       └── 超過料金：tokens_overage * overage_price_per_1k_tokens / 1000
-    │
-    └── cancelled_at が設定されているなら
-        └── status = 'expired' に更新（サービス停止）
+Webhookを受信
+    ↓
+【Backend-go /api/v1/webhooks/stripe】
+├── 1. Invoiceデータを取得
+│   ├── subscription_id
+│   ├── customer_id
+│   ├── amount_paid
+│   ├── period_start（新しい期間）
+│   └── period_end（新しい期間）
+│
+├── 2. 超過料金を計算してStripeに追加請求（必要なら）
+│   ├── 前期間のtoken_usageを取得
+│   ├── IF tokens_used > monthly_token_limit THEN
+│   │   ├── overage_tokens = tokens_used - monthly_token_limit
+│   │   ├── overage_cost = overage_tokens / 1000 * overage_price_per_1k_tokens
+│   │   └── stripe.invoiceItems.create({
+│   │       customer: customer_id,
+│   │       amount: overage_cost,
+│   │       currency: 'jpy',
+│   │       description: '超過トークン料金'
+│   │     })
+│   └── （次回請求時に自動課金される）
+│
+└── 3. 新しい期間のtoken_usageレコードを作成
+    └── INSERT INTO token_usage (
+        user_id,
+        stripe_subscription_id,
+        subscription_period_start,
+        subscription_period_end,
+        tokens_used
+      ) VALUES (?, ?, ?, ?, 0)
 ```
 
-### 4. プラン変更時
+### 5. 課金失敗時（Webhook: invoice.payment_failed）
+
+```
+Stripeが自動課金を実行
+    ↓
+課金失敗（カード無効など）
+    ↓
+Webhookを受信
+    ↓
+【Backend-go /api/v1/webhooks/stripe】
+├── 1. ユーザーに通知メール送信
+│   └── 「お支払いが完了しませんでした。カード情報を更新してください」
+│
+├── 2. サービス制限（オプション）
+│   └── 数日後にStripeが自動リトライするので、待つのもあり
+│
+└── 3. Stripeが自動リトライ（Smart Retry）
+    └── 数日間、最適なタイミングで再試行
+```
+
+### 6. プラン変更時
 
 ```
 ユーザーがプラン変更を申請
     ↓
-【アップグレードの場合】
-├── 即座に新プランに変更
-├── 使用量はそのまま引き継ぐ
-└── 差額を日割り計算して請求（オプション）
+【Backend-go】
+├── 1. Stripe Subscriptionを更新
+│   └── stripe.subscriptions.update(subscription_id, {
+│       items: [{
+│         id: subscription_item_id,
+│         price: new_price_id  // 新しいプランのPrice ID
+│       }],
+│       proration_behavior: 'always_invoice'  // 日割り計算
+│     })
+│
+└── 2. Webhook（customer.subscription.updated）が飛んでくる
+    ├── users.stripe_price_id を新しいPrice IDに更新
+    ├── 現在のtoken_usageはそのまま（引き継ぐ）
+    └── 日割り差額はStripeが自動計算・請求
+```
 
-【ダウングレードの場合】
-├── cancelled_at を設定
-├── status = 'cancelled'（期間終了まで利用可能）
-└── period_end 時に新プランで再作成
+### 7. 解約時
+
+```
+ユーザーが解約を申請
+    ↓
+【Backend-go】
+├── 1. Stripe Subscriptionをキャンセル
+│   └── stripe.subscriptions.update(subscription_id, {
+│       cancel_at_period_end: true  // 期間終了まで利用可能
+│     })
+│
+└── 2. Webhook（customer.subscription.updated）が飛んでくる
+    └── ステータスが 'active' のまま、cancel_at_period_end = true
+
+期間終了時
+    ↓
+Webhook（customer.subscription.deleted）が飛んでくる
+    ↓
+【Backend-go】
+├── users.stripe_subscription_id をNULLに
+├── users.stripe_price_id をNULLに
+└── サービス停止（Freeプランに戻すかは要検討）
 ```
 
 ---
@@ -465,50 +716,72 @@ SELECT
     u.id as user_id,
     u.email,
     u.display_name,
-    sp.name as plan_name,
-    sp.monthly_price_jpy,
-    sp.monthly_token_limit,
-    us.tokens_used_current_period,
-    sp.monthly_token_limit - us.tokens_used_current_period as tokens_remaining,
-    ROUND(
-        (us.tokens_used_current_period::DECIMAL /
-         NULLIF(sp.monthly_token_limit, 0) * 100), 2
-    ) as usage_percent,
-    us.period_start,
-    us.period_end,
-    us.status
-FROM user_subscriptions us
-JOIN users u ON us.user_id = u.id
-JOIN subscription_plans sp ON us.plan_id = sp.id
+    u.stripe_customer_id,
+    u.stripe_subscription_id,
+    u.stripe_price_id,
+    tu.tokens_used,
+    tu.subscription_period_start,
+    tu.subscription_period_end
+FROM users u
+LEFT JOIN token_usage tu ON u.id = tu.user_id
 WHERE
-    us.user_id = $1 AND
-    us.status = 'active';
+    u.id = $1 AND
+    tu.subscription_period_end > CURRENT_TIMESTAMP
+ORDER BY tu.subscription_period_start DESC
+LIMIT 1;
 ```
 
 **用途**：ダッシュボードで表示、API レスポンス
+
+**補足**：プラン情報（monthly_token_limit など）は Stripe API から取得
+
+```go
+// Goでの実装例
+subscription, _ := stripe.subscriptions.retrieve(user.StripeSubscriptionID)
+price, _ := stripe.prices.retrieve(subscription.Items.Data[0].Price.ID, &stripe.PriceParams{
+    Params: stripe.Params{
+        Expand: []*string{stripe.String("product")},
+    },
+})
+
+monthlyTokenLimit := price.Product.Metadata["monthly_token_limit"]
+maxAIAgents := price.Product.Metadata["max_ai_agents"]
+```
 
 ---
 
 ### 2. 制限に近づいているユーザーを抽出（アラート用）
 
 ```sql
+-- DBから現在のトークン使用量を取得
 SELECT
     u.id,
     u.email,
-    sp.name as plan_name,
-    us.tokens_used_current_period,
-    sp.monthly_token_limit,
-    ROUND(
-        (us.tokens_used_current_period::DECIMAL / sp.monthly_token_limit * 100), 2
-    ) as usage_percent
-FROM user_subscriptions us
-JOIN users u ON us.user_id = u.id
-JOIN subscription_plans sp ON us.plan_id = sp.id
+    u.stripe_price_id,
+    tu.tokens_used,
+    tu.subscription_period_end
+FROM users u
+JOIN token_usage tu ON u.id = tu.user_id
 WHERE
-    us.status = 'active' AND
-    sp.monthly_token_limit > 0 AND  -- 無制限プランを除外
-    us.tokens_used_current_period >= sp.monthly_token_limit * 0.8  -- 80%以上
-ORDER BY usage_percent DESC;
+    u.stripe_subscription_id IS NOT NULL AND
+    tu.subscription_period_end > CURRENT_TIMESTAMP;
+```
+
+その後、アプリケーション層で：
+
+```go
+for _, user := range users {
+    // Stripe APIからプラン情報取得
+    price, _ := stripe.prices.retrieve(user.StripePriceID, ...)
+    monthlyTokenLimit := price.Product.Metadata["monthly_token_limit"]
+
+    usagePercent := float64(user.TokensUsed) / float64(monthlyTokenLimit) * 100
+
+    if usagePercent >= 80 {
+        // アラート送信
+        sendUsageAlert(user, usagePercent)
+    }
+}
 ```
 
 **用途**：
@@ -539,6 +812,8 @@ WHERE
 
 **用途**：経営ダッシュボード、月次レポート
 
+**変更なし**：このクエリはそのまま使える
+
 ---
 
 ### 4. モデル別のコストと利益を分析
@@ -565,6 +840,8 @@ ORDER BY total_profit_usd DESC;
 
 **用途**：どのモデルが利益率が高いかを分析
 
+**変更なし**：このクエリもそのまま使える
+
 ---
 
 ### 5. ユーザーごとの月間コスト（上位 100 人）
@@ -572,7 +849,7 @@ ORDER BY total_profit_usd DESC;
 ```sql
 SELECT
     u.email,
-    sp.name as plan_name,
+    u.stripe_price_id,
     COUNT(s.id) as request_count,
     SUM(s.tokens_total) as total_tokens,
     ROUND(SUM(s.cost_usd)::NUMERIC, 4) as total_cost_usd,
@@ -580,64 +857,136 @@ SELECT
     ROUND(SUM(s.price_usd - s.cost_usd)::NUMERIC, 4) as total_profit_usd
 FROM ai_chat_sessions s
 JOIN users u ON s.user_id = u.id
-JOIN user_subscriptions us ON u.id = us.user_id AND us.status = 'active'
-JOIN subscription_plans sp ON us.plan_id = sp.id
 WHERE
     DATE_TRUNC('month', s.started_at) = DATE_TRUNC('month', CURRENT_TIMESTAMP) AND
-    s.status = 'completed'
-GROUP BY u.id, u.email, sp.name
+    s.status = 'completed' AND
+    u.stripe_subscription_id IS NOT NULL
+GROUP BY u.id, u.email, u.stripe_price_id
 ORDER BY total_cost_usd DESC
 LIMIT 100;
 ```
 
 **用途**：コストがかかっているユーザーの特定、プラン提案
 
+**補足**：プラン名は Stripe API から取得
+
 ---
 
-### 6. 期限切れサブスクリプションの検出（バッチ用）
+### 6. 期限切れ間近のサブスクリプションを検出（通知用）
 
 ```sql
+-- 3日以内に期限が切れるサブスク
 SELECT
-    us.id,
-    us.user_id,
+    u.id,
     u.email,
-    us.period_end,
-    us.cancelled_at
-FROM user_subscriptions us
-JOIN users u ON us.user_id = u.id
+    u.stripe_subscription_id,
+    tu.subscription_period_end,
+    tu.tokens_used
+FROM users u
+JOIN token_usage tu ON u.id = tu.user_id
 WHERE
-    us.status = 'active' AND
-    us.period_end < CURRENT_TIMESTAMP
-ORDER BY us.period_end;
+    u.stripe_subscription_id IS NOT NULL AND
+    tu.subscription_period_end BETWEEN CURRENT_TIMESTAMP AND CURRENT_TIMESTAMP + INTERVAL '3 days'
+ORDER BY tu.subscription_period_end;
 ```
 
-**用途**：日次バッチで実行、期間更新処理
+**用途**：更新前の通知メール送信
+
+**補足**：実際の課金は Stripe が自動で行うため、バッチ処理は**不要**
 
 ---
 
 ## 実装ガイド
 
-### フェーズ 1：テーブル作成
+### フェーズ 1：環境準備
 
-#### 1-1. マイグレーションファイルの作成
+#### 1-1. Stripe アカウントのセットアップ
 
 ```bash
-# backend-go/schema/migrations/ に作成
+# 1. Stripeダッシュボードでアカウント作成
+https://dashboard.stripe.com/register
+
+# 2. APIキーを取得
+https://dashboard.stripe.com/test/apikeys
+```
+
+#### 1-2. 環境変数の設定
+
+```bash
+# backend-go/.env
+STRIPE_SECRET_KEY=sk_test_xxxxx
+STRIPE_WEBHOOK_SECRET=whsec_xxxxx
+STRIPE_PRICE_FREE=price_xxxxx
+STRIPE_PRICE_BASIC=price_xxxxx
+STRIPE_PRICE_PRO=price_xxxxx
+```
+
+#### 1-3. Stripe CLI のインストール（開発用）
+
+```bash
+brew install stripe/stripe-cli/stripe
+stripe login
+stripe listen --forward-to localhost:8080/api/v1/webhooks/stripe
+```
+
+---
+
+### フェーズ 2：テーブル作成
+
+#### 2-1. マイグレーションファイルの作成
+
+```bash
+# backend-go/migrations/ に作成
 touch 000010_create_billing_tables.up.sql
 touch 000010_create_billing_tables.down.sql
 ```
 
-#### 1-2. up.sql の内容
+#### 2-2. up.sql の内容
 
 ```sql
 -- llm_pricing テーブル作成
-CREATE TABLE llm_pricing (...);
+CREATE TABLE llm_pricing (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    provider VARCHAR(50) NOT NULL,
+    model VARCHAR(100) NOT NULL,
+    cost_per_1k_prompt_tokens DECIMAL(10, 6) NOT NULL,
+    cost_per_1k_completion_tokens DECIMAL(10, 6) NOT NULL,
+    price_per_1k_prompt_tokens DECIMAL(10, 6) NOT NULL,
+    price_per_1k_completion_tokens DECIMAL(10, 6) NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_price_above_cost CHECK (
+        price_per_1k_prompt_tokens >= cost_per_1k_prompt_tokens AND
+        price_per_1k_completion_tokens >= cost_per_1k_completion_tokens
+    ),
+    CONSTRAINT unique_active_model UNIQUE(provider, model) WHERE is_active = true
+);
 
--- subscription_plans テーブル作成
-CREATE TABLE subscription_plans (...);
+-- usersテーブルにStripe IDを追加
+ALTER TABLE users
+    ADD COLUMN stripe_customer_id VARCHAR(255) UNIQUE,
+    ADD COLUMN stripe_subscription_id VARCHAR(255),
+    ADD COLUMN stripe_price_id VARCHAR(255);
 
--- user_subscriptions テーブル作成
-CREATE TABLE user_subscriptions (...);
+CREATE INDEX idx_users_stripe_customer ON users(stripe_customer_id);
+CREATE INDEX idx_users_stripe_subscription ON users(stripe_subscription_id);
+
+-- token_usage テーブル作成
+CREATE TABLE token_usage (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    stripe_subscription_id VARCHAR(255) NOT NULL,
+    subscription_period_start TIMESTAMP NOT NULL,
+    subscription_period_end TIMESTAMP NOT NULL,
+    tokens_used INTEGER DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_user_period UNIQUE(user_id, subscription_period_start)
+);
+
+CREATE INDEX idx_token_usage_user ON token_usage(user_id);
+CREATE INDEX idx_token_usage_subscription ON token_usage(stripe_subscription_id);
 
 -- ai_chat_sessions の拡張
 ALTER TABLE ai_chat_sessions
@@ -646,92 +995,318 @@ ALTER TABLE ai_chat_sessions
     ADD COLUMN pricing_id UUID REFERENCES llm_pricing(id) ON DELETE SET NULL;
 
 -- 初期データ投入
-INSERT INTO llm_pricing (...);
-INSERT INTO subscription_plans (...);
+INSERT INTO llm_pricing (provider, model, cost_per_1k_prompt_tokens, cost_per_1k_completion_tokens, price_per_1k_prompt_tokens, price_per_1k_completion_tokens)
+VALUES
+('openai', 'gpt-4o', 0.0025, 0.010, 0.00325, 0.013),
+('openai', 'gpt-4o-mini', 0.00015, 0.0006, 0.000195, 0.00078),
+('anthropic', 'claude-3-5-sonnet', 0.003, 0.015, 0.0039, 0.0195),
+('google', 'gemini-pro', 0.00025, 0.0005, 0.000325, 0.00065);
 ```
 
-#### 1-3. down.sql の内容（ロールバック用）
+#### 2-3. down.sql の内容
 
 ```sql
--- 逆順で削除
 ALTER TABLE ai_chat_sessions
     DROP COLUMN pricing_id,
     DROP COLUMN price_usd,
     DROP COLUMN cost_usd;
 
-DROP TABLE IF EXISTS user_subscriptions CASCADE;
-DROP TABLE IF EXISTS subscription_plans CASCADE;
+DROP TABLE IF EXISTS token_usage CASCADE;
+
+ALTER TABLE users
+    DROP COLUMN stripe_price_id,
+    DROP COLUMN stripe_subscription_id,
+    DROP COLUMN stripe_customer_id;
+
 DROP TABLE IF EXISTS llm_pricing CASCADE;
 ```
 
 ---
 
-### フェーズ 2：Backend-go 実装
+### フェーズ 3：Stripe Product/Price 作成
 
-#### 2-1. ドメイン層（internal/domain/billing/）
+#### 3-1. 管理スクリプトの作成
 
 ```go
-// pricing.go
-package billing
+// cmd/stripe-setup/main.go
+package main
 
-type LLMPricing struct {
-    ID                            uuid.UUID
-    Provider                      string
-    Model                         string
-    CostPer1kPromptTokens         float64
-    CostPer1kCompletionTokens     float64
-    PricePer1kPromptTokens        float64
-    PricePer1kCompletionTokens    float64
-    IsActive                      bool
-}
+import (
+    "github.com/stripe/stripe-go/v76"
+    "github.com/stripe/stripe-go/v76/product"
+    "github.com/stripe/stripe-go/v76/price"
+)
 
-func (p *LLMPricing) CalculateCost(promptTokens, completionTokens int) float64 {
-    return (float64(promptTokens) / 1000.0 * p.CostPer1kPromptTokens) +
-           (float64(completionTokens) / 1000.0 * p.CostPer1kCompletionTokens)
-}
+func main() {
+    stripe.Key = os.Getenv("STRIPE_SECRET_KEY")
 
-func (p *LLMPricing) CalculatePrice(promptTokens, completionTokens int) float64 {
-    return (float64(promptTokens) / 1000.0 * p.PricePer1kPromptTokens) +
-           (float64(completionTokens) / 1000.0 * p.PricePer1kCompletionTokens)
+    // Freeプラン作成
+    freeProduct, _ := product.New(&stripe.ProductParams{
+        Name: stripe.String("Free"),
+        Description: stripe.String("無料で始める"),
+        Metadata: map[string]string{
+            "plan_code": "free",
+            "monthly_token_limit": "100000",
+            "max_ai_agents": "1",
+            "allowed_providers": "openai",
+            "allowed_models": "gpt-4o-mini",
+            "overage_allowed": "false",
+        },
+    })
+
+    freePrice, _ := price.New(&stripe.PriceParams{
+        Product: stripe.String(freeProduct.ID),
+        UnitAmount: stripe.Int64(0),
+        Currency: stripe.String(string(stripe.CurrencyJPY)),
+        Recurring: &stripe.PriceRecurringParams{
+            Interval: stripe.String(string(stripe.PriceRecurringIntervalMonth)),
+        },
+    })
+
+    fmt.Printf("Free Price ID: %s\n", freePrice.ID)
+    // 同様にBasic、Proも作成...
 }
 ```
 
+---
+
+### フェーズ 4：Backend-go 実装
+
+#### 4-1. Stripe クライアントの初期化
+
 ```go
-// subscription.go
-package billing
+// pkg/stripe/client.go
+package stripe
 
-type SubscriptionPlan struct {
-    ID                        uuid.UUID
-    PlanCode                  string
-    Name                      string
-    MonthlyPriceJPY           int
-    MonthlyTokenLimit         int
-    OveragePricePer1kTokens   float64
-    MaxAIAgents               int
-    AllowedProviders          []string
+import (
+    "github.com/stripe/stripe-go/v76"
+    "github.com/stripe/stripe-go/v76/customer"
+    "github.com/stripe/stripe-go/v76/sub"
+)
+
+type Client struct {
+    apiKey string
 }
 
-type UserSubscription struct {
-    ID                       uuid.UUID
-    UserID                   uuid.UUID
-    PlanID                   uuid.UUID
-    Status                   string
-    PeriodStart              time.Time
-    PeriodEnd                time.Time
-    TokensUsedCurrentPeriod  int
-    CancelledAt              *time.Time
+func NewClient(apiKey string) *Client {
+    stripe.Key = apiKey
+    return &Client{apiKey: apiKey}
 }
 
-func (s *UserSubscription) IsOverLimit(plan *SubscriptionPlan) bool {
-    if plan.MonthlyTokenLimit == -1 {
-        return false // 無制限
+func (c *Client) CreateCustomer(email, name string, metadata map[string]string) (*stripe.Customer, error) {
+    params := &stripe.CustomerParams{
+        Email: stripe.String(email),
+        Name: stripe.String(name),
     }
-    return s.TokensUsedCurrentPeriod >= plan.MonthlyTokenLimit
+    params.AddMetadata("user_id", metadata["user_id"])
+
+    return customer.New(params)
 }
 
-func (s *UserSubscription) CanUseProvider(plan *SubscriptionPlan, provider string) bool {
-    for _, p := range plan.AllowedProviders {
-        if p == provider {
+func (c *Client) CreateSubscription(customerID, priceID string) (*stripe.Subscription, error) {
+    params := &stripe.SubscriptionParams{
+        Customer: stripe.String(customerID),
+        Items: []*stripe.SubscriptionItemsParams{
+            {Price: stripe.String(priceID)},
+        },
+    }
+
+    return sub.New(params)
+}
+```
+
+#### 4-2. Webhook ハンドラー
+
+```go
+// internal/handler/http/webhook_handler.go
+package http
+
+func (h *WebhookHandler) HandleStripeWebhook(c *gin.Context) {
+    payload, _ := ioutil.ReadAll(c.Request.Body)
+    signature := c.GetHeader("Stripe-Signature")
+
+    event, err := webhook.ConstructEvent(payload, signature, webhookSecret)
+    if err != nil {
+        c.JSON(400, gin.H{"error": "Invalid signature"})
+        return
+    }
+
+    switch event.Type {
+    case "customer.subscription.created":
+        h.handleSubscriptionCreated(event)
+    case "customer.subscription.updated":
+        h.handleSubscriptionUpdated(event)
+    case "customer.subscription.deleted":
+        h.handleSubscriptionDeleted(event)
+    case "invoice.payment_succeeded":
+        h.handlePaymentSucceeded(event)
+    case "invoice.payment_failed":
+        h.handlePaymentFailed(event)
+    }
+
+    c.JSON(200, gin.H{"status": "success"})
+}
+
+func (h *WebhookHandler) handleSubscriptionCreated(event stripe.Event) {
+    var subscription stripe.Subscription
+    json.Unmarshal(event.Data.Raw, &subscription)
+
+    // 1. DBのusersテーブルを更新
+    h.userRepo.UpdateStripeInfo(
+        subscription.Customer.ID,
+        subscription.ID,
+        subscription.Items.Data[0].Price.ID,
+    )
+
+    // 2. token_usageレコードを作成
+    h.billingRepo.CreateTokenUsage(&domain.TokenUsage{
+        StripeSubscriptionID: subscription.ID,
+        PeriodStart: time.Unix(subscription.CurrentPeriodStart, 0),
+        PeriodEnd: time.Unix(subscription.CurrentPeriodEnd, 0),
+        TokensUsed: 0,
+    })
+}
+```
+
+#### 4-3. AI 処理時の制限チェック
+
+```go
+// internal/usecase/ai/ai_usecase.go
+package ai
+
+import (
+    "context"
+    "fmt"
+    "strconv"
+    "github.com/stripe/stripe-go/v76"
+    "github.com/stripe/stripe-go/v76/subscription"
+    "github.com/stripe/stripe-go/v76/price"
+)
+
+type AIUsecase struct {
+    userRepo       domain.UserRepository
+    billingRepo    domain.BillingRepository
+    llmRepo        domain.LLMRepository
+    logger         *logger.Logger
+}
+
+func (u *AIUsecase) ProcessMessage(ctx context.Context, userID uuid.UUID, provider, model, message string) (*AIResponse, error) {
+    // 1. ユーザー情報取得
+    user, err := u.userRepo.GetByID(ctx, userID)
+    if err != nil {
+        return nil, fmt.Errorf("user not found: %w", err)
+    }
+
+    // 2. Stripe サブスクリプション状態確認
+    if user.StripeSubscriptionID == "" {
+        return nil, domain.ErrNoActiveSubscription
+    }
+
+    sub, err := subscription.Get(user.StripeSubscriptionID, nil)
+    if err != nil {
+        if stripeErr, ok := err.(*stripe.Error); ok {
+            if stripeErr.Code == stripe.ErrorCodeResourceMissing {
+                return nil, domain.ErrSubscriptionNotFound
+            }
+        }
+        return nil, fmt.Errorf("failed to get subscription: %w", err)
+    }
+
+    // サブスク状態チェック
+    if sub.Status != "active" {
+        switch sub.Status {
+        case "past_due":
+            return nil, domain.ErrPaymentPastDue
+        case "canceled":
+            return nil, domain.ErrSubscriptionCanceled
+        case "unpaid":
+            return nil, domain.ErrSubscriptionUnpaid
+        default:
+            return nil, fmt.Errorf("subscription status is %s", sub.Status)
+        }
+    }
+
+    // 3. プラン情報取得（metadata から）
+    priceObj, err := price.Get(user.StripePriceID, &stripe.PriceParams{
+        Params: stripe.Params{
+            Expand: []*string{stripe.String("product")},
+        },
+    })
+    if err != nil {
+        return nil, fmt.Errorf("failed to get price: %w", err)
+    }
+
+    metadata := priceObj.Product.Metadata
+    monthlyTokenLimit, _ := strconv.Atoi(metadata["monthly_token_limit"])
+    allowedProviders := metadata["allowed_providers"]
+    overageAllowed := metadata["overage_allowed"] == "true"
+
+    // 4. プロバイダー制限チェック
+    if !u.isProviderAllowed(provider, allowedProviders) {
+        return nil, domain.ErrProviderNotAllowed
+    }
+
+    // 5. 現在のトークン使用量取得
+    usage, err := u.billingRepo.GetCurrentTokenUsage(ctx, userID)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get token usage: %w", err)
+    }
+
+    // 6. トークン制限チェック
+    if usage.TokensUsed >= monthlyTokenLimit {
+        if !overageAllowed {
+            return nil, domain.ErrTokenLimitReached
+        }
+        // 超過可能な場合は継続（後で追加課金される）
+        u.logger.Warn("Token limit exceeded", "user_id", userID, "tokens_used", usage.TokensUsed)
+    }
+
+    // 7. LLM 料金情報取得
+    pricing, err := u.llmRepo.GetActivePricing(ctx, provider, model)
+    if err != nil {
+        return nil, fmt.Errorf("failed to get LLM pricing: %w", err)
+    }
+
+    // 8. AI 処理実行
+    response, err := u.llmRepo.ProcessMessage(ctx, provider, model, message)
+    if err != nil {
+        return nil, fmt.Errorf("failed to process AI message: %w", err)
+    }
+
+    // 9. コスト・価格計算
+    costUSD := pricing.CalculateCost(response.PromptTokens, response.CompletionTokens)
+    priceUSD := pricing.CalculatePrice(response.PromptTokens, response.CompletionTokens)
+
+    // 10. ai_chat_sessions に記録
+    session := &domain.AIChatSession{
+        UserID:            userID,
+        Provider:          provider,
+        Model:             model,
+        TokensPrompt:      response.PromptTokens,
+        TokensCompletion:  response.CompletionTokens,
+        TokensTotal:       response.PromptTokens + response.CompletionTokens,
+        CostUSD:           costUSD,
+        PriceUSD:          priceUSD,
+        PricingID:         pricing.ID,
+    }
+
+    if err := u.billingRepo.RecordChatSession(ctx, session); err != nil {
+        u.logger.Error("Failed to record chat session", "error", err)
+        // 記録失敗してもレスポンスは返す
+    }
+
+    // 11. token_usage を更新
+    if err := u.billingRepo.IncrementTokenUsage(ctx, userID, session.TokensTotal); err != nil {
+        u.logger.Error("Failed to increment token usage", "error", err)
+    }
+
+    return response, nil
+}
+
+func (u *AIUsecase) isProviderAllowed(provider, allowedProviders string) bool {
+    // "openai,anthropic,google" のような文字列から判定
+    for _, p := range strings.Split(allowedProviders, ",") {
+        if strings.TrimSpace(p) == provider {
             return true
         }
     }
@@ -739,222 +1314,510 @@ func (s *UserSubscription) CanUseProvider(plan *SubscriptionPlan, provider strin
 }
 ```
 
-#### 2-2. リポジトリ層（internal/infrastructure/persistence/）
+#### カスタムエラーの定義
 
 ```go
-// billing_repository.go
-package persistence
+// internal/domain/errors.go
+package domain
 
-type BillingRepository struct {
-    db *sql.DB
-}
+import "errors"
 
-func (r *BillingRepository) GetActivePricing(ctx context.Context, provider, model string) (*billing.LLMPricing, error) {
-    // SELECT ... FROM llm_pricing WHERE provider = ? AND model = ? AND is_active = true
-}
+var (
+    // サブスク関連
+    ErrNoActiveSubscription   = errors.New("アクティブなサブスクリプションがありません")
+    ErrSubscriptionNotFound   = errors.New("サブスクリプションが見つかりません")
+    ErrSubscriptionCanceled   = errors.New("サブスクリプションは解約されています")
+    ErrSubscriptionUnpaid     = errors.New("お支払いが完了していません")
+    ErrPaymentPastDue         = errors.New("お支払いが遅延しています。カード情報を確認してください")
 
-func (r *BillingRepository) GetActiveSubscription(ctx context.Context, userID uuid.UUID) (*billing.UserSubscription, *billing.SubscriptionPlan, error) {
-    // JOIN query to get both subscription and plan
-}
+    // 制限関連
+    ErrTokenLimitReached      = errors.New("月間トークン制限に達しました。プランをアップグレードしてください")
+    ErrProviderNotAllowed     = errors.New("このプランでは利用できないプロバイダーです")
+    ErrMaxAgentsReached       = errors.New("AI分身の作成上限に達しました")
 
-func (r *BillingRepository) UpdateTokenUsage(ctx context.Context, subscriptionID uuid.UUID, tokensUsed int) error {
-    // UPDATE user_subscriptions SET tokens_used_current_period = tokens_used_current_period + ?
-}
-```
-
-#### 2-3. ユースケース層（internal/usecase/billing/）
-
-```go
-// billing_usecase.go
-package billing
-
-type BillingUsecase struct {
-    billingRepo BillingRepository
-}
-
-// CheckAndRecordUsage AI処理前に制限チェックし、処理後に記録
-func (u *BillingUsecase) CheckAndRecordUsage(
-    ctx context.Context,
-    userID uuid.UUID,
-    provider, model string,
-    promptTokens, completionTokens int,
-) error {
-    // 1. サブスクリプション取得
-    subscription, plan, err := u.billingRepo.GetActiveSubscription(ctx, userID)
-    if err != nil {
-        return err
-    }
-
-    // 2. プロバイダー制限チェック
-    if !subscription.CanUseProvider(plan, provider) {
-        return errors.New("このプランでは利用できないプロバイダーです")
-    }
-
-    // 3. トークン制限チェック
-    totalTokens := promptTokens + completionTokens
-    if subscription.IsOverLimit(plan) && plan.OveragePricePer1kTokens == 0 {
-        return errors.New("月間トークン制限に達しました")
-    }
-
-    // 4. 料金情報取得
-    pricing, err := u.billingRepo.GetActivePricing(ctx, provider, model)
-    if err != nil {
-        return err
-    }
-
-    // 5. コスト・価格計算
-    cost := pricing.CalculateCost(promptTokens, completionTokens)
-    price := pricing.CalculatePrice(promptTokens, completionTokens)
-
-    // 6. ai_chat_sessionsに記録（別のユースケースから呼ばれる想定）
-    // 7. user_subscriptionsの使用量更新
-    if err := u.billingRepo.UpdateTokenUsage(ctx, subscription.ID, totalTokens); err != nil {
-        return err
-    }
-
-    return nil
-}
+    // その他
+    ErrAlreadyExists          = errors.New("既に存在します")
+)
 ```
 
 ---
 
-### フェーズ 3：API 実装
+### フェーズ 5：Frontend 実装
 
-#### 3-1. ハンドラー層（internal/handler/http/）
-
-```go
-// billing_handler.go
-package http
-
-// GET /api/v1/billing/usage/current
-func (h *BillingHandler) GetCurrentUsage(c *gin.Context) {
-    userID := c.GetString("user_id") // 認証ミドルウェアから取得
-
-    usage, err := h.billingUsecase.GetCurrentUsage(ctx, userID)
-    if err != nil {
-        c.JSON(500, gin.H{"error": err.Error()})
-        return
-    }
-
-    c.JSON(200, gin.H{
-        "plan_name": usage.PlanName,
-        "tokens_used": usage.TokensUsed,
-        "tokens_limit": usage.TokensLimit,
-        "tokens_remaining": usage.TokensRemaining,
-        "usage_percent": usage.UsagePercent,
-        "period_end": usage.PeriodEnd,
-    })
-}
-
-// GET /api/v1/billing/plans
-func (h *BillingHandler) GetPlans(c *gin.Context) {
-    plans, err := h.billingUsecase.GetAllPlans(ctx)
-    if err != nil {
-        c.JSON(500, gin.H{"error": err.Error()})
-        return
-    }
-
-    c.JSON(200, plans)
-}
-
-// POST /api/v1/billing/subscription/change
-func (h *BillingHandler) ChangePlan(c *gin.Context) {
-    var req struct {
-        PlanCode string `json:"plan_code"`
-    }
-
-    if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(400, gin.H{"error": err.Error()})
-        return
-    }
-
-    userID := c.GetString("user_id")
-
-    if err := h.billingUsecase.ChangePlan(ctx, userID, req.PlanCode); err != nil {
-        c.JSON(500, gin.H{"error": err.Error()})
-        return
-    }
-
-    c.JSON(200, gin.H{"message": "プランを変更しました"})
-}
-```
-
----
-
-### フェーズ 4：Frontend 実装
-
-#### 4-1. 使用量表示コンポーネント
+#### 5-1. Stripe Checkout 統合
 
 ```typescript
-// components/billing/UsageDisplay.tsx
-interface UsageData {
-  planName: string;
-  tokensUsed: number;
-  tokensLimit: number;
-  tokensRemaining: number;
-  usagePercent: number;
-  periodEnd: string;
-}
+// lib/actions/billing.ts
+export async function createCheckoutSession(priceId: string) {
+  const res = await fetch("/api/v1/billing/checkout", {
+    method: "POST",
+    body: JSON.stringify({ price_id: priceId }),
+  });
 
-export function UsageDisplay() {
-  const { data } = useSWR<UsageData>("/api/v1/billing/usage/current");
-
-  return (
-    <div>
-      <h3>今月の使用量</h3>
-      <p>プラン: {data?.planName}</p>
-      <ProgressBar value={data?.usagePercent} />
-      <p>
-        {data?.tokensUsed.toLocaleString()} /{" "}
-        {data?.tokensLimit.toLocaleString()} トークン
-      </p>
-      <p>残り: {data?.tokensRemaining.toLocaleString()} トークン</p>
-      <p>更新日: {new Date(data?.periodEnd).toLocaleDateString()}</p>
-    </div>
-  );
+  const { session_url } = await res.json();
+  window.location.href = session_url;
 }
 ```
+
+````go
+// Backend-go側
+func (h *BillingHandler) CreateCheckoutSession(c *gin.Context) {
+    userID := c.GetString("user_id")
+    priceID := c.PostForm("price_id")
+
+    user, _ := h.userRepo.GetByID(ctx, userID)
+
+    session, _ := h.stripeClient.CreateCheckoutSession(&stripe.CheckoutSessionParams{
+        Customer: stripe.String(user.StripeCustomerID),
+        LineItems: []*stripe.CheckoutSessionLineItemParams{
+            {Price: stripe.String(priceID), Quantity: stripe.Int64(1)},
+        },
+        Mode: stripe.String(string(stripe.CheckoutSessionModeSubscription)),
+        SuccessURL: stripe.String("https://your-app.com/success"),
+        CancelURL: stripe.String("https://your-app.com/cancel"),
+    })
+
+    c.JSON(200, gin.H{"session_url": session.URL})
+}
+
+---
+
+## エラーハンドリング
+
+### Stripe API のエラー
+
+#### エラーの種類
+
+```go
+import "github.com/stripe/stripe-go/v76"
+
+func createSubscription(params *stripe.SubscriptionParams) (*stripe.Subscription, error) {
+    sub, err := subscription.New(params)
+    if err != nil {
+        // Stripe エラーの判定
+        if stripeErr, ok := err.(*stripe.Error); ok {
+            switch stripeErr.Code {
+            case stripe.ErrorCodeCardDeclined:
+                return nil, fmt.Errorf("カードが拒否されました: %s", stripeErr.DeclineCode)
+
+            case stripe.ErrorCodeExpiredCard:
+                return nil, errors.New("カードの有効期限が切れています")
+
+            case stripe.ErrorCodeInsufficientFunds:
+                return nil, errors.New("残高不足です")
+
+            case stripe.ErrorCodeResourceMissing:
+                return nil, errors.New("指定されたリソースが見つかりません")
+
+            case stripe.ErrorCodeInvalidRequest:
+                return nil, fmt.Errorf("リクエストが無効です: %s", stripeErr.Msg)
+
+            default:
+                return nil, fmt.Errorf("決済エラー: %s", stripeErr.Msg)
+            }
+        }
+
+        return nil, fmt.Errorf("unexpected error: %w", err)
+    }
+
+    return sub, nil
+}
+```
+
+#### よくあるエラー
+
+| エラーコード              | 原因                 | 対処法                                 |
+| ------------------------- | -------------------- | -------------------------------------- |
+| `card_declined`           | カード拒否           | 別のカードを試す、カード会社に連絡     |
+| `expired_card`            | 期限切れ             | カード情報を更新                       |
+| `insufficient_funds`      | 残高不足             | 入金を依頼                             |
+| `invalid_request_error`   | API 呼び出しミス     | パラメータを確認                       |
+| `rate_limit_error`        | レート制限           | リトライ（指数バックオフ）             |
+| `authentication_error`    | API キーが無効       | API キーを確認                         |
+| `resource_missing`        | リソースが存在しない | ID を確認、または削除済みリソースの確認 |
+
+### エラーレスポンスの統一
+
+```go
+// internal/handler/http/error.go
+package http
+
+type ErrorResponse struct {
+    Error   string `json:"error"`
+    Code    string `json:"code"`
+    Message string `json:"message"`
+}
+
+func HandleError(c *gin.Context, err error) {
+    var statusCode int
+    var code string
+    var message string
+
+    switch {
+    case errors.Is(err, domain.ErrTokenLimitReached):
+        statusCode = 403
+        code = "TOKEN_LIMIT_REACHED"
+        message = "月間トークン制限に達しました"
+
+    case errors.Is(err, domain.ErrSubscriptionCanceled):
+        statusCode = 402
+        code = "SUBSCRIPTION_CANCELED"
+        message = "サブスクリプションが解約されています"
+
+    case errors.Is(err, domain.ErrPaymentPastDue):
+        statusCode = 402
+        code = "PAYMENT_PAST_DUE"
+        message = "お支払いが遅延しています"
+
+    default:
+        statusCode = 500
+        code = "INTERNAL_ERROR"
+        message = "サーバーエラーが発生しました"
+    }
+
+    c.JSON(statusCode, ErrorResponse{
+        Error:   err.Error(),
+        Code:    code,
+        Message: message,
+    })
+}
+```
+
+---
+
+## セキュリティ
+
+### 1. API キーの管理
+
+#### ❌ 絶対にダメな例
+
+```go
+// コードに直書き
+const stripeKey = "sk_live_xxxxx"  // 絶対NG！
+
+// リポジトリにコミット
+// .env ファイルをコミット  // 絶対NG！
+```
+
+#### ✅ 正しい方法
+
+```bash
+# .env（ローカル開発用）
+STRIPE_SECRET_KEY=sk_test_xxxxx
+STRIPE_WEBHOOK_SECRET=whsec_xxxxx
+
+# .gitignore に追加
+.env
+.env.local
+.env.production
+```
+
+```go
+// 環境変数から読み込む
+func main() {
+    stripeKey := os.Getenv("STRIPE_SECRET_KEY")
+    if stripeKey == "" {
+        log.Fatal("STRIPE_SECRET_KEY is not set")
+    }
+
+    stripe.Key = stripeKey
+}
+```
+
+#### 本番環境
+
+```bash
+# AWS Secrets Manager、Parameter Store など使用
+# または環境変数として設定
+
+# Vercel の場合
+vercel env add STRIPE_SECRET_KEY production
+
+# Docker の場合
+docker run -e STRIPE_SECRET_KEY=sk_live_xxxxx ...
+```
+
+---
+
+### 2. Webhook 署名検証
+
+#### ❌ 検証なし（危険！）
+
+```go
+// なりすまし可能！
+func HandleWebhook(c *gin.Context) {
+    var event stripe.Event
+    json.NewDecoder(c.Request.Body).Decode(&event)  // NG！
+
+    // 処理...
+}
+```
+
+#### ✅ 署名検証（必須）
+
+```go
+func HandleWebhook(c *gin.Context) {
+    payload, _ := io.ReadAll(c.Request.Body)
+    signature := c.GetHeader("Stripe-Signature")
+
+    // 署名検証
+    event, err := webhook.ConstructEvent(
+        payload,
+        signature,
+        webhookSecret,
+    )
+    if err != nil {
+        c.JSON(400, gin.H{"error": "Invalid signature"})
+        return  // 不正なリクエストは拒否
+    }
+
+    // 処理...
+}
+```
+
+---
+
+### 3. HTTPS 必須
+
+```
+❌ http://yourdomain.com/webhooks/stripe   # 傍受される
+✅ https://yourdomain.com/webhooks/stripe  # 安全
+```
+
+**本番環境では必ず HTTPS を使用**
+
+---
+
+### 4. レート制限
+
+```go
+// Webhook 用のレート制限
+import "golang.org/x/time/rate"
+
+var webhookLimiter = rate.NewLimiter(100, 200) // 秒間100リクエスト
+
+func WebhookRateLimitMiddleware() gin.HandlerFunc {
+    return func(c *gin.Context) {
+        if !webhookLimiter.Allow() {
+            c.JSON(429, gin.H{"error": "Too many requests"})
+            c.Abort()
+            return
+        }
+        c.Next()
+    }
+}
+```
+
+---
+
+### 5. 機密情報のログ出力
+
+#### ❌ カード情報を絶対にログに出さない
+
+```go
+// NG！
+log.Printf("Card: %s", cardNumber)
+```
+
+#### ✅ マスキングする
+
+```go
+// OK
+log.Printf("Card: ****%s", last4)
+```
+
+---
+
+### 6. SQL インジェクション対策
+
+#### ❌ 文字列結合（危険）
+
+```go
+// SQL インジェクション可能！
+query := fmt.Sprintf("SELECT * FROM users WHERE email = '%s'", email)
+```
+
+#### ✅ プレースホルダー使用
+
+```go
+// 安全
+query := "SELECT * FROM users WHERE email = $1"
+row := db.QueryRow(query, email)
+```
+
+---
+
+### 7. べき等性の保証（Webhook）
+
+Webhook は重複して送信される可能性があるため、べき等性を保証する：
+
+```go
+// イベント ID をテーブルに記録
+CREATE TABLE webhook_events (
+    event_id VARCHAR(255) PRIMARY KEY,
+    processed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+func HandleWebhook(c *gin.Context) {
+    event, _ := webhook.ConstructEvent(...)
+
+    // 1. 既に処理済みかチェック
+    var exists bool
+    db.QueryRow("SELECT EXISTS(SELECT 1 FROM webhook_events WHERE event_id = $1)", event.ID).Scan(&exists)
+
+    if exists {
+        // 既に処理済み
+        c.JSON(200, gin.H{"received": true})
+        return
+    }
+
+    // 2. 処理実行
+    // ...
+
+    // 3. イベント ID を記録
+    db.Exec("INSERT INTO webhook_events (event_id) VALUES ($1)", event.ID)
+
+    c.JSON(200, gin.H{"received": true})
+}
+```
+
+---
+
+## 実装チェックリスト
+
+### フェーズ 1：セットアップ ✓
+
+- [ ] Stripe アカウント作成
+- [ ] テストモードの API キー取得
+- [ ] 環境変数に保存（`.env`）
+- [ ] `.gitignore`に`.env`を追加
+- [ ] Stripe Go SDK をインストール
+  ```bash
+  go get github.com/stripe/stripe-go/v76
+  ```
+
+---
+
+### フェーズ 2：プラン作成 ✓
+
+- [ ] Free、Basic、Pro の 3 プランを Stripe Dashboard で作成
+- [ ] Price ID を環境変数に保存
+- [ ] metadata にトークン制限などを設定
+
+---
+
+### フェーズ 3：DB マイグレーション ✓
+
+- [ ] マイグレーションファイル作成
+- [ ] `llm_pricing`テーブル作成
+- [ ] `token_usage`テーブル作成
+- [ ] `users`テーブルに Stripe カラム追加
+- [ ] `ai_chat_sessions`テーブルに原価カラム追加
+- [ ] 初期データ投入（LLM 料金）
+- [ ] マイグレーション実行
+
+---
+
+### フェーズ 4：Backend 実装 ✓
+
+- [ ] Stripe クライアント初期化
+- [ ] ユーザー登録時に Customer 作成
+- [ ] カード登録 API 実装
+- [ ] Subscription 作成 API 実装
+- [ ] Webhook ハンドラー実装
+  - [ ] `customer.subscription.created`
+  - [ ] `customer.subscription.updated`
+  - [ ] `customer.subscription.deleted`
+  - [ ] `invoice.payment_succeeded`
+  - [ ] `invoice.payment_failed`
+- [ ] AI 処理時のトークン制限チェック
+- [ ] トークン使用量更新処理
+- [ ] エラーハンドリング実装
+- [ ] カスタムエラー定義
+
+---
+
+### フェーズ 5：ローカルテスト ✓
+
+- [ ] Stripe CLI インストール
+  ```bash
+  brew install stripe/stripe-cli/stripe
+  ```
+- [ ] Webhook 転送開始
+  ```bash
+  stripe listen --forward-to localhost:8080/webhooks/stripe
+  ```
+- [ ] テストカードで決済テスト
+  ```
+  4242 4242 4242 4242
+  ```
+- [ ] Webhook イベントテスト
+  ```bash
+  stripe trigger invoice.payment_succeeded
+  ```
+
+---
+
+### フェーズ 6：Frontend 実装 ✓
+
+- [ ] Stripe.js 導入
+- [ ] カード登録フォーム
+- [ ] プラン選択画面
+- [ ] 使用量ダッシュボード
+- [ ] エラー表示
+
+---
+
+### フェーズ 7：本番移行 ✓
+
+- [ ] 本番モードの API キー取得
+- [ ] 本番環境に環境変数設定
+- [ ] Webhook URL を本番環境に登録
+  ```
+  https://yourdomain.com/webhooks/stripe
+  ```
+- [ ] Webhook 署名シークレット取得（本番用）
+- [ ] 実際のカードでテスト
+- [ ] エラーモニタリング設定
+- [ ] ログ出力の確認
+- [ ] セキュリティチェック
+  - [ ] HTTPS 使用
+  - [ ] API キーが環境変数
+  - [ ] Webhook 署名検証
+  - [ ] SQL インジェクション対策
+  - [ ] べき等性の保証
 
 ---
 
 ## 運用ガイド
 
-### 日次バッチ処理
+### 日次バッチ処理（最小限）
 
-#### 実行内容
+**重要**：Stripeが自動課金を行うため、複雑なバッチ処理は**不要**です。
 
-1. **期限切れサブスクリプションの更新**
-2. **使用量アラートの送信**
-3. **コスト集計レポートの生成**
-
-#### 実装例
+#### 実行内容（推奨）
 
 ```go
-// scripts/daily_billing_batch.go
+// scripts/daily_tasks.go
 func main() {
-    // 1. 期限切れサブスクリプションを取得
-    expiredSubs := getExpiredSubscriptions()
+    // 1. 使用量アラートの送信（80%/90%/100%）
+    sendUsageAlerts()
 
-    for _, sub := range expiredSubs {
-        if sub.CancelledAt == nil {
-            // 自動更新
-            renewSubscription(sub)
-        } else {
-            // 解約済み → expired に変更
-            expireSubscription(sub)
-        }
-    }
-
-    // 2. 使用量アラート
-    highUsageUsers := getUsersNearLimit()
-    for _, user := range highUsageUsers {
-        sendUsageAlert(user)
-    }
-
-    // 3. 日次レポート生成
+    // 2. コスト集計レポートの生成
     generateDailyReport()
+
+    // 3. Stripeとの同期チェック（念のため）
+    verifySyncWithStripe()
 }
-```
+````
+
+**不要なもの**：
+
+- ❌ サブスク期限チェック → Stripe が管理
+- ❌ 自動課金処理 → Stripe が実行
+- ❌ 決済リトライ → Stripe が自動実行
+
+---
 
 ### LLM 料金の更新手順
 
@@ -980,43 +1843,66 @@ INSERT INTO llm_pricing (
 );
 ```
 
+---
+
 ### プラン料金の変更手順
 
-#### 既存ユーザーへの影響を考慮
+#### Stripe Product/Price を更新
 
-```sql
--- 1. 新しいプランを作成（別のplan_codeで）
-INSERT INTO subscription_plans (
-    plan_code, name, description,
-    monthly_price_jpy, monthly_token_limit, overage_price_per_1k_tokens,
-    max_ai_agents, allowed_providers, display_order
-) VALUES (
-    'basic_v2', 'Basic', '個人利用向け（新料金）',
-    1280, 1000000, 0.5,
-    3, ARRAY['openai'], 2
-);
+```go
+// 新しいPriceを作成（既存ユーザーは影響なし）
+newPrice, _ := price.New(&stripe.PriceParams{
+    Product: stripe.String(productID),
+    UnitAmount: stripe.Int64(128000), // 1280円に値上げ
+    Currency: stripe.String("jpy"),
+    Recurring: &stripe.PriceRecurringParams{
+        Interval: stripe.String("month"),
+    },
+    Metadata: map[string]string{
+        "monthly_token_limit": "1500000", // 制限も変更
+    },
+})
 
--- 2. 旧プランを非表示に（既存ユーザーは継続可能）
-UPDATE subscription_plans
-SET is_visible = false
-WHERE plan_code = 'basic';
-
--- 3. 既存ユーザーは次回更新時に新プランへ移行
+// 環境変数を更新
+STRIPE_PRICE_BASIC=price_new_xxxxx
 ```
+
+**既存ユーザーへの対応**：
+
+1. 既存ユーザーは旧 Price のまま継続
+2. 新規ユーザーは新 Price を使用
+3. 任意で移行キャンペーンを実施
+
+---
 
 ### モニタリング
 
-#### 監視すべき指標
+#### Stripe Dashboard で監視
+
+- MRR（月次経常収益）
+- Churn Rate（解約率）
+- 決済失敗率
+- アクティブサブスク数
+
+#### 自前 DB で監視
 
 1. **全体の利益率**
+
+   ```sql
+   SELECT
+       SUM(price_usd - cost_usd) / SUM(cost_usd) * 100 as profit_margin
+   FROM ai_chat_sessions
+   WHERE started_at >= DATE_TRUNC('month', CURRENT_TIMESTAMP);
+   ```
 
    - 目標：30%以上
    - アラート：20%を下回ったら通知
 
 2. **プランごとの収益**
 
-   - Free ユーザーのコスト
-   - 有料プランの収益
+   ```sql
+   -- Stripe APIから取得したプラン別収益を分析
+   ```
 
 3. **モデル別のコスト**
 
@@ -1029,130 +1915,213 @@ WHERE plan_code = 'basic';
 
 ---
 
-## FAQ
+### トラブルシューティング
 
-### Q1: ユーザー登録時に Free プランを自動作成するには？
+#### Q: Webhook が届かない
+
+**原因**：
+
+- Webhook URL が間違っている
+- 署名検証に失敗している
+- サーバーがダウンしている
+
+**対処**：
+
+```bash
+# Stripe CLIでローカルテスト
+stripe listen --forward-to localhost:8080/api/v1/webhooks/stripe
+
+# Stripe Dashboardでログ確認
+https://dashboard.stripe.com/webhooks
+```
+
+#### Q: 課金が二重になった
+
+**原因**：Webhook が重複して処理された
+
+**対処**：
 
 ```go
-// ユーザー作成時にトリガーまたはアプリケーション層で実行
-func CreateUserWithFreeSubscription(ctx context.Context, user *User) error {
-    tx, _ := db.BeginTx(ctx, nil)
-    defer tx.Rollback()
-
-    // 1. ユーザー作成
-    if err := createUser(tx, user); err != nil {
-        return err
+// Webhookのべき等性を保証
+func (h *WebhookHandler) handlePaymentSucceeded(event stripe.Event) {
+    // 1. イベントIDをチェック
+    if h.eventRepo.Exists(event.ID) {
+        return // 既に処理済み
     }
 
-    // 2. Freeプランを取得
-    freePlan, err := getPlanByCode(tx, "free")
-    if err != nil {
-        return err
-    }
+    // 2. 処理実行
+    // ...
 
-    // 3. サブスクリプション作成
-    subscription := &UserSubscription{
-        UserID:      user.ID,
-        PlanID:      freePlan.ID,
-        Status:      "active",
-        PeriodStart: time.Now(),
-        PeriodEnd:   time.Now().AddDate(0, 1, 0), // 1ヶ月後
-        TokensUsedCurrentPeriod: 0,
-    }
-
-    if err := createSubscription(tx, subscription); err != nil {
-        return err
-    }
-
-    return tx.Commit()
+    // 3. イベントIDを記録
+    h.eventRepo.Save(event.ID)
 }
 ```
+
+---
+
+## FAQ
+
+### Q1: ユーザー登録時に Free プランを自動付与するには？
+
+```go
+func CreateUser(ctx context.Context, email, name string) error {
+    // 1. ユーザー作成
+    user := createUser(email, name)
+
+    // 2. Stripe Customerを作成
+    customer, _ := stripeClient.CreateCustomer(email, name, map[string]string{
+        "user_id": user.ID.String(),
+    })
+
+    // 3. DBに保存
+    user.StripeCustomerID = customer.ID
+    updateUser(user)
+
+    // 4. Freeプランを自動付与
+    subscription, _ := stripeClient.CreateSubscription(customer.ID, STRIPE_PRICE_FREE)
+
+    // 5. Webhook（customer.subscription.created）が自動で飛んでくる
+    // → usersテーブルとtoken_usageが自動更新される
+
+    return nil
+}
+```
+
+---
 
 ### Q2: 超過料金はどう計算する？
 
 ```go
-func CalculateOverageCost(
-    plan *SubscriptionPlan,
-    tokensUsed int,
-) float64 {
-    if plan.MonthlyTokenLimit == -1 {
-        return 0 // 無制限
-    }
+// Webhook（invoice.payment_succeeded）で実行
+func (h *WebhookHandler) handlePaymentSucceeded(event stripe.Event) {
+    // 1. 前期間のトークン使用量を取得
+    usage := h.billingRepo.GetTokenUsage(subscriptionID)
 
-    overageTokens := tokensUsed - plan.MonthlyTokenLimit
-    if overageTokens <= 0 {
-        return 0 // 制限内
-    }
+    // 2. Stripe APIからプラン情報取得
+    price, _ := h.stripeClient.GetPrice(priceID)
+    monthlyTokenLimit := parseIntメタデータ["monthly_token_limit"])
+    overagePricePer1kTokens := parseFloat(metadata["overage_price_per_1k_tokens"])
 
-    // 超過料金 = (超過トークン数 / 1000) * 超過単価
-    return float64(overageTokens) / 1000.0 * plan.OveragePricePer1kTokens
+    // 3. 超過分を計算
+    if usage.TokensUsed > monthlyTokenLimit {
+        overageTokens := usage.TokensUsed - monthlyTokenLimit
+        overageCost := float64(overageTokens) / 1000.0 * overagePricePer1kTokens
+
+        // 4. Stripeに追加課金を作成（次回請求時に自動課金）
+        h.stripeClient.CreateInvoiceItem(customerID, int64(overageCost*100), "超過トークン料金")
+    }
 }
 ```
 
-### Q3: 利益率が低いモデルの使用を制限するには？
+---
 
-```sql
--- Freeプランでは低コストモデルのみ許可
-UPDATE subscription_plans
-SET allowed_providers = ARRAY['openai']
-WHERE plan_code = 'free';
+### Q3: プランのトークン制限を変更するには？
 
--- アプリケーション層でさらに細かく制御
--- allowed_models: ['gpt-4o-mini'] のようなカラムを追加
+```go
+// Stripe Product metadataを更新
+product, _ := stripe.products.update(productID, &stripe.ProductParams{
+    Metadata: map[string]string{
+        "monthly_token_limit": "2000000", // 200万トークンに増やす
+    },
+})
+
+// 既存サブスクは即座に新制限が適用される
 ```
+
+---
 
 ### Q4: 日割り計算は必要？
 
-**推奨：シンプルにするため日割り計算は不要**
-
-- アップグレード：即座に反映、差額は次回請求時に調整
-- ダウングレード：期間終了時に変更
-
-日割りが必要な場合：
+**Stripe が自動で処理します**
 
 ```go
-func CalculateProration(
-    oldPrice, newPrice int,
-    periodStart, changeDate, periodEnd time.Time,
-) int {
-    totalDays := periodEnd.Sub(periodStart).Hours() / 24
-    remainingDays := periodEnd.Sub(changeDate).Hours() / 24
-
-    oldRefund := int(float64(oldPrice) * (remainingDays / totalDays))
-    newCharge := int(float64(newPrice) * (remainingDays / totalDays))
-
-    return newCharge - oldRefund
-}
+// プラン変更時
+stripe.subscriptions.update(subscriptionID, &stripe.SubscriptionParams{
+    Items: []*stripe.SubscriptionItemsParams{
+        {Price: stripe.String(newPriceID)},
+    },
+    ProrationBehavior: stripe.String("always_invoice"), // 自動で日割り計算
+})
 ```
+
+- アップグレード：即座に変更、差額を即座に請求
+- ダウングレード：`cancel_at_period_end: true` で期間終了時に変更
 
 ---
 
 ## まとめ
 
+### 旧設計との比較
+
+| 項目       | 旧設計（独自実装） | 新設計（Stripe 連携）   |
+| ---------- | ------------------ | ----------------------- |
+| テーブル数 | 3 つ新規           | 1 つ新規（token_usage） |
+| バッチ処理 | 必須（複雑）       | ほぼ不要                |
+| 実装コスト | 高い               | 低い                    |
+| バグリスク | 高い               | 低い                    |
+| 保守性     | 低い               | 高い                    |
+| 決済処理   | 自前実装           | Stripe 任せ             |
+| PCI DSS    | 要対応             | Stripe 準拠             |
+
 ### このシステムの強み
 
-✅ **シンプル**：テーブル 3 つ追加、既存 1 つ拡張のみ  
+✅ **シンプル**：テーブル 2 つ（llm_pricing + token_usage）のみ  
+✅ **Stripe 活用**：サブスク管理を完全に任せる  
+✅ **バッチレス**：複雑な定期処理が不要  
 ✅ **利益保証**：DB 制約で販売価格 ≥ 原価を強制  
 ✅ **透明性**：原価と売上を完全に分離して記録  
-✅ **拡張性**：後から機能追加が容易  
-✅ **運用容易**：3 プランのみで管理しやすい
+✅ **Webhook 駆動**：リアルタイム同期  
+✅ **PCI DSS 準拠**：決済は Stripe 任せで安全  
+✅ **エラーハンドリング**：すべてのエラーケースに対応  
+✅ **セキュリティ**：API キー管理、署名検証、べき等性を保証
 
-### 実装優先度
+### 実装の流れ
 
-1. **フェーズ 1（必須）**：テーブル作成、初期データ投入
-2. **フェーズ 2（必須）**：Backend-go のドメイン・リポジトリ層
-3. **フェーズ 3（必須）**：使用量チェック・記録ロジック
-4. **フェーズ 4（推奨）**：Frontend 実装、ダッシュボード
-5. **フェーズ 5（後回し OK）**：バッチ処理、アラート、決済連携
+上記の[実装チェックリスト](#実装チェックリスト)に沿って、順番に実装を進めてください：
+
+1. **フェーズ 1（必須）**：Stripe アカウント設定、API キー取得
+2. **フェーズ 2（必須）**：Product/Price 作成（Stripe Dashboard）
+3. **フェーズ 3（必須）**：DB マイグレーション実行
+4. **フェーズ 4（必須）**：Backend 実装（Customer/Subscription/Webhook）
+5. **フェーズ 5（必須）**：ローカルテスト（Stripe CLI 使用）
+6. **フェーズ 6（推奨）**：Frontend 実装（Stripe Checkout 連携）
+7. **フェーズ 7（本番）**：本番環境への移行、セキュリティチェック
+
+### 開発時の注意点
+
+1. **常にテストモードで開発**
+
+   - 本番モードのキーは最後まで使わない
+   - テストカード `4242 4242 4242 4242` を使用
+
+2. **Webhook は Stripe CLI でテスト**
+
+   ```bash
+   stripe listen --forward-to localhost:8080/webhooks/stripe
+   ```
+
+3. **エラーハンドリングを徹底**
+
+   - Stripe API のエラーを適切に処理
+   - ユーザーフレンドリーなエラーメッセージ
+
+4. **ログを必ず出力**
+
+   - すべての Webhook イベントをログに記録
+   - トラブルシューティングに必須
+
+5. **べき等性を保証**
+   - Webhook は重複送信される可能性あり
+   - イベント ID をテーブルに記録
 
 ### 関連ドキュメント
 
+- [Stripe Billing 公式ドキュメント](https://stripe.com/docs/billing)
+- [Stripe Webhook 公式ドキュメント](https://stripe.com/docs/webhooks)
 - [DATABASE_DESIGN.md](../DATABASE_DESIGN.md) - 全体の DB 設計
-- [DATABASE_DESIGN_MVP.md](../DATABASE_DESIGN_MVP.md) - MVP 版 DB 設計
-- マイグレーションファイル: `backend-go/schema/migrations/`
 
 ---
 
-**最終更新**: 2024 年 12 月  
+**最終更新**: 2025 年 1 月（Stripe 連携版）  
 **作成者**: AI Assistant  
-**レビュー**: 要レビュー
+**レビュー**: 上司フィードバック反映済み

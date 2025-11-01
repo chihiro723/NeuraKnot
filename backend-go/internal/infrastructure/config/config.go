@@ -19,6 +19,9 @@ type Config struct {
 	// AI Service設定
 	AIService AIServiceConfig
 
+	// S3/MinIO設定
+	S3 S3Config
+
 	// ログ設定
 	Log LogConfig
 
@@ -56,6 +59,16 @@ type CognitoConfig struct {
 type AIServiceConfig struct {
 	URL     string
 	Timeout int
+}
+
+// S3Config S3/MinIO設定
+type S3Config struct {
+	BucketName      string
+	Region          string
+	Endpoint        string // MinIO用（空の場合はAWS S3を使用）
+	BaseURL         string // 画像URLのベースURL
+	AccessKeyID     string
+	SecretAccessKey string
 }
 
 // LogConfig ログ設定
@@ -99,6 +112,14 @@ func Load() *Config {
 		AIService: AIServiceConfig{
 			URL:     getEnv("AI_SERVICE_URL", "http://localhost:8001"),
 			Timeout: getEnvAsInt("AI_SERVICE_TIMEOUT", 120),
+		},
+		S3: S3Config{
+			BucketName:      getEnv("S3_BUCKET_NAME", "neuraknot-dev-media"),
+			Region:          getEnv("S3_REGION", "ap-northeast-1"),
+			Endpoint:        getEnv("S3_ENDPOINT", ""),
+			BaseURL:         getEnv("S3_BASE_URL", ""),
+			AccessKeyID:     getEnv("AWS_ACCESS_KEY_ID", ""),
+			SecretAccessKey: getEnv("AWS_SECRET_ACCESS_KEY", ""),
 		},
 		Log: LogConfig{
 			Level:  getEnv("LOG_LEVEL", "info"),

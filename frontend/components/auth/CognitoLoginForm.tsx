@@ -159,13 +159,13 @@ export function CognitoLoginForm() {
       </div>
 
       <div className="text-center">
-        <p className="text-sm text-white/50">
+        <button
+          type="button"
+          onClick={() => router.push("/auth/forgot-password")}
+          className="text-sm text-blue-400 underline transition-colors hover:text-blue-300"
+        >
           パスワードを忘れた場合
-          <br />
-          <span className="text-xs">
-            ※パスワードリセット機能は近日実装予定です
-          </span>
-        </p>
+        </button>
       </div>
     </form>
   );

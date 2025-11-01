@@ -15,7 +15,8 @@ type SignInRequest struct {
 
 // UpdateProfileRequest プロフィール更新リクエスト
 type UpdateProfileRequest struct {
-	DisplayName string `json:"display_name" binding:"required,min=1,max=50"`
+	DisplayName string  `json:"display_name" binding:"required,min=1,max=50"`
+	AvatarURL   *string `json:"avatar_url,omitempty"`
 }
 
 // ChangeEmailRequest メールアドレス変更リクエスト

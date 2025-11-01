@@ -10,6 +10,7 @@ import (
 	"backend-go/internal/infrastructure/external"
 	"backend-go/internal/infrastructure/persistence"
 	userrepo "backend-go/internal/infrastructure/persistence/user"
+	"backend-go/internal/infrastructure/storage"
 	aiusecase "backend-go/internal/usecase/ai"
 	analyticsusecase "backend-go/internal/usecase/analytics"
 	chatusecase "backend-go/internal/usecase/chat"
@@ -40,6 +41,19 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 	engine.Use(gin.Recovery())
 	engine.Use(middleware.CORSMiddleware())
 
+	// S3/MinIOクライアントの初期化
+	s3Client, err := storage.NewS3Client(
+		cfg.S3.BucketName,
+		cfg.S3.Region,
+		cfg.S3.Endpoint,
+		cfg.S3.BaseURL,
+		cfg.S3.AccessKeyID,
+		cfg.S3.SecretAccessKey,
+	)
+	if err != nil {
+		panic("Failed to create S3 client: " + err.Error())
+	}
+
 	// 依存関係を注入
 	userRepo := userrepo.NewRepository(db.DB)
 	authService, err := external.NewCognitoService(cfg, userRepo)
@@ -47,7 +61,7 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 		panic("Failed to create Cognito service: " + err.Error())
 	}
 
-	userService := userusecase.NewService(userRepo, authService)
+	userService := userusecase.NewService(userRepo, authService, s3Client)
 	userHandler := NewUserHandler(userService)
 
 	// AI関連の依存関係
@@ -83,7 +97,7 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 	}
 
 	// AI関連のユースケースとハンドラー
-	agentUsecase := aiusecase.NewAgentUsecase(aiAgentRepo)
+	agentUsecase := aiusecase.NewAgentUsecase(aiAgentRepo, s3Client)
 	chatUsecase := chatusecase.NewChatUsecase(aiAgentRepo, conversationRepo, messageRepo, toolUsageRepo, chatSessionRepo, aiAgentServiceRepo, serviceConfigRepo, aiClient)
 
 	aiAgentHandler := NewAIAgentHandler(agentUsecase, serviceUsecase, aiAgentServiceRepo)
@@ -97,8 +111,11 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 	analyticsUsecase := analyticsusecase.NewAnalyticsUsecase(analyticsRepo)
 	analyticsHandler := NewAnalyticsHandler(analyticsUsecase)
 
+	// Upload関連のハンドラー
+	uploadHandler := NewUploadHandler(userService, agentUsecase, s3Client)
+
 	// ルートを設定
-	setupRoutes(engine, userHandler, aiAgentHandler, chatHandler, serviceHandler, promptHandler, analyticsHandler, authService)
+	setupRoutes(engine, userHandler, aiAgentHandler, chatHandler, serviceHandler, promptHandler, analyticsHandler, uploadHandler, authService)
 
 	return &Router{
 		engine: engine,
@@ -106,7 +123,7 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 }
 
 // setupRoutes ルートを設定
-func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *AIAgentHandler, chatHandler *ChatHandler, serviceHandler *ServiceHandler, promptHandler *PromptHandler, analyticsHandler *AnalyticsHandler, authService user.AuthService) {
+func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *AIAgentHandler, chatHandler *ChatHandler, serviceHandler *ServiceHandler, promptHandler *PromptHandler, analyticsHandler *AnalyticsHandler, uploadHandler *UploadHandler, authService user.AuthService) {
 	// ヘルスチェック（ALB用に/api/healthも追加）
 	engine.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -206,6 +223,14 @@ func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *A
 		analyticsRoutes.Use(authMiddleware.RequireAuth())
 		{
 			analyticsRoutes.GET("", analyticsHandler.GetUserAnalytics)
+		}
+
+		// アップロード関連（認証必要）
+		upload := v1.Group("/upload")
+		upload.Use(authMiddleware.RequireAuth())
+		{
+			upload.POST("/avatar/user", uploadHandler.UploadUserAvatar)
+			upload.POST("/avatar/agent/:id", uploadHandler.UploadAgentAvatar)
 		}
 	}
 }

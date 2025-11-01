@@ -23,13 +23,14 @@ func NewRepository(db *sql.DB) user.UserRepository {
 // Save ユーザーを保存
 func (r *Repository) Save(ctx context.Context, user *user.User) error {
 	query := `
-		INSERT INTO users (id, cognito_user_id, email, display_name, status, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO users (id, cognito_user_id, email, display_name, avatar_url, status, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		ON CONFLICT (id) 
 		DO UPDATE SET 
 			cognito_user_id = EXCLUDED.cognito_user_id,
 			email = EXCLUDED.email,
 			display_name = EXCLUDED.display_name,
+			avatar_url = EXCLUDED.avatar_url,
 			status = EXCLUDED.status,
 			updated_at = EXCLUDED.updated_at
 	`
@@ -39,6 +40,7 @@ func (r *Repository) Save(ctx context.Context, user *user.User) error {
 		user.CognitoUserID,
 		user.Email.String(),
 		user.DisplayName,
+		user.AvatarURL,
 		user.Status.String(),
 		user.CreatedAt,
 		user.UpdatedAt,
@@ -54,7 +56,7 @@ func (r *Repository) Save(ctx context.Context, user *user.User) error {
 // GetByID IDでユーザーを取得
 func (r *Repository) GetByID(ctx context.Context, id user.UserID) (*user.User, error) {
 	query := `
-		SELECT id, cognito_user_id, email, display_name, status, created_at, updated_at
+		SELECT id, cognito_user_id, email, display_name, avatar_url, status, created_at, updated_at
 		FROM users
 		WHERE id = $1
 	`
@@ -68,6 +70,7 @@ func (r *Repository) GetByID(ctx context.Context, id user.UserID) (*user.User, e
 		&u.CognitoUserID,
 		&email,
 		&u.DisplayName,
+		&u.AvatarURL,
 		&status,
 		&createdAt,
 		&updatedAt,
@@ -112,7 +115,7 @@ func (r *Repository) GetByID(ctx context.Context, id user.UserID) (*user.User, e
 // GetByCognitoUserID CognitoユーザーIDでユーザーを取得
 func (r *Repository) GetByCognitoUserID(ctx context.Context, cognitoUserID string) (*user.User, error) {
 	query := `
-		SELECT id, cognito_user_id, email, display_name, status, created_at, updated_at
+		SELECT id, cognito_user_id, email, display_name, avatar_url, status, created_at, updated_at
 		FROM users
 		WHERE cognito_user_id = $1
 	`
@@ -126,6 +129,7 @@ func (r *Repository) GetByCognitoUserID(ctx context.Context, cognitoUserID strin
 		&u.CognitoUserID,
 		&email,
 		&u.DisplayName,
+		&u.AvatarURL,
 		&status,
 		&createdAt,
 		&updatedAt,
@@ -170,7 +174,7 @@ func (r *Repository) GetByCognitoUserID(ctx context.Context, cognitoUserID strin
 // GetByEmail メールアドレスでユーザーを取得
 func (r *Repository) GetByEmail(ctx context.Context, email user.Email) (*user.User, error) {
 	query := `
-		SELECT id, cognito_user_id, email, display_name, status, created_at, updated_at
+		SELECT id, cognito_user_id, email, display_name, avatar_url, status, created_at, updated_at
 		FROM users
 		WHERE email = $1
 	`
@@ -184,6 +188,7 @@ func (r *Repository) GetByEmail(ctx context.Context, email user.Email) (*user.Us
 		&u.CognitoUserID,
 		&emailStr,
 		&u.DisplayName,
+		&u.AvatarURL,
 		&status,
 		&createdAt,
 		&updatedAt,
@@ -254,7 +259,7 @@ func (r *Repository) Delete(ctx context.Context, id user.UserID) error {
 // List ユーザー一覧を取得
 func (r *Repository) List(ctx context.Context, limit, offset int) ([]*user.User, error) {
 	query := `
-		SELECT id, cognito_user_id, email, display_name, status, created_at, updated_at
+		SELECT id, cognito_user_id, email, display_name, avatar_url, status, created_at, updated_at
 		FROM users
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
@@ -277,6 +282,7 @@ func (r *Repository) List(ctx context.Context, limit, offset int) ([]*user.User,
 			&u.CognitoUserID,
 			&email,
 			&u.DisplayName,
+			&u.AvatarURL,
 			&status,
 			&createdAt,
 			&updatedAt,
@@ -325,7 +331,7 @@ func (r *Repository) List(ctx context.Context, limit, offset int) ([]*user.User,
 func (r *Repository) Update(ctx context.Context, user *user.User) error {
 	query := `
 		UPDATE users 
-		SET cognito_user_id = $2, email = $3, display_name = $4, status = $5, updated_at = $6
+		SET cognito_user_id = $2, email = $3, display_name = $4, avatar_url = $5, status = $6, updated_at = $7
 		WHERE id = $1
 	`
 
@@ -334,6 +340,7 @@ func (r *Repository) Update(ctx context.Context, user *user.User) error {
 		user.CognitoUserID,
 		user.Email.String(),
 		user.DisplayName,
+		user.AvatarURL,
 		user.Status.String(),
 		user.UpdatedAt,
 	)

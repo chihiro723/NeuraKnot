@@ -27,6 +27,12 @@ variable "service_discovery_arn" {
   default     = ""
 }
 
+variable "s3_bucket_arn" {
+  description = "ARN of the S3 bucket for media storage"
+  type        = string
+  default     = ""
+}
+
 variable "enable_rds_enhanced_monitoring" {
   description = "Enable RDS Enhanced Monitoring"
   type        = bool
