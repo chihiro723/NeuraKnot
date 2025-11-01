@@ -13,7 +13,7 @@ export default function HomePage() {
         id: user.id,
         username: user.email.split("@")[0],
         display_name: user.display_name,
-        avatar_url: null,
+        avatar_url: user.avatar_url || null,
         status: "online" as const,
         created_at: user.created_at,
       }
