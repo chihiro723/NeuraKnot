@@ -1,5 +1,5 @@
 import { AuthResponse, AuthUser } from '@/lib/types/auth'
-import { signUp as serverSignUp, confirmSignUp as serverConfirmSignUp, resendConfirmationCode, signOut as serverSignOut } from '@/lib/actions/auth-mutations'
+import { signUp as serverSignUp, confirmSignUp as serverConfirmSignUp, resendConfirmationCode, signOut as serverSignOut, forgotPassword as serverForgotPassword, confirmForgotPassword as serverConfirmForgotPassword } from '@/lib/actions/auth-mutations'
 
 /**
  * Cognito認証クライアント
@@ -146,6 +146,30 @@ export class CognitoAuthClient {
     return response.json()
   }
 
+  /**
+   * パスワードリセット要求
+   * Server Action使用 - Cookie設定が不要なため
+   */
+  async forgotPassword(email: string): Promise<void> {
+    const result = await serverForgotPassword(email)
+    
+    if (!result.success) {
+      throw new Error(result.error || 'パスワードリセットメールの送信に失敗しました')
+    }
+  }
+
+  /**
+   * パスワードリセット確認
+   * Server Action使用 - Cookie設定が不要なため
+   */
+  async confirmForgotPassword(email: string, confirmationCode: string, newPassword: string): Promise<void> {
+    const result = await serverConfirmForgotPassword(email, confirmationCode, newPassword)
+    
+    if (!result.success) {
+      throw new Error(result.error || 'パスワードリセットに失敗しました')
+    }
+  }
+
   // TODO: 以下の機能は現在未実装（MVP後に実装予定）
   
   /**
@@ -154,22 +178,6 @@ export class CognitoAuthClient {
    */
   async updateUser(): Promise<AuthUser> {
     throw new Error('ユーザー情報更新は現在実装されていません')
-  }
-
-  /**
-   * パスワードリセット（未実装）
-   * 将来的にbackend-goのエンドポイント経由で実装
-   */
-  async forgotPassword(): Promise<void> {
-    throw new Error('パスワードリセットは現在実装されていません')
-  }
-
-  /**
-   * パスワードリセット確認（未実装）
-   * 将来的にbackend-goのエンドポイント経由で実装
-   */
-  async confirmForgotPassword(): Promise<void> {
-    throw new Error('パスワードリセット確認は現在実装されていません')
   }
 }
 
