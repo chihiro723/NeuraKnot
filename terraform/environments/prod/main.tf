@@ -315,6 +315,9 @@ module "ecs" {
   log_retention_in_days = var.log_retention_in_days
   log_level             = var.log_level
   aws_region            = var.aws_region
+
+  # S3 configuration
+  s3_bucket_name = module.s3.bucket_name
 }
 
 # VPC Endpoints Module (for ECS Exec)

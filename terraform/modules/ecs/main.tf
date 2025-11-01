@@ -194,6 +194,18 @@ resource "aws_ecs_task_definition" "backend_go" {
         {
           name  = "FRONTEND_URL"
           value = var.frontend_url
+        },
+        {
+          name  = "S3_BUCKET_NAME"
+          value = var.s3_bucket_name
+        },
+        {
+          name  = "S3_REGION"
+          value = var.aws_region
+        },
+        {
+          name  = "S3_BASE_URL"
+          value = "https://${var.s3_bucket_name}.s3.${var.aws_region}.amazonaws.com"
         }
       ]
       logConfiguration = {

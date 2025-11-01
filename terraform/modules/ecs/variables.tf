@@ -335,3 +335,9 @@ variable "langsmith_endpoint" {
   type        = string
   default     = "https://smith.langchain.com"
 }
+
+# S3 configuration
+variable "s3_bucket_name" {
+  description = "S3 bucket name for media storage"
+  type        = string
+}
