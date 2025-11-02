@@ -97,9 +97,6 @@ export function LoadingSpinner({
       {/* メインスピナー */}
       <div className="relative">
         <DoubleRingSpinner />
-
-        {/* 装飾的な背景パルス */}
-        <div className="absolute -inset-8 rounded-full animate-pulse bg-green-500/5 dark:bg-green-400/5" />
       </div>
 
       {/* ローディングテキスト */}
