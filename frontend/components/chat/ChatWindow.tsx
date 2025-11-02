@@ -90,6 +90,9 @@ export function ChatWindow({
   // アバターURLのキャッシュバスティング用タイムスタンプ
   const [avatarTimestamp, setAvatarTimestamp] = useState<number | null>(null);
 
+  // 初回メッセージ読み込みかどうかを追跡（初回のみ自動スクロール）
+  const isInitialLoadRef = useRef(true);
+
   // 定数
   const MESSAGE_LIMIT = 50;
   const STREAMING_DELAY = 500;
@@ -163,14 +166,26 @@ export function ChatWindow({
     setIsClient(true);
   }, []);
 
+  // 初回読み込み時のみスクロール（messages が初めて設定された時）
+  useEffect(() => {
+    // チャットIDが変わったらフラグをリセット
+    isInitialLoadRef.current = true;
+  }, [selectedChat.id]);
+
+  // 初回メッセージ読み込み時のみ最下部にスクロール
+  useEffect(() => {
+    if (messages.length > 0 && isInitialLoadRef.current) {
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
+      });
+      isInitialLoadRef.current = false;
+    }
+  }, [messages.length > 0 ? messages[0]?.id : null]); // 初回のメッセージIDが変わった時のみ
+
   // 会話を初期化してメッセージを取得（初期データがない場合のみ）
   useEffect(() => {
     if (initialConversationId && initialMessages.length > 0) {
       // 初期データがあればスキップ
-      // メッセージ読み込み後、即座に最下部にスクロール
-      requestAnimationFrame(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
-      });
       return;
     }
 
@@ -216,10 +231,6 @@ export function ChatWindow({
             });
           }
           setMessages(messages);
-          // メッセージ読み込み後、即座に最下部にスクロール
-          requestAnimationFrame(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
-          });
         } else {
           console.error("Error loading messages:", result.error);
         }
@@ -279,26 +290,9 @@ export function ChatWindow({
     textarea.style.height = `${newHeight}px`;
   }, []);
 
-  // メッセージ変更時に高さを調整
-  useEffect(() => {
-    adjustTextareaHeight();
-  }, [newMessage, adjustTextareaHeight]);
-
-  // テキストエリアfocus時にキーボードで隠れないようスクロール
+  // テキストエリアfocus時のハンドラー（自動スクロールなし）
   const handleInputFocus = useCallback(() => {
-    // 少し遅延させてビューポート縮小後にスクロール
-    setTimeout(() => {
-      try {
-        footerRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-        const container = messagesContainerRef.current;
-        if (container) {
-          container.scrollTo({
-            top: container.scrollHeight,
-            behavior: "smooth",
-          });
-        }
-      } catch {}
-    }, 50);
+    // 何もしない（ユーザーが自分でスクロール位置を管理）
   }, []);
 
   // スタンプピッカー外側クリックで閉じる
@@ -345,40 +339,17 @@ export function ChatWindow({
     };
     setMessages((prev) => [...prev, tempUserMessage]);
 
+    // メッセージ送信後、最下部にスクロール
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      });
+    });
+
     // サイドバーにユーザーメッセージを表示（少し遅延を入れてDBの書き込みを待つ）
     setTimeout(() => {
       router.refresh();
     }, 500);
-
-    // メッセージ送信後、新しいメッセージが画面の一番上に表示されるようにスクロール
-    // DOMの更新を待つために複数のrequestAnimationFrameを使用
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const messageElement = document.getElementById(
-          `message-${tempMessageId}`
-        );
-        const container = messagesContainerRef.current;
-
-        if (messageElement && container) {
-          // コンテナとメッセージの絶対位置を取得
-          const containerRect = container.getBoundingClientRect();
-          const messageRect = messageElement.getBoundingClientRect();
-
-          // 現在のスクロール位置を取得
-          const currentScrollTop = container.scrollTop;
-
-          // メッセージがコンテナの一番上に来るために必要なスクロール量を計算
-          const scrollOffset = messageRect.top - containerRect.top;
-          const targetScrollTop = currentScrollTop + scrollOffset;
-
-          // 確実に一番上に表示されるようスクロール
-          container.scrollTo({
-            top: targetScrollTop,
-            behavior: "smooth",
-          });
-        }
-      });
-    });
 
     if (selectedChat.type === "ai") {
       // AIチャット: ストリーミングAPIを使用（非ストリーミングも自動処理）
@@ -831,7 +802,9 @@ export function ChatWindow({
                     tools={streamingTools}
                     avatarUrl={
                       selectedChat.avatar_url && avatarTimestamp
-                        ? `${selectedChat.avatar_url.split('?')[0]}?t=${avatarTimestamp}`
+                        ? `${
+                            selectedChat.avatar_url.split("?")[0]
+                          }?t=${avatarTimestamp}`
                         : selectedChat.avatar_url
                     }
                     name={selectedChat.name}
@@ -852,7 +825,9 @@ export function ChatWindow({
                 <div className="flex overflow-hidden flex-shrink-0 justify-center items-center w-8 h-8 bg-green-500 rounded-full md:w-10 md:h-10">
                   {selectedChat.avatar_url && avatarTimestamp ? (
                     <img
-                      src={`${selectedChat.avatar_url.split('?')[0]}?t=${avatarTimestamp}`}
+                      src={`${
+                        selectedChat.avatar_url.split("?")[0]
+                      }?t=${avatarTimestamp}`}
                       alt={selectedChat.name}
                       className="object-cover w-full h-full"
                     />
@@ -909,7 +884,10 @@ export function ChatWindow({
             <textarea
               ref={textareaRef}
               value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
+              onChange={(e) => {
+                setNewMessage(e.target.value);
+                adjustTextareaHeight();
+              }}
               onKeyDown={handleKeyDown}
               onFocus={handleInputFocus}
               placeholder={
