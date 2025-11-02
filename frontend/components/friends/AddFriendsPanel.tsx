@@ -740,12 +740,12 @@ export function AIAgentCreationPanel({
               <label className="block text-sm font-medium text-gray-900 dark:text-white">
                 アイコン <span className="text-xs text-gray-400">任意</span>
               </label>
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3 md:space-x-4">
                 {/* アバタープレビュー */}
                 <div className="relative">
-                  <div className="flex overflow-hidden justify-center items-center w-20 h-20 bg-gray-300 rounded-full ring-2 ring-gray-200 shadow-lg dark:bg-gray-700 dark:ring-gray-800">
+                  <div className="flex overflow-hidden justify-center items-center w-16 h-16 md:w-20 md:h-20 bg-gray-300 rounded-full ring-2 ring-gray-200 shadow-lg dark:bg-gray-700 dark:ring-gray-800">
                     {isUploadingAvatar ? (
-                      <div className="w-6 h-6 rounded-full border-2 border-white animate-spin border-t-transparent" />
+                      <div className="w-5 h-5 md:w-6 md:h-6 rounded-full border-2 border-white animate-spin border-t-transparent" />
                     ) : formData.avatar_url ? (
                       <img
                         src={formData.avatar_url}
@@ -753,7 +753,7 @@ export function AIAgentCreationPanel({
                         className="object-cover w-full h-full"
                       />
                     ) : (
-                      <Bot className="w-8 h-8 text-white" />
+                      <Bot className="w-6 h-6 md:w-8 md:h-8 text-white" />
                     )}
                   </div>
                   <input
@@ -766,9 +766,9 @@ export function AIAgentCreationPanel({
                   />
                   <label
                     htmlFor="agent-avatar-upload"
-                    className="flex absolute -right-1 -bottom-1 justify-center items-center w-8 h-8 text-white bg-green-500 rounded-full ring-2 ring-white shadow-lg transition-all duration-200 cursor-pointer hover:bg-green-600 hover:scale-110 dark:ring-gray-900"
+                    className="flex absolute -right-1 -bottom-1 justify-center items-center w-7 h-7 md:w-8 md:h-8 text-white bg-green-500 rounded-full ring-2 ring-white shadow-lg transition-all duration-200 cursor-pointer hover:bg-green-600 hover:scale-110 dark:ring-gray-900"
                   >
-                    <Camera className="w-4 h-4" />
+                    <Camera className="w-3.5 h-3.5 md:w-4 md:h-4" />
                   </label>
                 </div>
                 <div className="flex-1">
