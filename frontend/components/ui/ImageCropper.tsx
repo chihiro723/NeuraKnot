@@ -110,20 +110,20 @@ export function ImageCropper({
   };
 
   return (
-    <div className="flex fixed inset-0 z-50 justify-center items-center p-4 bg-black/80">
-      <div className="overflow-hidden w-full max-w-3xl bg-white rounded-2xl shadow-2xl dark:bg-gray-900">
+    <div className="flex fixed inset-0 z-50 justify-center items-center p-2 md:p-4 bg-black/80">
+      <div className="overflow-hidden w-full max-w-3xl bg-white rounded-xl md:rounded-2xl shadow-2xl dark:bg-gray-900">
         {/* ヘッダー */}
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+        <div className="px-4 py-3 md:px-6 md:py-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-base md:text-xl font-semibold text-gray-900 dark:text-white">
             画像をトリミング
           </h2>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-0.5 md:mt-1 text-xs md:text-sm text-gray-500 dark:text-gray-400">
             ドラッグして表示範囲を調整してください
           </p>
         </div>
 
         {/* トリミングエリア */}
-        <div className="p-6 flex justify-center items-center bg-gray-100 dark:bg-gray-800 min-h-[500px]">
+        <div className="p-3 md:p-6 flex justify-center items-center bg-gray-100 dark:bg-gray-800 min-h-[300px] md:min-h-[500px]">
           <ReactCrop
             crop={crop}
             onChange={handleCropChange}
@@ -138,31 +138,26 @@ export function ImageCropper({
               src={src}
               alt="Crop preview"
               onLoad={onImageLoad}
-              style={{
-                maxWidth: "600px",
-                maxHeight: "600px",
-                width: "auto",
-                height: "auto",
-                display: "block",
-              }}
+              className="max-w-[280px] max-h-[280px] md:max-w-[600px] md:max-h-[600px] w-auto h-auto block"
             />
           </ReactCrop>
         </div>
 
         {/* アクション */}
-        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700">
-          <div className="flex justify-end space-x-3">
+        <div className="px-4 py-3 md:px-6 md:py-4 bg-gray-50 border-t border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+          <div className="flex justify-end space-x-2 md:space-x-3">
             <Button
               variant="outline"
               onClick={onCancel}
               disabled={isProcessing}
+              className="text-xs md:text-sm px-3 md:px-4 py-1.5 md:py-2"
             >
               キャンセル
             </Button>
             <Button
               onClick={handleSave}
               disabled={isProcessing}
-              className="bg-green-500 hover:bg-green-600"
+              className="bg-green-500 hover:bg-green-600 text-xs md:text-sm px-3 md:px-4 py-1.5 md:py-2"
             >
               {isProcessing ? "処理中..." : "切り取り"}
             </Button>
