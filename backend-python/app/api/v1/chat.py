@@ -151,7 +151,8 @@ async def chat_stream(request: ChatRequest):
             # システムプロンプト構築
             system_prompt = AgentService._build_system_prompt(
                 request.agent_config.persona,
-                request.agent_config.custom_system_prompt
+                request.agent_config.custom_system_prompt,
+                request.user_name
             )
             
             prompt = ChatPromptTemplate.from_messages([
