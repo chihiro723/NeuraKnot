@@ -46,9 +46,10 @@ async def chat(request: ChatRequest):
             service_class = registry.get_service_class(service_config.service_class)
             if service_class:
                 # サービスインスタンスを作成（認証情報付き）
-                auth = {}
-                if service_config.api_key:
-                    auth["api_key"] = service_config.api_key
+                # authフィールドがあればそれを使用、なければapi_keyで後方互換性を保つ
+                auth = service_config.auth if service_config.auth else {}
+                if not auth and service_config.api_key:
+                    auth = {"api_key": service_config.api_key}
                 
                 service = service_class(
                     config=service_config.headers or {},
@@ -113,9 +114,10 @@ async def chat_stream(request: ChatRequest):
                     service_class = registry.get_service_class(service_config.service_class)
                     if service_class:
                         # サービスインスタンスを作成（認証情報付き）
-                        auth = {}
-                        if service_config.api_key:
-                            auth["api_key"] = service_config.api_key
+                        # authフィールドがあればそれを使用、なければapi_keyで後方互換性を保つ
+                        auth = service_config.auth if service_config.auth else {}
+                        if not auth and service_config.api_key:
+                            auth = {"api_key": service_config.api_key}
                         
                         service = service_class(
                             config=service_config.headers or {},
@@ -159,18 +161,95 @@ async def chat_stream(request: ChatRequest):
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
             ])
             
-            # エージェント作成
-            agent = create_openai_tools_agent(llm, tools, prompt)
-            agent_executor = AgentExecutor(
-                agent=agent,
-                tools=tools,
-                max_iterations=10,
-                max_execution_time=120,
-                return_intermediate_steps=True,
-                handle_parsing_errors=True,
-                callbacks=[callback],
-                verbose=True  # デバッグのためverboseを有効化
-            )
+            # プロバイダーごとに適切なエージェント作成
+            if request.agent_config.provider == "anthropic":
+                # Anthropic: ツールなしのシンプルなチャット
+                logger.info("⚠️ Anthropic provider detected - tools are not supported, using simple chat")
+                # ツールを使用しないため、AgentExecutorなしで直接LLMを使用
+                # ただし、互換性のため空のエージェントを作成
+                from langchain.agents import create_react_agent
+                from langchain_core.prompts import PromptTemplate
+                
+                react_prompt = PromptTemplate.from_template("""
+{system_prompt}
+
+You are a helpful AI assistant. Respond to the user's question directly.
+
+Question: {input}
+Answer:""")
+                
+                agent = create_react_agent(llm, tools=[], prompt=react_prompt)
+                agent_executor = AgentExecutor(
+                    agent=agent,
+                    tools=[],  # Anthropicではツール使用を無効化
+                    max_iterations=1,
+                    max_execution_time=120,
+                    return_intermediate_steps=False,
+                    handle_parsing_errors=True,
+                    callbacks=[callback],
+                    verbose=True
+                )
+            elif request.agent_config.provider == "google":
+                # Google Gemini: bind_toolsで明示的にツールをバインド
+                logger.info("🔧 Google Gemini provider detected - using bind_tools approach")
+                try:
+                    # Geminiの形式にツールをバインド
+                    llm_with_tools = llm.bind_tools(tools)
+                    
+                    # シンプルなチェーンとして構築
+                    from langchain.agents.format_scratchpad import format_to_openai_function_messages
+                    from langchain.agents.output_parsers import OpenAIFunctionsAgentOutputParser
+                    from langchain_core.runnables import RunnablePassthrough
+                    
+                    agent = (
+                        RunnablePassthrough.assign(
+                            agent_scratchpad=lambda x: format_to_openai_function_messages(
+                                x.get("intermediate_steps", [])
+                            )
+                        )
+                        | prompt
+                        | llm_with_tools
+                        | OpenAIFunctionsAgentOutputParser()
+                    )
+                    
+                    agent_executor = AgentExecutor(
+                        agent=agent,
+                        tools=tools,
+                        max_iterations=10,
+                        max_execution_time=120,
+                        return_intermediate_steps=True,
+                        handle_parsing_errors=True,
+                        callbacks=[callback],
+                        verbose=True
+                    )
+                except Exception as e:
+                    logger.warning(f"⚠️ Gemini bind_tools failed ({e}), falling back to OpenAI agent")
+                    # フォールバック: 通常のOpenAIエージェント
+                    agent = create_openai_tools_agent(llm, tools, prompt)
+                    agent_executor = AgentExecutor(
+                        agent=agent,
+                        tools=tools,
+                        max_iterations=10,
+                        max_execution_time=120,
+                        return_intermediate_steps=True,
+                        handle_parsing_errors=True,
+                        callbacks=[callback],
+                        verbose=True
+                    )
+            else:
+                # OpenAI等: 通常のツールエージェント
+                logger.info(f"✅ Using OpenAI tools agent for provider: {request.agent_config.provider}")
+                agent = create_openai_tools_agent(llm, tools, prompt)
+                agent_executor = AgentExecutor(
+                    agent=agent,
+                    tools=tools,
+                    max_iterations=10,
+                    max_execution_time=120,
+                    return_intermediate_steps=True,
+                    handle_parsing_errors=True,
+                    callbacks=[callback],
+                    verbose=True  # デバッグのためverboseを有効化
+                )
             
             logger.info(f"🤖 Agent executor created with {len(tools)} tools and callback registered")
             

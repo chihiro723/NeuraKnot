@@ -444,14 +444,24 @@ func (u *ServiceUsecase) ValidateServiceAuth(serviceClass string, auth map[strin
 
 		// successがtrueでも、resultフィールドにエラーメッセージが含まれている場合は失敗とする
 		if resultMsg, ok := result["result"].(string); ok && resultMsg != "" {
-			// エラーメッセージのパターンをチェック
-			if strings.Contains(resultMsg, "エラー:") ||
+			// エラーメッセージのパターンをチェック（絵文字付きエラーにも対応）
+			if strings.Contains(resultMsg, "エラー") ||
 				strings.Contains(resultMsg, "error") ||
+				strings.Contains(resultMsg, "Error") ||
 				strings.Contains(resultMsg, "無効") ||
 				strings.Contains(resultMsg, "invalid") ||
 				strings.Contains(resultMsg, "unauthorized") ||
-				strings.Contains(resultMsg, "forbidden") {
+				strings.Contains(resultMsg, "forbidden") ||
+				strings.Contains(resultMsg, "❌") ||  // エラー絵文字
+				strings.Contains(resultMsg, "⚠️") ||  // 警告絵文字
+				strings.Contains(resultMsg, "🌐") {   // ネットワークエラー絵文字
 				u.logger.Info("Auth validation failed due to error in result", "result", resultMsg)
+				// 改行を含むエラーメッセージの場合、最初の行のみを返す
+				lines := strings.Split(resultMsg, "\n")
+				firstLine := strings.TrimSpace(lines[0])
+				if firstLine != "" {
+					return fmt.Errorf("%s", firstLine)
+				}
 				return fmt.Errorf("認証情報が正しくありません: %s", resultMsg)
 			}
 		}
@@ -501,7 +511,10 @@ func (u *ServiceUsecase) getValidationToolAndArgs(serviceClass string) (string, 
 	switch serviceClass {
 	// API Wrapper サービス（認証が必要）
 	case "SlackService":
-		return "list_channels", map[string]interface{}{"limit": 1}
+		return "list_channels", map[string]interface{}{
+			"limit": 1,
+			"types": "public_channel", // パブリックチャンネルのみ（channels:read権限で対応）
+		}
 	case "NotionService":
 		return "search_pages", map[string]interface{}{"query": "", "page_size": 1}
 	case "BraveSearchService":

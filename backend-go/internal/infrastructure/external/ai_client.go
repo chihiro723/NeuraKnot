@@ -36,10 +36,12 @@ type ConversationMessage struct {
 
 // ServiceConfig はサービスの設定（オプション）
 type ServiceConfig struct {
-	ServiceClass      string   `json:"service_class"`
-	ToolSelectionMode string   `json:"tool_selection_mode,omitempty"` // "all" or "selected"
-	SelectedTools     []string `json:"selected_tools,omitempty"`      // 選択されたツール名のリスト
-	APIKey            *string  `json:"api_key,omitempty"`             // APIキー（復号化済み、オプション）
+	ServiceClass      string                 `json:"service_class"`
+	ToolSelectionMode string                 `json:"tool_selection_mode,omitempty"` // "all" or "selected"
+	SelectedTools     []string               `json:"selected_tools,omitempty"`      // 選択されたツール名のリスト
+	APIKey            *string                `json:"api_key,omitempty"`             // 後方互換性のため残す（非推奨）
+	Headers           map[string]string      `json:"headers,omitempty"`             // カスタムヘッダー
+	Auth              map[string]interface{} `json:"auth,omitempty"`                // 認証情報（api_key, bot_token等、サービスごとに異なる）
 }
 
 // AgentConfig はAI Agentの設定

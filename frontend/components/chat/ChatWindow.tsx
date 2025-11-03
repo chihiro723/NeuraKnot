@@ -4,6 +4,7 @@ import { Send, Smile, Paperclip } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils/cn";
+import type { Components } from "react-markdown";
 import {
   getOrCreateConversation,
   getMessages,
@@ -46,6 +47,16 @@ interface UserProfile {
   display_name?: string;
   avatar_url?: string;
 }
+
+/**
+ * ReactMarkdownのカスタムコンポーネント
+ * 全てのリンクを新しいタブで開く
+ */
+const markdownComponents: Components = {
+  a: ({ node, ...props }) => (
+    <a {...props} target="_blank" rel="noopener noreferrer" />
+  ),
+};
 
 /**
  * チャットウィンドウコンポーネント - 完璧に統一されたデザインシステム
@@ -734,7 +745,10 @@ export function ChatWindow({
                               )}
                             >
                               <div className="max-w-full text-sm leading-relaxed break-words lg:text-base overflow-wrap-anywhere word-break-break-word markdown-chat">
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                <ReactMarkdown
+                                  remarkPlugins={[remarkGfm]}
+                                  components={markdownComponents}
+                                >
                                   {message.content}
                                 </ReactMarkdown>
                               </div>

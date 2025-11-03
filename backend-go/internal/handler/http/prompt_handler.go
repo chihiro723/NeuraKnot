@@ -54,9 +54,9 @@ func (h *PromptHandler) EnhancePrompt(c *gin.Context) {
 		return
 	}
 
-	// タイムアウト付きHTTPクライアント（30秒）
+	// タイムアウト付きHTTPクライアント（60秒）
 	client := &http.Client{
-		Timeout: 30 * time.Second,
+		Timeout: 60 * time.Second,
 	}
 
 	// Python バックエンドへリクエスト
