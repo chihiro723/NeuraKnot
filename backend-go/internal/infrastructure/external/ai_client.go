@@ -57,6 +57,7 @@ type AgentConfig struct {
 // ChatRequest はチャットリクエスト
 type ChatRequest struct {
 	UserID              string                `json:"user_id"`                        // ユーザーID
+	UserName            string                `json:"user_name"`                      // ユーザー名（DisplayName）
 	ConversationID      string                `json:"conversation_id"`                // 会話ID
 	Message             string                `json:"message"`                        // ユーザーメッセージ
 	ConversationHistory []ConversationMessage `json:"conversation_history,omitempty"` // 会話履歴
