@@ -3,7 +3,7 @@
 Pydanticモデルによるバリデーション
 """
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 from enum import Enum
 
 
@@ -42,8 +42,9 @@ class ServiceConfig(BaseModel):
     service_class: str
     tool_selection_mode: str = "all"  # "all" or "selected"
     selected_tools: List[str] = []
-    api_key: Optional[str] = None
+    api_key: Optional[str] = None  # 後方互換性のため残す（非推奨）
     headers: Optional[Dict[str, str]] = None
+    auth: Optional[Dict[str, Any]] = None  # 認証情報（api_key, bot_token等、サービスごとに異なる）
     enabled: bool = True
 
 

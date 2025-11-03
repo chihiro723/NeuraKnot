@@ -2,7 +2,7 @@
 エージェントサービス
 LangChain AgentExecutorベースのエージェント管理
 """
-from langchain.agents import AgentExecutor, create_openai_tools_agent
+from langchain.agents import AgentExecutor
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from app.models.request import ChatRequest, CompletionMode
@@ -166,15 +166,116 @@ class AgentService:
             request.agent_config.custom_system_prompt
         )
         
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", system_prompt),
-            MessagesPlaceholder(variable_name="chat_history", optional=True),
-            ("human", "{input}"),
-            MessagesPlaceholder(variable_name="agent_scratchpad"),
-        ])
+        # プロバイダーごとに適切なエージェントを作成
+        if request.agent_config.provider == "openai":
+            # OpenAI用: create_openai_tools_agent
+            from langchain.agents import create_openai_tools_agent
+            
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", system_prompt),
+                MessagesPlaceholder(variable_name="chat_history", optional=True),
+                ("human", "{input}"),
+                MessagesPlaceholder(variable_name="agent_scratchpad"),
+            ])
+            
+            agent = create_openai_tools_agent(llm, filtered_tools, prompt)
+            
+        elif request.agent_config.provider == "anthropic":
+            # Anthropic用: ツールコールに対応したエージェント
+            # Anthropicのツールコールは特殊な形式なので、ReActエージェントを使用
+            logger.info("Using Anthropic with ReAct agent pattern")
+            
+            from langchain.agents import create_structured_chat_agent
+            
+            # ReAct形式のプロンプト
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", f"""{system_prompt}
+
+あなたは以下のツールにアクセスできます:
+{{tools}}
+
+次の形式を使用してください:
+
+Question: 答える必要がある質問
+Thought: 何をすべきか常に考えてください
+Action: 実行するアクション、[{{tool_names}}]のいずれか
+Action Input: アクションへの入力
+Observation: アクションの結果
+... (このThought/Action/Action Input/Observationを必要に応じて繰り返す)
+Thought: 最終的な答えがわかりました
+Final Answer: 元の質問に対する最終的な答え"""),
+                MessagesPlaceholder(variable_name="chat_history", optional=True),
+                ("human", "{input}\n\n{agent_scratchpad}"),
+            ])
+            
+            try:
+                agent = create_structured_chat_agent(llm, filtered_tools, prompt)
+            except Exception as e:
+                logger.warning(f"create_structured_chat_agent failed: {e}, using simpler approach")
+                # よりシンプルなアプローチ: ツールを使わずにLLMのみ
+                from langchain.agents import create_react_agent
+                from langchain_core.prompts import PromptTemplate
+                
+                template = f"""{system_prompt}
+
+Answer the following questions as best you can. You have access to the following tools:
+
+{{tools}}
+
+Use the following format:
+
+Question: the input question you must answer
+Thought: you should always think about what to do
+Action: the action to take, should be one of [{{tool_names}}]
+Action Input: the input to the action
+Observation: the result of the action
+... (this Thought/Action/Action Input/Observation can repeat N times)
+Thought: I now know the final answer
+Final Answer: the final answer to the original input question
+
+Begin!
+
+Question: {{input}}
+Thought:{{agent_scratchpad}}"""
+                
+                prompt = PromptTemplate.from_template(template)
+                agent = create_react_agent(llm, filtered_tools, prompt)
+                
+        else:
+            # Google等その他のプロバイダー: ツール呼び出しエージェント
+            try:
+                from langchain.agents import create_tool_calling_agent
+                
+                # プロバイダーに応じたツール形式に変換
+                try:
+                    llm_with_tools = llm.bind_tools(filtered_tools)
+                except AttributeError:
+                    # bind_toolsがない場合はそのまま使用
+                    llm_with_tools = llm
+                
+                prompt = ChatPromptTemplate.from_messages([
+                    ("system", system_prompt),
+                    MessagesPlaceholder(variable_name="chat_history", optional=True),
+                    ("human", "{input}"),
+                    MessagesPlaceholder(variable_name="agent_scratchpad"),
+                ])
+                
+                agent = create_tool_calling_agent(llm_with_tools, filtered_tools, prompt)
+            except ImportError:
+                # フォールバック
+                logger.warning("create_tool_calling_agent not available, using create_openai_tools_agent as fallback")
+                from langchain.agents import create_openai_tools_agent
+                
+                prompt = ChatPromptTemplate.from_messages([
+                    ("system", system_prompt),
+                    MessagesPlaceholder(variable_name="chat_history", optional=True),
+                    ("human", "{input}"),
+                    MessagesPlaceholder(variable_name="agent_scratchpad"),
+                ])
+                
+                agent = create_openai_tools_agent(llm, filtered_tools, prompt)
         
-        # エージェント実行
-        agent = create_openai_tools_agent(llm, filtered_tools, prompt)
+        # エージェントエグゼキューター作成
         agent_executor = AgentExecutor(
             agent=agent,
             tools=filtered_tools,

@@ -7,6 +7,7 @@ import remarkGfm from "remark-gfm";
 import { Copy, Check } from "lucide-react";
 import { ToolUsageIndicator } from "./ToolUsageIndicator";
 import type { ToolUsageData } from "@/lib/types";
+import type { Components } from "react-markdown";
 
 interface StreamingMessageProps {
   content: string;
@@ -17,6 +18,16 @@ interface StreamingMessageProps {
   hideContent?: boolean;
   agentId?: string; // エージェントID（ナビゲーション用）
 }
+
+/**
+ * ReactMarkdownのカスタムコンポーネント
+ * 全てのリンクを新しいタブで開く
+ */
+const markdownComponents: Components = {
+  a: ({ node, ...props }) => (
+    <a {...props} target="_blank" rel="noopener noreferrer" />
+  ),
+};
 
 export function StreamingMessage({
   content,
@@ -76,7 +87,10 @@ export function StreamingMessage({
         <>
           {content && (
             <div className="max-w-full text-sm leading-relaxed break-words lg:text-base overflow-wrap-anywhere word-break-break-word markdown-chat">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={markdownComponents}
+              >
                 {content}
               </ReactMarkdown>
             </div>
@@ -101,7 +115,10 @@ export function StreamingMessage({
         <>
           {content && (
             <div className="max-w-full text-sm leading-relaxed break-words lg:text-base overflow-wrap-anywhere word-break-break-word markdown-chat">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={markdownComponents}
+              >
                 {content}
               </ReactMarkdown>
             </div>
@@ -127,7 +144,10 @@ export function StreamingMessage({
               key={`text-${index}`}
               className="max-w-full text-sm leading-relaxed break-words lg:text-base overflow-wrap-anywhere word-break-break-word markdown-chat"
             >
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={markdownComponents}
+              >
                 {textSegment}
               </ReactMarkdown>
             </div>
@@ -152,7 +172,10 @@ export function StreamingMessage({
             key="text-final"
             className="max-w-full text-sm leading-relaxed break-words lg:text-base overflow-wrap-anywhere word-break-break-word markdown-chat"
           >
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={markdownComponents}
+            >
               {remainingText}
             </ReactMarkdown>
           </div>
