@@ -189,21 +189,12 @@ func (uc *ChatUsecase) SendMessage(
 					var serviceConfig *service.ServiceConfig
 					serviceConfig, _, _, _, _, err = uc.serviceConfigRepo.FindByUserAndClass(userID, as.ServiceClass)
 					if err == nil && serviceConfig != nil {
-						// APIキーを取得
-						var apiKey *string
-						if serviceConfig.Auth != nil {
-							if key, exists := serviceConfig.Auth["api_key"]; exists {
-								if keyStr, ok := key.(string); ok {
-									apiKey = &keyStr
-								}
-							}
-						}
-
 						services = append(services, external.ServiceConfig{
 							ServiceClass:      as.ServiceClass,
 							ToolSelectionMode: as.ToolSelectionMode,
 							SelectedTools:     as.SelectedTools,
-							APIKey:            apiKey,
+							Auth:              serviceConfig.Auth, // Auth全体を送る（bot_token, api_key等、サービスごとに異なる）
+							Headers:           nil,                // 必要に応じて設定
 						})
 					}
 				}
@@ -509,21 +500,12 @@ func (uc *ChatUsecase) SendMessageStream(
 					var serviceConfig *service.ServiceConfig
 					serviceConfig, _, _, _, _, err = uc.serviceConfigRepo.FindByUserAndClass(userID, as.ServiceClass)
 					if err == nil && serviceConfig != nil {
-						// APIキーを取得
-						var apiKey *string
-						if serviceConfig.Auth != nil {
-							if key, exists := serviceConfig.Auth["api_key"]; exists {
-								if keyStr, ok := key.(string); ok {
-									apiKey = &keyStr
-								}
-							}
-						}
-
 						services = append(services, external.ServiceConfig{
 							ServiceClass:      as.ServiceClass,
 							ToolSelectionMode: as.ToolSelectionMode,
 							SelectedTools:     as.SelectedTools,
-							APIKey:            apiKey,
+							Auth:              serviceConfig.Auth, // Auth全体を送る（bot_token, api_key等、サービスごとに異なる）
+							Headers:           nil,                // 必要に応じて設定
 						})
 					}
 				}
@@ -782,21 +764,12 @@ func (uc *ChatUsecase) SendAgentIntroduction(
 					var serviceConfig *service.ServiceConfig
 					serviceConfig, _, _, _, _, err = uc.serviceConfigRepo.FindByUserAndClass(userID, as.ServiceClass)
 					if err == nil && serviceConfig != nil {
-						// APIキーを取得
-						var apiKey *string
-						if serviceConfig.Auth != nil {
-							if key, exists := serviceConfig.Auth["api_key"]; exists {
-								if keyStr, ok := key.(string); ok {
-									apiKey = &keyStr
-								}
-							}
-						}
-
 						services = append(services, external.ServiceConfig{
 							ServiceClass:      as.ServiceClass,
 							ToolSelectionMode: as.ToolSelectionMode,
 							SelectedTools:     as.SelectedTools,
-							APIKey:            apiKey,
+							Auth:              serviceConfig.Auth, // Auth全体を送る（bot_token, api_key等、サービスごとに異なる）
+							Headers:           nil,                // 必要に応じて設定
 						})
 					}
 				}
