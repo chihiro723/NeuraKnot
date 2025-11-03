@@ -75,7 +75,8 @@ class BraveSearchService(BaseService):
                 },
                 "search_lang": {
                     "type": "string",
-                    "description": "検索言語コード（例: ja、en、fr）。指定言語のページを優先"
+                    "description": "検索言語コード（例: jp、en、fr）。指定言語のページを優先",
+                    "default": "jp"
                 },
                 "freshness": {
                     "type": "string",
@@ -98,7 +99,7 @@ class BraveSearchService(BaseService):
         query: str, 
         count: int = 10,
         country: Optional[str] = None,
-        search_lang: Optional[str] = None,
+        search_lang: str = "jp",
         freshness: Optional[Literal["pd", "pw", "pm", "py"]] = None,
         safesearch: Literal["strict", "moderate", "off"] = "moderate"
     ) -> str:
@@ -111,13 +112,12 @@ class BraveSearchService(BaseService):
                 params: Dict[str, Any] = {
                     "q": query,
                     "count": min(count, 20),
+                    "search_lang": search_lang,
                     "safesearch": safesearch
                 }
                 
                 if country:
                     params["country"] = country
-                if search_lang:
-                    params["search_lang"] = search_lang
                 if freshness:
                     params["freshness"] = freshness
                 
@@ -171,6 +171,12 @@ class BraveSearchService(BaseService):
                 return "エラー: APIキーが無効です"
             elif e.response.status_code == 429:
                 return "エラー: レート制限を超えました。しばらく待ってから再試行してください"
+            elif e.response.status_code == 422:
+                try:
+                    error_detail = e.response.json()
+                    return f"エラー: パラメータが不正です (422) - {error_detail}"
+                except:
+                    return f"エラー: パラメータが不正です (422) - {e.response.text}"
             return f"エラー: 検索に失敗しました - {e.response.status_code}"
         except httpx.RequestError as e:
             return f"エラー: リクエストエラー - {str(e)}"
