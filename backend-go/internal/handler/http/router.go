@@ -98,7 +98,7 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 
 	// AI関連のユースケースとハンドラー
 	agentUsecase := aiusecase.NewAgentUsecase(aiAgentRepo, s3Client)
-	chatUsecase := chatusecase.NewChatUsecase(aiAgentRepo, conversationRepo, messageRepo, toolUsageRepo, chatSessionRepo, aiAgentServiceRepo, serviceConfigRepo, aiClient)
+	chatUsecase := chatusecase.NewChatUsecase(aiAgentRepo, conversationRepo, messageRepo, toolUsageRepo, chatSessionRepo, aiAgentServiceRepo, serviceConfigRepo, userRepo, aiClient)
 
 	aiAgentHandler := NewAIAgentHandler(agentUsecase, serviceUsecase, aiAgentServiceRepo)
 	chatHandler := NewChatHandler(chatUsecase)
