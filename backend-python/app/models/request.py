@@ -51,6 +51,7 @@ class ServiceConfig(BaseModel):
 class ChatRequest(BaseModel):
     """チャットリクエスト"""
     user_id: str
+    user_name: str = "ユーザー"  # ユーザー名（デフォルト値を設定）
     conversation_id: str
     message: str = Field(..., min_length=1, max_length=10000)
     completion_mode: CompletionMode = CompletionMode.AUTO
