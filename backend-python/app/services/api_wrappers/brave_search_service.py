@@ -73,10 +73,10 @@ class BraveSearchService(BaseService):
                     "type": "string",
                     "description": "国コード（例: JP=日本、US=アメリカ、GB=イギリス）。指定国の結果を優先"
                 },
-                "lang": {
+                "search_lang": {
                     "type": "string",
-                    "description": "検索言語コード（例: ja、en、fr）。指定言語のページを優先",
-                    "default": "ja"
+                    "description": "検索言語コード（例: jp、en、fr）。指定言語のページを優先",
+                    "default": "jp"
                 },
                 "freshness": {
                     "type": "string",
@@ -99,7 +99,7 @@ class BraveSearchService(BaseService):
         query: str, 
         count: int = 10,
         country: Optional[str] = None,
-        lang: str = "ja",
+        search_lang: str = "jp",
         freshness: Optional[Literal["pd", "pw", "pm", "py"]] = None,
         safesearch: Literal["strict", "moderate", "off"] = "moderate"
     ) -> str:
@@ -112,7 +112,7 @@ class BraveSearchService(BaseService):
                 params: Dict[str, Any] = {
                     "q": query,
                     "count": min(count, 20),
-                    "lang": lang,
+                    "search_lang": search_lang,
                     "safesearch": safesearch
                 }
                 
@@ -139,8 +139,8 @@ class BraveSearchService(BaseService):
                 filter_info = []
                 if country:
                     filter_info.append(f"国: {country}")
-                if lang:
-                    filter_info.append(f"言語: {lang}")
+                if search_lang:
+                    filter_info.append(f"言語: {search_lang}")
                 if freshness:
                     freshness_map = {"pd": "過去24時間", "pw": "過去1週間", "pm": "過去1ヶ月", "py": "過去1年"}
                     filter_info.append(f"期間: {freshness_map[freshness]}")
