@@ -29,21 +29,27 @@ class AgentService:
     }
     
     @staticmethod
-    def _build_system_prompt(persona: str, custom_prompt: str = None) -> str:
+    def _build_system_prompt(persona: str, custom_prompt: str = None, user_name: str = None) -> str:
         """
         ペルソナに応じたシステムプロンプトを構築
         
         Args:
             persona: ペルソナ名
             custom_prompt: カスタムプロンプト（Go側で既にペルソナプロンプトと連結済み）
+            user_name: ユーザー名（会話の相手）
             
         Returns:
             システムプロンプト文字列
         """
+        # ユーザー名の文脈を追加
+        user_context = ""
+        if user_name:
+            user_context = f"\n\n【会話相手の情報】\nあなたは今、{user_name}さんと会話しています。自然で親しみやすい対話を心がけてください。"
+        
         # custom_promptが渡された場合は、既にGo側でペルソナプロンプトと連結されているのでそのまま使用
         if custom_prompt:
             # ツール使用の指示を追加
-            return f"""{custom_prompt}
+            return f"""{custom_prompt}{user_context}
 
 【ツール活用の最重要指示】
 - **利用可能なツールを最大限積極的に活用してください**
@@ -71,7 +77,7 @@ class AgentService:
             AgentService.PERSONA_PROMPTS["none"]
         )
         
-        return f"""{base_prompt}
+        return f"""{base_prompt}{user_context}
 
 【ツール活用の最重要指示】
 - **利用可能なツールを最大限積極的に活用してください**
@@ -163,7 +169,8 @@ class AgentService:
         # プロンプト作成
         system_prompt = self._build_system_prompt(
             request.agent_config.persona,
-            request.agent_config.custom_system_prompt
+            request.agent_config.custom_system_prompt,
+            request.user_name
         )
         
         # プロバイダーごとに適切なエージェントを作成

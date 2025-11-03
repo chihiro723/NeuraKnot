@@ -10,6 +10,7 @@ import (
 	"backend-go/internal/domain/ai"
 	"backend-go/internal/domain/conversation"
 	"backend-go/internal/domain/service"
+	"backend-go/internal/domain/user"
 	"backend-go/internal/infrastructure/external"
 
 	"github.com/google/uuid"
@@ -24,6 +25,7 @@ type ChatUsecase struct {
 	chatSessionRepo    conversation.ChatSessionRepository
 	aiAgentServiceRepo service.AIAgentServiceRepository
 	serviceConfigRepo  service.ServiceConfigRepository
+	userRepo           user.UserRepository
 	aiClient           *external.AIClient
 }
 
@@ -36,6 +38,7 @@ func NewChatUsecase(
 	chatSessionRepo conversation.ChatSessionRepository,
 	aiAgentServiceRepo service.AIAgentServiceRepository,
 	serviceConfigRepo service.ServiceConfigRepository,
+	userRepo user.UserRepository,
 	aiClient *external.AIClient,
 ) *ChatUsecase {
 	return &ChatUsecase{
@@ -46,6 +49,7 @@ func NewChatUsecase(
 		chatSessionRepo:    chatSessionRepo,
 		aiAgentServiceRepo: aiAgentServiceRepo,
 		serviceConfigRepo:  serviceConfigRepo,
+		userRepo:           userRepo,
 		aiClient:           aiClient,
 	}
 }
@@ -169,14 +173,24 @@ func (uc *ChatUsecase) SendMessage(
 		})
 	}
 
-	// 4. AI設定を取得
+	// 4. ユーザー情報を取得
+	var userName string
+	userEntity, err := uc.userRepo.GetByID(ctx, user.UserID(userID.String()))
+	if err != nil {
+		log.Printf("Warning: failed to get user info: %v", err)
+		userName = "ユーザー" // デフォルト値
+	} else {
+		userName = userEntity.DisplayName
+	}
+
+	// 5. AI設定を取得
 	var agent *ai.Agent
 	agent, err = uc.aiRepo.FindByID(ctx, conv.AIAgentID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get AI agent: %w", err)
 	}
 
-	// 5. エージェントに紐付けられたサービス情報を取得
+	// 6. エージェントに紐付けられたサービス情報を取得
 	var services []external.ServiceConfig
 	if uc.aiAgentServiceRepo != nil {
 		var agentServices []service.AIAgentService
@@ -202,11 +216,12 @@ func (uc *ChatUsecase) SendMessage(
 		}
 	}
 
-	// 6. Backend-pythonにリクエスト
+	// 7. Backend-pythonにリクエスト
 	// システムプロンプトをカスタムシステムプロンプトとして設定
 	systemPrompt := agent.GetSystemPrompt()
 	aiReq := external.ChatRequest{
 		UserID:              userID.String(),
+		UserName:            userName,
 		ConversationID:      conversationID.String(),
 		Message:             messageContent,
 		ConversationHistory: history[:len(history)-1], // 最新のユーザーメッセージを除く
@@ -480,14 +495,24 @@ func (uc *ChatUsecase) SendMessageStream(
 		})
 	}
 
-	// 4. AI設定を取得
+	// 4. ユーザー情報を取得
+	var userName string
+	userEntity, err := uc.userRepo.GetByID(ctx, user.UserID(userID.String()))
+	if err != nil {
+		log.Printf("Warning: failed to get user info: %v", err)
+		userName = "ユーザー" // デフォルト値
+	} else {
+		userName = userEntity.DisplayName
+	}
+
+	// 5. AI設定を取得
 	var agent *ai.Agent
 	agent, err = uc.aiRepo.FindByID(ctx, conv.AIAgentID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to get AI agent: %w", err)
 	}
 
-	// 5. エージェントに紐付けられたサービス情報を取得
+	// 6. エージェントに紐付けられたサービス情報を取得
 	var services []external.ServiceConfig
 	if uc.aiAgentServiceRepo != nil {
 		var agentServices []service.AIAgentService
@@ -513,10 +538,11 @@ func (uc *ChatUsecase) SendMessageStream(
 		}
 	}
 
-	// 6. Backend-pythonにストリーミングリクエスト
+	// 7. Backend-pythonにストリーミングリクエスト
 	systemPrompt := agent.GetSystemPrompt()
 	aiReq := external.ChatRequest{
 		UserID:              userID.String(),
+		UserName:            userName,
 		ConversationID:      conversationID.String(),
 		Message:             messageContent,
 		ConversationHistory: history[:len(history)-1], // 最新のユーザーメッセージを除く
@@ -744,14 +770,24 @@ func (uc *ChatUsecase) SendAgentIntroduction(
 		return nil, fmt.Errorf("unauthorized: user does not own this conversation")
 	}
 
-	// 2. エージェントを取得
+	// 2. ユーザー情報を取得
+	var userName string
+	userEntity, err := uc.userRepo.GetByID(ctx, user.UserID(userID.String()))
+	if err != nil {
+		log.Printf("Warning: failed to get user info: %v", err)
+		userName = "ユーザー" // デフォルト値
+	} else {
+		userName = userEntity.DisplayName
+	}
+
+	// 3. エージェントを取得
 	var agent *ai.Agent
 	agent, err = uc.aiRepo.FindByID(ctx, conv.AIAgentID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get AI agent: %w", err)
 	}
 
-	// 3. エージェントのサービス設定を取得
+	// 4. エージェントのサービス設定を取得
 	var services []external.ServiceConfig
 	if uc.aiAgentServiceRepo != nil {
 		var agentServices []service.AIAgentService
@@ -777,7 +813,7 @@ func (uc *ChatUsecase) SendAgentIntroduction(
 		}
 	}
 
-	// 4. 自己紹介を促すプロンプトを作成
+	// 5. 自己紹介を促すプロンプトを作成
 	introPrompt := fmt.Sprintf(
 		"あなたは今、新しくユーザーと友達になりました。簡潔に自己紹介をしてください。\n"+
 			"あなたの名前は「%s」です。\n"+
@@ -787,10 +823,11 @@ func (uc *ChatUsecase) SendAgentIntroduction(
 		messageContent,
 	)
 
-	// 5. AIクライアントでエージェントのペルソナを反映した自己紹介を生成
+	// 6. AIクライアントでエージェントのペルソナを反映した自己紹介を生成
 	systemPrompt := agent.GetSystemPrompt()
 	aiReq := external.ChatRequest{
 		UserID:              userID.String(),
+		UserName:            userName,
 		ConversationID:      conversationID.String(),
 		Message:             introPrompt,
 		ConversationHistory: []external.ConversationMessage{}, // 会話履歴なし
@@ -810,7 +847,7 @@ func (uc *ChatUsecase) SendAgentIntroduction(
 		return nil, fmt.Errorf("failed to generate AI introduction: %w", err)
 	}
 
-	// 6. AIメッセージを保存
+	// 7. AIメッセージを保存
 	aiMessage, err := conversation.NewMessage(
 		conversationID,
 		conversation.SenderTypeAI,
