@@ -68,8 +68,20 @@ export async function authFetch(
 ): Promise<Response> {
   const maxRetries = 1
 
+  // ヘッダーを準備
+  const headers = new Headers(options?.headers)
+  
+  // LocalStorageからトークンを取得してAuthorizationヘッダーに設定
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('access_token')
+    if (token && !headers.has('Authorization')) {
+      headers.set('Authorization', `Bearer ${token}`)
+    }
+  }
+
   const response = await fetch(url, {
     ...options,
+    headers,
     credentials: 'include',
   })
 
