@@ -25,6 +25,7 @@ class ConversationMessage(BaseModel):
     """会話メッセージ"""
     role: MessageRole
     content: str
+    name: Optional[str] = None  # 発言者名（英数字・アンダースコア・ハイフンのみ、最大64文字）
 
 
 class AgentConfig(BaseModel):
@@ -35,6 +36,7 @@ class AgentConfig(BaseModel):
     max_tokens: int = Field(2000, ge=1, le=8000)
     persona: str = "assistant"
     custom_system_prompt: Optional[str] = None
+    agent_name: Optional[str] = None  # エージェント名
 
 
 class ServiceConfig(BaseModel):
@@ -70,4 +72,29 @@ class ToolsRequest(BaseModel):
 class EnhancePromptRequest(BaseModel):
     """プロンプト強化リクエスト"""
     current_prompt: str = Field(..., max_length=5000, description="強化対象のシステムプロンプト")
+
+
+class MessageItem(BaseModel):
+    """メッセージアイテム"""
+    sender_type: str = Field(..., description="送信者タイプ (user/ai)")
+    sender_name: Optional[str] = Field(None, description="送信者名（グループチャット用）")
+    content: str = Field(..., description="メッセージ内容")
+    created_at: str = Field(..., description="作成日時")
+
+
+class SuggestQuestionsRequest(BaseModel):
+    """グループチャットの質問候補生成リクエスト"""
+    group_chat_id: str = Field(..., description="グループチャットID")
+    group_chat_name: str = Field(..., description="グループチャット名")
+    system_prompt: Optional[str] = Field(None, description="システムプロンプト")
+    recent_messages: List[MessageItem] = Field(..., description="最新のメッセージリスト", min_length=1)
+
+
+class SuggestConversationQuestionsRequest(BaseModel):
+    """1対1会話の質問候補生成リクエスト"""
+    conversation_id: str = Field(..., description="会話ID")
+    agent_name: str = Field(..., description="AIエージェント名")
+    agent_persona: str = Field(..., description="AIエージェントのペルソナ")
+    system_prompt: Optional[str] = Field(None, description="システムプロンプト")
+    recent_messages: List[MessageItem] = Field(..., description="最新のメッセージリスト", min_length=1)
 

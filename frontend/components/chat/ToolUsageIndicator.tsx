@@ -85,8 +85,7 @@ export function ToolUsageIndicator({
               <div className="flex-shrink-0 ml-2">
                 <div
                   className={`transition-transform duration-200 ${
-                    isExpanded ? "rotate-180" : ""
-                  }`}
+                    isExpanded ? "rotate-180" : ""}`}
                 >
                   <ChevronDown className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                 </div>

@@ -23,13 +23,38 @@ interface RosterListClientProps {
       created_at: string;
     }>;
   } | null;
+  initialGroupChats?: {
+    group_chats: Array<{
+      id: string;
+      name: string;
+      description?: string;
+      icon_url?: string;
+      message_count?: number;
+      last_message_at?: string;
+      last_message?: {
+        content: string;
+        sender_name: string;
+        sender_type: string;
+      };
+      created_at: string;
+      updated_at: string;
+      members?: Array<{
+        id: string;
+        ai_agent_id: string;
+        display_order: number;
+      }>;
+    }>;
+  } | null;
 }
 
 /**
  * Roster（名簿）リストクライアントコンポーネント
  * サーバーから渡されたデータを使用
  */
-export function RosterListClient({ initialAgents }: RosterListClientProps) {
+export function RosterListClient({
+  initialAgents,
+  initialGroupChats,
+}: RosterListClientProps) {
   const router = useRouter();
   const params = useParams();
   const [searchQuery, setSearchQuery] = useState("");
@@ -40,28 +65,68 @@ export function RosterListClient({ initialAgents }: RosterListClientProps) {
 
   // サーバーから渡されたデータを変換
   const friends = useMemo(() => {
-    if (!initialAgents?.agents) {
-      return [];
+    const friendsList: FriendData[] = [];
+
+    // AIエージェントを追加
+    if (initialAgents?.agents) {
+      initialAgents.agents.forEach((agent) => {
+        friendsList.push({
+          id: agent.id,
+          type: "ai" as const,
+          name: agent.name,
+          avatar_url: agent.avatar_url,
+          status: "online" as const,
+          personality_preset: agent.persona_type,
+          description: agent.description,
+          last_message:
+            agent.message_count && agent.message_count > 0
+              ? `メッセージ数: ${agent.message_count}`
+              : "まだメッセージがありません",
+          last_message_at: agent.last_chat_at || agent.created_at,
+          unread_count: 0,
+        });
+      });
     }
 
-    return initialAgents.agents.map(
-      (agent): FriendData => ({
-        id: agent.id,
-        type: "ai" as const,
-        name: agent.name,
-        avatar_url: agent.avatar_url,
-        status: "online" as const,
-        personality_preset: agent.persona_type,
-        description: agent.description,
-        last_message:
-          agent.message_count && agent.message_count > 0
-            ? `メッセージ数: ${agent.message_count}`
-            : "まだメッセージがありません",
-        last_message_at: agent.last_chat_at || agent.created_at,
-        unread_count: 0,
-      })
-    );
-  }, [initialAgents]);
+    // グループチャットを追加
+    if (initialGroupChats?.group_chats) {
+      initialGroupChats.group_chats.forEach((group) => {
+        const memberCount = group.members?.length || 0;
+
+        // 最後のメッセージを整形
+        let lastMessage = "まだメッセージがありません";
+        if (group.last_message) {
+          let senderPrefix = "";
+          if (group.last_message.sender_type === "ai") {
+            // AIエージェントの場合、名前がない場合は「削除されたエージェント」と表示
+            const senderName =
+              group.last_message.sender_name || "削除されたエージェント";
+            senderPrefix = `${senderName}: `;
+          }
+          // ユーザーの場合は名前を表示しない
+          lastMessage = `${senderPrefix}${group.last_message.content}`;
+        }
+
+        friendsList.push({
+          id: group.id,
+          type: "group" as const,
+          name: group.name,
+          avatar_url: group.icon_url,
+          status: "online" as const,
+          personality_preset: undefined,
+          description: group.description || "",
+          last_message: lastMessage,
+          last_message_at:
+            group.last_message_at || group.updated_at || group.created_at,
+          unread_count: 0,
+          // グループ固有の情報を保持
+          member_count: memberCount,
+        });
+      });
+    }
+
+    return friendsList;
+  }, [initialAgents, initialGroupChats]);
 
   const handleSelectFriend = (friend: FriendData) => {
     // URLベースのナビゲーション（状態管理なし）
@@ -139,24 +204,46 @@ export function RosterListClient({ initialAgents }: RosterListClientProps) {
       {/* 友だちリスト */}
       <div className="overflow-y-auto flex-1">
         {filteredFriends.length === 0 ? (
-          activeFilter === "human" || activeFilter === "group" ? (
+          activeFilter === "human" ? (
             <EmptyState
               icon={Users}
               title="近日追加予定"
-              description={
-                activeFilter === "human"
-                  ? "ユーザー機能は現在開発中です"
-                  : "グループ機能は現在開発中です"
+              description="ユーザー機能は現在開発中です"
+            />
+          ) : activeFilter === "group" ? (
+            <EmptyState
+              icon={Users}
+              title="グループがありません"
+              description="グループを作成して複数のエジェントと協働しましょう"
+              action={
+                <button
+                  onClick={() => router.push("/dashboard/add/group-chats")}
+                  className="px-4 py-2 text-sm font-medium text-white bg-green-500 rounded-lg transition-colors hover:bg-green-600"
+                >
+                  グループを作成
+                </button>
               }
             />
           ) : (
             <EmptyState
               icon={Users}
-              title={searchQuery ? "検索結果がありません" : "友だちがいません"}
+              title={
+                searchQuery ? "検索結果がありません" : "エージェントがいません"
+              }
               description={
                 searchQuery
                   ? "検索条件を変更してください"
-                  : "友だちを追加してください"
+                  : "AIエージェントを作成してください"
+              }
+              action={
+                !searchQuery ? (
+                  <button
+                    onClick={() => router.push("/dashboard/add/ai")}
+                    className="px-4 py-2 text-sm font-medium text-white bg-green-500 rounded-lg transition-colors hover:bg-green-600"
+                  >
+                    エージェントを作成
+                  </button>
+                ) : undefined
               }
             />
           )
@@ -189,6 +276,23 @@ interface FriendItemProps {
 }
 
 function FriendItem({ friend, onSelect, isSelected }: FriendItemProps) {
+  // 時間のフォーマット
+  const formatTime = (dateString?: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "たった今";
+    if (diffMins < 60) return `${diffMins}分前`;
+    if (diffHours < 24) return `${diffHours}時間前`;
+    if (diffDays < 7) return `${diffDays}日前`;
+    return date.toLocaleDateString("ja-JP", { month: "short", day: "numeric" });
+  };
+
   return (
     <button
       onClick={onSelect}
@@ -213,7 +317,14 @@ function FriendItem({ friend, onSelect, isSelected }: FriendItemProps) {
       {friend.type === "ai" &&
         friend.last_message &&
         friend.last_message.includes("メッセージ数:") && (
-          <span className="absolute top-3 right-3 px-2 py-1 text-xs font-medium text-green-600 bg-green-50 rounded-full dark:text-green-400 dark:bg-green-900/20">
+          <span className="absolute top-2 right-2 text-xs font-medium text-green-600 dark:text-green-400">
+            {friend.last_message.replace("メッセージ数: ", "")}件
+          </span>
+        )}
+      {friend.type === "group" &&
+        friend.last_message &&
+        friend.last_message.includes("メッセージ数:") && (
+          <span className="absolute top-2 right-2 text-xs font-medium text-green-600 dark:text-green-400">
             {friend.last_message.replace("メッセージ数: ", "")}件
           </span>
         )}
@@ -234,12 +345,17 @@ function FriendItem({ friend, onSelect, isSelected }: FriendItemProps) {
 
         {/* 友だち情報 */}
         <div className="flex-1 pr-16 min-w-0">
-          <div className="flex items-baseline mb-0.5">
+          <div className="flex items-baseline gap-3 mb-0.5">
             <h3 className="text-sm font-semibold text-gray-900 truncate dark:text-white">
               {friend.name}
+              {friend.type === "group" && friend.member_count !== undefined && (
+                <span className="ml-1 font-normal text-gray-900 dark:text-white">
+                  ({friend.member_count + 1})
+                </span>
+              )}
             </h3>
             {friend.type === "ai" && friend.personality_preset && (
-              <span className="ml-2 text-xs text-green-600 whitespace-nowrap dark:text-green-400">
+              <span className="flex-shrink-0 text-xs text-green-600 dark:text-green-400">
                 {getPersonalityLabel(friend.personality_preset)}
               </span>
             )}

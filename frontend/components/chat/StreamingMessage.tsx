@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -20,13 +20,46 @@ interface StreamingMessageProps {
 }
 
 /**
+ * テキスト内の@メンションを処理して青色にする
+ */
+const processTextWithMentions = (text: string) => {
+  const parts = text.split(/(@\w+)/g);
+  return parts.map((part, index) => {
+    if (part.match(/^@\w+$/)) {
+      return (
+        <span key={index} className="text-blue-500 dark:text-blue-400 font-medium">
+          {part}
+        </span>
+      );
+    }
+    return part;
+  });
+};
+
+/**
  * ReactMarkdownのカスタムコンポーネント
  * 全てのリンクを新しいタブで開く
+ * @メンションを青色で表示
  */
 const markdownComponents: Components = {
   a: ({ node, ...props }) => (
     <a {...props} target="_blank" rel="noopener noreferrer" />
   ),
+  p: ({ node, children, ...props }) => {
+    const processedChildren = React.Children.map(children, (child) => {
+      if (typeof child === 'string') {
+        return processTextWithMentions(child);
+      }
+      return child;
+    });
+    return <p {...props}>{processedChildren}</p>;
+  },
+  text: ({ node, children, ...props }) => {
+    if (typeof children === 'string') {
+      return <>{processTextWithMentions(children)}</>;
+    }
+    return <>{children}</>;
+  },
 };
 
 export function StreamingMessage({
@@ -45,6 +78,14 @@ export function StreamingMessage({
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  useEffect(() => {
+    console.log("[StreamingMessage] Props updated - content length:", content.length, "tools count:", tools.length);
+    if (tools.length > 0) {
+      console.log("[StreamingMessage] Tools:", tools);
+    }
+  }, [content, tools]);
+
 
   const formatTime = () => {
     const now = new Date();

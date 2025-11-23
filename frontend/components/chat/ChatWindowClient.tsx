@@ -14,6 +14,8 @@ export interface Message {
   content: string;
   sender_type: "user" | "ai";
   sender_id: string;
+  sender_name?: string;
+  sender_icon?: string;
   created_at: string;
   tool_usages?: ToolUsage[];
 }
@@ -29,14 +31,16 @@ export interface ChatWindowClientProps {
     id: string;
     name: string;
     avatar_url?: string;
-    type: "ai" | "human";
+    type: "ai" | "human" | "group";
     status: "online" | "offline" | "away";
     personality_preset?: string;
     description?: string;
+    members?: any[];
   };
   conversationId?: string;
   initialMessages?: Message[];
   initialUserProfile?: UserProfile;
+  isGroupChat?: boolean;
 }
 
 /**
@@ -48,13 +52,14 @@ export function ChatWindowClient({
   conversationId,
   initialMessages,
   initialUserProfile,
+  isGroupChat = false,
 }: ChatWindowClientProps) {
   // 選択状態は URL で管理されるため、Context は不要
   const router = useRouter();
   const isMobile = useIsMobile();
 
   const handleAvatarClick = () => {
-    if (chatData.type === "ai") {
+    if (chatData.type === "ai" || chatData.type === "group") {
       router.push(`/dashboard/roster/${chatData.id}`);
     }
   };
@@ -70,13 +75,13 @@ export function ChatWindowClient({
         <div className="flex items-center space-x-3">
           <button
             onClick={handleAvatarClick}
-            disabled={chatData.type !== "ai"}
+            disabled={chatData.type !== "ai" && chatData.type !== "group"}
             className={`transition-all duration-200 ${
-              chatData.type === "ai"
+              chatData.type === "ai" || chatData.type === "group"
                 ? "hover:scale-105 cursor-pointer"
                 : "cursor-default"
             }`}
-            title={chatData.type === "ai" ? "エージェントの詳細を表示" : ""}
+            title={chatData.type === "ai" ? "エージェントの詳細を表示" : chatData.type === "group" ? "グループの詳細を表示" : ""}
           >
             <Avatar
               src={chatData.avatar_url}
@@ -91,6 +96,11 @@ export function ChatWindowClient({
           <div>
             <h2 className="font-medium text-gray-900 dark:text-white">
               {chatData.name}
+              {chatData.type === "group" && chatData.members && (
+                <span className="ml-1 font-normal">
+                  ({chatData.members.length + 1})
+                </span>
+              )}
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-300">
               {chatData.type === "ai"
@@ -134,10 +144,12 @@ export function ChatWindowClient({
             type: chatData.type,
             status: chatData.status,
             personality_preset: chatData.personality_preset,
+            members: chatData.members,
           }}
           initialMessages={initialMessages}
           initialConversationId={conversationId}
           initialUserProfile={initialUserProfile}
+          isGroupChat={isGroupChat}
         />
       </div>
     </>

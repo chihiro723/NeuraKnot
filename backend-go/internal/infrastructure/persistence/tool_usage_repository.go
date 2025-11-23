@@ -22,12 +22,13 @@ func NewToolUsageRepository(db *sql.DB) *ToolUsageRepository {
 func (r *ToolUsageRepository) Save(toolUsage *conversation.ToolUsage) error {
 	query := `
 		INSERT INTO ai_tool_usage (
-			id, session_id, message_id, tool_name, tool_category,
+			id, session_id, message_id, group_message_id, tool_name, tool_category,
 			input_data, output_data, status, error_message, execution_time_ms, insert_position, executed_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 		ON CONFLICT (id) DO UPDATE SET
 			session_id = EXCLUDED.session_id,
 			message_id = EXCLUDED.message_id,
+			group_message_id = EXCLUDED.group_message_id,
 			tool_name = EXCLUDED.tool_name,
 			tool_category = EXCLUDED.tool_category,
 			input_data = EXCLUDED.input_data,
@@ -44,6 +45,7 @@ func (r *ToolUsageRepository) Save(toolUsage *conversation.ToolUsage) error {
 		toolUsage.ID,
 		toolUsage.SessionID,
 		toolUsage.MessageID,
+		toolUsage.GroupMessageID,
 		toolUsage.ToolName,
 		toolUsage.ToolCategory,
 		toolUsage.InputData,
@@ -61,7 +63,7 @@ func (r *ToolUsageRepository) Save(toolUsage *conversation.ToolUsage) error {
 func (r *ToolUsageRepository) FindByMessageID(messageID uuid.UUID) ([]*conversation.ToolUsage, error) {
 	query := `
 		SELECT 
-			id, session_id, message_id, tool_name, tool_category,
+			id, session_id, message_id, group_message_id, tool_name, tool_category,
 			input_data, output_data, status, error_message, execution_time_ms, insert_position, executed_at
 		FROM ai_tool_usage
 		WHERE message_id = $1
@@ -81,6 +83,51 @@ func (r *ToolUsageRepository) FindByMessageID(messageID uuid.UUID) ([]*conversat
 			&tu.ID,
 			&tu.SessionID,
 			&tu.MessageID,
+			&tu.GroupMessageID,
+			&tu.ToolName,
+			&tu.ToolCategory,
+			&tu.InputData,
+			&tu.OutputData,
+			&tu.Status,
+			&tu.ErrorMessage,
+			&tu.ExecutionTimeMs,
+			&tu.InsertPosition,
+			&tu.ExecutedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		toolUsages = append(toolUsages, tu)
+	}
+
+	return toolUsages, nil
+}
+
+// FindByGroupMessageID はグループメッセージIDでツール使用履歴を取得
+func (r *ToolUsageRepository) FindByGroupMessageID(groupMessageID uuid.UUID) ([]*conversation.ToolUsage, error) {
+	query := `
+		SELECT 
+			id, session_id, message_id, group_message_id, tool_name, tool_category,
+			input_data, output_data, status, error_message, execution_time_ms, insert_position, executed_at
+		FROM ai_tool_usage
+		WHERE group_message_id = $1
+		ORDER BY insert_position ASC NULLS LAST, executed_at ASC
+	`
+
+	rows, err := r.db.QueryContext(context.Background(), query, groupMessageID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var toolUsages []*conversation.ToolUsage
+	for rows.Next() {
+		tu := &conversation.ToolUsage{}
+		err := rows.Scan(
+			&tu.ID,
+			&tu.SessionID,
+			&tu.MessageID,
+			&tu.GroupMessageID,
 			&tu.ToolName,
 			&tu.ToolCategory,
 			&tu.InputData,
@@ -104,7 +151,7 @@ func (r *ToolUsageRepository) FindByMessageID(messageID uuid.UUID) ([]*conversat
 func (r *ToolUsageRepository) FindBySessionID(sessionID uuid.UUID) ([]*conversation.ToolUsage, error) {
 	query := `
 		SELECT 
-			id, session_id, message_id, tool_name, tool_category,
+			id, session_id, message_id, group_message_id, tool_name, tool_category,
 			input_data, output_data, status, error_message, execution_time_ms, insert_position, executed_at
 		FROM ai_tool_usage
 		WHERE session_id = $1
@@ -124,6 +171,7 @@ func (r *ToolUsageRepository) FindBySessionID(sessionID uuid.UUID) ([]*conversat
 			&tu.ID,
 			&tu.SessionID,
 			&tu.MessageID,
+			&tu.GroupMessageID,
 			&tu.ToolName,
 			&tu.ToolCategory,
 			&tu.InputData,

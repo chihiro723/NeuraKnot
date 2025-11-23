@@ -270,7 +270,7 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
                 <div className="relative group">
                   <div className="absolute inset-0 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full opacity-30 blur-xl transition-opacity group-hover:opacity-50" />
                   <div className="flex overflow-hidden relative justify-center items-center w-24 h-24 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full border-4 border-white shadow-lg dark:from-gray-800 dark:to-gray-700 dark:border-gray-900">
-                    {(agent?.avatar_url || friend.avatar_url) ? (
+                    {agent?.avatar_url || friend.avatar_url ? (
                       <img
                         src={agent?.avatar_url || friend.avatar_url}
                         alt={friend.name}
@@ -336,9 +336,6 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
           {agent && (
             <div className="p-6 space-y-4 bg-white rounded-2xl border shadow-lg border-gray-200/50 dark:bg-gray-800 dark:border-gray-700/50">
               <div className="flex items-center space-x-3">
-                <div className="flex justify-center items-center w-10 h-10 bg-gradient-to-br from-purple-100 to-blue-100 rounded-xl dark:from-purple-900/30 dark:to-blue-900/30">
-                  <Brain className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                   AI設定
                 </h3>
@@ -385,9 +382,6 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
           {agent?.system_prompt && (
             <div className="p-6 space-y-4 bg-white rounded-2xl border shadow-lg border-gray-200/50 dark:bg-gray-800 dark:border-gray-700/50">
               <div className="flex items-center space-x-3">
-                <div className="flex justify-center items-center w-10 h-10 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl dark:from-indigo-900/30 dark:to-purple-900/30">
-                  <Code className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                   カスタム指示
                 </h3>

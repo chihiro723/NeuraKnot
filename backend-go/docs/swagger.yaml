@@ -83,12 +83,27 @@ definitions:
     - auth
     - service_class
     type: object
+  backend-go_internal_handler_http_request.AddMemberRequest:
+    properties:
+      ai_agent_id:
+        type: string
+    required:
+    - ai_agent_id
+    type: object
   backend-go_internal_handler_http_request.ChangeEmailRequest:
     properties:
       email:
         type: string
     required:
     - email
+    type: object
+  backend-go_internal_handler_http_request.ChangeSubscriptionPlanRequest:
+    properties:
+      tier:
+        description: free, pro, max
+        type: string
+    required:
+    - tier
     type: object
   backend-go_internal_handler_http_request.ConfirmForgotPasswordRequest:
     properties:
@@ -116,6 +131,9 @@ definitions:
     type: object
   backend-go_internal_handler_http_request.CreateAgentRequest:
     properties:
+      avatar_url:
+        description: アバター画像URL
+        type: string
       description:
         type: string
       model:
@@ -141,6 +159,47 @@ definitions:
     required:
     - name
     type: object
+  backend-go_internal_handler_http_request.CreateBillingPortalSessionRequest:
+    properties:
+      return_url:
+        description: 戻り先URL
+        type: string
+    required:
+    - return_url
+    type: object
+  backend-go_internal_handler_http_request.CreateCheckoutSessionRequest:
+    properties:
+      cancel_url:
+        description: キャンセル時のリダイレクトURL
+        type: string
+      success_url:
+        description: 成功時のリダイレクトURL
+        type: string
+      tier:
+        description: free, pro, max
+        type: string
+    required:
+    - cancel_url
+    - success_url
+    - tier
+    type: object
+  backend-go_internal_handler_http_request.CreateGroupChatRequest:
+    properties:
+      description:
+        type: string
+      icon_url:
+        type: string
+      member_ids:
+        items:
+          type: string
+        minItems: 1
+        type: array
+      name:
+        type: string
+    required:
+    - member_ids
+    - name
+    type: object
   backend-go_internal_handler_http_request.EnhancePromptRequest:
     properties:
       current_prompt:
@@ -163,6 +222,16 @@ definitions:
     required:
     - ai_agent_id
     type: object
+  backend-go_internal_handler_http_request.ReorderMembersRequest:
+    properties:
+      orders:
+        additionalProperties:
+          type: integer
+        description: memberID -> order
+        type: object
+    required:
+    - orders
+    type: object
   backend-go_internal_handler_http_request.ResendConfirmationCodeRequest:
     properties:
       email:
@@ -179,6 +248,16 @@ definitions:
     required:
     - ai_agent_id
     - message
+    type: object
+  backend-go_internal_handler_http_request.SendGroupMessageRequest:
+    properties:
+      content:
+        type: string
+      mentions:
+        description: '"all" or []MentionItem'
+    required:
+    - content
+    - mentions
     type: object
   backend-go_internal_handler_http_request.SendMessageRequest:
     properties:
@@ -252,6 +331,17 @@ definitions:
         type: number
       tools_enabled:
         type: boolean
+    type: object
+  backend-go_internal_handler_http_request.UpdateGroupChatRequest:
+    properties:
+      description:
+        type: string
+      icon_url:
+        type: string
+      name:
+        type: string
+      system_prompt:
+        type: string
     type: object
   backend-go_internal_handler_http_request.UpdateProfileRequest:
     properties:
@@ -400,6 +490,18 @@ definitions:
       user:
         $ref: '#/definitions/backend-go_internal_handler_http_response.UserResponse'
     type: object
+  backend-go_internal_handler_http_response.BillingPortalSessionResponse:
+    properties:
+      url:
+        type: string
+    type: object
+  backend-go_internal_handler_http_response.CheckoutSessionResponse:
+    properties:
+      session_id:
+        type: string
+      session_url:
+        type: string
+    type: object
   backend-go_internal_handler_http_response.ConversationResponse:
     properties:
       ai_agent_id:
@@ -475,6 +577,112 @@ definitions:
       message:
         type: string
     type: object
+  backend-go_internal_handler_http_response.GroupChatResponse:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      icon_url:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      last_message:
+        $ref: '#/definitions/backend-go_internal_handler_http_response.LastMessageResponse'
+      last_message_at:
+        type: string
+      members:
+        items:
+          $ref: '#/definitions/backend-go_internal_handler_http_response.GroupMemberResponse'
+        type: array
+      message_count:
+        type: integer
+      name:
+        type: string
+      system_prompt:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+  backend-go_internal_handler_http_response.GroupChatsListResponse:
+    properties:
+      group_chats:
+        items:
+          $ref: '#/definitions/backend-go_internal_handler_http_response.GroupChatResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  backend-go_internal_handler_http_response.GroupMemberResponse:
+    properties:
+      ai_agent_icon:
+        type: string
+      ai_agent_id:
+        type: string
+      ai_agent_model:
+        type: string
+      ai_agent_name:
+        type: string
+      display_order:
+        type: integer
+      group_chat_id:
+        type: string
+      id:
+        type: string
+      joined_at:
+        type: string
+    type: object
+  backend-go_internal_handler_http_response.GroupMessageResponse:
+    properties:
+      ai_session_id:
+        type: string
+      content:
+        type: string
+      created_at:
+        type: string
+      group_chat_id:
+        type: string
+      id:
+        type: string
+      parent_message_id:
+        type: string
+      processing_status:
+        type: string
+      sender_icon:
+        type: string
+      sender_id:
+        type: string
+      sender_name:
+        type: string
+      sender_type:
+        type: string
+      tool_usages:
+        items:
+          $ref: '#/definitions/backend-go_internal_handler_http_response.ToolUsageResponse'
+        type: array
+    type: object
+  backend-go_internal_handler_http_response.GroupMessagesResponse:
+    properties:
+      messages:
+        items:
+          $ref: '#/definitions/backend-go_internal_handler_http_response.GroupMessageResponse'
+        type: array
+      total:
+        type: integer
+    type: object
+  backend-go_internal_handler_http_response.LastMessageResponse:
+    properties:
+      content:
+        type: string
+      sender_name:
+        type: string
+      sender_type:
+        type: string
+    type: object
   backend-go_internal_handler_http_response.MessageResponse:
     properties:
       ai_session_id:
@@ -535,6 +743,60 @@ definitions:
       service_class:
         type: string
     type: object
+  backend-go_internal_handler_http_response.SuggestedQuestionsResponse:
+    properties:
+      metadata:
+        additionalProperties: true
+        type: object
+      suggestions:
+        items:
+          type: string
+        type: array
+      token_usage:
+        $ref: '#/definitions/backend-go_internal_handler_http_response.TokenUsage'
+    type: object
+  backend-go_internal_handler_http_response.TierLimitsResponse:
+    properties:
+      max_ai_agents:
+        type: integer
+      max_group_chats:
+        type: integer
+      monthly_budget_usd:
+        type: number
+      price_jpy:
+        type: integer
+      price_usd:
+        type: number
+      tier:
+        type: string
+    type: object
+  backend-go_internal_handler_http_response.TokenLimitCheckResponse:
+    properties:
+      budget_limit_usd:
+        description: 予算上限 (USD)
+        type: number
+      can_send:
+        description: チャット送信可能か
+        type: boolean
+      cost_usd:
+        description: 使用済みコスト (USD)
+        type: number
+      current_tier:
+        description: 現在のプラン
+        type: string
+      period_end:
+        description: 課金期間終了日
+        type: string
+      remaining_budget_usd:
+        description: 残り予算 (USD)
+        type: number
+      tokens_used:
+        description: 使用済みトークン数
+        type: integer
+      usage_percentage:
+        description: '使用率（%）: コストベース'
+        type: number
+    type: object
   backend-go_internal_handler_http_response.TokenStatsResponse:
     properties:
       by_model:
@@ -554,6 +816,43 @@ definitions:
       prompt_tokens:
         type: integer
       total_tokens:
+        type: integer
+    type: object
+  backend-go_internal_handler_http_response.TokenUsage:
+    properties:
+      completion:
+        type: integer
+      prompt:
+        type: integer
+      total:
+        type: integer
+    type: object
+  backend-go_internal_handler_http_response.TokenUsageResponse:
+    properties:
+      cost_jpy:
+        type: number
+      cost_usd:
+        type: number
+      current_tier:
+        type: string
+      limit_usd:
+        type: number
+      period_end:
+        type: string
+      period_start:
+        type: string
+      provider_breakdown:
+        additionalProperties: true
+        type: object
+      remaining_usd:
+        type: number
+      request_count:
+        type: integer
+      tokens_completion:
+        type: integer
+      tokens_prompt:
+        type: integer
+      tokens_total:
         type: integer
     type: object
   backend-go_internal_handler_http_response.TokensByModelResponse:
@@ -725,6 +1024,177 @@ paths:
       summary: ユーザーの統計データを取得
       tags:
       - Analytics
+  /api/billing/check-limit:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.TokenLimitCheckResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      summary: トークン上限をチェック
+      tags:
+      - billing
+  /api/billing/checkout:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Checkout Session作成リクエスト
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/backend-go_internal_handler_http_request.CreateCheckoutSessionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.CheckoutSessionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      summary: Checkout Sessionを作成
+      tags:
+      - billing
+  /api/billing/portal:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Billing Portal Session作成リクエスト
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/backend-go_internal_handler_http_request.CreateBillingPortalSessionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.BillingPortalSessionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      summary: Billing Portal Sessionを作成
+      tags:
+      - billing
+  /api/billing/subscription/cancel:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      summary: サブスクリプションを解約
+      tags:
+      - billing
+  /api/billing/subscription/change:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: プラン変更リクエスト
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/backend-go_internal_handler_http_request.ChangeSubscriptionPlanRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      summary: サブスクリプションプランを変更
+      tags:
+      - billing
+  /api/billing/tiers:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/backend-go_internal_handler_http_response.TierLimitsResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      summary: プラン制限情報を取得
+      tags:
+      - billing
+  /api/billing/usage:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.TokenUsageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      summary: 現在のトークン使用量を取得
+      tags:
+      - billing
   /api/v1/ai-agents:
     get:
       consumes:
@@ -1264,6 +1734,49 @@ paths:
       summary: メッセージ送信
       tags:
       - Chat
+  /api/v1/conversations/{id}/suggested-questions:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Conversation ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: 10
+        description: 取得するメッセージ数
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.SuggestedQuestionsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 1対1会話の質問候補を生成
+      tags:
+      - conversations
   /api/v1/conversations/agent-introduction:
     post:
       consumes:
@@ -1300,6 +1813,501 @@ paths:
       summary: AIエージェント自己紹介送信
       tags:
       - Chat
+  /api/v1/group-chats:
+    get:
+      description: ユーザーのグループチャット一覧を取得します
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 取得成功
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.GroupChatsListResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: グループチャット一覧取得
+      tags:
+      - GroupChat
+    post:
+      consumes:
+      - application/json
+      description: 新しいグループチャットを作成します
+      parameters:
+      - description: グループチャット情報
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/backend-go_internal_handler_http_request.CreateGroupChatRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 作成成功
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.GroupChatResponse'
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: グループチャット作成
+      tags:
+      - GroupChat
+  /api/v1/group-chats/{id}:
+    delete:
+      description: グループチャットを削除します
+      parameters:
+      - description: グループチャットID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: 削除成功
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: グループチャット削除
+      tags:
+      - GroupChat
+    get:
+      description: グループチャットの詳細を取得します
+      parameters:
+      - description: グループチャットID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 取得成功
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.GroupChatResponse'
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "404":
+          description: 見つかりません
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: グループチャット詳細取得
+      tags:
+      - GroupChat
+    put:
+      consumes:
+      - application/json
+      description: グループチャット情報を更新します
+      parameters:
+      - description: グループチャットID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 更新情報
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/backend-go_internal_handler_http_request.UpdateGroupChatRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 更新成功
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.GroupChatResponse'
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: グループチャット更新
+      tags:
+      - GroupChat
+  /api/v1/group-chats/{id}/icon:
+    post:
+      consumes:
+      - multipart/form-data
+      description: グループチャットのアイコン画像をアップロードします（所有者のみ）
+      parameters:
+      - description: グループチャットID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: アイコン画像ファイル
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: アップロード成功
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "403":
+          description: 権限エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "404":
+          description: グループチャットが見つかりません
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "413":
+          description: ファイルサイズ超過
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: グループチャットアイコンアップロード
+      tags:
+      - Upload
+  /api/v1/group-chats/{id}/members:
+    post:
+      consumes:
+      - application/json
+      description: グループチャットにメンバーを追加します
+      parameters:
+      - description: グループチャットID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: メンバー情報
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/backend-go_internal_handler_http_request.AddMemberRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 追加成功
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.GroupMemberResponse'
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: メンバー追加
+      tags:
+      - GroupChat
+  /api/v1/group-chats/{id}/members/{member_id}:
+    delete:
+      description: グループチャットからメンバーを削除します
+      parameters:
+      - description: グループチャットID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: メンバーID
+        in: path
+        name: member_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: 削除成功
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: メンバー削除
+      tags:
+      - GroupChat
+  /api/v1/group-chats/{id}/members/reorder:
+    put:
+      consumes:
+      - application/json
+      description: グループチャットのメンバー順序を変更します
+      parameters:
+      - description: グループチャットID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 順序情報
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/backend-go_internal_handler_http_request.ReorderMembersRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: 更新成功
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: メンバー順序変更
+      tags:
+      - GroupChat
+  /api/v1/group-chats/{id}/messages:
+    get:
+      description: グループチャットのメッセージ履歴を取得します
+      parameters:
+      - description: グループチャットID
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: 50
+        description: 取得件数
+        in: query
+        name: limit
+        type: integer
+      - description: このメッセージIDより前を取得
+        in: query
+        name: before
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 取得成功
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.GroupMessagesResponse'
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: メッセージ履歴取得
+      tags:
+      - GroupChat
+  /api/v1/group-chats/{id}/messages/{msg_id}/cancel:
+    post:
+      description: グループチャットのメッセージ処理をキャンセルします
+      parameters:
+      - description: グループチャットID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: メッセージID
+        in: path
+        name: msg_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: キャンセル成功
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: メッセージ処理キャンセル
+      tags:
+      - GroupChat
+  /api/v1/group-chats/{id}/messages/stream:
+    post:
+      consumes:
+      - application/json
+      description: グループチャットにメッセージを送信してストリーミング応答を取得します
+      parameters:
+      - description: グループチャットID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: メッセージ内容
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/backend-go_internal_handler_http_request.SendGroupMessageRequest'
+      produces:
+      - text/event-stream
+      responses:
+        "200":
+          description: ストリーミング成功
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: メッセージ送信（ストリーミング）
+      tags:
+      - GroupChat
+  /api/v1/group-chats/{id}/suggested-questions:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Group Chat ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - default: 10
+        description: 取得するメッセージ数
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.SuggestedQuestionsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: グループチャットの質問候補を生成
+      tags:
+      - group-chats
   /api/v1/prompts/enhance:
     post:
       consumes:
@@ -1508,6 +2516,47 @@ paths:
       summary: サービス認証情報検証
       tags:
       - Services
+  /api/v1/upload/avatar/agent:
+    post:
+      consumes:
+      - multipart/form-data
+      description: エージェント作成時にアバター画像を一時アップロードします
+      parameters:
+      - description: アバター画像ファイル
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: アップロード成功
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "413":
+          description: ファイルサイズ超過
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: エージェントアバターアップロード（作成時）
+      tags:
+      - Upload
   /api/v1/upload/avatar/agent/{id}:
     post:
       consumes:
@@ -1601,6 +2650,71 @@ paths:
       summary: ユーザーアバターアップロード
       tags:
       - Upload
+  /api/v1/upload/icon/group:
+    post:
+      consumes:
+      - multipart/form-data
+      description: グループチャット作成時にアイコン画像を一時アップロードします
+      parameters:
+      - description: アイコン画像ファイル
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: アップロード成功
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "413":
+          description: ファイルサイズ超過
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: グループチャットアイコンアップロード（作成時）
+      tags:
+      - Upload
+  /api/webhooks/stripe:
+    post:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      summary: Stripe Webhookを処理
+      tags:
+      - webhook
   /auth/confirm-forgot-password:
     post:
       consumes:

@@ -18,15 +18,16 @@
 
 開発ルール、ブランチ戦略、コミットメッセージ規約
 
-### [DATABASE_DESIGN.md](./DATABASE_DESIGN.md)
+### [DATABASE.md](./DATABASE.md)
 
 データベース設計書
 
 - ER 図
-- テーブル定義
+- 8 テーブル詳細定義
 - インデックス戦略
-- Backend-go と Backend-python の統合パターン
-- セキュリティ・パフォーマンス考慮事項
+- マイグレーション管理（golang-migrate）
+- セキュリティ（AES-256-GCM 暗号化）
+- パフォーマンス最適化
 
 ## AWS インフラ
 

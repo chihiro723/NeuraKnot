@@ -27,12 +27,26 @@ type Config struct {
 
 	// セキュリティ設定
 	Security SecurityConfig
+
+	// Stripe設定
+	Stripe StripeConfig
+
+	// サブスクリプション機能有効化フラグ
+	EnableSubscription bool
 }
 
 // ServerConfig サーバー設定
 type ServerConfig struct {
 	Port string
 	Host string
+}
+
+// StripeConfig Stripe設定
+type StripeConfig struct {
+	SecretKey     string
+	WebhookSecret string
+	PriceIDPro    string
+	PriceIDMax    string
 }
 
 // DatabaseConfig データベース設定
@@ -130,6 +144,13 @@ func Load() *Config {
 			UseSecretsManager:   getEnv("USE_SECRETS_MANAGER", "false") == "true",
 			SecretsManagerARN:   getEnv("SECRETS_MANAGER_ARN", ""),
 		},
+		Stripe: StripeConfig{
+			SecretKey:     getEnv("STRIPE_SECRET_KEY", ""),
+			WebhookSecret: getEnv("STRIPE_WEBHOOK_SECRET", ""),
+			PriceIDPro:    getEnv("STRIPE_PRICE_ID_PRO", ""),
+			PriceIDMax:    getEnv("STRIPE_PRICE_ID_MAX", ""),
+		},
+		EnableSubscription: getEnv("ENABLE_SUBSCRIPTION", "false") == "true",
 	}
 }
 

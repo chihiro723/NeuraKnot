@@ -51,7 +51,6 @@ show_help() {
     echo "  status            - サービス状態を表示"
     echo "  urls              - アクセスURL一覧を表示"
     echo "  clean             - 全コンテナとボリュームを削除"
-    echo "  schema            - 統合スキーマでデータベースを構築"
     echo "  help              - このヘルプを表示"
     echo ""
     echo "利用可能なサービス:"
@@ -71,7 +70,6 @@ show_help() {
     echo "  ./dev.sh stop postgres            # PostgreSQLのみ停止"
     echo "  ./dev.sh build                    # 全サービスを再ビルド"
     echo "  ./dev.sh build frontend           # フロントエンドのみ再ビルド"
-    echo "  ./dev.sh schema                   # 統合スキーマでデータベースを構築"
     echo "  ./dev.sh env backend-go           # Backend Goの環境変数を表示"
     echo "  ./dev.sh env frontend             # フロントエンドの環境変数を表示"
 }
@@ -141,12 +139,6 @@ start_services() {
     
     # サービスを起動
     run_docker_compose "up -d" "$service"
-    
-    # 全サービス起動時はデータベースを完全再構築
-    if [ -z "$service" ]; then
-        log_info "データベースを完全再構築中..."
-        build_schema
-    fi
     
     if [ -n "$service" ]; then
         log_info "$service サービス起動完了！"
@@ -289,23 +281,6 @@ clean_all() {
 }
 
 
-# 統合スキーマでデータベースを構築（常に完全再構築）
-build_schema() {
-    log_info "統合スキーマでデータベースを完全再構築中..."
-    
-    # スキーマ構築スクリプトを実行（強制再作成）
-    if [[ -f "backend-go/schema/build_schema.sh" ]]; then
-        cd backend-go/schema
-        ./build_schema.sh --force --with-mock-data --yes
-        cd ../..
-        log_success "統合スキーマ完全再構築完了！"
-    else
-        log_error "スキーマ構築スクリプトが見つかりません: backend-go/schema/build_schema.sh"
-        exit 1
-    fi
-}
-
-
 # 環境変数表示
 show_env_vars() {
     local service="$1"
@@ -394,9 +369,6 @@ case "${1:-help}" in
         ;;
     env)
         show_env_vars "$2"
-        ;;
-    schema)
-        build_schema
         ;;
     help|--help|-h)
         show_help

@@ -59,6 +59,7 @@ func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 
 		// ユーザー情報をコンテキストに保存
 		c.Set("user", authResult.User)
+		c.Set("user_id", authResult.User.ID.String())
 		c.Set("token", token)
 
 		c.Next()
@@ -96,6 +97,7 @@ func (m *AuthMiddleware) OptionalAuth() gin.HandlerFunc {
 
 		// ユーザー情報をコンテキストに保存
 		c.Set("user", authResult.User)
+		c.Set("user_id", authResult.User.ID.String())
 		c.Set("token", token)
 
 		c.Next()

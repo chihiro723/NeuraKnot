@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { listConversations } from "@/lib/actions/conversation";
 import { listAIAgents } from "@/lib/actions/ai-agent";
+import { listGroupChats } from "@/lib/actions/group-chat";
 import { getAuthUser } from "@/lib/actions/auth-queries";
 import { SidebarLayout } from "@/components/layout/SidebarLayout";
 import { DashboardSidebar } from "@/components/layout/DashboardSidebar";
@@ -15,9 +16,10 @@ export const revalidate = 60; // 60秒ごとに再検証
 
 // データフェッチコンポーネント（1回だけ呼ばれる）
 async function ChatListData() {
-  const [conversationsResult, agentsResult] = await Promise.all([
+  const [conversationsResult, agentsResult, groupChatsResult] = await Promise.all([
     listConversations(),
     listAIAgents(),
+    listGroupChats(),
   ]);
 
   return (
@@ -26,6 +28,9 @@ async function ChatListData() {
         conversationsResult.success ? conversationsResult.data : null
       }
       initialAgents={agentsResult.success ? agentsResult.data : null}
+      initialGroupChats={
+        groupChatsResult.success ? groupChatsResult.data : null
+      }
     />
   );
 }

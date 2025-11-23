@@ -14,7 +14,7 @@
 #   ./scripts/connect-rds-bastion.sh status               # 状態を確認
 #
 # 接続後は以下のコマンドでRDSに接続できます:
-#   psql -h localhost -p 15432 -U postgres -d neuraKnot
+#   psql -h localhost -p 5433 -U postgres -d neuraKnot
 #
 
 set -e
@@ -26,7 +26,7 @@ set -e
 REGION="ap-northeast-1"
 PROJECT_NAME="neuraKnot"
 ENVIRONMENT="prod"
-LOCAL_PORT="15432"
+LOCAL_PORT="5433"  # migrate.sh と統一（旧: 15432）
 DB_PORT="5432"
 SESSION_INFO_FILE="/tmp/rds-bastion-session.info"
 
@@ -471,7 +471,7 @@ case "${1:-}" in
         echo "  status                - 状態を確認"
         echo ""
         echo "接続後のコマンド例:"
-        echo "  psql -h localhost -p 15432 -U postgres -d neuraKnot"
+        echo "  psql -h localhost -p 5433 -U postgres -d neuraKnot"
         echo ""
         echo "💡 コスト削減のヒント:"
         echo "  使用後に 'stop --stop-bastion' で Bastion を停止すると"

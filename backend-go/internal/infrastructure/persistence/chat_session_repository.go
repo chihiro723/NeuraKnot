@@ -24,25 +24,25 @@ func NewChatSessionRepository(db *sql.DB) conversation.ChatSessionRepository {
 func (r *ChatSessionRepositoryImpl) Save(ctx context.Context, session *conversation.ChatSession) error {
 	query := `
 		INSERT INTO ai_chat_sessions (
-			id, user_id, conversation_id, ai_agent_id, message_id,
+			id, user_id, conversation_id, group_chat_id, ai_agent_id, message_id,
 			provider, model, persona, temperature,
 			tokens_prompt, tokens_completion, tokens_total,
 			processing_time_ms, tools_used,
 			status, error_message,
 			started_at, completed_at
 		) VALUES (
-			$1, $2, $3, $4, $5,
-			$6, $7, $8, $9,
-			$10, $11, $12,
-			$13, $14,
-			$15, $16,
-			$17, $18
+			$1, $2, $3, $4, $5, $6,
+			$7, $8, $9, $10,
+			$11, $12, $13,
+			$14, $15,
+			$16, $17,
+			$18, $19
 		)
 	`
 
 	_, err := r.db.ExecContext(
 		ctx, query,
-		session.ID, session.UserID, session.ConversationID, session.AIAgentID, session.MessageID,
+		session.ID, session.UserID, session.ConversationID, session.GroupChatID, session.AIAgentID, session.MessageID,
 		session.Provider, session.Model, session.Persona, session.Temperature,
 		session.TokensPrompt, session.TokensCompletion, session.TokensTotal,
 		session.ProcessingTimeMs, session.ToolsUsed,
@@ -55,8 +55,8 @@ func (r *ChatSessionRepositoryImpl) Save(ctx context.Context, session *conversat
 // FindByID はIDでChatSessionを取得
 func (r *ChatSessionRepositoryImpl) FindByID(ctx context.Context, id uuid.UUID) (*conversation.ChatSession, error) {
 	query := `
-		SELECT 
-			id, user_id, conversation_id, ai_agent_id, message_id,
+		SELECT
+			id, user_id, conversation_id, group_chat_id, ai_agent_id, message_id,
 			provider, model, persona, temperature,
 			tokens_prompt, tokens_completion, tokens_total,
 			processing_time_ms, tools_used,
@@ -68,7 +68,7 @@ func (r *ChatSessionRepositoryImpl) FindByID(ctx context.Context, id uuid.UUID) 
 
 	session := &conversation.ChatSession{}
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
-		&session.ID, &session.UserID, &session.ConversationID, &session.AIAgentID, &session.MessageID,
+		&session.ID, &session.UserID, &session.ConversationID, &session.GroupChatID, &session.AIAgentID, &session.MessageID,
 		&session.Provider, &session.Model, &session.Persona, &session.Temperature,
 		&session.TokensPrompt, &session.TokensCompletion, &session.TokensTotal,
 		&session.ProcessingTimeMs, &session.ToolsUsed,
@@ -89,8 +89,8 @@ func (r *ChatSessionRepositoryImpl) FindByID(ctx context.Context, id uuid.UUID) 
 // FindByMessageID はMessageIDでChatSessionを取得
 func (r *ChatSessionRepositoryImpl) FindByMessageID(ctx context.Context, messageID uuid.UUID) (*conversation.ChatSession, error) {
 	query := `
-		SELECT 
-			id, user_id, conversation_id, ai_agent_id, message_id,
+		SELECT
+			id, user_id, conversation_id, group_chat_id, ai_agent_id, message_id,
 			provider, model, persona, temperature,
 			tokens_prompt, tokens_completion, tokens_total,
 			processing_time_ms, tools_used,
@@ -102,7 +102,7 @@ func (r *ChatSessionRepositoryImpl) FindByMessageID(ctx context.Context, message
 
 	session := &conversation.ChatSession{}
 	err := r.db.QueryRowContext(ctx, query, messageID).Scan(
-		&session.ID, &session.UserID, &session.ConversationID, &session.AIAgentID, &session.MessageID,
+		&session.ID, &session.UserID, &session.ConversationID, &session.GroupChatID, &session.AIAgentID, &session.MessageID,
 		&session.Provider, &session.Model, &session.Persona, &session.Temperature,
 		&session.TokensPrompt, &session.TokensCompletion, &session.TokensTotal,
 		&session.ProcessingTimeMs, &session.ToolsUsed,
