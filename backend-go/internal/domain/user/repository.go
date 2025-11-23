@@ -18,6 +18,9 @@ type UserRepository interface {
 	// GetByEmail メールアドレスでユーザーを取得
 	GetByEmail(ctx context.Context, email Email) (*User, error)
 
+	// GetByStripeCustomerID Stripe Customer IDでユーザーを取得
+	GetByStripeCustomerID(ctx context.Context, stripeCustomerID string) (*User, error)
+
 	// GetByUsername ユーザー名でユーザーを取得
 	// GetByUsername は削除されました - GetByEmailを使用してください
 

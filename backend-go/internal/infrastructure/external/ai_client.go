@@ -30,8 +30,9 @@ func NewAIClient(baseURL string, timeout time.Duration) *AIClient {
 
 // ConversationMessage は会話履歴のメッセージ
 type ConversationMessage struct {
-	Role    string `json:"role"`    // "user" or "assistant"
-	Content string `json:"content"` // メッセージ内容
+	Role    string  `json:"role"`              // "user" or "assistant"
+	Content string  `json:"content"`           // メッセージ内容
+	Name    *string `json:"name,omitempty"`    // 発言者名（オプション、グループチャット用）
 }
 
 // ServiceConfig はサービスの設定（オプション）
@@ -52,6 +53,7 @@ type AgentConfig struct {
 	MaxTokens          int     `json:"max_tokens"`                     // 最大トークン数
 	Persona            string  `json:"persona"`                        // ペルソナ
 	CustomSystemPrompt *string `json:"custom_system_prompt,omitempty"` // カスタムシステムプロンプト
+	AgentName          *string `json:"agent_name,omitempty"`           // エージェント名（グループチャット用）
 }
 
 // ChatRequest はチャットリクエスト

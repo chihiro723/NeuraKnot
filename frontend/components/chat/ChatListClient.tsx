@@ -27,6 +27,29 @@ interface ChatListClientProps {
   initialAgents: {
     agents: Agent[];
   } | null;
+  initialGroupChats?: {
+    group_chats: Array<{
+      id: string;
+      user_id: string;
+      name: string;
+      description?: string;
+      icon_url?: string;
+      created_at: string;
+      updated_at: string;
+      message_count?: number;
+      last_message_at?: string;
+      last_message?: {
+        content: string;
+        sender_type: "user" | "ai";
+        sender_name?: string;
+      };
+      members?: Array<{
+        id: string;
+        ai_agent_id: string;
+        display_order: number;
+      }>;
+    }>;
+  } | null;
 }
 
 /**
@@ -36,6 +59,7 @@ interface ChatListClientProps {
 export function ChatListClient({
   initialConversations,
   initialAgents,
+  initialGroupChats,
 }: ChatListClientProps) {
   const router = useRouter();
   const params = useParams();
@@ -58,14 +82,13 @@ export function ChatListClient({
 
   // サーバーから渡されたデータを変換し、最後のメッセージ時刻でソート
   const conversations = useMemo(() => {
-    if (!initialConversations?.conversations) {
-      return [];
-    }
+    const conversationsList: ConversationData[] = [];
 
-    const conversationsList: ConversationData[] =
-      initialConversations.conversations.map((conv) => {
+    // 1対1の会話を追加
+    if (initialConversations?.conversations) {
+      initialConversations.conversations.forEach((conv) => {
         const agent = agentsMap.get(conv.ai_agent_id);
-        return {
+        conversationsList.push({
           id: conv.id,
           type: "direct" as const,
           created_at: conv.created_at,
@@ -89,16 +112,72 @@ export function ChatListClient({
             status: "online" as const,
             personality_preset: agent?.persona_type,
           },
-        };
+        });
       });
+    }
+
+    // グループチャットを追加
+    if (initialGroupChats?.group_chats) {
+      initialGroupChats.group_chats.forEach((group) => {
+        // メンバーのエージェント情報を取得
+        const memberAgents =
+          group.members
+            ?.map((m) => agentsMap.get(m.ai_agent_id))
+            .filter((a): a is Agent => !!a) || [];
+
+        // 最後のメッセージを処理
+        let lastMessage = null;
+        if (group.last_message) {
+          let senderName = group.last_message.sender_name;
+
+          // sender_nameが空の場合は「削除されたエージェント」と表示
+          if (group.last_message.sender_type === "ai" && !senderName) {
+            senderName = "削除されたエージェント";
+          } else if (group.last_message.sender_type === "user") {
+            senderName = "あなた";
+          }
+
+          lastMessage = {
+            content: group.last_message.content,
+            created_at: group.last_message_at || group.updated_at,
+            sender_type: group.last_message.sender_type,
+            sender_name: senderName,
+          };
+        }
+
+        conversationsList.push({
+          id: group.id,
+          type: "group" as const,
+          created_at: group.created_at,
+          updated_at: group.updated_at,
+          lastMessage,
+          groupInfo: {
+            name: group.name,
+            description: group.description,
+            icon_url: group.icon_url,
+            memberCount: memberAgents.length,
+            members: memberAgents.map((agent) => ({
+              id: agent.id,
+              name: agent.name,
+              avatar_url: agent.avatar_url,
+              type: "ai" as const,
+            })),
+          },
+        });
+      });
+    }
 
     // 最後のメッセージの時刻でソート（新しい順）
     return conversationsList.sort((a, b) => {
-      const aTime = a.lastMessage?.created_at || a.created_at;
-      const bTime = b.lastMessage?.created_at || b.created_at;
+      const aTime = a.lastMessage?.created_at || a.updated_at || a.created_at;
+      const bTime = b.lastMessage?.created_at || b.updated_at || b.created_at;
       return new Date(bTime).getTime() - new Date(aTime).getTime();
     });
-  }, [initialConversations?.conversations, agentsMap]);
+  }, [
+    initialConversations?.conversations,
+    initialGroupChats?.group_chats,
+    agentsMap,
+  ]);
 
   const handleChatSelect = (conversation: ConversationData) => {
     // URLベースのナビゲーション（状態管理なし）
@@ -208,14 +287,24 @@ export function ChatListClient({
 
       <div className="overflow-y-auto flex-1">
         {filteredConversations.length === 0 ? (
-          activeFilter === "users" || activeFilter === "groups" ? (
+          activeFilter === "users" ? (
             <EmptyState
               icon={MessageCircle}
               title="近日追加予定"
-              description={
-                activeFilter === "users"
-                  ? "ユーザーとのチャット機能は現在開発中です"
-                  : "グループチャット機能は現在開発中です"
+              description="ユーザーとのチャット機能は現在開発中です"
+            />
+          ) : activeFilter === "groups" ? (
+            <EmptyState
+              icon={MessageCircle}
+              title="グループがありません"
+              description="グループを作成して複数のエジェントと協働しましょう"
+              action={
+                <button
+                  onClick={() => router.push("/dashboard/add/group-chats")}
+                  className="px-4 py-2 text-sm font-medium text-white bg-green-500 rounded-lg transition-colors hover:bg-green-600"
+                >
+                  グループを作成
+                </button>
               }
             />
           ) : (
@@ -227,7 +316,17 @@ export function ChatListClient({
               description={
                 searchQuery
                   ? "検索条件を変更してください"
-                  : "友だちを追加してトークを始めましょう"
+                  : "AIエージェントを追加してトークを始めましょう"
+              }
+              action={
+                !searchQuery ? (
+                  <button
+                    onClick={() => router.push("/dashboard/add/ai")}
+                    className="px-4 py-2 text-sm font-medium text-white bg-green-500 rounded-lg transition-colors hover:bg-green-600"
+                  >
+                    エージェントを作成
+                  </button>
+                ) : undefined
               }
             />
           )
@@ -279,7 +378,7 @@ function ConversationItem({
     ? conversation.groupInfo?.name || "グループ"
     : conversation.otherParticipant?.name || "Unknown";
   const avatarUrl = isGroup
-    ? conversation.groupInfo?.avatar_url
+    ? conversation.groupInfo?.icon_url
     : conversation.otherParticipant?.avatar_url;
   const type = isGroup ? "group" : conversation.otherParticipant?.type || "ai";
   const status = isGroup ? "online" : conversation.otherParticipant?.status;
@@ -342,6 +441,11 @@ function ConversationItem({
         <div className="flex-1 pr-16 min-w-0">
           <h3 className="mb-1 text-sm font-semibold text-gray-900 truncate dark:text-white">
             {displayName}
+            {isGroup && conversation.groupInfo?.memberCount !== undefined && (
+              <span className="ml-1 font-normal text-gray-900 dark:text-white">
+                ({conversation.groupInfo.memberCount + 1})
+              </span>
+            )}
           </h3>
           <p className="text-xs text-gray-600 truncate dark:text-gray-400">
             {conversation.lastMessage ? (

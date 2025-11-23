@@ -574,7 +574,7 @@ export function AIAgentCreationPanel({
           persona_type: formData.persona_type,
           model: formData.model,
           description: formData.description || undefined,
-          avatar_url: undefined, // 一旦undefinedで作成
+          avatar_url: undefined, // アバターは後でアップロード
           system_prompt: formData.system_prompt || undefined,
           provider: formData.provider,
           temperature: formData.temperature,
@@ -594,13 +594,16 @@ export function AIAgentCreationPanel({
 
         const agentId = result.data.id;
 
-        // アバターがある場合はアップロード
+        // アバターがある場合はエージェント作成後にアップロード
         if (pendingAvatarBlob) {
           try {
+            setIsUploadingAvatar(true);
             await uploadAgentAvatar(agentId, pendingAvatarBlob);
           } catch (err) {
             console.error("Failed to upload avatar:", err);
             // アバターのアップロードに失敗してもエージェント作成は成功
+          } finally {
+            setIsUploadingAvatar(false);
           }
         }
 
@@ -743,9 +746,9 @@ export function AIAgentCreationPanel({
               <div className="flex items-center space-x-3 md:space-x-4">
                 {/* アバタープレビュー */}
                 <div className="relative">
-                  <div className="flex overflow-hidden justify-center items-center w-16 h-16 md:w-20 md:h-20 bg-gray-300 rounded-full ring-2 ring-gray-200 shadow-lg dark:bg-gray-700 dark:ring-gray-800">
+                  <div className="flex overflow-hidden justify-center items-center w-16 h-16 bg-gray-300 rounded-full ring-2 ring-gray-200 shadow-lg md:w-20 md:h-20 dark:bg-gray-700 dark:ring-gray-800">
                     {isUploadingAvatar ? (
-                      <div className="w-5 h-5 md:w-6 md:h-6 rounded-full border-2 border-white animate-spin border-t-transparent" />
+                      <div className="w-5 h-5 rounded-full border-2 border-white animate-spin md:w-6 md:h-6 border-t-transparent" />
                     ) : formData.avatar_url ? (
                       <img
                         src={formData.avatar_url}
@@ -753,7 +756,7 @@ export function AIAgentCreationPanel({
                         className="object-cover w-full h-full"
                       />
                     ) : (
-                      <Bot className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                      <Bot className="w-6 h-6 text-white md:w-8 md:h-8" />
                     )}
                   </div>
                   <input
@@ -766,7 +769,7 @@ export function AIAgentCreationPanel({
                   />
                   <label
                     htmlFor="agent-avatar-upload"
-                    className="flex absolute -right-1 -bottom-1 justify-center items-center w-7 h-7 md:w-8 md:h-8 text-white bg-green-500 rounded-full ring-2 ring-white shadow-lg transition-all duration-200 cursor-pointer hover:bg-green-600 hover:scale-110 dark:ring-gray-900"
+                    className="flex absolute -right-1 -bottom-1 justify-center items-center w-7 h-7 text-white bg-green-500 rounded-full ring-2 ring-white shadow-lg transition-all duration-200 cursor-pointer md:w-8 md:h-8 hover:bg-green-600 hover:scale-110 dark:ring-gray-900"
                   >
                     <Camera className="w-3.5 h-3.5 md:w-4 md:h-4" />
                   </label>
@@ -1283,16 +1286,7 @@ export function AIAgentCreationPanel({
           )}
 
           {/* 作成ボタン */}
-          <div className="flex gap-3 pt-6 border-t border-gray-200 dark:border-gray-800">
-            {!isDesktop && (
-              <button
-                type="button"
-                onClick={onBack}
-                className="px-6 py-3 font-medium text-gray-700 bg-white rounded-lg border border-gray-300 transition-all dark:bg-gray-900 dark:text-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-              >
-                キャンセル
-              </button>
-            )}
+          <div className="pt-6 border-t border-gray-200 dark:border-gray-800">
             <button
               type="button"
               onClick={(e) => {
@@ -1301,7 +1295,7 @@ export function AIAgentCreationPanel({
               }}
               disabled={!formData.name || !formData.model || isPending}
               className={cn(
-                "flex-1 px-6 py-3 font-medium rounded-lg transition-all",
+                "px-6 py-3 w-full font-medium rounded-lg transition-all",
                 "flex justify-center items-center space-x-2",
                 "text-white bg-green-600 hover:bg-green-700",
                 "disabled:bg-gray-400 dark:disabled:bg-gray-600",

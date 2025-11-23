@@ -278,7 +278,7 @@ export function LandingPage({
                   >
                     ダッシュボード
                   </Link>
-                  <div className="flex items-center pl-3 pr-4 py-2 space-x-3 rounded-lg border bg-emerald-500/10 border-emerald-500/30">
+                  <div className="flex items-center py-2 pr-4 pl-3 space-x-3 rounded-lg border bg-emerald-500/10 border-emerald-500/30">
                     {/* ユーザーアイコン */}
                     <div className="flex overflow-hidden justify-center items-center w-8 h-8 bg-gradient-to-br from-emerald-400 via-emerald-500 to-cyan-600 rounded-full ring-2 ring-emerald-500/30">
                       {profile?.avatar_url ? (
@@ -985,7 +985,7 @@ export function LandingPage({
                 最新LLMモデル対応 + 外部API連携
               </h3>
               <div className="mb-6">
-                <p className="mb-4 text-lg text-emerald-400 font-semibold">
+                <p className="mb-4 text-lg font-semibold text-emerald-400">
                   ✨ 9つの最新LLMモデル
                 </p>
                 <div className="flex flex-wrap gap-3 justify-center mb-8">
@@ -1033,12 +1033,10 @@ export function LandingPage({
             </div>
 
             <div className="grid gap-8 md:grid-cols-3">
-              {/* ベーシックプラン */}
+              {/* フリー プラン */}
               <div className="p-8 rounded-2xl border backdrop-blur-sm transition-all duration-300 group bg-white/5 border-white/10 hover:border-emerald-400/30 hover:bg-white/10">
                 <div className="mb-6 text-center">
-                  <h3 className="mb-2 text-2xl font-bold text-white">
-                    ベーシック
-                  </h3>
+                  <h3 className="mb-2 text-2xl font-bold text-white">フリー</h3>
                   <div className="mb-4">
                     <span className="text-4xl font-black text-emerald-400">
                       無料

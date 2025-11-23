@@ -103,3 +103,10 @@ class EnhancePromptResponse(BaseModel):
     enhanced_prompt: str
     metadata: Optional[Dict[str, Any]] = None
 
+
+class SuggestQuestionsResponse(BaseModel):
+    """質問候補生成レスポンス"""
+    suggestions: List[str]
+    token_usage: Optional[TokenUsage] = None
+    metadata: Optional[Dict[str, Any]] = None
+

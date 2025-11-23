@@ -69,3 +69,35 @@ export async function uploadAgentAvatar(
   return { avatar_url: data.avatar_url };
 }
 
+/**
+ * グループチャットアイコンをアップロード
+ */
+export async function uploadGroupChatIcon(
+  groupChatId: string,
+  file: Blob
+): Promise<{ icon_url: string }> {
+  const formData = new FormData();
+  formData.append("file", file, "icon.jpg");
+
+  const accessToken = getAccessToken();
+  if (!accessToken) {
+    throw new Error("Not authenticated");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/group-chats/${groupChatId}/icon`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: "Upload failed" }));
+    throw new Error(error.error || "Failed to upload group chat icon");
+  }
+
+  const data = await response.json();
+  return { icon_url: data.icon_url };
+}
+

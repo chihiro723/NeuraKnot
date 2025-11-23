@@ -27,6 +27,13 @@ export const AI_PERSONALITIES: Record<string, AIPersonality> = {
     icon: LineChart,
     color: 'from-green-400 to-teal-600',
     description: '論理的で分析的な対話'
+  },
+  concise: {
+    id: 'concise',
+    name: '簡潔',
+    icon: LineChart,
+    color: 'from-gray-400 to-gray-600',
+    description: '簡潔で要点を押さえた対話'
   }
 }
 

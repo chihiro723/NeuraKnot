@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { listAIAgents } from "@/lib/actions/ai-agent";
+import { listGroupChats } from "@/lib/actions/group-chat";
 import { getAuthUser } from "@/lib/actions/auth-queries";
 import { SidebarLayout } from "@/components/layout/SidebarLayout";
 import { DashboardSidebar } from "@/components/layout/DashboardSidebar";
@@ -14,11 +15,15 @@ export const revalidate = 60; // 60秒ごとに再検証
 
 // データフェッチコンポーネント（1回だけ呼ばれる）
 async function RosterListData() {
-  const agentsResult = await listAIAgents();
+  const [agentsResult, groupChatsResult] = await Promise.all([
+    listAIAgents(),
+    listGroupChats(),
+  ]);
 
   return (
     <RosterListClient
       initialAgents={agentsResult.success ? agentsResult.data : null}
+      initialGroupChats={groupChatsResult.success ? groupChatsResult.data : null}
     />
   );
 }

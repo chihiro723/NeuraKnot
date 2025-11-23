@@ -29,7 +29,7 @@ class AgentService:
     }
     
     @staticmethod
-    def _build_system_prompt(persona: str, custom_prompt: str = None, user_name: str = None) -> str:
+    def _build_system_prompt(persona: str, custom_prompt: str = None, user_name: str = None, agent_name: str = None) -> str:
         """
         ペルソナに応じたシステムプロンプトを構築
         
@@ -37,10 +37,16 @@ class AgentService:
             persona: ペルソナ名
             custom_prompt: カスタムプロンプト（Go側で既にペルソナプロンプトと連結済み）
             user_name: ユーザー名（会話の相手）
+            agent_name: エージェント名（自分の名前）
             
         Returns:
             システムプロンプト文字列
         """
+        # エージェント名の文脈を追加
+        agent_context = ""
+        if agent_name:
+            agent_context = f"\n\n【あなたの名前】\nあなたの名前は「{agent_name}」です。必ずこの名前で自己認識してください。"
+        
         # ユーザー名の文脈を追加
         user_context = ""
         if user_name:
@@ -49,23 +55,17 @@ class AgentService:
         # custom_promptが渡された場合は、既にGo側でペルソナプロンプトと連結されているのでそのまま使用
         if custom_prompt:
             # ツール使用の指示を追加
-            return f"""{custom_prompt}{user_context}
+            return f"""{custom_prompt}{agent_context}{user_context}
 
 【ツール活用の最重要指示】
 - **利用可能なツールを最大限積極的に活用してください**
 - ユーザーの質問に対して、ツールを使うことでより正確で有用な回答ができる場合は、**必ずツールを使用してください**
 - 複数のツールを組み合わせることで、より豊かな回答が可能です
-- 例：
-  * 現在時刻を聞かれたら → 日時計算ツールを使用
-  * 天気を聞かれたら → 天気予報ツールを使用
-  * 計算が必要なら → 計算ツールを使用
-  * 検索が必要なら → 検索ツールを使用
 - ツールの結果を受け取ったら、それを元にユーザーにわかりやすく丁寧に説明してください
 - **ツールを使わずに推測で答えるのは避けてください**。正確な情報が必要な場合は必ずツールを使用すること
 
 【回答時の追加提案】
 - 回答後、**利用可能な他のツールを使ってさらにできることを積極的に紹介してください**
-- 例：「ちなみに、天気予報ツールで明日の天気も確認できますよ」「日時計算ツールで〇〇日後の日付も計算できます」
 - ユーザーの潜在的なニーズを先回りして提案することで、より有用な体験を提供してください
 """
         
@@ -83,17 +83,11 @@ class AgentService:
 - **利用可能なツールを最大限積極的に活用してください**
 - ユーザーの質問に対して、ツールを使うことでより正確で有用な回答ができる場合は、**必ずツールを使用してください**
 - 複数のツールを組み合わせることで、より豊かな回答が可能です
-- 例：
-  * 現在時刻を聞かれたら → 日時計算ツールを使用
-  * 天気を聞かれたら → 天気予報ツールを使用
-  * 計算が必要なら → 計算ツールを使用
-  * 検索が必要なら → 検索ツールを使用
 - ツールの結果を受け取ったら、それを元にユーザーにわかりやすく丁寧に説明してください
 - **ツールを使わずに推測で答えるのは避けてください**。正確な情報が必要な場合は必ずツールを使用すること
 
 【回答時の追加提案】
 - 回答後、**利用可能な他のツールを使ってさらにできることを積極的に紹介してください**
-- 例：「ちなみに、天気予報ツールで明日の天気も確認できますよ」「日時計算ツールで〇〇日後の日付も計算できます」
 - ユーザーの潜在的なニーズを先回りして提案することで、より有用な体験を提供してください
 """
     
@@ -111,6 +105,7 @@ class AgentService:
         Note:
             空のコンテンツを持つメッセージはフィルタリングされます。
             これはAnthropicなどのプロバイダーが空メッセージを許可しないためです。
+            nameフィールドが存在する場合、LangChainメッセージに渡されます。
         """
         messages = []
         for msg in history:
@@ -121,9 +116,17 @@ class AgentService:
                 continue
             
             if msg.role == "user":
-                messages.append(HumanMessage(content=msg.content))
+                # nameフィールドがある場合は含める
+                if msg.name:
+                    messages.append(HumanMessage(content=msg.content, name=msg.name))
+                else:
+                    messages.append(HumanMessage(content=msg.content))
             elif msg.role == "assistant":
-                messages.append(AIMessage(content=msg.content))
+                # nameフィールドがある場合は含める
+                if msg.name:
+                    messages.append(AIMessage(content=msg.content, name=msg.name))
+                else:
+                    messages.append(AIMessage(content=msg.content))
             elif msg.role == "system":
                 messages.append(SystemMessage(content=msg.content))
         return messages
@@ -170,7 +173,8 @@ class AgentService:
         system_prompt = self._build_system_prompt(
             request.agent_config.persona,
             request.agent_config.custom_system_prompt,
-            request.user_name
+            request.user_name,
+            request.agent_config.agent_name  # エージェント名を渡す
         )
         
         # プロバイダーごとに適切なエージェントを作成
@@ -295,6 +299,18 @@ Thought:{{agent_scratchpad}}"""
         
         # 会話履歴を変換
         chat_history = self._convert_history_to_messages(request.conversation_history)
+        
+        print(f"\n==== Chat Request Debug ====")
+        print(f"Input message: {request.message}")
+        print(f"Chat history length: {len(chat_history)}")
+        if len(chat_history) > 0:
+            print(f"Last 3 messages in history:")
+            for i, msg in enumerate(chat_history[-3:]):
+                role = type(msg).__name__
+                content_preview = msg.content[:50] if len(msg.content) > 50 else msg.content
+                name = getattr(msg, 'name', None)
+                print(f"  [{len(chat_history)-3+i}] {role}, name={name}, content={content_preview}")
+        print("============================\n")
         
         # 実行
         result = await agent_executor.ainvoke({

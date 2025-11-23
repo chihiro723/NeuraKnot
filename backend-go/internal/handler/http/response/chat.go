@@ -50,6 +50,22 @@ type ToolUsageResponse struct {
 	ExecutedAt      string  `json:"executed_at"`
 }
 
+// ToToolUsageResponse はツール使用エンティティをToolUsageResponseに変換
+func ToToolUsageResponse(tu *conversation.ToolUsage) *ToolUsageResponse {
+	return &ToolUsageResponse{
+		ID:              tu.ID.String(),
+		ToolName:        tu.ToolName,
+		ToolCategory:    tu.ToolCategory,
+		InputData:       string(tu.InputData),
+		OutputData:      tu.OutputData,
+		Status:          tu.Status,
+		ErrorMessage:    tu.ErrorMessage,
+		ExecutionTimeMs: tu.ExecutionTimeMs,
+		InsertPosition:  tu.InsertPosition,
+		ExecutedAt:      tu.ExecutedAt.Format(time.RFC3339),
+	}
+}
+
 // MessageResponse はメッセージレスポンス
 type MessageResponse struct {
 	ID             string               `json:"id"`

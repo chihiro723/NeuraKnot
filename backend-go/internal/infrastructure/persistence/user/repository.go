@@ -23,15 +23,26 @@ func NewRepository(db *sql.DB) user.UserRepository {
 // Save ユーザーを保存
 func (r *Repository) Save(ctx context.Context, user *user.User) error {
 	query := `
-		INSERT INTO users (id, cognito_user_id, email, display_name, avatar_url, status, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		ON CONFLICT (id) 
-		DO UPDATE SET 
+		INSERT INTO users (
+			id, cognito_user_id, email, display_name, avatar_url, status,
+			stripe_customer_id, subscription_tier, subscription_status,
+			stripe_subscription_id, current_period_start, current_period_end,
+			created_at, updated_at
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+		ON CONFLICT (id)
+		DO UPDATE SET
 			cognito_user_id = EXCLUDED.cognito_user_id,
 			email = EXCLUDED.email,
 			display_name = EXCLUDED.display_name,
 			avatar_url = EXCLUDED.avatar_url,
 			status = EXCLUDED.status,
+			stripe_customer_id = EXCLUDED.stripe_customer_id,
+			subscription_tier = EXCLUDED.subscription_tier,
+			subscription_status = EXCLUDED.subscription_status,
+			stripe_subscription_id = EXCLUDED.stripe_subscription_id,
+			current_period_start = EXCLUDED.current_period_start,
+			current_period_end = EXCLUDED.current_period_end,
 			updated_at = EXCLUDED.updated_at
 	`
 
@@ -42,6 +53,12 @@ func (r *Repository) Save(ctx context.Context, user *user.User) error {
 		user.DisplayName,
 		user.AvatarURL,
 		user.Status.String(),
+		user.StripeCustomerID,
+		user.SubscriptionTier,
+		user.SubscriptionStatus,
+		user.StripeSubscriptionID,
+		user.CurrentPeriodStart,
+		user.CurrentPeriodEnd,
 		user.CreatedAt,
 		user.UpdatedAt,
 	)
@@ -56,7 +73,11 @@ func (r *Repository) Save(ctx context.Context, user *user.User) error {
 // GetByID IDでユーザーを取得
 func (r *Repository) GetByID(ctx context.Context, id user.UserID) (*user.User, error) {
 	query := `
-		SELECT id, cognito_user_id, email, display_name, avatar_url, status, created_at, updated_at
+		SELECT
+			id, cognito_user_id, email, display_name, avatar_url, status,
+			stripe_customer_id, subscription_tier, subscription_status,
+			stripe_subscription_id, current_period_start, current_period_end,
+			created_at, updated_at
 		FROM users
 		WHERE id = $1
 	`
@@ -72,6 +93,12 @@ func (r *Repository) GetByID(ctx context.Context, id user.UserID) (*user.User, e
 		&u.DisplayName,
 		&u.AvatarURL,
 		&status,
+		&u.StripeCustomerID,
+		&u.SubscriptionTier,
+		&u.SubscriptionStatus,
+		&u.StripeSubscriptionID,
+		&u.CurrentPeriodStart,
+		&u.CurrentPeriodEnd,
 		&createdAt,
 		&updatedAt,
 	)
@@ -115,7 +142,11 @@ func (r *Repository) GetByID(ctx context.Context, id user.UserID) (*user.User, e
 // GetByCognitoUserID CognitoユーザーIDでユーザーを取得
 func (r *Repository) GetByCognitoUserID(ctx context.Context, cognitoUserID string) (*user.User, error) {
 	query := `
-		SELECT id, cognito_user_id, email, display_name, avatar_url, status, created_at, updated_at
+		SELECT
+			id, cognito_user_id, email, display_name, avatar_url, status,
+			stripe_customer_id, subscription_tier, subscription_status,
+			stripe_subscription_id, current_period_start, current_period_end,
+			created_at, updated_at
 		FROM users
 		WHERE cognito_user_id = $1
 	`
@@ -131,6 +162,12 @@ func (r *Repository) GetByCognitoUserID(ctx context.Context, cognitoUserID strin
 		&u.DisplayName,
 		&u.AvatarURL,
 		&status,
+		&u.StripeCustomerID,
+		&u.SubscriptionTier,
+		&u.SubscriptionStatus,
+		&u.StripeSubscriptionID,
+		&u.CurrentPeriodStart,
+		&u.CurrentPeriodEnd,
 		&createdAt,
 		&updatedAt,
 	)
@@ -174,7 +211,11 @@ func (r *Repository) GetByCognitoUserID(ctx context.Context, cognitoUserID strin
 // GetByEmail メールアドレスでユーザーを取得
 func (r *Repository) GetByEmail(ctx context.Context, email user.Email) (*user.User, error) {
 	query := `
-		SELECT id, cognito_user_id, email, display_name, avatar_url, status, created_at, updated_at
+		SELECT
+			id, cognito_user_id, email, display_name, avatar_url, status,
+			stripe_customer_id, subscription_tier, subscription_status,
+			stripe_subscription_id, current_period_start, current_period_end,
+			created_at, updated_at
 		FROM users
 		WHERE email = $1
 	`
@@ -190,6 +231,12 @@ func (r *Repository) GetByEmail(ctx context.Context, email user.Email) (*user.Us
 		&u.DisplayName,
 		&u.AvatarURL,
 		&status,
+		&u.StripeCustomerID,
+		&u.SubscriptionTier,
+		&u.SubscriptionStatus,
+		&u.StripeSubscriptionID,
+		&u.CurrentPeriodStart,
+		&u.CurrentPeriodEnd,
 		&createdAt,
 		&updatedAt,
 	)
@@ -212,6 +259,75 @@ func (r *Repository) GetByEmail(ctx context.Context, email user.Email) (*user.Us
 	}
 
 	parsedEmail, err = user.NewEmail(emailStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid email: %w", err)
+	}
+
+	parsedStatus, err = user.ParseUserStatus(status)
+	if err != nil {
+		return nil, fmt.Errorf("invalid status: %w", err)
+	}
+
+	u.ID = parsedUserID
+	u.Email = parsedEmail
+	u.Status = parsedStatus
+	u.CreatedAt = createdAt
+	u.UpdatedAt = updatedAt
+
+	return &u, nil
+}
+
+// GetByStripeCustomerID Stripe Customer IDでユーザーを取得
+func (r *Repository) GetByStripeCustomerID(ctx context.Context, stripeCustomerID string) (*user.User, error) {
+	query := `
+		SELECT
+			id, cognito_user_id, email, display_name, avatar_url, status,
+			stripe_customer_id, subscription_tier, subscription_status,
+			stripe_subscription_id, current_period_start, current_period_end,
+			created_at, updated_at
+		FROM users
+		WHERE stripe_customer_id = $1
+	`
+
+	var u user.User
+	var userID, email, status string
+	var createdAt, updatedAt time.Time
+
+	err := r.db.QueryRowContext(ctx, query, stripeCustomerID).Scan(
+		&userID,
+		&u.CognitoUserID,
+		&email,
+		&u.DisplayName,
+		&u.AvatarURL,
+		&status,
+		&u.StripeCustomerID,
+		&u.SubscriptionTier,
+		&u.SubscriptionStatus,
+		&u.StripeSubscriptionID,
+		&u.CurrentPeriodStart,
+		&u.CurrentPeriodEnd,
+		&createdAt,
+		&updatedAt,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	// 値オブジェクトを作成
+	var parsedUserID user.UserID
+	var parsedEmail user.Email
+	var parsedStatus user.UserStatus
+
+	parsedUserID, err = user.ParseUserID(userID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user ID: %w", err)
+	}
+
+	parsedEmail, err = user.NewEmail(email)
 	if err != nil {
 		return nil, fmt.Errorf("invalid email: %w", err)
 	}
@@ -259,7 +375,11 @@ func (r *Repository) Delete(ctx context.Context, id user.UserID) error {
 // List ユーザー一覧を取得
 func (r *Repository) List(ctx context.Context, limit, offset int) ([]*user.User, error) {
 	query := `
-		SELECT id, cognito_user_id, email, display_name, avatar_url, status, created_at, updated_at
+		SELECT
+			id, cognito_user_id, email, display_name, avatar_url, status,
+			stripe_customer_id, subscription_tier, subscription_status,
+			stripe_subscription_id, current_period_start, current_period_end,
+			created_at, updated_at
 		FROM users
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
@@ -284,6 +404,12 @@ func (r *Repository) List(ctx context.Context, limit, offset int) ([]*user.User,
 			&u.DisplayName,
 			&u.AvatarURL,
 			&status,
+			&u.StripeCustomerID,
+			&u.SubscriptionTier,
+			&u.SubscriptionStatus,
+			&u.StripeSubscriptionID,
+			&u.CurrentPeriodStart,
+			&u.CurrentPeriodEnd,
 			&createdAt,
 			&updatedAt,
 		)
@@ -330,8 +456,20 @@ func (r *Repository) List(ctx context.Context, limit, offset int) ([]*user.User,
 // Update ユーザーを更新
 func (r *Repository) Update(ctx context.Context, user *user.User) error {
 	query := `
-		UPDATE users 
-		SET cognito_user_id = $2, email = $3, display_name = $4, avatar_url = $5, status = $6, updated_at = $7
+		UPDATE users
+		SET
+			cognito_user_id = $2,
+			email = $3,
+			display_name = $4,
+			avatar_url = $5,
+			status = $6,
+			stripe_customer_id = $7,
+			subscription_tier = $8,
+			subscription_status = $9,
+			stripe_subscription_id = $10,
+			current_period_start = $11,
+			current_period_end = $12,
+			updated_at = $13
 		WHERE id = $1
 	`
 
@@ -342,6 +480,12 @@ func (r *Repository) Update(ctx context.Context, user *user.User) error {
 		user.DisplayName,
 		user.AvatarURL,
 		user.Status.String(),
+		user.StripeCustomerID,
+		user.SubscriptionTier,
+		user.SubscriptionStatus,
+		user.StripeSubscriptionID,
+		user.CurrentPeriodStart,
+		user.CurrentPeriodEnd,
 		user.UpdatedAt,
 	)
 

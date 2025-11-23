@@ -11,7 +11,8 @@ import (
 type ToolUsage struct {
 	ID              uuid.UUID
 	SessionID       *uuid.UUID // NULLable
-	MessageID       *uuid.UUID // NULLable
+	MessageID       *uuid.UUID // NULLable (1対1チャット用)
+	GroupMessageID  *uuid.UUID // NULLable (グループチャット用)
 	ToolName        string
 	ToolCategory    string
 	InputData       json.RawMessage
@@ -23,7 +24,7 @@ type ToolUsage struct {
 	ExecutedAt      time.Time
 }
 
-// NewToolUsage はツール使用履歴を作成
+// NewToolUsage はツール使用履歴を作成（1対1チャット用）
 func NewToolUsage(
 	messageID uuid.UUID,
 	toolName string,
@@ -38,6 +39,24 @@ func NewToolUsage(
 		InputData:    inputData,
 		Status:       "completed",
 		ExecutedAt:   time.Now(),
+	}, nil
+}
+
+// NewGroupToolUsage はツール使用履歴を作成（グループチャット用）
+func NewGroupToolUsage(
+	groupMessageID uuid.UUID,
+	toolName string,
+	toolCategory string,
+	inputData json.RawMessage,
+) (*ToolUsage, error) {
+	return &ToolUsage{
+		ID:             uuid.New(),
+		GroupMessageID: &groupMessageID,
+		ToolName:       toolName,
+		ToolCategory:   toolCategory,
+		InputData:      inputData,
+		Status:         "completed",
+		ExecutedAt:     time.Now(),
 	}, nil
 }
 
@@ -69,6 +88,9 @@ type ToolUsageRepository interface {
 
 	// FindByMessageID はメッセージIDでツール使用履歴を取得
 	FindByMessageID(messageID uuid.UUID) ([]*ToolUsage, error)
+
+	// FindByGroupMessageID はグループメッセージIDでツール使用履歴を取得
+	FindByGroupMessageID(groupMessageID uuid.UUID) ([]*ToolUsage, error)
 
 	// FindBySessionID はセッションIDでツール使用履歴を取得
 	FindBySessionID(sessionID uuid.UUID) ([]*ToolUsage, error)

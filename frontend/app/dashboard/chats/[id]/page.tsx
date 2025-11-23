@@ -6,6 +6,7 @@ import {
   getMessages,
 } from "@/lib/actions/conversation";
 import { listAIAgents } from "@/lib/actions/ai-agent";
+import { listGroupChats, getGroupChatMessages } from "@/lib/actions/group-chat";
 import { getProfile } from "@/lib/actions/user";
 import { ChatWindowClient } from "@/components/chat/ChatWindowClient";
 import { LoadingSpinner } from "@/components/ui/feedback/LoadingSpinner";
@@ -38,9 +39,10 @@ async function ChatWindowData({ chatId }: { chatId: string }) {
   // await devDelayCustom();
 
   // サーバーサイドでデータフェッチ
-  const [conversationsResult, agentsResult, profileResult] = await Promise.all([
+  const [conversationsResult, agentsResult, groupChatsResult, profileResult] = await Promise.all([
     listConversations(),
     listAIAgents(),
+    listGroupChats(),
     getProfile(),
   ]);
 
@@ -49,6 +51,9 @@ async function ChatWindowData({ chatId }: { chatId: string }) {
     ? conversationsResult.data?.conversations || []
     : [];
   const agents = agentsResult.success ? agentsResult.data?.agents || [] : [];
+  const groupChats = groupChatsResult.success
+    ? groupChatsResult.data?.group_chats || []
+    : [];
 
   // AI Agentのマッピング
   const agentsMap = new Map<string, AIAgent>();
@@ -56,7 +61,47 @@ async function ChatWindowData({ chatId }: { chatId: string }) {
     agentsMap.set(agent.id, agent);
   });
 
-  // chatIdに該当する会話を検索
+  // グループチャットかどうかチェック
+  const groupChat = groupChats.find((gc: any) => gc.id === chatId);
+  if (groupChat) {
+    // グループチャットの場合
+    const memberAgents = groupChat.members
+      ?.map((m: any) => agentsMap.get(m.ai_agent_id))
+      .filter((a: any): a is AIAgent => !!a) || [];
+
+    const chatData = {
+      id: chatId,
+      name: groupChat.name,
+      avatar_url: groupChat.icon_url,
+      type: "group" as const,
+      status: "online" as const,
+      description: groupChat.description || `メンバー: ${memberAgents.length}人`,
+      members: memberAgents,
+    };
+
+    // グループチャットのメッセージ履歴を取得
+    let groupMessages = [];
+    const messagesResult = await getGroupChatMessages(chatId, 50);
+    if (messagesResult.success && messagesResult.data) {
+      groupMessages = messagesResult.data.messages || [];
+    }
+
+    return (
+      <ChatWindowClient
+        chatData={chatData}
+        conversationId={chatId}
+        initialMessages={groupMessages}
+        initialUserProfile={profileResult.success ? {
+          username: profileResult.data.username,
+          display_name: profileResult.data.display_name,
+          avatar_url: profileResult.data.avatar_url,
+        } : undefined}
+        isGroupChat={true}
+      />
+    );
+  }
+
+  // chatIdに該当する会話を検索（1対1チャット）
   let selectedConversation: Conversation | null = null;
   let selectedAgent: AIAgent | null = null;
 

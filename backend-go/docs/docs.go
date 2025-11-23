@@ -80,6 +80,271 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/billing/check-limit": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "billing"
+                ],
+                "summary": "トークン上限をチェック",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.TokenLimitCheckResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/billing/checkout": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "billing"
+                ],
+                "summary": "Checkout Sessionを作成",
+                "parameters": [
+                    {
+                        "description": "Checkout Session作成リクエスト",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_request.CreateCheckoutSessionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.CheckoutSessionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/billing/portal": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "billing"
+                ],
+                "summary": "Billing Portal Sessionを作成",
+                "parameters": [
+                    {
+                        "description": "Billing Portal Session作成リクエスト",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_request.CreateBillingPortalSessionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.BillingPortalSessionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/billing/subscription/cancel": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "billing"
+                ],
+                "summary": "サブスクリプションを解約",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/billing/subscription/change": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "billing"
+                ],
+                "summary": "サブスクリプションプランを変更",
+                "parameters": [
+                    {
+                        "description": "プラン変更リクエスト",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_request.ChangeSubscriptionPlanRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/billing/tiers": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "billing"
+                ],
+                "summary": "プラン制限情報を取得",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/backend-go_internal_handler_http_response.TierLimitsResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/billing/usage": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "billing"
+                ],
+                "summary": "現在のトークン使用量を取得",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.TokenUsageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/ai-agents": {
             "get": {
                 "security": [
@@ -974,6 +1239,845 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/conversations/{id}/suggested-questions": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "conversations"
+                ],
+                "summary": "1対1会話の質問候補を生成",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Conversation ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "取得するメッセージ数",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.SuggestedQuestionsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/group-chats": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "ユーザーのグループチャット一覧を取得します",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GroupChat"
+                ],
+                "summary": "グループチャット一覧取得",
+                "responses": {
+                    "200": {
+                        "description": "取得成功",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.GroupChatsListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "新しいグループチャットを作成します",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GroupChat"
+                ],
+                "summary": "グループチャット作成",
+                "parameters": [
+                    {
+                        "description": "グループチャット情報",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_request.CreateGroupChatRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "作成成功",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.GroupChatResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/group-chats/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "グループチャットの詳細を取得します",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GroupChat"
+                ],
+                "summary": "グループチャット詳細取得",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "グループチャットID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "取得成功",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.GroupChatResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "見つかりません",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "グループチャット情報を更新します",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GroupChat"
+                ],
+                "summary": "グループチャット更新",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "グループチャットID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "更新情報",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_request.UpdateGroupChatRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "更新成功",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.GroupChatResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "グループチャットを削除します",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GroupChat"
+                ],
+                "summary": "グループチャット削除",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "グループチャットID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "削除成功"
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/group-chats/{id}/icon": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "グループチャットのアイコン画像をアップロードします（所有者のみ）",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Upload"
+                ],
+                "summary": "グループチャットアイコンアップロード",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "グループチャットID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "アイコン画像ファイル",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "アップロード成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "権限エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "グループチャットが見つかりません",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "ファイルサイズ超過",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/group-chats/{id}/members": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "グループチャットにメンバーを追加します",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GroupChat"
+                ],
+                "summary": "メンバー追加",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "グループチャットID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "メンバー情報",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_request.AddMemberRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "追加成功",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.GroupMemberResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/group-chats/{id}/members/reorder": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "グループチャットのメンバー順序を変更します",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GroupChat"
+                ],
+                "summary": "メンバー順序変更",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "グループチャットID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "順序情報",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_request.ReorderMembersRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "更新成功"
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/group-chats/{id}/members/{member_id}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "グループチャットからメンバーを削除します",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GroupChat"
+                ],
+                "summary": "メンバー削除",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "グループチャットID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "メンバーID",
+                        "name": "member_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "削除成功"
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/group-chats/{id}/messages": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "グループチャットのメッセージ履歴を取得します",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GroupChat"
+                ],
+                "summary": "メッセージ履歴取得",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "グループチャットID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 50,
+                        "description": "取得件数",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "このメッセージIDより前を取得",
+                        "name": "before",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "取得成功",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.GroupMessagesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/group-chats/{id}/messages/stream": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "グループチャットにメッセージを送信してストリーミング応答を取得します",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "text/event-stream"
+                ],
+                "tags": [
+                    "GroupChat"
+                ],
+                "summary": "メッセージ送信（ストリーミング）",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "グループチャットID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "メッセージ内容",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_request.SendGroupMessageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ストリーミング成功"
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/group-chats/{id}/messages/{msg_id}/cancel": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "グループチャットのメッセージ処理をキャンセルします",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "GroupChat"
+                ],
+                "summary": "メッセージ処理キャンセル",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "グループチャットID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "メッセージID",
+                        "name": "msg_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "キャンセル成功"
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/group-chats/{id}/suggested-questions": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "group-chats"
+                ],
+                "summary": "グループチャットの質問候補を生成",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Group Chat ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "取得するメッセージ数",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.SuggestedQuestionsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Service Unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/prompts/enhance": {
             "post": {
                 "security": [
@@ -1291,6 +2395,70 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/upload/avatar/agent": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "エージェント作成時にアバター画像を一時アップロードします",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Upload"
+                ],
+                "summary": "エージェントアバターアップロード（作成時）",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "アバター画像ファイル",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "アップロード成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "ファイルサイズ超過",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/upload/avatar/agent/{id}": {
             "post": {
                 "security": [
@@ -1428,6 +2596,107 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/upload/icon/group": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "グループチャット作成時にアイコン画像を一時アップロードします",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Upload"
+                ],
+                "summary": "グループチャットアイコンアップロード（作成時）",
+                "parameters": [
+                    {
+                        "type": "file",
+                        "description": "アイコン画像ファイル",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "アップロード成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "413": {
+                        "description": "ファイルサイズ超過",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/webhooks/stripe": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "webhook"
+                ],
+                "summary": "Stripe Webhookを処理",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
                         }
@@ -2142,6 +3411,17 @@ const docTemplate = `{
                 }
             }
         },
+        "backend-go_internal_handler_http_request.AddMemberRequest": {
+            "type": "object",
+            "required": [
+                "ai_agent_id"
+            ],
+            "properties": {
+                "ai_agent_id": {
+                    "type": "string"
+                }
+            }
+        },
         "backend-go_internal_handler_http_request.ChangeEmailRequest": {
             "type": "object",
             "required": [
@@ -2149,6 +3429,18 @@ const docTemplate = `{
             ],
             "properties": {
                 "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_request.ChangeSubscriptionPlanRequest": {
+            "type": "object",
+            "required": [
+                "tier"
+            ],
+            "properties": {
+                "tier": {
+                    "description": "free, pro, max",
                     "type": "string"
                 }
             }
@@ -2194,6 +3486,10 @@ const docTemplate = `{
                 "name"
             ],
             "properties": {
+                "avatar_url": {
+                    "description": "アバター画像URL",
+                    "type": "string"
+                },
                 "description": {
                     "type": "string"
                 },
@@ -2223,6 +3519,65 @@ const docTemplate = `{
                 },
                 "system_prompt": {
                     "description": "カスタムシステムプロンプト",
+                    "type": "string"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_request.CreateBillingPortalSessionRequest": {
+            "type": "object",
+            "required": [
+                "return_url"
+            ],
+            "properties": {
+                "return_url": {
+                    "description": "戻り先URL",
+                    "type": "string"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_request.CreateCheckoutSessionRequest": {
+            "type": "object",
+            "required": [
+                "cancel_url",
+                "success_url",
+                "tier"
+            ],
+            "properties": {
+                "cancel_url": {
+                    "description": "キャンセル時のリダイレクトURL",
+                    "type": "string"
+                },
+                "success_url": {
+                    "description": "成功時のリダイレクトURL",
+                    "type": "string"
+                },
+                "tier": {
+                    "description": "free, pro, max",
+                    "type": "string"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_request.CreateGroupChatRequest": {
+            "type": "object",
+            "required": [
+                "member_ids",
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "icon_url": {
+                    "type": "string"
+                },
+                "member_ids": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "name": {
                     "type": "string"
                 }
             }
@@ -2261,6 +3616,21 @@ const docTemplate = `{
                 }
             }
         },
+        "backend-go_internal_handler_http_request.ReorderMembersRequest": {
+            "type": "object",
+            "required": [
+                "orders"
+            ],
+            "properties": {
+                "orders": {
+                    "description": "memberID -\u003e order",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
         "backend-go_internal_handler_http_request.ResendConfirmationCodeRequest": {
             "type": "object",
             "required": [
@@ -2284,6 +3654,21 @@ const docTemplate = `{
                 },
                 "message": {
                     "type": "string"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_request.SendGroupMessageRequest": {
+            "type": "object",
+            "required": [
+                "content",
+                "mentions"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "mentions": {
+                    "description": "\"all\" or []MentionItem"
                 }
             }
         },
@@ -2392,6 +3777,23 @@ const docTemplate = `{
                 },
                 "tools_enabled": {
                     "type": "boolean"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_request.UpdateGroupChatRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "icon_url": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "system_prompt": {
+                    "type": "string"
                 }
             }
         },
@@ -2619,6 +4021,25 @@ const docTemplate = `{
                 }
             }
         },
+        "backend-go_internal_handler_http_response.BillingPortalSessionResponse": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_response.CheckoutSessionResponse": {
+            "type": "object",
+            "properties": {
+                "session_id": {
+                    "type": "string"
+                },
+                "session_url": {
+                    "type": "string"
+                }
+            }
+        },
         "backend-go_internal_handler_http_response.ConversationResponse": {
             "type": "object",
             "properties": {
@@ -2734,6 +4155,168 @@ const docTemplate = `{
                 }
             }
         },
+        "backend-go_internal_handler_http_response.GroupChatResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "icon_url": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "last_message": {
+                    "$ref": "#/definitions/backend-go_internal_handler_http_response.LastMessageResponse"
+                },
+                "last_message_at": {
+                    "type": "string"
+                },
+                "members": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/backend-go_internal_handler_http_response.GroupMemberResponse"
+                    }
+                },
+                "message_count": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "system_prompt": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_response.GroupChatsListResponse": {
+            "type": "object",
+            "properties": {
+                "group_chats": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/backend-go_internal_handler_http_response.GroupChatResponse"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_response.GroupMemberResponse": {
+            "type": "object",
+            "properties": {
+                "ai_agent_icon": {
+                    "type": "string"
+                },
+                "ai_agent_id": {
+                    "type": "string"
+                },
+                "ai_agent_model": {
+                    "type": "string"
+                },
+                "ai_agent_name": {
+                    "type": "string"
+                },
+                "display_order": {
+                    "type": "integer"
+                },
+                "group_chat_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "joined_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_response.GroupMessageResponse": {
+            "type": "object",
+            "properties": {
+                "ai_session_id": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "group_chat_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "parent_message_id": {
+                    "type": "string"
+                },
+                "processing_status": {
+                    "type": "string"
+                },
+                "sender_icon": {
+                    "type": "string"
+                },
+                "sender_id": {
+                    "type": "string"
+                },
+                "sender_name": {
+                    "type": "string"
+                },
+                "sender_type": {
+                    "type": "string"
+                },
+                "tool_usages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/backend-go_internal_handler_http_response.ToolUsageResponse"
+                    }
+                }
+            }
+        },
+        "backend-go_internal_handler_http_response.GroupMessagesResponse": {
+            "type": "object",
+            "properties": {
+                "messages": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/backend-go_internal_handler_http_response.GroupMessageResponse"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_response.LastMessageResponse": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "sender_name": {
+                    "type": "string"
+                },
+                "sender_type": {
+                    "type": "string"
+                }
+            }
+        },
         "backend-go_internal_handler_http_response.MessageResponse": {
             "type": "object",
             "properties": {
@@ -2826,6 +4409,84 @@ const docTemplate = `{
                 }
             }
         },
+        "backend-go_internal_handler_http_response.SuggestedQuestionsResponse": {
+            "type": "object",
+            "properties": {
+                "metadata": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "suggestions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "token_usage": {
+                    "$ref": "#/definitions/backend-go_internal_handler_http_response.TokenUsage"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_response.TierLimitsResponse": {
+            "type": "object",
+            "properties": {
+                "max_ai_agents": {
+                    "type": "integer"
+                },
+                "max_group_chats": {
+                    "type": "integer"
+                },
+                "monthly_budget_usd": {
+                    "type": "number"
+                },
+                "price_jpy": {
+                    "type": "integer"
+                },
+                "price_usd": {
+                    "type": "number"
+                },
+                "tier": {
+                    "type": "string"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_response.TokenLimitCheckResponse": {
+            "type": "object",
+            "properties": {
+                "budget_limit_usd": {
+                    "description": "予算上限 (USD)",
+                    "type": "number"
+                },
+                "can_send": {
+                    "description": "チャット送信可能か",
+                    "type": "boolean"
+                },
+                "cost_usd": {
+                    "description": "使用済みコスト (USD)",
+                    "type": "number"
+                },
+                "current_tier": {
+                    "description": "現在のプラン",
+                    "type": "string"
+                },
+                "period_end": {
+                    "description": "課金期間終了日",
+                    "type": "string"
+                },
+                "remaining_budget_usd": {
+                    "description": "残り予算 (USD)",
+                    "type": "number"
+                },
+                "tokens_used": {
+                    "description": "使用済みトークン数",
+                    "type": "integer"
+                },
+                "usage_percentage": {
+                    "description": "使用率（%）: コストベース",
+                    "type": "number"
+                }
+            }
+        },
         "backend-go_internal_handler_http_response.TokenStatsResponse": {
             "type": "object",
             "properties": {
@@ -2854,6 +4515,62 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "total_tokens": {
+                    "type": "integer"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_response.TokenUsage": {
+            "type": "object",
+            "properties": {
+                "completion": {
+                    "type": "integer"
+                },
+                "prompt": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_response.TokenUsageResponse": {
+            "type": "object",
+            "properties": {
+                "cost_jpy": {
+                    "type": "number"
+                },
+                "cost_usd": {
+                    "type": "number"
+                },
+                "current_tier": {
+                    "type": "string"
+                },
+                "limit_usd": {
+                    "type": "number"
+                },
+                "period_end": {
+                    "type": "string"
+                },
+                "period_start": {
+                    "type": "string"
+                },
+                "provider_breakdown": {
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "remaining_usd": {
+                    "type": "number"
+                },
+                "request_count": {
+                    "type": "integer"
+                },
+                "tokens_completion": {
+                    "type": "integer"
+                },
+                "tokens_prompt": {
+                    "type": "integer"
+                },
+                "tokens_total": {
                     "type": "integer"
                 }
             }
