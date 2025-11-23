@@ -29,11 +29,20 @@ coverage.xml
 # 開発ルール・プロジェクトルール
 .cursorrules
 
+# Binaries
+backend-go/api
+backend-go/bin/
+
 # Environment variables
 # 各サービスの.envはGitコミット（サンプル用）
 # 個人設定と本番設定の.env.localは除外
 **/.env.local
+.env
+.env.local
 .env.*.local
+**/.env
+**/.env.local
+**/.env.*.local
 
 # IDE
 .vscode/
@@ -143,7 +152,6 @@ temp/
 .vscode/*
 !.vscode/extensions.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj

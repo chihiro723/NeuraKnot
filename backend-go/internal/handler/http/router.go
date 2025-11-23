@@ -2,6 +2,7 @@ package http
 
 import (
 	"backend-go/internal/crypto"
+	"backend-go/internal/domain/analytics"
 	"backend-go/internal/domain/service"
 	"backend-go/internal/domain/user"
 	"backend-go/internal/handler/http/middleware"
@@ -13,17 +14,49 @@ import (
 	"backend-go/internal/infrastructure/storage"
 	aiusecase "backend-go/internal/usecase/ai"
 	analyticsusecase "backend-go/internal/usecase/analytics"
+	billingusecase "backend-go/internal/usecase/billing"
 	chatusecase "backend-go/internal/usecase/chat"
+	groupchatusecase "backend-go/internal/usecase/groupchat"
 	serviceusecase "backend-go/internal/usecase/service"
 	userusecase "backend-go/internal/usecase/user"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
+
+// SimpleLogger シンプルなロガー実装（パッケージ外のloggerが使えない場合の代替）
+type SimpleLogger struct {
+	infoLogger  *log.Logger
+	errorLogger *log.Logger
+}
+
+func NewSimpleLogger() *SimpleLogger {
+	return &SimpleLogger{
+		infoLogger:  log.New(os.Stdout, "[INFO] ", log.LstdFlags),
+		errorLogger: log.New(os.Stderr, "[ERROR] ", log.LstdFlags),
+	}
+}
+
+func (l *SimpleLogger) Info(msg string, args ...interface{}) {
+	l.infoLogger.Printf(msg, args...)
+}
+
+func (l *SimpleLogger) Error(msg string, args ...interface{}) {
+	l.errorLogger.Printf(msg, args...)
+}
+
+func (l *SimpleLogger) Debug(msg string, args ...interface{}) {
+	l.infoLogger.Printf("[DEBUG] "+msg, args...)
+}
+
+func (l *SimpleLogger) Warn(msg string, args ...interface{}) {
+	l.infoLogger.Printf("[WARN] "+msg, args...)
+}
 
 // Router HTTPルーター
 type Router struct {
@@ -101,21 +134,51 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 	chatUsecase := chatusecase.NewChatUsecase(aiAgentRepo, conversationRepo, messageRepo, toolUsageRepo, chatSessionRepo, aiAgentServiceRepo, serviceConfigRepo, userRepo, aiClient)
 
 	aiAgentHandler := NewAIAgentHandler(agentUsecase, serviceUsecase, aiAgentServiceRepo)
-	chatHandler := NewChatHandler(chatUsecase)
+	chatHandler := NewChatHandler(chatUsecase, cfg.AIService.URL, db.DB)
 
 	// Prompt関連のハンドラー
 	promptHandler := NewPromptHandler(cfg.AIService.URL)
 
 	// Analytics関連のハンドラー
-	analyticsRepo := persistence.NewAnalyticsRepository(db.DB)
+	llmPricingRepo := persistence.NewLLMPricingRepository(db.DB)
+	pricingService := analytics.NewPricingService(llmPricingRepo)
+	analyticsRepo := persistence.NewAnalyticsRepository(db.DB, pricingService)
 	analyticsUsecase := analyticsusecase.NewAnalyticsUsecase(analyticsRepo)
 	analyticsHandler := NewAnalyticsHandler(analyticsUsecase)
 
+	// Billing関連のハンドラー
+	tokenUsageRepo := persistence.NewTokenUsageRepository(db.DB)
+	stripeClient := external.NewStripeClient(cfg.Stripe.SecretKey)
+	billingUsecase := billingusecase.NewBillingUseCase(
+		tokenUsageRepo,
+		llmPricingRepo,
+		userRepo,
+		stripeClient,
+		db.DB,
+		cfg.Stripe.PriceIDPro,
+		cfg.Stripe.PriceIDMax,
+		cfg.EnableSubscription,
+	)
+	billingHandler := NewBillingHandler(billingUsecase)
+
+	// Webhook関連のハンドラー
+	simpleLogger := NewSimpleLogger() // シンプルなロガーを作成
+	webhookHandler := NewWebhookHandler(billingUsecase, userRepo, cfg.Stripe.WebhookSecret, cfg, simpleLogger)
+
+	// GroupChat関連のハンドラー
+	groupChatRepo := persistence.NewGroupChatRepository(db.DB)
+	groupMemberRepo := persistence.NewGroupMemberRepository(db.DB)
+	groupMessageRepo := persistence.NewGroupMessageRepository(db.DB, toolUsageRepo)
+	messageMentionRepo := persistence.NewMessageMentionRepository(db.DB)
+	groupChatUsecase := groupchatusecase.NewGroupChatUsecase(groupChatRepo, groupMemberRepo, s3Client)
+	groupMessageUsecase := groupchatusecase.NewGroupMessageUsecase(groupChatRepo, groupMemberRepo, groupMessageRepo, messageMentionRepo, chatSessionRepo, toolUsageRepo, aiAgentRepo, aiAgentServiceRepo, serviceConfigRepo, aiClient)
+	groupChatHandler := NewGroupChatHandler(groupChatUsecase, groupMessageUsecase, cfg.AIService.URL, db.DB)
+
 	// Upload関連のハンドラー
-	uploadHandler := NewUploadHandler(userService, agentUsecase, s3Client)
+	uploadHandler := NewUploadHandler(userService, agentUsecase, groupChatUsecase, s3Client)
 
 	// ルートを設定
-	setupRoutes(engine, userHandler, aiAgentHandler, chatHandler, serviceHandler, promptHandler, analyticsHandler, uploadHandler, authService)
+	setupRoutes(engine, userHandler, aiAgentHandler, chatHandler, serviceHandler, promptHandler, analyticsHandler, billingHandler, groupChatHandler, uploadHandler, webhookHandler, authService)
 
 	return &Router{
 		engine: engine,
@@ -123,7 +186,7 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 }
 
 // setupRoutes ルートを設定
-func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *AIAgentHandler, chatHandler *ChatHandler, serviceHandler *ServiceHandler, promptHandler *PromptHandler, analyticsHandler *AnalyticsHandler, uploadHandler *UploadHandler, authService user.AuthService) {
+func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *AIAgentHandler, chatHandler *ChatHandler, serviceHandler *ServiceHandler, promptHandler *PromptHandler, analyticsHandler *AnalyticsHandler, billingHandler *BillingHandler, groupChatHandler *GroupChatHandler, uploadHandler *UploadHandler, webhookHandler *WebhookHandler, authService user.AuthService) {
 	// ヘルスチェック（ALB用に/api/healthも追加）
 	engine.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -188,6 +251,7 @@ func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *A
 			conversations.POST("", chatHandler.GetOrCreateConversation)
 			conversations.POST("/:id/messages", chatHandler.SendMessage) // ストリーミングも自動対応
 			conversations.GET("/:id/messages", chatHandler.GetMessages)
+			conversations.GET("/:id/suggested-questions", chatHandler.GenerateSuggestedQuestions)
 			conversations.PATCH("/:conversation_id/messages/:message_id/tools/positions", chatHandler.UpdateToolPositions)
 			conversations.POST("/agent-introduction", chatHandler.SendAgentIntroduction) // AIエージェント自己紹介送信
 		}
@@ -225,12 +289,55 @@ func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *A
 			analyticsRoutes.GET("", analyticsHandler.GetUserAnalytics)
 		}
 
+		// 課金・サブスクリプション関連
+		// 公開エンドポイント（認証不要）
+		v1.GET("/billing/tiers", billingHandler.GetTierLimits)
+
+		// 認証必要なエンドポイント
+		billingRoutes := v1.Group("/billing")
+		billingRoutes.Use(authMiddleware.RequireAuth())
+		{
+			billingRoutes.POST("/checkout", billingHandler.CreateCheckoutSession)
+			billingRoutes.POST("/portal", billingHandler.CreateBillingPortalSession)
+			billingRoutes.POST("/subscription/change", billingHandler.ChangeSubscriptionPlan)
+			billingRoutes.POST("/subscription/cancel", billingHandler.CancelSubscription)
+			billingRoutes.GET("/usage", billingHandler.GetCurrentUsage)
+			billingRoutes.GET("/check-limit", billingHandler.CheckTokenLimit)
+		}
+
+		// グループチャット関連（認証必要）
+		groupChats := v1.Group("/group-chats")
+		groupChats.Use(authMiddleware.RequireAuth())
+		{
+			groupChats.POST("", groupChatHandler.CreateGroupChat)
+			groupChats.GET("", groupChatHandler.GetGroupChats)
+			groupChats.GET("/:id", groupChatHandler.GetGroupChat)
+			groupChats.PUT("/:id", groupChatHandler.UpdateGroupChat)
+			groupChats.DELETE("/:id", groupChatHandler.DeleteGroupChat)
+			groupChats.POST("/:id/icon", uploadHandler.UploadGroupChatIcon)
+			groupChats.POST("/:id/members", groupChatHandler.AddMember)
+			groupChats.DELETE("/:id/members/:member_id", groupChatHandler.RemoveMember)
+			groupChats.PUT("/:id/members/reorder", groupChatHandler.ReorderMembers)
+			groupChats.POST("/:id/messages/stream", groupChatHandler.SendMessageStream)
+			groupChats.POST("/:id/messages/:msg_id/cancel", groupChatHandler.CancelMessage)
+			groupChats.GET("/:id/messages", groupChatHandler.GetMessages)
+			groupChats.GET("/:id/suggested-questions", groupChatHandler.GenerateSuggestedQuestions)
+		}
+
 		// アップロード関連（認証必要）
 		upload := v1.Group("/upload")
 		upload.Use(authMiddleware.RequireAuth())
 		{
 			upload.POST("/avatar/user", uploadHandler.UploadUserAvatar)
 			upload.POST("/avatar/agent/:id", uploadHandler.UploadAgentAvatar)
+			upload.POST("/avatar/agent", uploadHandler.UploadAgentAvatarSimple)
+			upload.POST("/icon/group", uploadHandler.UploadGroupIcon)
+		}
+
+		// Webhook関連（認証不要 - Stripe署名で検証）
+		webhooks := v1.Group("/webhooks")
+		{
+			webhooks.POST("/stripe", webhookHandler.HandleStripeWebhook)
 		}
 	}
 }

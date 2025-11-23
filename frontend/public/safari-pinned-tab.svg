@@ -1,0 +1,19 @@
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g fill="black">
+    <!-- 左側の柱 -->
+    <rect x="2" y="4" width="2" height="8" rx="1"/>
+    
+    <!-- 右側の柱 -->
+    <rect x="12" y="4" width="2" height="8" rx="1"/>
+    
+    <!-- ブリッジの道路部分 -->
+    <rect x="1" y="9" width="14" height="2" rx="1"/>
+    
+    <!-- ケーブル（簡略化） -->
+    <path d="M 3 5 Q 8 7, 8 9" stroke="black" stroke-width="0.5" fill="none"/>
+    <path d="M 13 5 Q 8 7, 8 9" stroke="black" stroke-width="0.5" fill="none"/>
+    
+    <!-- 中央の点 -->
+    <circle cx="8" cy="9" r="1.5"/>
+  </g>
+</svg>

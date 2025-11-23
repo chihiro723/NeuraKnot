@@ -27,6 +27,12 @@ export interface SelectedChat {
   personality_preset?: string
   member_count?: number
   description?: string
+  members?: Array<{
+    id: string
+    name: string
+    avatar_url?: string
+    type?: 'ai' | 'human'
+  }>
 }
 
 // 選択された友だちの型定義
@@ -71,7 +77,7 @@ export interface ConversationData {
   } | null
   groupInfo?: {
     name: string
-    avatar_url?: string
+    icon_url?: string
     member_count: number
     description?: string
   } | null

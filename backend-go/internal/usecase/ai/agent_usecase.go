@@ -38,6 +38,7 @@ func (uc *AgentUsecase) CreateAgent(
 	provider string,
 	model string,
 	description *string,
+	avatarURL *string,
 	systemPrompt *string,
 	streamingEnabled bool,
 ) (*ai.Agent, error) {
@@ -73,6 +74,11 @@ func (uc *AgentUsecase) CreateAgent(
 	// 説明を設定
 	if description != nil && *description != "" {
 		agent.SetDescription(*description)
+	}
+
+	// アバターURLを設定
+	if avatarURL != nil && *avatarURL != "" {
+		agent.AvatarURL = avatarURL
 	}
 
 	// システムプロンプトを設定

@@ -32,9 +32,9 @@ export function AddTypeSidebar() {
       type: "group" as const,
       icon: Handshake,
       title: "グループ",
-      description: "複数の友だちやAIとグループチャット",
-      path: "/dashboard/add/group",
-      comingSoon: true,
+      description: "複数のAIとグループチャット",
+      path: "/dashboard/add/group-chats",
+      comingSoon: false,
     },
   ];
 

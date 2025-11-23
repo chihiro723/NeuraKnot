@@ -1,0 +1,9 @@
+# BridgeSpeak Security Policy
+# 
+# If you discover a security vulnerability, please report it to us.
+# We take security seriously and will respond promptly.
+
+Contact: security@bridgespeak.com
+Expires: 2025-12-31T23:59:59.000Z
+Preferred-Languages: ja, en
+Canonical: https://bridgespeak.com/.well-known/security.txt

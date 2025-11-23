@@ -15,6 +15,7 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { SignOutButton } from "./SignOutButton";
 import { cn } from "@/lib/utils/cn";
 import type { Profile } from "@/lib/types";
+import { FEATURES } from "@/lib/constants/features";
 
 interface SettingsListSidebarProps {
   profile: Profile;
@@ -84,29 +85,28 @@ export function SettingsListSidebar({ profile }: SettingsListSidebarProps) {
         </Link>
 
         {/* サブスクリプション */}
-        <Link
-          href="/dashboard/settings/subscription"
-          className={cn(
-            "relative w-full bg-white dark:bg-gray-800 rounded-xl border p-6 shadow-sm hover:shadow-md transition-all duration-200 text-left block min-h-[104px]",
-            pathname === "/dashboard/settings/subscription"
-              ? "border-green-400 bg-green-50 dark:bg-green-500/10"
-              : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600"
-          )}
-        >
-          <div className="flex justify-between items-start mb-2">
-            <h3 className="flex items-center font-medium text-gray-900 dark:text-white lg:text-sm">
-              <CreditCard className="mr-2 w-5 h-5" />
-              サブスクリプション
-              <span className="ml-2 px-2 py-0.5 text-[10px] font-medium text-gray-600 bg-gray-100 rounded dark:text-gray-400 dark:bg-gray-700">
-                近日追加予定
-              </span>
-            </h3>
-            <ChevronRight className="flex-shrink-0 w-5 h-5 text-gray-400 dark:text-gray-500" />
-          </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 lg:text-xs">
-            プラン管理と利用状況を確認
-          </p>
-        </Link>
+        {FEATURES.ENABLE_SUBSCRIPTION && (
+          <Link
+            href="/dashboard/settings/subscription"
+            className={cn(
+              "relative w-full bg-white dark:bg-gray-800 rounded-xl border p-6 shadow-sm hover:shadow-md transition-all duration-200 text-left block min-h-[104px]",
+              pathname === "/dashboard/settings/subscription"
+                ? "border-green-400 bg-green-50 dark:bg-green-500/10"
+                : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600"
+            )}
+          >
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="flex items-center font-medium text-gray-900 dark:text-white lg:text-sm">
+                <CreditCard className="mr-2 w-5 h-5" />
+                サブスクリプション
+              </h3>
+              <ChevronRight className="flex-shrink-0 w-5 h-5 text-gray-400 dark:text-gray-500" />
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 lg:text-xs">
+              プラン管理と利用状況を確認
+            </p>
+          </Link>
+        )}
 
         {/* 統計・分析 */}
         <Link

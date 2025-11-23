@@ -121,3 +121,101 @@ export async function sendMessageStream(
     onError('ストリーミングメッセージの送信に失敗しました: ' + (error instanceof Error ? error.message : String(error)))
   }
 }
+
+/**
+ * グループチャットでストリーミングメッセージを送信
+ */
+export async function sendGroupChatMessageStream(
+  groupChatId: string,
+  content: string,
+  accessToken: string | null,
+  onEvent: (event: StreamEvent) => void,
+  onError: (error: string) => void,
+  mentionedAgentIds?: string[]
+) {
+  try {
+    const token = accessToken || (typeof window !== 'undefined' ? localStorage.getItem('access_token') : null);
+
+    const headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(
+      `${BACKEND_URL}/api/v1/group-chats/${groupChatId}/messages/stream`,
+      {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+        body: JSON.stringify({
+          content,
+          mentions: mentionedAgentIds && mentionedAgentIds.length > 0
+            ? mentionedAgentIds.map((id, index) => ({
+                ai_agent_id: id,
+                order: index + 1
+              }))
+            : "all"
+        }),
+      }
+    )
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Failed to send message' }))
+      const errorMsg = `[${response.status}] ${error.message || error.error || 'グループメッセージの送信に失敗しました'}`
+      console.error('Group chat stream request failed:', errorMsg)
+      onError(errorMsg)
+      return
+    }
+
+    // SSEストリームを読み込み
+    const reader = response.body?.getReader()
+    const decoder = new TextDecoder()
+
+    if (!reader) {
+      onError('レスポンスの読み込みに失敗しました')
+      return
+    }
+
+    let buffer = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+
+      buffer = lines.pop() || ''
+
+      for (const line of lines) {
+        if (line.startsWith('event: ')) {
+          // イベント名を取得（次の行のdataと組み合わせる）
+          continue
+        }
+        if (line.startsWith('data: ')) {
+          const data = line.substring(6)
+          if (data.trim()) {
+            try {
+              const event = JSON.parse(data)
+              console.log('🔄 Group Chat SSE Event:', event)
+              onEvent(event)
+
+              if (event.event === 'error' || event.event === 'complete') {
+                console.log('🏁 Group chat stream ended with event:', event.event)
+                return
+              }
+            } catch (e) {
+              console.error('Failed to parse group chat SSE event:', e, 'data:', data)
+            }
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Send group chat message stream error:', error)
+    onError('グループチャットメッセージの送信に失敗しました: ' + (error instanceof Error ? error.message : String(error)))
+  }
+}

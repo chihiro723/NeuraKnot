@@ -7,14 +7,20 @@ import (
 
 // User ユーザーエンティティ（集約ルート）
 type User struct {
-	ID            UserID
-	CognitoUserID string
-	Email         Email
-	DisplayName   string
-	AvatarURL     *string
-	Status        UserStatus
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	ID                   UserID
+	CognitoUserID        string
+	Email                Email
+	DisplayName          string
+	AvatarURL            *string
+	Status               UserStatus
+	StripeCustomerID     *string
+	SubscriptionTier     string
+	SubscriptionStatus   string
+	StripeSubscriptionID *string
+	CurrentPeriodStart   *time.Time
+	CurrentPeriodEnd     *time.Time
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
 }
 
 // NewUser ユーザーを作成（集約ルート）
@@ -28,13 +34,19 @@ func NewUser(id UserID, cognitoUserID string, email Email, displayName string) (
 
 	now := time.Now()
 	user := &User{
-		ID:            id,
-		CognitoUserID: cognitoUserID,
-		Email:         email,
-		DisplayName:   displayName,
-		Status:        UserStatusActive,
-		CreatedAt:     now,
-		UpdatedAt:     now,
+		ID:                   id,
+		CognitoUserID:        cognitoUserID,
+		Email:                email,
+		DisplayName:          displayName,
+		Status:               UserStatusActive,
+		StripeCustomerID:     nil,
+		SubscriptionTier:     "free",
+		SubscriptionStatus:   "active",
+		StripeSubscriptionID: nil,
+		CurrentPeriodStart:   nil,
+		CurrentPeriodEnd:     nil,
+		CreatedAt:            now,
+		UpdatedAt:            now,
 	}
 
 	return user, nil

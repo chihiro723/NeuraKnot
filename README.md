@@ -408,7 +408,7 @@ NeuraKnot は、様々な外部サービスやツールと連携できます。�
 
 汎用性が高く、コーディングや論理的な推論が得意です。
 
-- **GPT-4.1** - 最新の高性能モデル（100万トークン対応）
+- **GPT-4.1** - 最新の高性能モデル（100 万トークン対応）
 - **GPT-4.1 mini** - 性能とコストのバランス型
 - **GPT-4.1 nano** - 超高速・最安価
 
@@ -434,7 +434,7 @@ NeuraKnot は、様々な外部サービスやツールと連携できます。�
 
 NeuraKnot は、Vercel（フロントエンド）と AWS（バックエンド）を組み合わせたクラウドネイティブなアーキテクチャで動作しています。
 
-![システム構成図](docs/images/infrastructure.png)
+![システム構成図](docs/images/infra.png)
 
 **主なコンポーネント**
 
@@ -602,39 +602,16 @@ Internet
 
 NeuraKnot は **PostgreSQL 15** を使用し、**Backend-go のみ**がデータベースにアクセスします。
 
-#### テーブル構成（8 テーブル）
+#### 主な特徴
 
-| カテゴリ        | テーブル名             | 説明                                      |
-| --------------- | ---------------------- | ----------------------------------------- |
-| ユーザー管理    | `users`                | ユーザー情報（AWS Cognito 連携）          |
-| AI エージェント | `ai_agents`            | AI エージェント設定とペルソナ             |
-| 会話            | `conversations`        | ユーザーと AI Agent 間の 1 対 1 会話      |
-|                 | `messages`             | チャットメッセージ                        |
-| AI 処理履歴     | `ai_chat_sessions`     | AI 処理セッション履歴（分析・デバッグ用） |
-|                 | `ai_tool_usage`        | AI ツール使用履歴                         |
-| サービス連携    | `user_service_configs` | ユーザーのサービス設定（暗号化）          |
-|                 | `ai_agent_services`    | AI Agent × サービス紐付け                 |
-
-#### 主な機能
-
-- **LLM サポート**: OpenAI（GPT-4.1系）、Anthropic（Claude 4.5系）、Google（Gemini 2.5系）の最新モデル
-- **ペルソナ**: assistant, creative, analytical, concise
-- **ツール連携**: Notion, Slack, GitHub, Weather など
-- **セキュリティ**: 認証情報は AES-256-GCM で暗号化
-- **拡張性**: モデルバリデーションはアプリケーション層で実施（新モデル追加が容易）
-
-#### 設計原則
-
-1. **単一データアクセスポイント**: Backend-go のみが PostgreSQL にアクセス
-2. **MVP に集中**: 現在は 1 対 1 チャット（User ↔ AI Agent）のみサポート
-3. **パフォーマンス最適化**: 適切なインデックス配置、トリガーによる自動更新
-4. **セキュリティ**: 機密情報の暗号化、CHECK 制約による型安全性
+- **8 テーブル構成**: ユーザー、AI エージェント、会話、メッセージ、AI 処理履歴、サービス連携
+- **LLM サポート**: OpenAI（GPT-4.1 系）、Anthropic（Claude 4.5 系）、Google（Gemini 2.5 系）
+- **セキュリティ**: API キーは AES-256-GCM で暗号化、CHECK 制約による型安全性
+- **段階的マイグレーション**: golang-migrate によるバージョン管理とロールバック対応
 
 #### 詳細ドキュメント
 
-- 📘 [現在のデータベース設計（MVP 版）](./docs/DATABASE_DESIGN_CURRENT.md) - 全テーブル詳細、ER 図、インデックス戦略
-- 📗 [将来のデータベース設計](./docs/DATABASE_DESIGN.md) - グループチャット、友達機能等の将来設計
-- [スキーマ分析レポート](./docs/backend/SCHEMA_ANALYSIS_REPORT.md) - 現在のスキーマ状態と最適化情報
+📘 **[データベース設計書](./docs/DATABASE.md)** - 全テーブル詳細、ER 図、インデックス戦略、セキュリティ、マイグレーション管理
 
 ### プロジェクト構成
 
@@ -779,6 +756,15 @@ cp frontend/.env frontend/.env.local
 - **AI API**: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`
 - **モデル設定**: デフォルトモデルは `gpt-4.1`（プロンプト強化にも使用）
 - **外部サービス** (オプション): Slack, Notion, Weather API 等
+
+**注意**: 開発環境では MinIO（S3 互換ストレージ）の設定は `docker-compose/dev.yml` で自動的に設定されます。
+
+- `S3_ENDPOINT=http://minio:9000`
+- `S3_BASE_URL=http://localhost:9000/neuraknot-dev-media`
+- `AWS_ACCESS_KEY_ID=minioadmin`
+- `AWS_SECRET_ACCESS_KEY=minioadmin`
+
+これらの環境変数により、ユーザー・エージェント・グループのアイコン画像が MinIO に保存されます。
 
 ### サービス起動
 
@@ -976,21 +962,24 @@ uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 **対応 LLM モデル**
 
 **OpenAI**
+
 - GPT-4.1 ($2.50 / $10.00 per 1M tokens)
 - GPT-4.1 mini ($0.15 / $0.60 per 1M tokens)
 - GPT-4.1 nano ($0.05 / $0.20 per 1M tokens)
 
 **Anthropic**
+
 - Claude Sonnet 4.5 ($3.00 / $15.00 per 1M tokens)
 - Claude Haiku 4.5 ($0.25 / $1.25 per 1M tokens)
 - Claude Opus 4.1 ($15.00 / $75.00 per 1M tokens)
 
 **Google**
+
 - Gemini 2.5 Pro ($3.50 / $10.50 per 1M tokens)
 - Gemini 2.5 Flash ($0.075 / $0.30 per 1M tokens)
 - Gemini 2.5 Flash-Lite ($0.04 / $0.16 per 1M tokens)
 
-*価格は入力/出力トークンあたり（100万トークンあたりUSD）*
+_価格は入力/出力トークンあたり（100 万トークンあたり USD）_
 
 **利用可能なサービス**
 
@@ -1190,9 +1179,7 @@ terraform apply
 
 **アーキテクチャ**
 
-- [現在のデータベース設計](./docs/DATABASE_DESIGN_CURRENT.md) - **現在の 8 テーブル詳細（MVP 版）**
-- [将来のデータベース設計](./docs/DATABASE_DESIGN.md) - グループチャット、友達機能等の将来設計
-- [スキーマ分析レポート](./docs/backend/SCHEMA_ANALYSIS_REPORT.md) - スキーマ状態と最適化情報
+- [データベース設計書](./docs/DATABASE.md) - **8 テーブル詳細、ER 図、セキュリティ、マイグレーション**
 - [フロントエンドアーキテクチャ](./docs/frontend/ARCHITECTURE.md)
 - [認証アーキテクチャ](./docs/frontend/AUTH_ARCHITECTURE.md)
 - [エラーハンドリング](./docs/frontend/ERROR_HANDLING_ARCHITECTURE.md)
@@ -1205,10 +1192,13 @@ terraform apply
 - [ECS Auto Scaling ガイド](./docs/aws/ECS_AUTO_SCALING.md) - **自動スケーリング設定とコスト最適化**
 - [AWS ドキュメント一覧](./docs/aws/)
 
-**データベース管理**
+**データベース**
 
+- [データベース設計書](./docs/DATABASE.md) - **テーブル構成、ER 図、セキュリティ、マイグレーション**
+- [本番環境マイグレーションガイド](./docs/PRODUCTION_MIGRATION_GUIDE.md) - **安全な本番マイグレーション手順**
+- [安全なマイグレーションパターン](./docs/SAFE_MIGRATION_PATTERNS.md) - **ゼロダウンタイム設計**
 - [SSM 経由 RDS 接続ガイド](./docs/backend/SSM_RDS_CONNECTION_GUIDE.md) - プライベート RDS への安全な接続方法
-- [pgAdmin セットアップ](./docs/backend/PGADMIN_SETUP.md)
+- [pgAdmin セットアップ](./docs/backend/PGADMIN_SETUP.md) - GUI ツール設定
 
 **デプロイ・インフラ**
 

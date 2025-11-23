@@ -44,6 +44,7 @@ export function useIsMobile(): boolean {
  * - /dashboard/add/ai
  * - /dashboard/add/user
  * - /dashboard/add/group
+ * - /dashboard/add/group-chats
  */
 export function useIsDetailPage(): boolean {
   const pathname = usePathname();
@@ -69,7 +70,7 @@ export function useIsDetailPage(): boolean {
   }
 
   // 新規追加サブページ: /dashboard/add/[type]
-  if (pathname.match(/^\/dashboard\/add\/(ai|user|group)$/)) {
+  if (pathname.match(/^\/dashboard\/add\/(ai|user|group|group-chats)$/)) {
     return true;
   }
 
