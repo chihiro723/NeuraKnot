@@ -244,8 +244,12 @@ start_port_forwarding() {
     
     # Bastion インスタンスの状態を確認し、必要なら起動
     echo ""
-    INSTANCE_ID=$(get_bastion_instance_id)
-    if [ $? -ne 0 ]; then
+    
+    # set -e により get_bastion_instance_id が 1 を返すとスクリプトが終了してしまうため、
+    # 一時的にエラーを許容する
+    INSTANCE_ID=$(get_bastion_instance_id) || true
+    
+    if [ -z "$INSTANCE_ID" ]; then
         log_info "Bastion インスタンスが停止しています。起動します..."
         echo ""
         start_bastion_instance
