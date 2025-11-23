@@ -1285,6 +1285,39 @@ export function ChatWindow({
                 mentions,
               });
 
+              // トークン制限をチェック
+              try {
+                const response = await authFetch(
+                  `${process.env.NEXT_PUBLIC_API_BASE_URL}/billing/check-limit`
+                );
+
+                if (response.ok) {
+                  const limitCheck = await response.json();
+
+                  if (!limitCheck.can_send) {
+                    // トークン制限に達している場合、モーダルを表示
+                    setTokenLimitData({
+                      tier: limitCheck.current_tier,
+                      tokensUsed: limitCheck.tokens_used,
+                      tokensLimit: limitCheck.tokens_limit,
+                      usagePercentage: limitCheck.usage_percentage,
+                      periodEnd: limitCheck.period_end,
+                    });
+                    setShowTokenLimitModal(true);
+                    return; // メッセージ送信をブロック
+                  }
+                } else {
+                  console.error(
+                    "Failed to check token limit:",
+                    await response.text()
+                  );
+                  // エラー時は送信を許可（フェイルオープン）
+                }
+              } catch (error) {
+                console.error("Error checking token limit:", error);
+                // エラー時は送信を許可（フェイルオープン）
+              }
+
               setIsStreaming(true);
               setStreamingContent("");
               setStreamingTools([]);
