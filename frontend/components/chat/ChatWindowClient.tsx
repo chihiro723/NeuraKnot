@@ -71,7 +71,7 @@ export function ChatWindowClient({
   return (
     <>
       {/* チャットヘッダー */}
-      <div className="flex justify-between items-center h-16 px-4 bg-white border-b border-gray-200 md:h-16 md:px-6 dark:bg-gray-900 dark:border-gray-700">
+      <div className="flex justify-between items-center px-4 h-16 bg-white border-b border-gray-200 md:h-16 md:px-6 dark:bg-gray-900 dark:border-gray-700">
         <div className="flex items-center space-x-3">
           <button
             onClick={handleAvatarClick}
@@ -81,7 +81,13 @@ export function ChatWindowClient({
                 ? "hover:scale-105 cursor-pointer"
                 : "cursor-default"
             }`}
-            title={chatData.type === "ai" ? "エージェントの詳細を表示" : chatData.type === "group" ? "グループの詳細を表示" : ""}
+            title={
+              chatData.type === "ai"
+                ? "エージェントの詳細を表示"
+                : chatData.type === "group"
+                ? "グループの詳細を表示"
+                : ""
+            }
           >
             <Avatar
               src={chatData.avatar_url}
@@ -116,7 +122,7 @@ export function ChatWindowClient({
           {isMobile && (
             <button
               onClick={handleBack}
-              className="flex items-center justify-center p-2 text-gray-600 bg-gray-50/80 transition-all duration-200 dark:text-gray-300 dark:bg-gray-800/50 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-gray-700 rounded-lg"
+              className="flex justify-center items-center p-2 text-gray-600 rounded-lg transition-all duration-200 bg-gray-50/80 dark:text-gray-300 dark:bg-gray-800/50 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-gray-700"
               title="戻る"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -127,7 +133,7 @@ export function ChatWindowClient({
               <Phone className="w-5 h-5" />
             </button>
             {/* ツールチップ */}
-            <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 px-2 py-1 text-xs text-gray-600 bg-gray-100 dark:text-gray-300 dark:bg-gray-700 rounded-md shadow-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+            <div className="absolute top-full left-1/2 z-10 px-2 py-1 mt-1 text-xs text-gray-600 whitespace-nowrap bg-gray-100 rounded-md shadow-sm opacity-0 transition-opacity duration-200 transform -translate-x-1/2 pointer-events-none dark:text-gray-300 dark:bg-gray-700 group-hover:opacity-100">
               近日追加予定
             </div>
           </div>

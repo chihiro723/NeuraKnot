@@ -27,7 +27,10 @@ const processTextWithMentions = (text: string) => {
   return parts.map((part, index) => {
     if (part.match(/^@\w+$/)) {
       return (
-        <span key={index} className="text-blue-500 dark:text-blue-400 font-medium">
+        <span
+          key={index}
+          className="font-medium text-blue-500 dark:text-blue-400"
+        >
           {part}
         </span>
       );
@@ -47,7 +50,7 @@ const markdownComponents: Components = {
   ),
   p: ({ node, children, ...props }) => {
     const processedChildren = React.Children.map(children, (child) => {
-      if (typeof child === 'string') {
+      if (typeof child === "string") {
         return processTextWithMentions(child);
       }
       return child;
@@ -55,7 +58,7 @@ const markdownComponents: Components = {
     return <p {...props}>{processedChildren}</p>;
   },
   text: ({ node, children, ...props }) => {
-    if (typeof children === 'string') {
+    if (typeof children === "string") {
       return <>{processTextWithMentions(children)}</>;
     }
     return <>{children}</>;
@@ -80,12 +83,16 @@ export function StreamingMessage({
   }, []);
 
   useEffect(() => {
-    console.log("[StreamingMessage] Props updated - content length:", content.length, "tools count:", tools.length);
+    console.log(
+      "[StreamingMessage] Props updated - content length:",
+      content.length,
+      "tools count:",
+      tools.length
+    );
     if (tools.length > 0) {
       console.log("[StreamingMessage] Tools:", tools);
     }
   }, [content, tools]);
-
 
   const formatTime = () => {
     const now = new Date();
@@ -118,6 +125,11 @@ export function StreamingMessage({
         {tools.length > 0 && <ToolUsageIndicator tools={tools} />}
       </div>
     );
+  }
+
+  // コンテンツもツールもない場合は何も表示しない
+  if (!content && tools.length === 0) {
+    return null;
   }
 
   // メッセージとツールを時系列順に組み合わせる
