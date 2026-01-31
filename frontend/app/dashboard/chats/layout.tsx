@@ -12,6 +12,7 @@ import { ChatListSkeleton } from "@/components/ui/skeletons/ChatListSkeleton";
  * チャットセクション全体のレイアウト
  * サイドバーは /chats と /chats/[id] で共有される（再ロードなし）
  */
+export const dynamic = 'force-dynamic'; // cookies()を使用するため動的レンダリング必須
 export const revalidate = 60; // 60秒ごとに再検証
 
 // データフェッチコンポーネント（1回だけ呼ばれる）

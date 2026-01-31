@@ -7,6 +7,8 @@ import { AddTypeSidebar } from "@/components/friends/AddTypeSidebar";
  * 新規追加セクション全体のレイアウト
  * サイドバーは /add の各ページで共有される（再ロードなし）
  */
+export const dynamic = 'force-dynamic'; // cookies()を使用するため動的レンダリング必須
+
 export default async function AddLayout({
   children,
 }: {
