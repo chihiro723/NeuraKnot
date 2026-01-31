@@ -1,6 +1,11 @@
-# Terraform plans
+# Terraform plans（バイナリファイル、機密情報を含む可能性があるためコミット禁止）
 terraform/**/tfplan
+terraform/**/tfplan.*
 *.tfplan
+**/tfplan
+**/tfplan.*
+plan
+**/plan
 
 # Dependencies
 node_modules/
