@@ -6,6 +6,8 @@ import { LoadingSpinner } from "@/components/ui/feedback/LoadingSpinner";
 /**
  * サブスクリプション管理ページ（サーバーコンポーネント）
  */
+export const dynamic = 'force-dynamic'; // cookies()とno-store fetchを使用するため動的レンダリング必須
+
 async function SubscriptionData() {
   // サーバーサイドでデータフェッチ
   const [tiersResult, usageResult] = await Promise.all([
