@@ -7,6 +7,8 @@ import { ServiceListSidebar } from "@/components/services/ServiceListSidebar";
  * 外部サービスセクション全体のレイアウト
  * サイドバーは /services の各ページで共有される（再ロードなし）
  */
+export const dynamic = 'force-dynamic'; // cookies()を使用するため動的レンダリング必須
+
 export default async function ServicesLayout({
   children,
 }: {

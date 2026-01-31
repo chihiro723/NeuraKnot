@@ -4,7 +4,10 @@ const nextConfig = {
   output: process.env.NODE_ENV === 'production' ? 'standalone' : undefined,
   serverExternalPackages: [],
   
-  // ホットリロード設定（Docker環境用）
+  // Next.js 16: Turbopackの設定（空設定でwebpack警告を抑制）
+  turbopack: {},
+  
+  // ホットリロード設定（Docker環境用）- webpack使用時のみ
   webpack: (config, { dev, isServer }) => {
     if (dev && !isServer) {
       config.watchOptions = {

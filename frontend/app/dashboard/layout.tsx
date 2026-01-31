@@ -9,6 +9,8 @@ import { DashboardLayoutClient } from "./DashboardLayoutClient";
  * デスクトップ: 左側にナビゲーション
  * モバイル: 下部にナビゲーション（詳細画面では非表示）
  */
+export const dynamic = 'force-dynamic'; // cookies()を使用するため動的レンダリング必須
+
 export default async function DashboardLayout({
   children,
 }: {
