@@ -1495,6 +1495,3 @@ export function UserFriendAddPanel({
     </div>
   );
 }
-
-  return (
-    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
