@@ -559,27 +559,28 @@ Internet
 
 **フロントエンド**
 
-- Next.js 15 (App Router) - Vercel でホスティング
-- TypeScript
+- Next.js 16 (App Router) - Vercel でホスティング
+- TypeScript 5.5
+- React 19
 - Tailwind CSS
 
 **バックエンド**
 
-- Go 1.25 - REST API (クリーンアーキテクチャ / DDD)
-- Backend Python 3.11 - AI 処理 (FastAPI + LangChain)
+- Go 1.24 - REST API (クリーンアーキテクチャ / DDD)
+- Python 3.11 - AI 処理 (FastAPI + LangChain)
 
 **AI / LLM**
 
 - OpenAI (GPT-4.1, GPT-4.1 mini, GPT-4.1 nano)
 - Anthropic (Claude Sonnet 4.5, Claude Haiku 4.5, Claude Opus 4.1)
 - Google (Gemini 2.5 Pro, Gemini 2.5 Flash, Gemini 2.5 Flash-Lite)
-- LangChain Agent (最新版: 0.3.15)
+- LangChain 0.3.15
 
 **データストア**
 
 - PostgreSQL 15 - アプリケーションデータ（Backend-go のみアクセス）
-  - 8 テーブル構成 - 詳細は [データベース設計](#データベース設計) セクション参照
-  - 完全なドキュメント: [データベース設計書](./docs/DATABASE_DESIGN_CURRENT.md)
+  - 14 テーブル構成 - 詳細は [データベース設計](#データベース設計) セクション参照
+  - 完全なドキュメント: [データベース設計書](./docs/DATABASE.md)
 - S3 / MinIO - 画像ストレージ（アバター画像）
   - 開発環境: MinIO（Docker）
   - 本番環境: AWS S3
@@ -604,14 +605,14 @@ NeuraKnot は **PostgreSQL 15** を使用し、**Backend-go のみ**がデータ
 
 #### 主な特徴
 
-- **8 テーブル構成**: ユーザー、AI エージェント、会話、メッセージ、AI 処理履歴、サービス連携
+- **14 テーブル構成**: ユーザー、AI エージェント、会話、メッセージ、AI 処理履歴、サービス連携、課金、グループチャット
 - **LLM サポート**: OpenAI（GPT-4.1 系）、Anthropic（Claude 4.5 系）、Google（Gemini 2.5 系）
 - **セキュリティ**: API キーは AES-256-GCM で暗号化、CHECK 制約による型安全性
 - **段階的マイグレーション**: golang-migrate によるバージョン管理とロールバック対応
 
 #### 詳細ドキュメント
 
-📘 **[データベース設計書](./docs/DATABASE.md)** - 全テーブル詳細、ER 図、インデックス戦略、セキュリティ、マイグレーション管理
+📘 **[データベース設計書](./docs/DATABASE.md)** - 全テーブル詳細（14 テーブル）、ER 図、インデックス戦略、セキュリティ、マイグレーション管理
 
 ### プロジェクト構成
 
@@ -633,7 +634,7 @@ neuraKnot/
 │   ├── migrations/            # DBマイグレーション
 │   └── docs/                  # Swagger ドキュメント
 │
-├── backend-python/             # Backend Python サーバー
+├── backend-python/             # Python AI サーバー
 │   └── app/
 │       ├── api/v1/            # エンドポイント
 │       ├── services/          # サービス・ツール
@@ -658,10 +659,18 @@ neuraKnot/
 │   │   ├── vpc-endpoints/    # VPC Endpoints (SSM用)
 │   │   ├── service-discovery/ # Cloud Map
 │   │   ├── secrets/          # Secrets Manager
+│   │   ├── route53/          # Route 53（DNS管理）
+│   │   ├── acm/              # ACM（SSL証明書）
 │   │   └── iam/              # IAM ロール・ポリシー
 │   └── environments/
 │       ├── dev/              # 開発環境（Cognito のみ）
 │       └── prod/             # 本番環境（バックエンドAPI）
+│
+├── .github/
+│   └── workflows/            # GitHub Actions CI/CD
+│       ├── ci.yml            # CI パイプライン
+│       ├── deploy.yml        # デプロイ
+│       └── terraform-plan.yml # Terraform プラン
 │
 └── docs/                      # プロジェクトドキュメント
     ├── aws/                   # AWS関連
@@ -681,7 +690,8 @@ neuraKnot/
 ├── Backend Go (localhost:8080)
 ├── Backend Python (localhost:8001)
 ├── PostgreSQL (Docker/localhost:5432)
-└── MinIO (Docker/localhost:9000, 9001)
+├── MinIO (Docker/localhost:9000, 9001)
+└── pgAdmin (Docker/localhost:5050) - オプション
 
 AWS Cognito (DEV User Pool) - 認証専用
 ```
@@ -690,6 +700,7 @@ AWS Cognito (DEV User Pool) - 認証専用
 
 - PostgreSQL: アプリケーションデータのみ保存
 - MinIO: S3 互換のオブジェクトストレージ（アバター画像保存）
+- pgAdmin: PostgreSQL GUI 管理ツール
 - ユーザー管理: AWS Cognito DEV User Pool
 - 認証方式: メール + パスワード
 
@@ -787,6 +798,7 @@ docker-compose -f docker-compose/dev.yml logs -f
 | PostgreSQL     | localhost:5432                           | データベース               |
 | MinIO Console  | http://localhost:9001                    | オブジェクトストレージ管理 |
 | MinIO API      | http://localhost:9000                    | S3 互換 API                |
+| pgAdmin        | http://localhost:5050                    | PostgreSQL GUI 管理ツール  |
 
 ```bash
 # ヘルスチェック
@@ -797,6 +809,11 @@ curl http://localhost:8001/api/health
 # URL: http://localhost:9001
 # ユーザー名: minioadmin
 # パスワード: minioadmin
+
+# pgAdmin管理画面
+# URL: http://localhost:5050
+# ユーザー名: admin@example.com
+# パスワード: admin
 ```
 
 ## 開発
@@ -884,7 +901,7 @@ npm run dev
 cd backend-go
 go mod download
 # データベースを起動
-docker-compose -f ../docker-compose/dev.yml up -d postgres redis
+docker-compose -f ../docker-compose/dev.yml up -d postgres
 # サーバー起動
 go run cmd/api/main.go
 # http://localhost:8080
@@ -896,7 +913,7 @@ go run cmd/api/main.go
 cd backend-python
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt  # LangChain 0.3.15含む
+pip install -r requirements.txt
 uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 # http://localhost:8001
 ```
@@ -1060,7 +1077,7 @@ NeuraKnot のインフラストラクチャは **Terraform** を使用して Inf
 | --------------------- | ---------------------------- | ----------------------------------------------------------------- |
 | **Cognito**           | ユーザー認証・管理           | User Pool, User Pool Client                                       |
 | **VPC**               | ネットワーク基盤             | VPC, Subnets, Internet Gateway, NAT Gateway                       |
-| **Route 53**          | DNS 管理                     | Hosted Zone, DNS Records (A, CNAME)                               |
+| **Route 53**          | DNS 管理                     | Hosted Zone, DNS Records (A, CNAME, Alias)                        |
 | **ACM**               | SSL/TLS 証明書管理           | Certificate, DNS Validation                                       |
 | **ECR**               | コンテナイメージ管理         | ECR Repositories (backend-go, backend-python), Lifecycle Policies |
 | **ECS**               | コンテナオーケストレーション | ECS Cluster, Task Definition, Service (バックエンド API のみ)     |
@@ -1069,6 +1086,8 @@ NeuraKnot のインフラストラクチャは **Terraform** を使用して Inf
 | **S3**                | オブジェクトストレージ       | S3 Bucket, Bucket Policy, VPC Endpoint                            |
 | **ALB**               | ロードバランシング           | Application Load Balancer, Target Groups, HTTPS Listener          |
 | **Service Discovery** | 内部サービス通信             | Cloud Map, Private DNS Namespace                                  |
+| **VPC Endpoints**     | プライベート通信             | SSM, SSM Messages, EC2 Messages Endpoints                         |
+| **Bastion**           | データベース管理用接続       | EC2 Instance (SSM 経由接続)                                       |
 | **Secrets Manager**   | 機密情報管理                 | Secrets, Secret Versions                                          |
 | **IAM**               | アクセス制御                 | Roles, Policies, Policy Attachments                               |
 
@@ -1112,8 +1131,7 @@ ECS サービスに **ターゲット追跡スケーリング** を導入し、�
 
 **セットアップ手順**:
 
-- **API 用**: [Route 53 & ACM セットアップガイド](./docs/ROUTE53_ACM_SETUP.md)
-- **フロントエンド用**: [Vercel デプロイメントガイド - カスタムドメイン設定](./docs/VERCEL_DEPLOYMENT.md#3-カスタムドメインの設定)
+カスタムドメイン設定の詳細は、[Terraform インフラ管理](./terraform/README.md) を参照してください。
 
 **主な機能**:
 
@@ -1173,7 +1191,6 @@ terraform apply
 **開発ガイド**
 
 - [開発ルール・貢献ガイド](./docs/CONTRIBUTING.md) - コミットメッセージ、プルリクエスト、コードレビューのルール
-- [フロントエンド開発](./docs/frontend/GETTING_STARTED.md)
 - [Backend Go 開発](./backend-go/README.md)
 - [Backend Python 開発](./backend-python/README.md)
 
@@ -1188,13 +1205,12 @@ terraform apply
 
 - [Terraform インフラ管理](./terraform/README.md) - **Infrastructure as Code**
 - [AWS インフラ構築](./docs/aws/INFRASTRUCTURE.md)
-- [AWS Cognito 設定](./docs/aws/COGNITO_SETUP.md)
 - [ECS Auto Scaling ガイド](./docs/aws/ECS_AUTO_SCALING.md) - **自動スケーリング設定とコスト最適化**
 - [AWS ドキュメント一覧](./docs/aws/)
 
 **データベース**
 
-- [データベース設計書](./docs/DATABASE.md) - **テーブル構成、ER 図、セキュリティ、マイグレーション**
+- [データベース設計書](./docs/DATABASE.md) - **14 テーブル構成、ER 図、セキュリティ、マイグレーション**
 - [本番環境マイグレーションガイド](./docs/PRODUCTION_MIGRATION_GUIDE.md) - **安全な本番マイグレーション手順**
 - [安全なマイグレーションパターン](./docs/SAFE_MIGRATION_PATTERNS.md) - **ゼロダウンタイム設計**
 - [SSM 経由 RDS 接続ガイド](./docs/backend/SSM_RDS_CONNECTION_GUIDE.md) - プライベート RDS への安全な接続方法
@@ -1202,9 +1218,6 @@ terraform apply
 
 **デプロイ・インフラ**
 
-- [CI/CD セットアップガイド](./docs/CI_CD_SETUP.md) - **GitHub Actions 自動デプロイ**
-- [Vercel デプロイメントガイド](./docs/VERCEL_DEPLOYMENT.md) - **フロントエンドデプロイ + カスタムドメイン設定**
-- [Route 53 & ACM セットアップガイド](./docs/ROUTE53_ACM_SETUP.md) - **API 用カスタムドメイン設定**
 - [Swagger/OpenAPI 設定](./docs/backend/SWAGGER_GUIDE.md)
 - [ルーティングベストプラクティス](./docs/frontend/ROUTING_BEST_PRACTICES.md)
 - [サーバーサイドフェッチ](./docs/frontend/SERVER_SIDE_FETCH.md)
@@ -1276,12 +1289,9 @@ main ブランチへの push 時に自動デプロイ：
 
 ### セットアップ
 
-詳細な設定手順は以下のドキュメントを参照してください：
+GitHub Actions による自動デプロイは `.github/workflows/` ディレクトリで管理されています。
 
-- [CI/CD セットアップガイド](./docs/CI_CD_SETUP.md) - GitHub Actions 基本設定
-- [GitHub Actions OIDC 設定ガイド](./docs/GITHUB_ACTIONS_OIDC_SETUP.md) - **AWS OIDC 認証設定（推奨）**
-
-**必要な GitHub Secrets（OIDC 認証使用時）**:
+**必要な GitHub Secrets**:
 
 - `AWS_ROLE_ARN` - GitHub Actions 用 IAM ロール ARN（Terraform で作成）
 - `AWS_REGION` - AWS リージョン（例：ap-northeast-1）
@@ -1290,7 +1300,7 @@ main ブランチへの push 時に自動デプロイ：
 - `ECS_SERVICE_NAME_GO` - Backend Go サービス URL
 - `ECS_SERVICE_NAME_PYTHON` - Backend Python サービス名
 
-**セキュリティ向上**: 従来のアクセスキー（`AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`）の代わりに OIDC 認証を使用することで、一時的な認証情報による安全なデプロイが可能です。
+**セキュリティ向上**: OIDC 認証を使用することで、一時的な認証情報による安全なデプロイが可能です。
 
 ### ローカルでの Linter 実行
 
