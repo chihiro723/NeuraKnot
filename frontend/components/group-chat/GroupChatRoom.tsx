@@ -38,17 +38,19 @@ export function GroupChatRoom({ groupChatId }: GroupChatRoomProps) {
   const [streamingAgentName, setStreamingAgentName] = useState<string>("");
   const [streamingAgentIcon, setStreamingAgentIcon] = useState<string>("");
   const [streamingContent, setStreamingContent] = useState("");
-  const [streamingTools, setStreamingTools] = useState<Array<{
-    tool_id: string;
-    tool_name: string;
-    status: 'running' | 'completed' | 'failed';
-    input: unknown;
-    output?: string | null;
-    error?: string | null;
-    execution_time_ms?: number | null;
-    insertPosition?: number | null;
-    expanded: boolean;
-  }>>([]);
+  const [streamingTools, setStreamingTools] = useState<
+    Array<{
+      tool_id: string;
+      tool_name: string;
+      status: "running" | "completed" | "failed";
+      input: unknown;
+      output?: string | null;
+      error?: string | null;
+      execution_time_ms?: number | null;
+      insertPosition?: number | null;
+      expanded: boolean;
+    }>
+  >([]);
   const streamingContentRef = useRef(""); // ストリーミング内容の最新値を追跡
   const [cancelFn, setCancelFn] = useState<(() => void) | null>(null);
   const [mentionProgress, setMentionProgress] = useState<MentionProgress[]>([]);
@@ -76,18 +78,23 @@ export function GroupChatRoom({ groupChatId }: GroupChatRoomProps) {
   }, [groupChatId]);
 
   useEffect(() => {
-    console.log('[GroupChatRoom] コンポーネントマウント');
+    console.log("[GroupChatRoom] コンポーネントマウント");
     loadData();
   }, [loadData]);
 
   useEffect(() => {
-    console.log('[GroupChatRoom] 状態更新:', {
+    console.log("[GroupChatRoom] 状態更新:", {
       messagesCount: messages.length,
       isStreaming,
       isGeneratingSuggestions,
       suggestedQuestionsCount: suggestedQuestions.length,
     });
-  }, [messages.length, isStreaming, isGeneratingSuggestions, suggestedQuestions.length]);
+  }, [
+    messages.length,
+    isStreaming,
+    isGeneratingSuggestions,
+    suggestedQuestions.length,
+  ]);
 
   const handleSendMessage = async (
     content: string,
@@ -163,21 +170,23 @@ export function GroupChatRoom({ groupChatId }: GroupChatRoomProps) {
   };
 
   const handleGenerateSuggestions = async () => {
-    console.log('[GroupChatRoom] 質問候補生成ボタンがクリックされました');
+    console.log("[GroupChatRoom] 質問候補生成ボタンがクリックされました");
     if (isGeneratingSuggestions || isStreaming) {
-      console.log('[GroupChatRoom] 生成中またはストリーミング中のため処理をスキップ');
+      console.log(
+        "[GroupChatRoom] 生成中またはストリーミング中のため処理をスキップ"
+      );
       return;
     }
 
     setIsGeneratingSuggestions(true);
     try {
-      console.log('[GroupChatRoom] API呼び出し開始:', groupChatId);
+      console.log("[GroupChatRoom] API呼び出し開始:", groupChatId);
       const result = await generateSuggestedQuestions(groupChatId, 10);
-      console.log('[GroupChatRoom] API呼び出し成功:', result);
+      console.log("[GroupChatRoom] API呼び出し成功:", result);
       setSuggestedQuestions(result.suggestions);
     } catch (error: any) {
-      console.error('[GroupChatRoom] 質問候補の生成に失敗しました:', error);
-      setError(error.message || '質問候補の生成に失敗しました');
+      console.error("[GroupChatRoom] 質問候補の生成に失敗しました:", error);
+      setError(error.message || "質問候補の生成に失敗しました");
     } finally {
       setIsGeneratingSuggestions(false);
     }
@@ -189,11 +198,18 @@ export function GroupChatRoom({ groupChatId }: GroupChatRoomProps) {
 
   const handleStreamEvent = (event: StreamEvent) => {
     // すべてのイベントをログ出力
-    if (event.event === "tool_start" || event.event === "tool_end" || 
-        event.event === "agent_preparing" || event.event === "agent_start") {
-      console.log(`[GroupChatRoom] ===== Received ${event.event} event =====`, event.data);
+    if (
+      event.event === "tool_start" ||
+      event.event === "tool_end" ||
+      event.event === "agent_preparing" ||
+      event.event === "agent_start"
+    ) {
+      console.log(
+        `[GroupChatRoom] ===== Received ${event.event} event =====`,
+        event.data
+      );
     }
-    
+
     switch (event.event) {
       case "user_message_saved":
         // ユーザーメッセージが保存された - tempメッセージを実際のIDに置き換え
@@ -232,8 +248,12 @@ export function GroupChatRoom({ groupChatId }: GroupChatRoomProps) {
       case "agent_preparing":
         // エージェントの処理準備（リセットはしない）
         const preparingAgentId = event.data.agent_id;
-        console.log("[GroupChatRoom] agent_preparing for agent:", preparingAgentId, "- NOT resetting");
-        
+        console.log(
+          "[GroupChatRoom] agent_preparing for agent:",
+          preparingAgentId,
+          "- NOT resetting"
+        );
+
         // mentionProgressを更新
         setMentionProgress((prev) =>
           prev.map((m) =>
@@ -248,33 +268,37 @@ export function GroupChatRoom({ groupChatId }: GroupChatRoomProps) {
         // エージェントの処理開始（ここでリセット）
         const agentId = event.data.agent_id;
         console.log("[GroupChatRoom] agent_start for agent:", agentId);
-        
+
         // 前のエージェントと異なる場合のみリセット
         if (streamingAgentId !== null && streamingAgentId !== agentId) {
-          console.log("[GroupChatRoom] Different agent detected, resetting tools and content");
+          console.log(
+            "[GroupChatRoom] Different agent detected, resetting tools and content"
+          );
           setStreamingContent("");
           setStreamingTools([]);
           streamingContentRef.current = "";
         } else if (streamingAgentId === null) {
           // 最初のエージェント
-          console.log("[GroupChatRoom] First agent, resetting tools and content");
+          console.log(
+            "[GroupChatRoom] First agent, resetting tools and content"
+          );
           setStreamingContent("");
           setStreamingTools([]);
           streamingContentRef.current = "";
         } else {
           console.log("[GroupChatRoom] Same agent, NOT resetting");
         }
-        
+
         // mentionProgressから該当エージェントの情報を取得
         setMentionProgress((prev) => {
           const updatedProgress = prev.map((m) =>
-            m.agent_id === agentId
-              ? { ...m, status: "processing" as const }
-              : m
+            m.agent_id === agentId ? { ...m, status: "processing" as const } : m
           );
-          
+
           // 該当エージェントの情報を取得してステートに設定
-          const currentAgent = updatedProgress.find((m) => m.agent_id === agentId);
+          const currentAgent = updatedProgress.find(
+            (m) => m.agent_id === agentId
+          );
           if (currentAgent) {
             setStreamingAgentName(currentAgent.agent_name || "AI");
             setStreamingAgentIcon(currentAgent.agent_icon || "");
@@ -283,10 +307,10 @@ export function GroupChatRoom({ groupChatId }: GroupChatRoomProps) {
             setStreamingAgentName(event.data.agent_name || "AI");
             setStreamingAgentIcon(event.data.agent_icon || "");
           }
-          
+
           return updatedProgress;
         });
-        
+
         setStreamingAgentId(agentId);
         break;
 
@@ -305,7 +329,10 @@ export function GroupChatRoom({ groupChatId }: GroupChatRoomProps) {
         setStreamingTools((prev) => {
           const toolId = event.data.tool_id;
           if (!toolId) {
-            console.warn("[GroupChatRoom] tool_start without tool_id", event.data);
+            console.warn(
+              "[GroupChatRoom] tool_start without tool_id",
+              event.data
+            );
             return prev;
           }
 
@@ -356,7 +383,10 @@ export function GroupChatRoom({ groupChatId }: GroupChatRoomProps) {
         setStreamingTools((prev) => {
           const toolId = event.data.tool_id;
           if (!toolId) {
-            console.warn("[GroupChatRoom] tool_end without tool_id", event.data);
+            console.warn(
+              "[GroupChatRoom] tool_end without tool_id",
+              event.data
+            );
             return prev;
           }
 
@@ -365,7 +395,9 @@ export function GroupChatRoom({ groupChatId }: GroupChatRoomProps) {
               ? {
                   ...tool,
                   status:
-                    event.data.status === "failed" ? ("failed" as const) : ("completed" as const),
+                    event.data.status === "failed"
+                      ? ("failed" as const)
+                      : ("completed" as const),
                   output: event.data.output,
                   error: event.data.error,
                   execution_time_ms: event.data.execution_time_ms,
@@ -537,7 +569,7 @@ export function GroupChatRoom({ groupChatId }: GroupChatRoomProps) {
         <div className="flex justify-between items-center">
           <button
             onClick={() => {
-              console.log('🔥 ボタンがクリックされました！');
+              console.log("🔥 ボタンがクリックされました！");
               handleGenerateSuggestions();
             }}
             disabled={
@@ -584,12 +616,12 @@ export function GroupChatRoom({ groupChatId }: GroupChatRoomProps) {
               <button
                 key={index}
                 onClick={() => {
-                  console.log('✅ カードがクリックされました:', question);
+                  console.log("✅ カードがクリックされました:", question);
                   handleSuggestionClick(question);
                 }}
                 disabled={isStreaming}
                 className={cn(
-                  "p-4 text-left text-sm rounded-xl border-2 transition-all duration-200",
+                  "p-4 text-sm text-left rounded-xl border-2 transition-all duration-200",
                   "bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20",
                   "border-blue-200 dark:border-blue-700",
                   "hover:border-blue-400 hover:shadow-lg hover:-translate-y-1",
@@ -607,16 +639,16 @@ export function GroupChatRoom({ groupChatId }: GroupChatRoomProps) {
             ))
           ) : (
             <>
-              <div className="p-4 text-center text-xs text-gray-500 border border-dashed border-gray-300 rounded-xl">
+              <div className="p-4 text-xs text-center text-gray-500 rounded-xl border border-gray-300 border-dashed">
                 候補1
               </div>
-              <div className="p-4 text-center text-xs text-gray-500 border border-dashed border-gray-300 rounded-xl">
+              <div className="p-4 text-xs text-center text-gray-500 rounded-xl border border-gray-300 border-dashed">
                 候補2
               </div>
-              <div className="p-4 text-center text-xs text-gray-500 border border-dashed border-gray-300 rounded-xl">
+              <div className="p-4 text-xs text-center text-gray-500 rounded-xl border border-gray-300 border-dashed">
                 候補3
               </div>
-              <div className="p-4 text-center text-xs text-gray-500 border border-dashed border-gray-300 rounded-xl">
+              <div className="p-4 text-xs text-center text-gray-500 rounded-xl border border-gray-300 border-dashed">
                 候補4
               </div>
             </>

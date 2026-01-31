@@ -29,7 +29,9 @@ export function GroupChatCreationPanel({
     icon_url: "",
   });
   const [agents, setAgents] = useState<AIAgent[]>([]);
-  const [selectedAgentIds, setSelectedAgentIds] = useState<Set<string>>(new Set());
+  const [selectedAgentIds, setSelectedAgentIds] = useState<Set<string>>(
+    new Set()
+  );
   const [isLoadingAgents, setIsLoadingAgents] = useState(true);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -200,7 +202,7 @@ export function GroupChatCreationPanel({
         >
           {/* エラー表示 */}
           {error && (
-            <div className="p-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg border border-red-200 dark:border-red-800 text-sm">
+            <div className="p-4 text-sm text-red-600 bg-red-50 rounded-lg border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800">
               {error}
             </div>
           )}
@@ -263,9 +265,9 @@ export function GroupChatCreationPanel({
               <div className="flex items-center space-x-3 md:space-x-4">
                 {/* アバタープレビュー */}
                 <div className="relative">
-                  <div className="flex overflow-hidden justify-center items-center w-16 h-16 md:w-20 md:h-20 bg-gray-300 rounded-full ring-2 ring-gray-200 shadow-lg dark:bg-gray-700 dark:ring-gray-800">
+                  <div className="flex overflow-hidden justify-center items-center w-16 h-16 bg-gray-300 rounded-full ring-2 ring-gray-200 shadow-lg md:w-20 md:h-20 dark:bg-gray-700 dark:ring-gray-800">
                     {isUploadingIcon ? (
-                      <div className="w-5 h-5 md:w-6 md:h-6 rounded-full border-2 border-white animate-spin border-t-transparent" />
+                      <div className="w-5 h-5 rounded-full border-2 border-white animate-spin md:w-6 md:h-6 border-t-transparent" />
                     ) : formData.icon_url ? (
                       <img
                         src={formData.icon_url}
@@ -273,7 +275,7 @@ export function GroupChatCreationPanel({
                         className="object-cover w-full h-full"
                       />
                     ) : (
-                      <Users className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                      <Users className="w-6 h-6 text-white md:w-8 md:h-8" />
                     )}
                   </div>
                   <input
@@ -286,7 +288,7 @@ export function GroupChatCreationPanel({
                   />
                   <label
                     htmlFor="group-icon-upload"
-                    className="flex absolute -right-1 -bottom-1 justify-center items-center w-7 h-7 md:w-8 md:h-8 text-white bg-green-500 rounded-full ring-2 ring-white shadow-lg transition-all duration-200 cursor-pointer hover:bg-green-600 hover:scale-110 dark:ring-gray-900"
+                    className="flex absolute -right-1 -bottom-1 justify-center items-center w-7 h-7 text-white bg-green-500 rounded-full ring-2 ring-white shadow-lg transition-all duration-200 cursor-pointer md:w-8 md:h-8 hover:bg-green-600 hover:scale-110 dark:ring-gray-900"
                   >
                     <Camera className="w-3.5 h-3.5 md:w-4 md:h-4" />
                   </label>
@@ -310,23 +312,23 @@ export function GroupChatCreationPanel({
                 メンバー選択
               </h2>
               {selectedAgentIds.size > 0 && (
-                <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                <p className="mt-1 text-xs text-green-600 dark:text-green-400">
                   {selectedAgentIds.size}個のエージェントを選択中
                 </p>
               )}
             </div>
 
             {isLoadingAgents ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500"></div>
+              <div className="flex justify-center items-center py-12">
+                <div className="w-8 h-8 rounded-full border-b-2 border-green-500 animate-spin"></div>
               </div>
             ) : agents.length === 0 ? (
-              <div className="text-center py-12">
-                <Users className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+              <div className="py-12 text-center">
+                <Users className="mx-auto mb-3 w-12 h-12 text-gray-400" />
                 <p className="text-sm text-gray-600 dark:text-gray-400">
                   エージェントがありません
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">
                   先にエージェントを作成してください
                 </p>
               </div>
@@ -344,7 +346,7 @@ export function GroupChatCreationPanel({
                         type="button"
                         onClick={() => handleToggleAgent(agent.id)}
                         className={cn(
-                          "w-full flex items-center space-x-3 p-4 rounded-lg border transition-all",
+                          "flex items-center p-4 space-x-3 w-full rounded-lg border transition-all",
                           isSelected
                             ? "bg-green-50 border-green-500 dark:bg-green-900/20 dark:border-green-500"
                             : "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600"
@@ -353,7 +355,7 @@ export function GroupChatCreationPanel({
                         {/* チェックボックス風アイコン */}
                         <div
                           className={cn(
-                            "flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-all",
+                            "flex flex-shrink-0 justify-center items-center w-5 h-5 rounded border-2 transition-all",
                             isSelected
                               ? "bg-green-500 border-green-500"
                               : "border-gray-300 dark:border-gray-600"
@@ -379,21 +381,21 @@ export function GroupChatCreationPanel({
                           <img
                             src={agent.avatar_url}
                             alt={agent.name}
-                            className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+                            className="object-cover flex-shrink-0 w-10 h-10 rounded-full"
                           />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+                          <div className="flex flex-shrink-0 justify-center items-center w-10 h-10 bg-gray-200 rounded-full dark:bg-gray-700">
                             <Users className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                           </div>
                         )}
 
                         {/* 名前と説明 */}
-                        <div className="flex-1 text-left min-w-0">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        <div className="flex-1 min-w-0 text-left">
+                          <p className="text-sm font-medium text-gray-900 truncate dark:text-white">
                             {agent.name}
                           </p>
                           {agent.description && (
-                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            <p className="text-xs text-gray-500 truncate dark:text-gray-400">
                               {agent.description}
                             </p>
                           )}
