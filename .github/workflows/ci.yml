@@ -2,7 +2,7 @@ name: CI
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, develop]
     paths-ignore:
       - "**.md"
       - "docs/**"
@@ -86,7 +86,16 @@ jobs:
           args: --timeout=5m
 
       - name: Run tests
-        run: go test -v -race -coverprofile=coverage.out ./...
+        run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Display coverage summary
+        run: |
+          echo "📊 Test Coverage Summary"
+          echo "======================="
+          go tool cover -func=coverage.out | tail -1
+          echo ""
+          echo "📁 Coverage by Domain Layer:"
+          go tool cover -func=coverage.out | grep "internal/domain" || echo "No domain tests yet"
 
       - name: Build check
         run: go build -v ./cmd/api
