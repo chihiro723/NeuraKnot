@@ -90,11 +90,11 @@ jobs:
 
       - name: Display coverage summary
         run: |
-          echo "📊 Test Coverage Summary"
-          echo "======================="
+          echo "Test Coverage Summary"
+          echo "====================="
           go tool cover -func=coverage.out | tail -1
           echo ""
-          echo "📁 Coverage by Domain Layer:"
+          echo "Coverage by Domain Layer:"
           go tool cover -func=coverage.out | grep "internal/domain" || echo "No domain tests yet"
 
       - name: Build check
