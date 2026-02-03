@@ -137,12 +137,12 @@ jobs:
 
           ### Domain Layer Details (上位15関数)
           \`\`\`
-          $(go tool cover -func=coverage.out | grep "internal/domain" | head -15 || echo "No domain tests")
+          $(go tool cover -func=coverage.out | grep "internal/domain" | head -15 | awk '{printf "%-80s %-40s %s\n", $1, $2, $3}' || echo "No domain tests")
           \`\`\`
 
           ### Usecase Layer Details (上位15関数)
           \`\`\`
-          $(go tool cover -func=coverage.out | grep "internal/usecase" | grep -v "mock\|testhelper" | head -15 || echo "No usecase tests")
+          $(go tool cover -func=coverage.out | grep "internal/usecase" | grep -v "mock\|testhelper" | head -15 | awk '{printf "%-80s %-40s %s\n", $1, $2, $3}' || echo "No usecase tests")
           \`\`\`
 
           <details>
