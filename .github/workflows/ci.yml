@@ -113,9 +113,11 @@ jobs:
         run: |
           TOTAL_COVERAGE=$(go tool cover -func=coverage.out | tail -1 | awk '{print $3}')
 
-          DOMAIN_ONLY_COVERAGE=$(go test -coverprofile=domain_coverage.out ./internal/domain/... 2>&1 | grep "coverage:" | tail -1 | awk '{print $5}')
+          go test -coverprofile=domain_coverage.out ./internal/domain/... > /dev/null 2>&1
+          DOMAIN_ONLY_COVERAGE=$(go tool cover -func=domain_coverage.out | tail -1 | awk '{print $3}')
 
-          USECASE_ONLY_COVERAGE=$(go test -coverprofile=usecase_coverage.out ./internal/usecase/... 2>&1 | grep "coverage:" | tail -1 | awk '{print $5}')
+          go test -coverprofile=usecase_coverage.out ./internal/usecase/... > /dev/null 2>&1
+          USECASE_ONLY_COVERAGE=$(go tool cover -func=usecase_coverage.out | tail -1 | awk '{print $3}')
 
           COMMENT_BODY=$(cat <<EOF
           ## Test Coverage Report
