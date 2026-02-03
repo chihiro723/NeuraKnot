@@ -5,6 +5,42 @@ import (
 	"time"
 )
 
+// Userエンティティの仕様
+// ============================================
+// 【目的】
+// - アプリケーションのユーザーを表す集約ルート
+// - ユーザーの基本情報と状態を管理
+//
+// 【必須項目】
+// 1. ID (UserID): 内部ユーザーID（文字列、3文字以上）
+// 2. CognitoUserID (string): AWS CognitoのユーザーID（空文字不可）
+// 3. Email (Email): メールアドレス値オブジェクト
+// 4. DisplayName (string): 表示名（空文字不可）
+//
+// 【オプション項目】
+// - AvatarURL (*string): プロフィール画像URL
+// - StripeCustomerID (*string): Stripe顧客ID
+// - StripeSubscriptionID (*string): StripeサブスクリプションID
+// - CurrentPeriodStart/End (*time.Time): サブスク期間
+//
+// 【デフォルト値（新規作成時）】
+// - Status: "active" (UserStatusActive)
+// - SubscriptionTier: "free"
+// - SubscriptionStatus: "active"
+// - Stripe関連フィールド: nil
+//
+// 【状態変更メソッド】
+// - ChangeEmail: メールアドレス変更（UpdatedAt自動更新）
+// - ChangeDisplayName: 表示名変更（空文字不可、UpdatedAt自動更新）
+// - ChangeAvatarURL: アバターURL変更（UpdatedAt自動更新）
+// - ChangeStatus: ステータス変更（UpdatedAt自動更新）
+//
+// 【ビジネスルール】
+// - ユーザーステータスが"active"の場合のみアクティブと判定
+// - メールアドレスは重複不可（DB制約）
+// - 同じ値への変更時も許容（冪等性）
+// ============================================
+
 func TestNewUser(t *testing.T) {
 	userID, _ := NewUserID("test-user-123")
 	email, _ := NewEmail("test@example.com")

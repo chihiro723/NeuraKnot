@@ -4,6 +4,48 @@ import (
 	"testing"
 )
 
+// Pricing関連の仕様
+// ============================================
+// 【目的】
+// - LLMモデルの料金計算とUSD→JPY変換を提供
+// - 後方互換性のためのDeprecated関数を維持
+//
+// 【ModelPricing構造体】（Deprecated）
+// - PromptCostPer1M: プロンプトトークンの料金（USD/1M tokens）
+// - CompletionCostPer1M: 補完トークンの料金（USD/1M tokens）
+// - 注意: 現在はDBから取得を推奨（PricingService使用）
+//
+// 【PricingService】（推奨）
+// - GetModelPricing: プロバイダー・モデル名から料金情報を取得
+// - CalculateCost: トークン使用量からコスト計算
+// - データソース: billing.LLMPricingRepository（DB）
+//
+// 【Deprecated関数】（後方互換性のために残存）
+// 1. GetModelPricing(provider, model): ハードコードされた料金テーブルから取得
+// 2. CalculateCost(provider, model, promptTokens, completionTokens): コスト計算
+// - 理由: 初期実装時は料金がハードコード、現在はDB管理に移行
+// - 削除予定: なし（レガシーコードのフォールバック用）
+//
+// 【USD→JPY変換】
+// - ConvertUSDToJPY(usd): 固定レート 1 USD = 150 JPY
+// - 注意: 実際の為替レートは使用していない（簡略化のため）
+//
+// 【フォールバック料金テーブル】（Deprecated関数用）
+// OpenAI:
+//   - gpt-4o: $2.50 / $10.00 (prompt / completion)
+//   - gpt-4o-mini: $0.15 / $0.60
+// Anthropic:
+//   - claude-3-5-sonnet-20241022: $3.00 / $15.00
+// Google:
+//   - gemini-1.5-pro: $3.50 / $10.50
+//   - gemini-1.5-flash: $0.075 / $0.30
+//
+// 【使用箇所】
+// - トークン使用量の記録時にコスト計算
+// - ユーザーへの料金表示（JPY換算）
+// - 分析ダッシュボードでの集計
+// ============================================
+
 // TestGetModelPricing_Deprecated 既存の非推奨関数のテスト（後方互換性のため）
 func TestGetModelPricing_Deprecated(t *testing.T) {
 	tests := []struct {

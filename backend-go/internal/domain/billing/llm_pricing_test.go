@@ -5,6 +5,46 @@ import (
 	"time"
 )
 
+// LLMPricingエンティティの仕様
+// ============================================
+// 【目的】
+// - LLMモデルの料金情報を管理（課金計算の基盤）
+// - プロバイダー・モデルごとの仕入れ単価を保持
+//
+// 【必須項目】
+// 1. Provider (string): プロバイダー名（"openai", "anthropic", "google"など）
+// 2. Model (string): モデル名（"gpt-4o", "claude-3-5-sonnet"など）
+// 3. PromptCostPer1M (float64): プロンプトトークンの単価（USD/1M tokens）
+// 4. CompletionCostPer1M (float64): 補完トークンの単価（USD/1M tokens）
+// 5. EffectiveFrom (time.Time): 有効開始日時
+//
+// 【制約条件】
+// - Provider、Modelは空文字不可
+// - 料金は0以上（負の値不可）
+// - EffectiveToが設定される場合、EffectiveFromより後でなければならない
+//
+// 【料金計算ロジック】
+// - 計算式: (promptTokens / 1,000,000 × PromptCostPer1M) + (completionTokens / 1,000,000 × CompletionCostPer1M)
+// - 負のトークン数は0として扱う（エラー回避）
+// - 結果はUSD単位
+//
+// 【有効期間管理】
+// - IsActive: 料金が有効かどうか
+// - EffectiveFrom: この日時から有効
+// - EffectiveTo: この日時まで有効（nilの場合は無期限）
+// - IsEffectiveAt(t): 指定日時に有効かを判定
+//
+// 【料金無効化】
+// - Deactivate(effectiveTo): 料金を無効化
+// - IsActiveがfalseになり、EffectiveToが設定される
+// - EffectiveToはEffectiveFromより後でなければならない
+//
+// 【使用箇所】
+// - ユーザーのトークン使用量から課金額を計算
+// - 管理者ダッシュボードでの料金管理
+// - 利益率計算（販売単価 - 仕入れ単価）
+// ============================================
+
 func TestNewLLMPricing(t *testing.T) {
 	now := time.Now()
 
