@@ -1,12 +1,12 @@
-# BridgeSpeak - AI 分身チャットアプリケーション
+# NeuraKnot - AI 分身チャットアプリケーション
 
 ## プロジェクト概要
 AI と人間の境界を消すハイブリッドメッセージングアプリケーション。
 
 **技術スタック**
-- フロントエンド: Next.js 15 (App Router) + TypeScript 5+ + Tailwind CSS
-- バックエンド: Go 1.25 (REST API) + Python 3.11 (AI サーバー)
-- データストア: PostgreSQL 15 + Redis 7
+- フロントエンド: Next.js 16 (App Router) + TypeScript 5+ + Tailwind CSS
+- バックエンド: Go 1.24 (REST API) + Python 3.11+ (AI サーバー)
+- データストア: PostgreSQL 15
 - 認証: AWS Cognito
 - インフラ: Docker / Docker Compose / AWS
 
@@ -45,7 +45,7 @@ AI と人間の境界を消すハイブリッドメッセージングアプリ�
 ### frontend/ (Next.js)
 
 #### 技術スタック
-- Next.js 15 (App Router) + TypeScript 5+
+- Next.js 16 (App Router) + TypeScript 5+
 - Tailwind CSS
 - AWS Cognito (認証)
 - React Context API (状態管理)
@@ -68,8 +68,8 @@ AI と人間の境界を消すハイブリッドメッセージングアプリ�
 ### backend-go/ (Go API)
 
 #### 技術スタック
-- Go 1.25 + Gin (HTTP)
-- PostgreSQL 15 + Redis 7
+- Go 1.24 + Gin (HTTP)
+- PostgreSQL 15
 - AWS Cognito (認証)
 
 #### アーキテクチャ
@@ -93,16 +93,16 @@ backend-go/
 │   ├── usecase/             # ユースケース層
 │   ├── handler/http/        # ハンドラー層
 │   └── infrastructure/      # インフラ層
-├── schema/                  # DB スキーマ
+├── migrations/              # DB マイグレーション
 └── pkg/logger/              # 共通パッケージ
 ```
 
 ### backend-python/ (Python AI Server)
 
 #### 技術スタック
-- Python 3.11 + FastAPI
-- LangChain + OpenAI API
-- PostgreSQL + Redis
+- Python 3.11+ + FastAPI
+- LangChain (OpenAI, Anthropic, Google Gemini 対応)
+- PostgreSQL (データ永続化)
 
 #### アーキテクチャ
 - 依存性注入: FastAPI の DI システムを活用
@@ -113,18 +113,23 @@ backend-go/
 ```
 backend-python/
 └── app/
-    ├── api/         # API エンドポイント
-    ├── models/      # データモデル
-    ├── services/    # ビジネスロジック
-    ├── core/        # 設定・LLM
-    └── tools/       # AI ツール
+    ├── api/v1/              # API エンドポイント (v1)
+    ├── models/              # リクエスト/レスポンスモデル
+    ├── services/            # ビジネスロジック
+    │   ├── built_in/        # 組み込みサービス (計算、日時、テキスト等)
+    │   └── api_wrappers/    # 外部API連携 (Notion, Slack, 天気等)
+    ├── core/                # 設定・LLM ファクトリ・ストリーミング
+    └── middleware/          # エラーハンドリング等
 ```
 
 #### AI/ML 関連
-- プロンプト管理: 外部ファイルで管理
-- ストリーミング: リアルタイムレスポンス実装
-- エラーハンドリング: AI API のエラーを適切に処理
-- ログ: AI 処理の詳細をログ出力
+- **LLM プロバイダー**: OpenAI, Anthropic, Google Gemini に対応
+- **サービスアーキテクチャ**: レジストリパターンで動的サービス管理
+- **組み込みサービス**: 計算、日時処理、テキスト処理、データ操作等
+- **外部サービス連携**: Notion, Slack, 天気情報, 為替レート, Google Calendar 等
+- **ストリーミング**: Server-Sent Events (SSE) でリアルタイムレスポンス
+- **エラーハンドリング**: AI API のエラーを適切に処理しユーザーフレンドリーなメッセージに変換
+- **ログ管理**: AI 処理の詳細をフィルタリングしてログ出力（機密情報除外）
 
 ### Docker
 
