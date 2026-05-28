@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"backend-go/internal/domain/ai"
+	"backend-go/internal/domain/chatpin"
 
 	"github.com/google/uuid"
 )
@@ -17,15 +18,18 @@ type S3Client interface {
 
 // AgentUsecase はAI Agentのユースケース
 type AgentUsecase struct {
-	repo     ai.Repository
-	s3Client S3Client
+	repo        ai.Repository
+	s3Client    S3Client
+	chatPinRepo chatpin.Repository
 }
 
 // NewAgentUsecase はAI Agentユースケースを作成
-func NewAgentUsecase(repo ai.Repository, s3Client S3Client) *AgentUsecase {
+// chatPinRepo は nil 可（ピン機能を無効化したい環境用の保険）
+func NewAgentUsecase(repo ai.Repository, s3Client S3Client, chatPinRepo chatpin.Repository) *AgentUsecase {
 	return &AgentUsecase{
-		repo:     repo,
-		s3Client: s3Client,
+		repo:        repo,
+		s3Client:    s3Client,
+		chatPinRepo: chatPinRepo,
 	}
 }
 
@@ -129,6 +133,8 @@ func (uc *AgentUsecase) UpdateAgent(ctx context.Context, agent *ai.Agent) error 
 }
 
 // DeleteAgent はAI Agentを削除
+// 削除成功後、全ユーザーの該当ピン（chat_type='direct'）もまとめて掃除する
+// （user_chat_pins には FK を張っていないため、DB レベルの CASCADE は効かない）
 func (uc *AgentUsecase) DeleteAgent(ctx context.Context, agentID uuid.UUID) error {
 	// エージェントを取得してアバターURLを確認
 	agent, err := uc.repo.FindByID(ctx, agentID)
@@ -145,5 +151,16 @@ func (uc *AgentUsecase) DeleteAgent(ctx context.Context, agentID uuid.UUID) erro
 	}
 
 	// データベースから削除
-	return uc.repo.Delete(ctx, agentID)
+	if err := uc.repo.Delete(ctx, agentID); err != nil {
+		return err
+	}
+
+	// 関連するピンを掃除（失敗してもユーザー操作の結果には影響させない）
+	if uc.chatPinRepo != nil {
+		if err := uc.chatPinRepo.DeleteByTarget(ctx, chatpin.ChatTypeDirect, agentID); err != nil {
+			fmt.Printf("failed to delete agent pins: %v\n", err)
+		}
+	}
+
+	return nil
 }

@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useTransition } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, Pin, PinOff } from "lucide-react";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { Avatar } from "@/components/ui/Avatar";
 import { EmptyState } from "@/components/ui/feedback/EmptyState";
 import { formatTime } from "@/lib/utils/date";
 import { cn } from "@/lib/utils/cn";
+import { pinChat, unpinChat, type ChatPin } from "@/lib/actions/chat-pin";
 import type { ConversationData, ChatFilter, Agent } from "@/lib/types";
 
 interface ChatListClientProps {
@@ -50,6 +51,9 @@ interface ChatListClientProps {
       }>;
     }>;
   } | null;
+  initialPins?: {
+    pins: ChatPin[];
+  } | null;
 }
 
 /**
@@ -60,11 +64,13 @@ export function ChatListClient({
   initialConversations,
   initialAgents,
   initialGroupChats,
+  initialPins,
 }: ChatListClientProps) {
   const router = useRouter();
   const params = useParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<ChatFilter>("all");
+  const [isPending, startTransition] = useTransition();
 
   // URLパラメータから現在選択されているチャットIDを取得
   const selectedChatId = params?.id as string | undefined;
@@ -80,6 +86,24 @@ export function ChatListClient({
     return map;
   }, [initialAgents?.agents]);
 
+  // ピン情報を chat_type ごとに targetId -> pinnedAt のマップに変換
+  // direct の targetId は ai_agent_id、group の targetId は group_chat_id
+  const directPinMap = useMemo(() => {
+    const map = new Map<string, string>();
+    initialPins?.pins
+      ?.filter((p) => p.chatType === "direct")
+      .forEach((p) => map.set(p.targetId, p.pinnedAt));
+    return map;
+  }, [initialPins?.pins]);
+
+  const groupPinMap = useMemo(() => {
+    const map = new Map<string, string>();
+    initialPins?.pins
+      ?.filter((p) => p.chatType === "group")
+      .forEach((p) => map.set(p.targetId, p.pinnedAt));
+    return map;
+  }, [initialPins?.pins]);
+
   // サーバーから渡されたデータを変換し、最後のメッセージ時刻でソート
   const conversations = useMemo(() => {
     const conversationsList: ConversationData[] = [];
@@ -88,6 +112,7 @@ export function ChatListClient({
     if (initialConversations?.conversations) {
       initialConversations.conversations.forEach((conv) => {
         const agent = agentsMap.get(conv.ai_agent_id);
+        const pinnedAt = directPinMap.get(conv.ai_agent_id);
         conversationsList.push({
           id: conv.id,
           type: "direct" as const,
@@ -112,6 +137,8 @@ export function ChatListClient({
             status: "online" as const,
             personality_preset: agent?.persona_type,
           },
+          isPinned: pinnedAt !== undefined,
+          pinnedAt: pinnedAt ?? null,
         });
       });
     }
@@ -145,6 +172,7 @@ export function ChatListClient({
           };
         }
 
+        const pinnedAt = groupPinMap.get(group.id);
         conversationsList.push({
           id: group.id,
           type: "group" as const,
@@ -163,12 +191,25 @@ export function ChatListClient({
               type: "ai" as const,
             })),
           },
+          isPinned: pinnedAt !== undefined,
+          pinnedAt: pinnedAt ?? null,
         });
       });
     }
 
-    // 最後のメッセージの時刻でソート（新しい順）
+    // 2 段ソート：
+    //   1. ピン留めされたものを先頭に。ピン同士は pinnedAt DESC（新しくピンしたものほど上）
+    //   2. それ以外は最後のメッセージ時刻の降順
     return conversationsList.sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+
+      if (a.isPinned && b.isPinned) {
+        const aPin = a.pinnedAt ? new Date(a.pinnedAt).getTime() : 0;
+        const bPin = b.pinnedAt ? new Date(b.pinnedAt).getTime() : 0;
+        return bPin - aPin;
+      }
+
       const aTime = a.lastMessage?.created_at || a.updated_at || a.created_at;
       const bTime = b.lastMessage?.created_at || b.updated_at || b.created_at;
       return new Date(bTime).getTime() - new Date(aTime).getTime();
@@ -177,6 +218,8 @@ export function ChatListClient({
     initialConversations?.conversations,
     initialGroupChats?.group_chats,
     agentsMap,
+    directPinMap,
+    groupPinMap,
   ]);
 
   const handleChatSelect = (conversation: ConversationData) => {
@@ -193,6 +236,34 @@ export function ChatListClient({
 
       router.push(`/dashboard/chats/${chatId}`);
     }
+  };
+
+  // ピンのトグル
+  // direct の targetId は ai_agent_id（URL キーと一致）、group の targetId は group_chat_id
+  const handleTogglePin = (conversation: ConversationData) => {
+    const chatType = conversation.type;
+    const targetId =
+      chatType === "direct"
+        ? conversation.otherParticipant?.id
+        : conversation.id;
+    if (!targetId) return;
+
+    // 連打対策として useTransition で待機中は無視する
+    if (isPending) return;
+
+    startTransition(async () => {
+      const result = conversation.isPinned
+        ? await unpinChat(chatType, targetId)
+        : await pinChat(chatType, targetId);
+
+      if (!result.success) {
+        console.error("Failed to toggle pin:", result.error);
+        return;
+      }
+
+      // サーバー側の pinned_at に揃えるため、サーバーコンポーネントを再取得
+      router.refresh();
+    });
   };
 
   const filteredConversations = conversations.filter(
@@ -219,7 +290,7 @@ export function ChatListClient({
         (activeFilter === "groups" && conv.type === "group");
 
       return matchesSearch && matchesFilter;
-    }
+    },
   );
 
   const filters = [
@@ -229,7 +300,7 @@ export function ChatListClient({
       label: "User",
       count: conversations.filter(
         (c: ConversationData) =>
-          c.type === "direct" && c.otherParticipant?.type === "human"
+          c.type === "direct" && c.otherParticipant?.type === "human",
       ).length,
     },
     {
@@ -237,7 +308,7 @@ export function ChatListClient({
       label: "Agent",
       count: conversations.filter(
         (c: ConversationData) =>
-          c.type === "direct" && c.otherParticipant?.type === "ai"
+          c.type === "direct" && c.otherParticipant?.type === "ai",
       ).length,
     },
     {
@@ -273,7 +344,7 @@ export function ChatListClient({
                   "flex flex-1 justify-center items-center px-3 py-3 transition-all duration-200",
                   isActive
                     ? "text-green-500 bg-green-50 border-b-2 border-green-500 dark:text-green-400 dark:bg-green-900/20 dark:border-green-400"
-                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+                    : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800",
                 )}
               >
                 <span className="text-sm font-medium">
@@ -345,7 +416,9 @@ export function ChatListClient({
                   key={conversation.id}
                   conversation={conversation}
                   onSelect={() => handleChatSelect(conversation)}
+                  onTogglePin={() => handleTogglePin(conversation)}
                   isSelected={isSelected}
+                  isPinBusy={isPending}
                 />
               );
             })}
@@ -359,13 +432,17 @@ export function ChatListClient({
 interface ConversationItemProps {
   conversation: ConversationData;
   onSelect: () => void;
+  onTogglePin: () => void;
   isSelected: boolean;
+  isPinBusy: boolean;
 }
 
 function ConversationItem({
   conversation,
   onSelect,
+  onTogglePin,
   isSelected,
+  isPinBusy,
 }: ConversationItemProps) {
   const [isClient, setIsClient] = useState(false);
 
@@ -382,9 +459,14 @@ function ConversationItem({
     : conversation.otherParticipant?.avatar_url;
   const type = isGroup ? "group" : conversation.otherParticipant?.type || "ai";
   const status = isGroup ? "online" : conversation.otherParticipant?.status;
+  const isPinned = Boolean(conversation.isPinned);
 
+  // HTML の仕様上 button 内に別の button をネストできないため、
+  // 外側を div role="button" にし、内側のピン切り替えを button にして stopPropagation する
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onSelect}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -396,16 +478,16 @@ function ConversationItem({
         conversation.lastMessage
           ? `。最後のメッセージ: ${conversation.lastMessage.content.substring(
               0,
-              50
+              50,
             )}`
           : ""
       }`}
       aria-current={isSelected ? "true" : "false"}
       className={cn(
-        "relative p-3 w-full text-left transition-all lg:border-b lg:border-gray-100 dark:lg:border-gray-800 last:border-b-0 focus:outline-none",
+        "relative p-3 w-full text-left transition-all cursor-pointer group lg:border-b lg:border-gray-100 dark:lg:border-gray-800 last:border-b-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500",
         isSelected
           ? "bg-green-50 border-l-2 border-green-500 dark:bg-green-900/20 dark:border-green-400"
-          : "hover:bg-gray-50 dark:hover:bg-gray-800/50"
+          : "hover:bg-gray-50 dark:hover:bg-gray-800/50",
       )}
     >
       {/* 時刻表示（右上角） */}
@@ -439,8 +521,14 @@ function ConversationItem({
 
         {/* メッセージプレビュー */}
         <div className="flex-1 pr-16 min-w-0">
-          <h3 className="mb-1 text-sm font-semibold text-gray-900 truncate dark:text-white">
-            {displayName}
+          <h3 className="flex gap-1 items-center mb-1 text-sm font-semibold text-gray-900 truncate dark:text-white">
+            {isPinned && (
+              <Pin
+                className="flex-shrink-0 w-3 h-3 text-green-500 fill-green-500 dark:text-green-400 dark:fill-green-400"
+                aria-label="ピン留め中"
+              />
+            )}
+            <span className="truncate">{displayName}</span>
             {isGroup && conversation.groupInfo?.memberCount !== undefined && (
               <span className="ml-1 font-normal text-gray-900 dark:text-white">
                 ({conversation.groupInfo.memberCount + 1})
@@ -456,6 +544,36 @@ function ConversationItem({
           </p>
         </div>
       </div>
-    </button>
+
+      {/* ピン切替ボタン（右下角）*/}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onTogglePin();
+        }}
+        onKeyDown={(e) => {
+          e.stopPropagation();
+        }}
+        disabled={isPinBusy}
+        aria-pressed={isPinned}
+        aria-label={isPinned ? "ピンを外す" : "ピン留めする"}
+        className={cn(
+          "absolute bottom-2 right-2 p-1 rounded transition-opacity",
+          "text-gray-400 hover:text-green-600 dark:hover:text-green-400",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500",
+          isPinned
+            ? "opacity-100 text-green-500 dark:text-green-400"
+            : "opacity-0 group-hover:opacity-100 focus:opacity-100",
+          isPinBusy && "cursor-not-allowed opacity-50",
+        )}
+      >
+        {isPinned ? (
+          <PinOff className="w-4 h-4" />
+        ) : (
+          <Pin className="w-4 h-4" />
+        )}
+      </button>
+    </div>
   );
 }

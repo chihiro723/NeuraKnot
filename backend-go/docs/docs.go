@@ -883,6 +883,194 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/chat-pins": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "ログインユーザーがピン留めしているチャット（1対1／グループ）の一覧を取得します。並びは pinned_at DESC（新しくピンしたものほど上）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ChatPin"
+                ],
+                "summary": "チャットピン一覧取得",
+                "responses": {
+                    "200": {
+                        "description": "取得成功",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ChatPinsResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/chat-pins/{chat_type}/{target_id}": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "指定のチャットをピン留めします。既にピン留め済みの場合も 200 を返します（冪等）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ChatPin"
+                ],
+                "summary": "チャットピン留め",
+                "parameters": [
+                    {
+                        "enum": [
+                            "direct",
+                            "group"
+                        ],
+                        "type": "string",
+                        "description": "チャット種別",
+                        "name": "chat_type",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ピン対象のID（direct の場合は ai_agent_id、group の場合は group_chat_id）",
+                        "name": "target_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ピン留め成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "権限エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "対象が見つかりません",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "指定のチャットのピン留めを解除します。ピン留めされていない場合も 200 を返します（冪等）。",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ChatPin"
+                ],
+                "summary": "チャットピン解除",
+                "parameters": [
+                    {
+                        "enum": [
+                            "direct",
+                            "group"
+                        ],
+                        "type": "string",
+                        "description": "チャット種別",
+                        "name": "chat_type",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ピン対象のID",
+                        "name": "target_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ピン解除成功",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/conversations": {
             "get": {
                 "security": [
@@ -4026,6 +4214,36 @@ const docTemplate = `{
             "properties": {
                 "url": {
                     "type": "string"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_response.ChatPinResponse": {
+            "type": "object",
+            "properties": {
+                "chat_type": {
+                    "description": "\"direct\" | \"group\"",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "pinned_at": {
+                    "description": "RFC3339",
+                    "type": "string"
+                },
+                "target_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_response.ChatPinsResponse": {
+            "type": "object",
+            "properties": {
+                "pins": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/backend-go_internal_handler_http_response.ChatPinResponse"
+                    }
                 }
             }
         },

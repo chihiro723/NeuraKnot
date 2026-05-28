@@ -87,6 +87,8 @@ export interface ConversationData {
     sender_type: 'user' | 'ai'
     sender_name?: string
   } | null
+  isPinned?: boolean
+  pinnedAt?: string | null
 }
 
 // ツール使用履歴の型定義（DBから取得したデータ）

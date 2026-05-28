@@ -16,6 +16,7 @@ import (
 	analyticsusecase "backend-go/internal/usecase/analytics"
 	billingusecase "backend-go/internal/usecase/billing"
 	chatusecase "backend-go/internal/usecase/chat"
+	chatpinusecase "backend-go/internal/usecase/chatpin"
 	groupchatusecase "backend-go/internal/usecase/groupchat"
 	serviceusecase "backend-go/internal/usecase/service"
 	userusecase "backend-go/internal/usecase/user"
@@ -129,8 +130,12 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 		serviceHandler = NewServiceHandler(serviceUsecase)
 	}
 
+	// ChatPin（ピン留め機能）の依存関係
+	// エージェント／グループ削除時の掃除にも使うので、AI／GroupChat ユースケースより先に初期化する
+	chatPinRepo := persistence.NewChatPinRepository(db.DB)
+
 	// AI関連のユースケースとハンドラー
-	agentUsecase := aiusecase.NewAgentUsecase(aiAgentRepo, s3Client)
+	agentUsecase := aiusecase.NewAgentUsecase(aiAgentRepo, s3Client, chatPinRepo)
 	chatUsecase := chatusecase.NewChatUsecase(aiAgentRepo, conversationRepo, messageRepo, toolUsageRepo, chatSessionRepo, aiAgentServiceRepo, serviceConfigRepo, userRepo, aiClient)
 
 	aiAgentHandler := NewAIAgentHandler(agentUsecase, serviceUsecase, aiAgentServiceRepo)
@@ -170,15 +175,19 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 	groupMemberRepo := persistence.NewGroupMemberRepository(db.DB)
 	groupMessageRepo := persistence.NewGroupMessageRepository(db.DB, toolUsageRepo)
 	messageMentionRepo := persistence.NewMessageMentionRepository(db.DB)
-	groupChatUsecase := groupchatusecase.NewGroupChatUsecase(groupChatRepo, groupMemberRepo, s3Client)
+	groupChatUsecase := groupchatusecase.NewGroupChatUsecase(groupChatRepo, groupMemberRepo, s3Client, chatPinRepo)
 	groupMessageUsecase := groupchatusecase.NewGroupMessageUsecase(groupChatRepo, groupMemberRepo, groupMessageRepo, messageMentionRepo, chatSessionRepo, toolUsageRepo, aiAgentRepo, aiAgentServiceRepo, serviceConfigRepo, aiClient)
 	groupChatHandler := NewGroupChatHandler(groupChatUsecase, groupMessageUsecase, cfg.AIService.URL, db.DB)
+
+	// ChatPin 関連のハンドラー
+	chatPinUsecase := chatpinusecase.NewChatPinUsecase(chatPinRepo, aiAgentRepo, groupChatRepo)
+	chatPinHandler := NewChatPinHandler(chatPinUsecase)
 
 	// Upload関連のハンドラー
 	uploadHandler := NewUploadHandler(userService, agentUsecase, groupChatUsecase, s3Client)
 
 	// ルートを設定
-	setupRoutes(engine, userHandler, aiAgentHandler, chatHandler, serviceHandler, promptHandler, analyticsHandler, billingHandler, groupChatHandler, uploadHandler, webhookHandler, authService)
+	setupRoutes(engine, userHandler, aiAgentHandler, chatHandler, serviceHandler, promptHandler, analyticsHandler, billingHandler, groupChatHandler, chatPinHandler, uploadHandler, webhookHandler, authService)
 
 	return &Router{
 		engine: engine,
@@ -186,7 +195,7 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 }
 
 // setupRoutes ルートを設定
-func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *AIAgentHandler, chatHandler *ChatHandler, serviceHandler *ServiceHandler, promptHandler *PromptHandler, analyticsHandler *AnalyticsHandler, billingHandler *BillingHandler, groupChatHandler *GroupChatHandler, uploadHandler *UploadHandler, webhookHandler *WebhookHandler, authService user.AuthService) {
+func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *AIAgentHandler, chatHandler *ChatHandler, serviceHandler *ServiceHandler, promptHandler *PromptHandler, analyticsHandler *AnalyticsHandler, billingHandler *BillingHandler, groupChatHandler *GroupChatHandler, chatPinHandler *ChatPinHandler, uploadHandler *UploadHandler, webhookHandler *WebhookHandler, authService user.AuthService) {
 	// ヘルスチェック（ALB用に/api/healthも追加）
 	engine.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -322,6 +331,15 @@ func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *A
 			groupChats.POST("/:id/messages/:msg_id/cancel", groupChatHandler.CancelMessage)
 			groupChats.GET("/:id/messages", groupChatHandler.GetMessages)
 			groupChats.GET("/:id/suggested-questions", groupChatHandler.GenerateSuggestedQuestions)
+		}
+
+		// チャットピン関連（認証必要）
+		chatPins := v1.Group("/chat-pins")
+		chatPins.Use(authMiddleware.RequireAuth())
+		{
+			chatPins.GET("", chatPinHandler.ListPins)
+			chatPins.PUT("/:chat_type/:target_id", chatPinHandler.Pin)
+			chatPins.DELETE("/:chat_type/:target_id", chatPinHandler.Unpin)
 		}
 
 		// アップロード関連（認証必要）

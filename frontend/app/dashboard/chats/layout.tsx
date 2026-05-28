@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { listConversations } from "@/lib/actions/conversation";
 import { listAIAgents } from "@/lib/actions/ai-agent";
 import { listGroupChats } from "@/lib/actions/group-chat";
+import { listChatPins } from "@/lib/actions/chat-pin";
 import { getAuthUser } from "@/lib/actions/auth-queries";
 import { SidebarLayout } from "@/components/layout/SidebarLayout";
 import { DashboardSidebar } from "@/components/layout/DashboardSidebar";
@@ -12,16 +13,18 @@ import { ChatListSkeleton } from "@/components/ui/skeletons/ChatListSkeleton";
  * チャットセクション全体のレイアウト
  * サイドバーは /chats と /chats/[id] で共有される（再ロードなし）
  */
-export const dynamic = 'force-dynamic'; // cookies()を使用するため動的レンダリング必須
+export const dynamic = "force-dynamic"; // cookies()を使用するため動的レンダリング必須
 export const revalidate = 60; // 60秒ごとに再検証
 
 // データフェッチコンポーネント（1回だけ呼ばれる）
 async function ChatListData() {
-  const [conversationsResult, agentsResult, groupChatsResult] = await Promise.all([
-    listConversations(),
-    listAIAgents(),
-    listGroupChats(),
-  ]);
+  const [conversationsResult, agentsResult, groupChatsResult, pinsResult] =
+    await Promise.all([
+      listConversations(),
+      listAIAgents(),
+      listGroupChats(),
+      listChatPins(),
+    ]);
 
   return (
     <ChatListClient
@@ -32,6 +35,7 @@ async function ChatListData() {
       initialGroupChats={
         groupChatsResult.success ? groupChatsResult.data : null
       }
+      initialPins={pinsResult.success ? pinsResult.data : null}
     />
   );
 }
