@@ -96,10 +96,15 @@ jobs:
         run: |
           echo "Test Coverage Summary"
           echo "====================="
+          echo ""
+          echo "Overall Coverage:"
           go tool cover -func=coverage.out | tail -1
           echo ""
-          echo "Coverage by Domain Layer:"
-          go tool cover -func=coverage.out | grep "internal/domain" || echo "No domain tests yet"
+          echo "Domain Layer Coverage:"
+          go tool cover -func=coverage.out | grep "internal/domain" | tail -5 || echo "No domain tests yet"
+          echo ""
+          echo "Usecase Layer Coverage:"
+          go tool cover -func=coverage.out | grep "internal/usecase" | grep -v "mock\|testhelper" | tail -5 || echo "No usecase tests yet"
 
       - name: Post coverage comment to PR
         if: github.event_name == 'pull_request'
@@ -108,7 +113,11 @@ jobs:
         run: |
           TOTAL_COVERAGE=$(go tool cover -func=coverage.out | tail -1 | awk '{print $3}')
 
-          DOMAIN_ONLY_COVERAGE=$(go test -coverprofile=domain_coverage.out ./internal/domain/... 2>&1 | grep "coverage:" | tail -1 | awk '{print $5}')
+          go test -coverprofile=domain_coverage.out ./internal/domain/... > /dev/null 2>&1
+          DOMAIN_ONLY_COVERAGE=$(go tool cover -func=domain_coverage.out | tail -1 | awk '{print $3}')
+
+          go test -coverprofile=usecase_coverage.out ./internal/usecase/... > /dev/null 2>&1
+          USECASE_ONLY_COVERAGE=$(go tool cover -func=usecase_coverage.out | tail -1 | awk '{print $3}')
 
           COMMENT_BODY=$(cat <<EOF
           ## Test Coverage Report
@@ -119,15 +128,21 @@ jobs:
           \`\`\`
           ※ backend-go全体（Handler, Infrastructure, Usecase, Domain層を含む）
 
-          ### Domain Layer Coverage (Domain層のみ)
+          ### Layer-Specific Coverage (層別カバレッジ)
           \`\`\`
-          Domain Layer: ${DOMAIN_ONLY_COVERAGE}
+          Domain Layer:  ${DOMAIN_ONLY_COVERAGE}
+          Usecase Layer: ${USECASE_ONLY_COVERAGE}
           \`\`\`
-          ※ Domain層のみを母数としたカバレッジ
+          ※ 各層のみを母数としたカバレッジ
 
-          ### Domain Layer Details (上位20関数)
+          ### Domain Layer Details (上位15関数)
           \`\`\`
-          $(go tool cover -func=coverage.out | grep "internal/domain" | head -20 || echo "No domain tests")
+          $(go tool cover -func=coverage.out | grep "internal/domain" | head -15 | awk '{printf "%-65s %-30s %s\n", $1, $2, $3}' || echo "No domain tests")
+          \`\`\`
+
+          ### Usecase Layer Details (上位15関数)
+          \`\`\`
+          $(go tool cover -func=coverage.out | grep "internal/usecase" | grep -v "mock\|testhelper" | head -15 | awk '{printf "%-65s %-30s %s\n", $1, $2, $3}' || echo "No usecase tests")
           \`\`\`
 
           <details>
