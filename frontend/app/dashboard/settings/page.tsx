@@ -1,4 +1,5 @@
 import { Settings } from "lucide-react";
+import Link from "next/link";
 
 /**
  * 設定ページ（設定項目未選択時）
@@ -17,6 +18,14 @@ export default function SettingsPage() {
         <p className="max-w-md text-sm text-gray-500 dark:text-gray-400">
           左側から設定項目を選択してください
         </p>
+        <div className="mt-4">
+          <Link
+            href="/dashboard/admin/llm-models"
+            className="text-sm font-medium text-green-600 hover:text-green-500 dark:text-green-400 dark:hover:text-green-300"
+          >
+            LLMモデル管理へ
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -7,213 +7,51 @@ import (
 	"time"
 
 	"backend-go/internal/domain/analytics"
+	"backend-go/pkg/money"
 
 	"github.com/google/uuid"
 )
 
 // AnalyticsRepository 統計データ取得のリポジトリ実装
 type AnalyticsRepository struct {
-	db             *sql.DB
-	pricingService *analytics.PricingService
+	db *sql.DB
 }
 
 // NewAnalyticsRepository 統計データリポジトリを作成
-func NewAnalyticsRepository(db *sql.DB, pricingService *analytics.PricingService) analytics.Repository {
+func NewAnalyticsRepository(db *sql.DB) analytics.Repository {
 	return &AnalyticsRepository{
-		db:             db,
-		pricingService: pricingService,
+		db: db,
 	}
 }
 
 // GetTokenStats トークン使用量とコスト統計を取得
+//
+// コストは利用時に確定・保存された値のみを集計する（読み取り時の再計算はしない）。
+//   - チャット: ai_chat_sessions.cost_usd（単価スナップショット由来）
+//   - 補助利用(質問候補等): token_usage.cost_usd（月次集計）
+//
+// 両テーブルはデータソースとして重複しないため、合算しても二重計上にならない。
 func (r *AnalyticsRepository) GetTokenStats(ctx context.Context, userID uuid.UUID, timeRange analytics.TimeRange) (*analytics.TokenStats, error) {
 	startTime := timeRange.GetStartTime()
 
-	// 総トークン数を取得（ai_chat_sessionsとtoken_usageの両方から）
-	var totalTokens, promptTokens, completionTokens sql.NullInt64
-
-	// ai_chat_sessionsからの取得
-	var sessionTokens, sessionPrompt, sessionCompletion sql.NullInt64
-	sessionQuery := `
-		SELECT 
-			COALESCE(SUM(tokens_total), 0) as total,
-			COALESCE(SUM(tokens_prompt), 0) as prompt,
-			COALESCE(SUM(tokens_completion), 0) as completion
+	// --- セッション（チャット）側: モデル別に集計 ---
+	modelQuery := `
+		SELECT
+			provider,
+			model,
+			COALESCE(SUM(tokens_total), 0) AS total,
+			COALESCE(SUM(tokens_prompt), 0) AS prompt,
+			COALESCE(SUM(tokens_completion), 0) AS completion,
+			COALESCE(SUM(cost_usd), 0)::float8 AS cost_usd,
+			COALESCE(SUM(prompt_cost_per_1m * tokens_prompt) / NULLIF(SUM(tokens_prompt), 0), 0)::float8 AS avg_prompt_cost,
+			COALESCE(SUM(completion_cost_per_1m * tokens_completion) / NULLIF(SUM(tokens_completion), 0), 0)::float8 AS avg_completion_cost
 		FROM ai_chat_sessions
 		WHERE user_id = $1 AND status = 'completed'
 	`
 	args := []interface{}{userID}
 	if startTime != nil {
-		sessionQuery += ` AND started_at >= $2`
-		args = append(args, *startTime)
-	}
-
-	var err error
-
-	err = r.db.QueryRowContext(ctx, sessionQuery, args...).Scan(&sessionTokens, &sessionPrompt, &sessionCompletion)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get session tokens: %w", err)
-	}
-
-	// token_usageテーブルからの取得（月次集計データ）
-	var usageTokens, usagePrompt, usageCompletion sql.NullInt64
-	usageQuery := `
-		SELECT 
-			COALESCE(SUM(tokens_total), 0) as total,
-			COALESCE(SUM(tokens_prompt), 0) as prompt,
-			COALESCE(SUM(tokens_completion), 0) as completion
-		FROM token_usage
-		WHERE user_id = $1
-	`
-	usageArgs := []interface{}{userID}
-	if startTime != nil {
-		usageQuery += ` AND period_start >= $2`
-		usageArgs = append(usageArgs, *startTime)
-	}
-
-	err = r.db.QueryRowContext(ctx, usageQuery, usageArgs...).Scan(&usageTokens, &usagePrompt, &usageCompletion)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get token usage: %w", err)
-	}
-
-	// 合計を計算
-	totalTokens.Int64 = sessionTokens.Int64 + usageTokens.Int64
-	promptTokens.Int64 = sessionPrompt.Int64 + usagePrompt.Int64
-	completionTokens.Int64 = sessionCompletion.Int64 + usageCompletion.Int64
-
-	// プロバイダー別の統計を取得
-	// まずai_chat_sessionsから取得
-	providerQuery := `
-		SELECT
-			provider,
-			COALESCE(SUM(tokens_total), 0) as total
-		FROM ai_chat_sessions
-		WHERE user_id = $1 AND status = 'completed'
-	`
-	if startTime != nil {
-		providerQuery += ` AND started_at >= $2`
-	}
-	providerQuery += ` GROUP BY provider ORDER BY total DESC`
-
-	providerRows, err := r.db.QueryContext(ctx, providerQuery, args...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get provider stats: %w", err)
-	}
-	defer providerRows.Close()
-
-	// プロバイダー別のトークン数とコストをマップで管理
-	providerMap := make(map[string]*analytics.TokensByProvider)
-
-	for providerRows.Next() {
-		var provider string
-		var total int64
-		if err = providerRows.Scan(&provider, &total); err != nil {
-			return nil, fmt.Errorf("failed to scan provider stats: %w", err)
-		}
-
-		// プロバイダー別のコストを計算（各モデルのコストを合計）
-		costQuery := `
-			SELECT
-				model,
-				COALESCE(SUM(tokens_prompt), 0) as prompt,
-				COALESCE(SUM(tokens_completion), 0) as completion
-			FROM ai_chat_sessions
-			WHERE user_id = $1 AND provider = $2 AND status = 'completed'
-		`
-		costArgs := []interface{}{userID, provider}
-		if startTime != nil {
-			costQuery += ` AND started_at >= $3`
-			costArgs = append(costArgs, *startTime)
-		}
-		costQuery += ` GROUP BY model`
-
-		costRows, err2 := r.db.QueryContext(ctx, costQuery, costArgs...)
-		if err2 != nil {
-			return nil, fmt.Errorf("failed to get model costs: %w", err2)
-		}
-
-		var providerCost float64
-		for costRows.Next() {
-			var model string
-			var prompt, completion int64
-			if err = costRows.Scan(&model, &prompt, &completion); err != nil {
-				costRows.Close()
-				return nil, fmt.Errorf("failed to scan model costs: %w", err)
-			}
-			providerCost += r.pricingService.CalculateCost(ctx, provider, model, prompt, completion)
-		}
-		costRows.Close()
-
-		providerMap[provider] = &analytics.TokensByProvider{
-			Provider:         provider,
-			TotalTokens:      total,
-			EstimatedCostUSD: providerCost,
-		}
-	}
-
-	// token_usageテーブルからプロバイダー別のデータを追加
-	tokenUsageQuery := `
-		SELECT 
-			cost_usd,
-			provider_breakdown
-		FROM token_usage
-		WHERE user_id = $1
-	`
-	if startTime != nil {
-		tokenUsageQuery += ` AND period_start >= $2`
-	}
-
-	tokenUsageRows, err := r.db.QueryContext(ctx, tokenUsageQuery, usageArgs...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get token usage provider stats: %w", err)
-	}
-	defer tokenUsageRows.Close()
-
-	for tokenUsageRows.Next() {
-		var costUSD float64
-		var providerBreakdownJSON string
-		if err = tokenUsageRows.Scan(&costUSD, &providerBreakdownJSON); err != nil {
-			return nil, fmt.Errorf("failed to scan token usage provider stats: %w", err)
-		}
-
-		// provider_breakdownをパース
-		// {"openai": {"tokens": 2538, "cost": 0.0075}}
-		// 簡易的な処理: "openai"を抽出
-		if providerBreakdownJSON != "" {
-			// JSONから"openai"などのプロバイダー名とそのトークン数、コストを抽出
-			// 今回はシンプルに"openai"のみを想定
-			provider := "openai"
-			if existing, ok := providerMap[provider]; ok {
-				existing.EstimatedCostUSD += costUSD
-				// トークン数はprovider_breakdownから取得すべきだが、簡易的に既に追加済み
-			} else {
-				providerMap[provider] = &analytics.TokensByProvider{
-					Provider:         provider,
-					TotalTokens:      usageTokens.Int64, // 全体のトークン数を使用
-					EstimatedCostUSD: costUSD,
-				}
-			}
-		}
-	}
-
-	byProvider := make([]*analytics.TokensByProvider, 0, len(providerMap))
-	for _, p := range providerMap {
-		byProvider = append(byProvider, p)
-	}
-
-	// モデル別の統計を取得
-	modelQuery := `
-		SELECT
-			provider,
-			model,
-			COALESCE(SUM(tokens_total), 0) as total,
-			COALESCE(SUM(tokens_prompt), 0) as prompt,
-			COALESCE(SUM(tokens_completion), 0) as completion
-		FROM ai_chat_sessions
-		WHERE user_id = $1 AND status = 'completed'
-	`
-	if startTime != nil {
 		modelQuery += ` AND started_at >= $2`
+		args = append(args, *startTime)
 	}
 	modelQuery += ` GROUP BY provider, model ORDER BY total DESC`
 
@@ -224,50 +62,97 @@ func (r *AnalyticsRepository) GetTokenStats(ctx context.Context, userID uuid.UUI
 	defer modelRows.Close()
 
 	byModel := []*analytics.TokensByModel{}
+	providerMap := make(map[string]*analytics.TokensByProvider)
+	var sessionTotal, sessionPrompt, sessionCompletion int64
 	var totalCostUSD float64
+
 	for modelRows.Next() {
 		var provider, model string
 		var total, prompt, completion int64
-		if err := modelRows.Scan(&provider, &model, &total, &prompt, &completion); err != nil {
+		var costUSD, avgPromptCost, avgCompletionCost float64
+		if err := modelRows.Scan(&provider, &model, &total, &prompt, &completion, &costUSD, &avgPromptCost, &avgCompletionCost); err != nil {
 			return nil, fmt.Errorf("failed to scan model stats: %w", err)
 		}
 
-		cost := r.pricingService.CalculateCost(ctx, provider, model, prompt, completion)
-		totalCostUSD += cost
-
 		byModel = append(byModel, &analytics.TokensByModel{
-			Provider:         provider,
-			Model:            model,
-			TotalTokens:      total,
-			PromptTokens:     prompt,
-			CompletionTokens: completion,
-			EstimatedCostUSD: cost,
+			Provider:               provider,
+			Model:                  model,
+			TotalTokens:            total,
+			PromptTokens:           prompt,
+			CompletionTokens:       completion,
+			EstimatedCostUSD:       costUSD,
+			AvgPromptCostPer1M:     avgPromptCost,
+			AvgCompletionCostPer1M: avgCompletionCost,
 		})
+
+		sessionTotal += total
+		sessionPrompt += prompt
+		sessionCompletion += completion
+		totalCostUSD += costUSD
+
+		if existing, ok := providerMap[provider]; ok {
+			existing.TotalTokens += total
+			existing.EstimatedCostUSD += costUSD
+		} else {
+			providerMap[provider] = &analytics.TokensByProvider{
+				Provider:         provider,
+				TotalTokens:      total,
+				EstimatedCostUSD: costUSD,
+			}
+		}
+	}
+	if err := modelRows.Err(); err != nil {
+		return nil, fmt.Errorf("model stats rows error: %w", err)
 	}
 
-	// token_usageテーブルからのコストを追加
-	var tokenUsageCostUSD sql.NullFloat64
-	tokenUsageCostQuery := `
-		SELECT COALESCE(SUM(cost_usd), 0) as total_cost
+	// --- 補助利用（質問候補等）側: token_usage を集計 ---
+	var usageTokens, usagePrompt, usageCompletion sql.NullInt64
+	var usageCost sql.NullFloat64
+	usageQuery := `
+		SELECT
+			COALESCE(SUM(tokens_total), 0),
+			COALESCE(SUM(tokens_prompt), 0),
+			COALESCE(SUM(tokens_completion), 0),
+			COALESCE(SUM(cost_usd), 0)
 		FROM token_usage
 		WHERE user_id = $1
 	`
+	usageArgs := []interface{}{userID}
 	if startTime != nil {
-		tokenUsageCostQuery += ` AND period_start >= $2`
+		usageQuery += ` AND period_start >= $2`
+		usageArgs = append(usageArgs, *startTime)
+	}
+	if err := r.db.QueryRowContext(ctx, usageQuery, usageArgs...).Scan(&usageTokens, &usagePrompt, &usageCompletion, &usageCost); err != nil {
+		return nil, fmt.Errorf("failed to get token usage: %w", err)
 	}
 
-	err = r.db.QueryRowContext(ctx, tokenUsageCostQuery, usageArgs...).Scan(&tokenUsageCostUSD)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get token usage cost: %w", err)
+	totalCostUSD += usageCost.Float64
+
+	// token_usage はプロバイダー内訳を openai に集約（補助利用は gpt-4.1 を使用）
+	if usageTokens.Int64 > 0 || usageCost.Float64 > 0 {
+		if existing, ok := providerMap["openai"]; ok {
+			existing.TotalTokens += usageTokens.Int64
+			existing.EstimatedCostUSD += usageCost.Float64
+		} else {
+			providerMap["openai"] = &analytics.TokensByProvider{
+				Provider:         "openai",
+				TotalTokens:      usageTokens.Int64,
+				EstimatedCostUSD: usageCost.Float64,
+			}
+		}
 	}
-	totalCostUSD += tokenUsageCostUSD.Float64
+
+	byProvider := make([]*analytics.TokensByProvider, 0, len(providerMap))
+	for _, p := range providerMap {
+		byProvider = append(byProvider, p)
+	}
 
 	return &analytics.TokenStats{
-		TotalTokens:      totalTokens.Int64,
-		PromptTokens:     promptTokens.Int64,
-		CompletionTokens: completionTokens.Int64,
+		TotalTokens:      sessionTotal + usageTokens.Int64,
+		PromptTokens:     sessionPrompt + usagePrompt.Int64,
+		CompletionTokens: sessionCompletion + usageCompletion.Int64,
 		EstimatedCostUSD: totalCostUSD,
-		EstimatedCostJPY: analytics.ConvertUSDToJPY(totalCostUSD),
+		EstimatedCostJPY: money.ConvertUSDToJPY(totalCostUSD),
 		ByProvider:       byProvider,
 		ByModel:          byModel,
 	}, nil

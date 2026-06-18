@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from "react";
 import ReactCrop, { Crop, PixelCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { Button } from "./Button";
+import { ModalOverlay } from "./ModalOverlay";
 
 interface ImageCropperProps {
   src: string;
@@ -110,8 +111,16 @@ export function ImageCropper({
   };
 
   return (
-    <div className="flex fixed inset-0 z-50 justify-center items-center p-2 md:p-4 bg-black/80">
-      <div className="overflow-hidden w-full max-w-md bg-white rounded-xl shadow-2xl dark:bg-gray-900">
+    <ModalOverlay
+      isOpen={true}
+      onClose={onCancel}
+      closeOnBackdropClick={false}
+      className="p-2 bg-black/80 backdrop-blur-none md:p-4"
+    >
+      <div
+        className="overflow-hidden w-full max-w-md bg-white rounded-xl shadow-2xl dark:bg-gray-900"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* ヘッダー */}
         <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-base font-semibold text-gray-900 dark:text-white">
@@ -164,6 +173,6 @@ export function ImageCropper({
           </div>
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 }

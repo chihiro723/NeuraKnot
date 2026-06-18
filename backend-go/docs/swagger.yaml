@@ -136,6 +136,8 @@ definitions:
         type: string
       description:
         type: string
+      max_tokens:
+        type: integer
       model:
         type: string
       name:
@@ -156,6 +158,8 @@ definitions:
       system_prompt:
         description: カスタムシステムプロンプト
         type: string
+      temperature:
+        type: number
     required:
     - name
     type: object
@@ -495,6 +499,26 @@ definitions:
       url:
         type: string
     type: object
+  backend-go_internal_handler_http_response.ChatPinResponse:
+    properties:
+      chat_type:
+        description: '"direct" | "group"'
+        type: string
+      id:
+        type: string
+      pinned_at:
+        description: RFC3339
+        type: string
+      target_id:
+        type: string
+    type: object
+  backend-go_internal_handler_http_response.ChatPinsResponse:
+    properties:
+      pins:
+        items:
+          $ref: '#/definitions/backend-go_internal_handler_http_response.ChatPinResponse'
+        type: array
+    type: object
   backend-go_internal_handler_http_response.CheckoutSessionResponse:
     properties:
       session_id:
@@ -822,8 +846,15 @@ definitions:
     properties:
       completion:
         type: integer
+      model:
+        type: string
       prompt:
         type: integer
+      provider:
+        description: |-
+          Provider / Model は使用した LLM。コスト記録時の単価参照に使う。
+          Python 側が返さない場合に備え、ハンドラ側でフォールバックする。
+        type: string
       total:
         type: integer
     type: object
@@ -857,6 +888,10 @@ definitions:
     type: object
   backend-go_internal_handler_http_response.TokensByModelResponse:
     properties:
+      avg_completion_cost_per_1m:
+        type: number
+      avg_prompt_cost_per_1m:
+        type: number
       completion_tokens:
         type: integer
       estimated_cost_usd:
@@ -1542,6 +1577,128 @@ paths:
       summary: AI Agentサービス更新
       tags:
       - AI Agent
+  /api/v1/chat-pins:
+    get:
+      consumes:
+      - application/json
+      description: ログインユーザーがピン留めしているチャット（1対1／グループ）の一覧を取得します。並びは pinned_at DESC（新しくピンしたものほど上）。
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 取得成功
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ChatPinsResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: チャットピン一覧取得
+      tags:
+      - ChatPin
+  /api/v1/chat-pins/{chat_type}/{target_id}:
+    delete:
+      consumes:
+      - application/json
+      description: 指定のチャットのピン留めを解除します。ピン留めされていない場合も 200 を返します（冪等）。
+      parameters:
+      - description: チャット種別
+        enum:
+        - direct
+        - group
+        in: path
+        name: chat_type
+        required: true
+        type: string
+      - description: ピン対象のID
+        in: path
+        name: target_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ピン解除成功
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: チャットピン解除
+      tags:
+      - ChatPin
+    put:
+      consumes:
+      - application/json
+      description: 指定のチャットをピン留めします。既にピン留め済みの場合も 200 を返します（冪等）。
+      parameters:
+      - description: チャット種別
+        enum:
+        - direct
+        - group
+        in: path
+        name: chat_type
+        required: true
+        type: string
+      - description: ピン対象のID（direct の場合は ai_agent_id、group の場合は group_chat_id）
+        in: path
+        name: target_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ピン留め成功
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "403":
+          description: 権限エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "404":
+          description: 対象が見つかりません
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: チャットピン留め
+      tags:
+      - ChatPin
   /api/v1/conversations:
     get:
       consumes:

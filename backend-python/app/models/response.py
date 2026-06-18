@@ -11,6 +11,9 @@ class TokenUsage(BaseModel):
     prompt: int
     completion: int
     total: int
+    # 使用した LLM（コスト記録時の単価参照に使う）。後方互換のため任意。
+    provider: Optional[str] = None
+    model: Optional[str] = None
 
 
 class ToolCall(BaseModel):

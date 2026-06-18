@@ -47,8 +47,12 @@ func (tr TimeRange) GetStartTime() *time.Time {
 		// 7日前の0時（日本時間）をUTCに変換
 		startTime = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, jst).AddDate(0, 0, -7).UTC()
 	case TimeRangeMonth:
-		// 30日前の0時（日本時間）をUTCに変換
-		startTime = time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, jst).AddDate(0, 0, -30).UTC()
+		// 当月1日0時（UTCカレンダー月基準）。
+		// サブスクリプションの請求期間（billing.GetCurrentUsageFromSessions /
+		// UsageRecorder の period_start）と同一の境界に揃え、利用枠使用状況と
+		// 統計・分析の「今月」が必ず一致するようにする。
+		n := time.Now()
+		startTime = time.Date(n.Year(), n.Month(), 1, 0, 0, 0, 0, time.UTC)
 	case TimeRangeAll:
 		// 全期間（nilを返す）
 		return nil
@@ -94,6 +98,10 @@ type TokensByModel struct {
 	PromptTokens     int64   `json:"prompt_tokens"`
 	CompletionTokens int64   `json:"completion_tokens"`
 	EstimatedCostUSD float64 `json:"estimated_cost_usd"`
+	// AvgPromptCostPer1M / AvgCompletionCostPer1M は、利用時に保存された単価
+	// スナップショットの加重平均（USD/1M tokens）。フロントでの再計算を不要にする。
+	AvgPromptCostPer1M     float64 `json:"avg_prompt_cost_per_1m"`
+	AvgCompletionCostPer1M float64 `json:"avg_completion_cost_per_1m"`
 }
 
 // ActivityStats メッセージ/会話の活動量統計

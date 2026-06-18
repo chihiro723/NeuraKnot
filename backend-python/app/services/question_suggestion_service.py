@@ -11,6 +11,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# 質問候補生成に使用する LLM（唯一の定義箇所）。
+# 使用モデルを変える場合はここだけを変更すれば、レスポンスの token_usage を通じて
+# Go 側のコスト記録（llm_pricing 参照）にも自動的に反映される。
+SUGGESTION_PROVIDER = "openai"
+SUGGESTION_MODEL = "gpt-4.1"
+
 
 class QuestionSuggestionService:
     """質問候補生成サービス"""
@@ -93,8 +99,8 @@ class QuestionSuggestionService:
         try:
             # LangChainでFunction Callingを使用
             llm = LLMFactory.create_llm(
-                provider="openai",
-                model="gpt-4.1",
+                provider=SUGGESTION_PROVIDER,
+                model=SUGGESTION_MODEL,
                 temperature=0.7,
                 max_tokens=500,
                 streaming=False
@@ -146,7 +152,9 @@ class QuestionSuggestionService:
                 token_usage = {
                     "prompt": response.usage_metadata.get("input_tokens", 0),
                     "completion": response.usage_metadata.get("output_tokens", 0),
-                    "total": response.usage_metadata.get("total_tokens", 0)
+                    "total": response.usage_metadata.get("total_tokens", 0),
+                    "provider": SUGGESTION_PROVIDER,
+                    "model": SUGGESTION_MODEL,
                 }
                 logger.info(f"Token usage: {token_usage}")
             elif hasattr(response, 'response_metadata') and 'token_usage' in response.response_metadata:
@@ -154,7 +162,9 @@ class QuestionSuggestionService:
                 token_usage = {
                     "prompt": usage.get("prompt_tokens", 0),
                     "completion": usage.get("completion_tokens", 0),
-                    "total": usage.get("total_tokens", 0)
+                    "total": usage.get("total_tokens", 0),
+                    "provider": SUGGESTION_PROVIDER,
+                    "model": SUGGESTION_MODEL,
                 }
                 logger.info(f"Token usage (from response_metadata): {token_usage}")
 

@@ -6,6 +6,9 @@ import (
 	"fmt"
 
 	"backend-go/internal/domain/ai"
+	"backend-go/internal/domain/chatpin"
+	"backend-go/internal/domain/llmmodel"
+	llmmodelusecase "backend-go/internal/usecase/llmmodel"
 
 	"github.com/google/uuid"
 )
@@ -17,15 +20,25 @@ type S3Client interface {
 
 // AgentUsecase はAI Agentのユースケース
 type AgentUsecase struct {
-	repo     ai.Repository
-	s3Client S3Client
+	repo        ai.Repository
+	s3Client    S3Client
+	chatPinRepo chatpin.Repository
+	llmModels   *llmmodelusecase.Usecase
 }
 
 // NewAgentUsecase はAI Agentユースケースを作成
-func NewAgentUsecase(repo ai.Repository, s3Client S3Client) *AgentUsecase {
+// chatPinRepo は nil 可（ピン機能を無効化したい環境用の保険）
+func NewAgentUsecase(
+	repo ai.Repository,
+	s3Client S3Client,
+	chatPinRepo chatpin.Repository,
+	llmModels *llmmodelusecase.Usecase,
+) *AgentUsecase {
 	return &AgentUsecase{
-		repo:     repo,
-		s3Client: s3Client,
+		repo:        repo,
+		s3Client:    s3Client,
+		chatPinRepo: chatPinRepo,
+		llmModels:   llmModels,
 	}
 }
 
@@ -37,6 +50,8 @@ func (uc *AgentUsecase) CreateAgent(
 	personaType string,
 	provider string,
 	model string,
+	temperature float64,
+	maxTokens int,
 	description *string,
 	avatarURL *string,
 	systemPrompt *string,
@@ -65,11 +80,24 @@ func (uc *AgentUsecase) CreateAgent(
 		model = "gpt-4.1"
 	}
 
+	if uc.llmModels != nil {
+		if err := uc.llmModels.ValidateRuntimeConfig(ctx, prov.String(), model, temperature, maxTokens); err != nil {
+			if errors.Is(err, llmmodel.ErrModelNotFound) || errors.Is(err, llmmodel.ErrModelDisabled) {
+				return nil, err
+			}
+			return nil, fmt.Errorf("failed to validate llm model: %w", err)
+		}
+	}
+
 	// AI Agentを作成
 	agent, err := ai.NewAgent(userID, name, persona, prov, model)
 	if err != nil {
 		return nil, err
 	}
+
+	// 作成時に指定されたランタイム設定を反映
+	agent.Temperature = temperature
+	agent.MaxTokens = maxTokens
 
 	// 説明を設定
 	if description != nil && *description != "" {
@@ -122,6 +150,18 @@ func (uc *AgentUsecase) GetAgentByID(ctx context.Context, agentID uuid.UUID) (*a
 
 // UpdateAgent はAI Agentを更新
 func (uc *AgentUsecase) UpdateAgent(ctx context.Context, agent *ai.Agent) error {
+	if uc.llmModels != nil {
+		if err := uc.llmModels.ValidateRuntimeConfig(
+			ctx,
+			agent.Provider.String(),
+			agent.Model,
+			agent.Temperature,
+			agent.MaxTokens,
+		); err != nil {
+			return err
+		}
+	}
+
 	if err := agent.Validate(); err != nil {
 		return err
 	}
@@ -129,6 +169,8 @@ func (uc *AgentUsecase) UpdateAgent(ctx context.Context, agent *ai.Agent) error 
 }
 
 // DeleteAgent はAI Agentを削除
+// 削除成功後、全ユーザーの該当ピン（chat_type='direct'）もまとめて掃除する
+// （user_chat_pins には FK を張っていないため、DB レベルの CASCADE は効かない）
 func (uc *AgentUsecase) DeleteAgent(ctx context.Context, agentID uuid.UUID) error {
 	// エージェントを取得してアバターURLを確認
 	agent, err := uc.repo.FindByID(ctx, agentID)
@@ -145,5 +187,16 @@ func (uc *AgentUsecase) DeleteAgent(ctx context.Context, agentID uuid.UUID) erro
 	}
 
 	// データベースから削除
-	return uc.repo.Delete(ctx, agentID)
+	if err := uc.repo.Delete(ctx, agentID); err != nil {
+		return err
+	}
+
+	// 関連するピンを掃除（失敗してもユーザー操作の結果には影響させない）
+	if uc.chatPinRepo != nil {
+		if err := uc.chatPinRepo.DeleteByTarget(ctx, chatpin.ChatTypeDirect, agentID); err != nil {
+			fmt.Printf("failed to delete agent pins: %v\n", err)
+		}
+	}
+
+	return nil
 }

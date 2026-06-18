@@ -3,15 +3,19 @@ package chat
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
 
 	"backend-go/internal/domain/ai"
 	"backend-go/internal/domain/conversation"
+	"backend-go/internal/domain/llmmodel"
 	"backend-go/internal/domain/service"
 	"backend-go/internal/domain/user"
 	"backend-go/internal/infrastructure/external"
+	llmmodelusecase "backend-go/internal/usecase/llmmodel"
+	"backend-go/internal/usecase/usage"
 
 	"github.com/google/uuid"
 )
@@ -22,11 +26,12 @@ type ChatUsecase struct {
 	convRepo           conversation.ConversationRepository
 	msgRepo            conversation.MessageRepository
 	toolUsageRepo      conversation.ToolUsageRepository
-	chatSessionRepo    conversation.ChatSessionRepository
+	usageRecorder      *usage.Recorder
 	aiAgentServiceRepo service.AIAgentServiceRepository
 	serviceConfigRepo  service.ServiceConfigRepository
 	userRepo           user.UserRepository
 	aiClient           *external.AIClient
+	llmModelUsecase    *llmmodelusecase.Usecase
 }
 
 // NewChatUsecase はチャットユースケースを作成
@@ -35,23 +40,48 @@ func NewChatUsecase(
 	convRepo conversation.ConversationRepository,
 	msgRepo conversation.MessageRepository,
 	toolUsageRepo conversation.ToolUsageRepository,
-	chatSessionRepo conversation.ChatSessionRepository,
+	usageRecorder *usage.Recorder,
 	aiAgentServiceRepo service.AIAgentServiceRepository,
 	serviceConfigRepo service.ServiceConfigRepository,
 	userRepo user.UserRepository,
 	aiClient *external.AIClient,
+	llmModelUsecase *llmmodelusecase.Usecase,
 ) *ChatUsecase {
 	return &ChatUsecase{
 		aiRepo:             aiRepo,
 		convRepo:           convRepo,
 		msgRepo:            msgRepo,
 		toolUsageRepo:      toolUsageRepo,
-		chatSessionRepo:    chatSessionRepo,
+		usageRecorder:      usageRecorder,
 		aiAgentServiceRepo: aiAgentServiceRepo,
 		serviceConfigRepo:  serviceConfigRepo,
 		userRepo:           userRepo,
 		aiClient:           aiClient,
+		llmModelUsecase:    llmModelUsecase,
 	}
+}
+
+func (uc *ChatUsecase) validateAgentModel(ctx context.Context, agent *ai.Agent) error {
+	if uc.llmModelUsecase == nil {
+		return nil
+	}
+
+	err := uc.llmModelUsecase.ValidateRuntimeConfig(
+		ctx,
+		agent.Provider.String(),
+		agent.Model,
+		agent.Temperature,
+		agent.MaxTokens,
+	)
+	if err == nil {
+		return nil
+	}
+
+	if errors.Is(err, llmmodel.ErrModelNotFound) || errors.Is(err, llmmodel.ErrModelDisabled) {
+		return err
+	}
+
+	return fmt.Errorf("failed to validate llm model config: %w", err)
 }
 
 // ChatResult はチャット結果
@@ -190,6 +220,10 @@ func (uc *ChatUsecase) SendMessage(
 		return nil, fmt.Errorf("failed to get AI agent: %w", err)
 	}
 
+	if err := uc.validateAgentModel(ctx, agent); err != nil {
+		return nil, err
+	}
+
 	// 6. エージェントに紐付けられたサービス情報を取得
 	var services []external.ServiceConfig
 	if uc.aiAgentServiceRepo != nil {
@@ -285,7 +319,7 @@ func (uc *ChatUsecase) SendMessage(
 		len(aiResp.ToolCalls),
 	)
 
-	if err := uc.chatSessionRepo.Save(ctx, chatSession); err != nil {
+	if err := uc.usageRecorder.RecordSessionUsage(ctx, chatSession); err != nil {
 		// ChatSession保存失敗してもユーザーへのレスポンスは正常に返す（ログに記録）
 		log.Printf("ERROR: Failed to save chat session: %v", err)
 	}
@@ -512,6 +546,10 @@ func (uc *ChatUsecase) SendMessageStream(
 		return nil, nil, fmt.Errorf("failed to get AI agent: %w", err)
 	}
 
+	if err := uc.validateAgentModel(ctx, agent); err != nil {
+		return nil, nil, err
+	}
+
 	// 6. エージェントに紐付けられたサービス情報を取得
 	var services []external.ServiceConfig
 	if uc.aiAgentServiceRepo != nil {
@@ -694,7 +732,7 @@ func (uc *ChatUsecase) relayAndHandleStream(
 						len(event.ToolCalls),
 					)
 
-					if err := uc.chatSessionRepo.Save(ctx, chatSession); err != nil {
+					if err := uc.usageRecorder.RecordSessionUsage(ctx, chatSession); err != nil {
 						log.Printf("ERROR: Failed to save chat session: %v", err)
 					}
 				} else {
@@ -785,6 +823,10 @@ func (uc *ChatUsecase) SendAgentIntroduction(
 	agent, err = uc.aiRepo.FindByID(ctx, conv.AIAgentID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get AI agent: %w", err)
+	}
+
+	if err := uc.validateAgentModel(ctx, agent); err != nil {
+		return nil, err
 	}
 
 	// 4. エージェントのサービス設定を取得
@@ -890,7 +932,7 @@ func (uc *ChatUsecase) SendAgentIntroduction(
 		len(aiResp.ToolCalls),
 	)
 
-	if err := uc.chatSessionRepo.Save(ctx, chatSession); err != nil {
+	if err := uc.usageRecorder.RecordSessionUsage(ctx, chatSession); err != nil {
 		// ChatSession保存失敗してもユーザーへのレスポンスは正常に返す（ログに記録）
 		log.Printf("ERROR: Failed to save chat session for introduction: %v", err)
 	}

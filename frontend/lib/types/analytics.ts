@@ -35,6 +35,8 @@ export interface TokensByModel {
   prompt_tokens: number;
   completion_tokens: number;
   estimated_cost_usd: number;
+  avg_prompt_cost_per_1m: number;
+  avg_completion_cost_per_1m: number;
 }
 
 export interface ActivityStats {

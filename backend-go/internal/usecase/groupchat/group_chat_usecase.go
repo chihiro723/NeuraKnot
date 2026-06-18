@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"backend-go/internal/domain/chatpin"
 	"backend-go/internal/domain/groupchat"
 
 	"github.com/google/uuid"
@@ -20,18 +21,22 @@ type GroupChatUsecase struct {
 	groupChatRepo groupchat.GroupChatRepository
 	memberRepo    groupchat.GroupMemberRepository
 	s3Client      S3Client
+	chatPinRepo   chatpin.Repository
 }
 
 // NewGroupChatUsecase はグループチャットユースケースを作成
+// chatPinRepo は nil 可（ピン機能を無効化したい環境用の保険）
 func NewGroupChatUsecase(
 	groupChatRepo groupchat.GroupChatRepository,
 	memberRepo groupchat.GroupMemberRepository,
 	s3Client S3Client,
+	chatPinRepo chatpin.Repository,
 ) *GroupChatUsecase {
 	return &GroupChatUsecase{
 		groupChatRepo: groupChatRepo,
 		memberRepo:    memberRepo,
 		s3Client:      s3Client,
+		chatPinRepo:   chatPinRepo,
 	}
 }
 
@@ -186,6 +191,14 @@ func (uc *GroupChatUsecase) DeleteGroupChat(ctx context.Context, userID, groupCh
 	// 削除
 	if err := uc.groupChatRepo.Delete(ctx, groupChatID); err != nil {
 		return fmt.Errorf("failed to delete group chat: %w", err)
+	}
+
+	// 関連するピンを掃除（失敗してもユーザー操作の結果には影響させない）
+	// user_chat_pins には FK を張っていないため、DB レベルの CASCADE は効かない
+	if uc.chatPinRepo != nil {
+		if err := uc.chatPinRepo.DeleteByTarget(ctx, chatpin.ChatTypeGroup, groupChatID); err != nil {
+			fmt.Printf("failed to delete group chat pins: %v\n", err)
+		}
 	}
 
 	return nil

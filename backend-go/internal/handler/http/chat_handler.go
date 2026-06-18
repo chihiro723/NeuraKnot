@@ -3,8 +3,8 @@ package http
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -13,28 +13,67 @@ import (
 	"time"
 
 	"backend-go/internal/domain/conversation"
+	"backend-go/internal/domain/llmmodel"
 	"backend-go/internal/handler/http/middleware"
 	"backend-go/internal/handler/http/request"
 	"backend-go/internal/handler/http/response"
 	chatusecase "backend-go/internal/usecase/chat"
+	"backend-go/internal/usecase/usage"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
+// 質問候補生成のコスト記録で使う既定の provider/model。
+// 通常は Python が token_usage に使用モデルを載せて返すため、その値を優先する。
+// 後方互換（古いレスポンスや未設定時）のためのフォールバックとしてのみ使用する。
+const (
+	defaultSuggestionProvider = "openai"
+	defaultSuggestionModel    = "gpt-4.1"
+)
+
+// resolveSuggestionModel は Python から返された provider/model を優先し、
+// 欠落時は既定値にフォールバックして返す。
+func resolveSuggestionModel(usage *response.TokenUsage) (provider, model string) {
+	provider = defaultSuggestionProvider
+	model = defaultSuggestionModel
+	if usage == nil {
+		return provider, model
+	}
+	if usage.Provider != "" {
+		provider = usage.Provider
+	}
+	if usage.Model != "" {
+		model = usage.Model
+	}
+	return provider, model
+}
+
 // ChatHandler はチャットのハンドラー
 type ChatHandler struct {
 	chatUsecase      *chatusecase.ChatUsecase
 	pythonBackendURL string
-	db               *sql.DB
+	usageRecorder    *usage.Recorder
+}
+
+func mapChatErrorStatus(err error) int {
+	switch {
+	case errors.Is(err, llmmodel.ErrModelNotFound),
+		errors.Is(err, llmmodel.ErrModelDisabled),
+		errors.Is(err, llmmodel.ErrTemperatureOutOfRange),
+		errors.Is(err, llmmodel.ErrMaxTokensOutOfRange):
+		return http.StatusBadRequest
+	default:
+		return http.StatusInternalServerError
+	}
 }
 
 // NewChatHandler はチャットハンドラーを作成
-func NewChatHandler(chatUsecase *chatusecase.ChatUsecase, pythonBackendURL string, db *sql.DB) *ChatHandler {
+func NewChatHandler(chatUsecase *chatusecase.ChatUsecase, pythonBackendURL string, usageRecorder *usage.Recorder) *ChatHandler {
 	return &ChatHandler{
 		chatUsecase:      chatUsecase,
 		pythonBackendURL: pythonBackendURL,
-		db:               db,
+		usageRecorder:    usageRecorder,
 	}
 }
 
@@ -151,7 +190,8 @@ func (h *ChatHandler) SendMessage(c *gin.Context) {
 		eventChan, _, streamErr := h.chatUsecase.SendMessageStream(c.Request.Context(), userID, conversationID, req.Content)
 		if streamErr != nil {
 			log.Printf("ERROR: Failed to start streaming: %v", streamErr)
-			c.JSON(http.StatusInternalServerError, response.NewErrorResponse(streamErr, http.StatusInternalServerError))
+			status := mapChatErrorStatus(streamErr)
+			c.JSON(status, response.NewErrorResponse(streamErr, status))
 			return
 		}
 
@@ -191,7 +231,8 @@ func (h *ChatHandler) SendMessage(c *gin.Context) {
 	result, err := h.chatUsecase.SendMessage(c.Request.Context(), userID, conversationID, req.Content)
 	if err != nil {
 		log.Printf("ERROR: Failed to send message: %v", err)
-		c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
+		status := mapChatErrorStatus(err)
+		c.JSON(status, response.NewErrorResponse(err, status))
 		return
 	}
 
@@ -257,7 +298,8 @@ func (h *ChatHandler) SendAgentIntroduction(c *gin.Context) {
 	// AIエージェントが自己紹介メッセージを送信
 	result, err := h.chatUsecase.SendAgentIntroduction(c.Request.Context(), userID, conv.ID, req.Message)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
+		status := mapChatErrorStatus(err)
+		c.JSON(status, response.NewErrorResponse(err, status))
 		return
 	}
 
@@ -566,24 +608,24 @@ func (h *ChatHandler) GenerateSuggestedQuestions(c *gin.Context) {
 		return
 	}
 
-	// トークン使用量をDBに記録
+	// トークン使用量をDBに記録（コストは llm_pricing から算出）
 	if suggestionsResp.TokenUsage != nil {
-		agentID := agent.ID
+		provider, model := resolveSuggestionModel(suggestionsResp.TokenUsage)
+		prompt := int64(suggestionsResp.TokenUsage.Prompt)
+		completion := int64(suggestionsResp.TokenUsage.Completion)
 		// context.Backgroundを使用してHTTPリクエストのコンテキストとは独立させる
 		go func() {
 			// 新しいコンテキストを作成（タイムアウト付き）
 			recordCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
-			if err := h.recordTokenUsage(
-				recordCtx,
-				userID,
-				&agentID,
-				suggestionsResp.TokenUsage.Prompt,
-				suggestionsResp.TokenUsage.Completion,
-				"openai",
-				"gpt-4.1",
-			); err != nil {
+			if err := h.usageRecorder.RecordAuxiliaryUsage(recordCtx, usage.AuxiliaryUsageInput{
+				UserID:     userID,
+				Provider:   provider,
+				Model:      model,
+				Prompt:     prompt,
+				Completion: completion,
+			}); err != nil {
 				log.Printf("ERROR: Failed to record token usage: %v", err)
 			}
 		}()
@@ -604,84 +646,3 @@ func (h *ChatHandler) formatMessagesForPython(messages []*conversation.Message) 
 	return formatted
 }
 
-// recordTokenUsage はトークン使用量をtoken_usageテーブルに記録
-func (h *ChatHandler) recordTokenUsage(
-	ctx context.Context,
-	userID uuid.UUID,
-	aiAgentID *uuid.UUID,
-	promptTokens int,
-	completionTokens int,
-	provider string,
-	model string,
-) error {
-	now := time.Now()
-	periodStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
-	periodEnd := periodStart.AddDate(0, 1, 0)
-
-	totalTokens := promptTokens + completionTokens
-
-	// コスト計算（簡易版: 実際にはllm_pricingテーブルから取得すべき）
-	// gpt-4.1の概算: prompt $2.50/1M, completion $10/1M
-	costUSD := (float64(promptTokens) * 2.50 / 1000000.0) + (float64(completionTokens) * 10.0 / 1000000.0)
-
-	// token_usageテーブルを更新（INSERT ON CONFLICT UPDATE）
-	query := `
-		INSERT INTO token_usage (
-			user_id,
-			period_start,
-			period_end,
-			tokens_prompt,
-			tokens_completion,
-			tokens_total,
-			cost_usd,
-			request_count,
-			provider_breakdown,
-			created_at,
-			updated_at
-		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, 1,
-			jsonb_build_object($8::text, jsonb_build_object('tokens', $6::bigint, 'cost', $7::numeric)),
-			NOW(), NOW()
-		)
-		ON CONFLICT (user_id, period_start, period_end)
-		DO UPDATE SET
-			tokens_prompt = token_usage.tokens_prompt + EXCLUDED.tokens_prompt,
-			tokens_completion = token_usage.tokens_completion + EXCLUDED.tokens_completion,
-			tokens_total = token_usage.tokens_total + EXCLUDED.tokens_total,
-			cost_usd = token_usage.cost_usd + EXCLUDED.cost_usd,
-			request_count = token_usage.request_count + 1,
-			provider_breakdown = jsonb_set(
-				COALESCE(token_usage.provider_breakdown, '{}'::jsonb),
-				ARRAY[$8::text],
-				jsonb_build_object(
-					'tokens',
-					COALESCE((token_usage.provider_breakdown->$8::text->>'tokens')::bigint, 0) + $6::bigint,
-					'cost',
-					COALESCE((token_usage.provider_breakdown->$8::text->>'cost')::numeric, 0) + $7::numeric
-				)
-			),
-			updated_at = NOW()
-	`
-
-	_, err := h.db.ExecContext(
-		ctx,
-		query,
-		userID,
-		periodStart,
-		periodEnd,
-		promptTokens,
-		completionTokens,
-		totalTokens,
-		costUSD,
-		provider,
-	)
-
-	if err != nil {
-		return fmt.Errorf("failed to record token usage: %w", err)
-	}
-
-	log.Printf("INFO: Recorded token usage - User: %s, Agent: %s, Tokens: %d (prompt: %d, completion: %d), Cost: $%.6f, Provider: %s, Model: %s",
-		userID, aiAgentID, totalTokens, promptTokens, completionTokens, costUSD, provider, model)
-
-	return nil
-}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
+import { ModalOverlay } from "@/components/ui/ModalOverlay";
 import {
   X,
   Trash2,
@@ -44,10 +44,7 @@ export function ServiceDetailModal({
     new Set()
   );
 
-  // 背景スクロールをロック
-  useBodyScrollLock(isOpen);
-
-  if (!isOpen || !service) return null;
+  if (!service) return null;
 
   // ツールをカテゴリ別にグループ化
   const groupedTools = tools.reduce((acc, tool) => {
@@ -95,9 +92,10 @@ export function ServiceDetailModal({
   const canModify = service.type !== "built_in";
 
   return (
-    <div
-      className="flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-sm bg-black/50"
-      onClick={onClose}
+    <ModalOverlay
+      isOpen={isOpen}
+      onClose={onClose}
+      className="backdrop-blur-sm bg-black/50"
     >
       <div
         className="relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-2xl bg-white dark:bg-gray-800 shadow-2xl"
@@ -330,6 +328,6 @@ export function ServiceDetailModal({
         variant="danger"
         isLoading={isDeleting}
       />
-    </div>
+    </ModalOverlay>
   );
 }

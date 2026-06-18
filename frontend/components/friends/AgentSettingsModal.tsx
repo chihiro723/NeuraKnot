@@ -18,7 +18,7 @@ import {
   Camera,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
+import { ModalOverlay } from "@/components/ui/ModalOverlay";
 import {
   updateAgent,
   getAgentServices,
@@ -27,12 +27,14 @@ import {
   deleteAgent,
 } from "@/lib/actions/ai-agent";
 import { getUserServicesWithDetails } from "@/lib/actions/services";
+import { listLLMProviderModels } from "@/lib/actions/llm-models";
 import type {
   AIAgent,
   UpdateAgentInput,
   AgentService,
 } from "@/lib/types/ai-agent";
 import type { UserServiceWithDetails } from "@/lib/types/service";
+import type { LLMProviderModels } from "@/lib/types/llm-model";
 import { cn } from "@/lib/utils/cn";
 import { ConfirmModal } from "@/components/ui/modals/ConfirmModal";
 import { useRouter } from "next/navigation";
@@ -75,10 +77,11 @@ export function AgentSettingsModal({
   const [formData, setFormData] = useState<UpdateAgentInput>({});
   const [agentServices, setAgentServices] = useState<AgentService[]>([]);
   const [userServices, setUserServices] = useState<UserServiceWithDetails[]>(
-    []
+    [],
   );
+  const [providerModels, setProviderModels] = useState<LLMProviderModels[]>([]);
   const [expandedServices, setExpandedServices] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
 
   // タブの定義
@@ -111,9 +114,6 @@ export function AgentSettingsModal({
     }
   }, [isOpen, agent]);
 
-  // 背景スクロールをロック
-  useBodyScrollLock(isOpen);
-
   const loadData = async () => {
     if (!agent) return;
 
@@ -121,10 +121,12 @@ export function AgentSettingsModal({
       setError(null);
 
       // エージェントのサービス一覧とユーザーのサービス一覧を並行取得
-      const [servicesResult, userServicesResult] = await Promise.all([
-        getAgentServices(agent.id),
-        getUserServicesWithDetails(),
-      ]);
+      const [servicesResult, userServicesResult, llmProviders] =
+        await Promise.all([
+          getAgentServices(agent.id),
+          getUserServicesWithDetails(),
+          listLLMProviderModels(true),
+        ]);
 
       if (servicesResult.success && servicesResult.data?.services) {
         setAgentServices(servicesResult.data.services);
@@ -133,21 +135,138 @@ export function AgentSettingsModal({
       if (userServicesResult) {
         setUserServices(userServicesResult);
       }
+
+      setProviderModels(llmProviders);
+      if (llmProviders.length > 0) {
+        const hasProvider = llmProviders.some(
+          (provider) => provider.provider === formData.provider,
+        );
+        const fallbackProvider =
+          hasProvider && formData.provider
+            ? formData.provider
+            : llmProviders[0].provider;
+        const providerEntry = llmProviders.find(
+          (provider) => provider.provider === fallbackProvider,
+        );
+        const hasModel = providerEntry?.models.some(
+          (model) => model.model === formData.model,
+        );
+
+        if (!hasModel) {
+          setFormData((prev) =>
+            applyModelConstraints(
+              prev,
+              fallbackProvider,
+              providerEntry?.models[0]?.model || prev.model || "",
+            ),
+          );
+        }
+      }
     } catch (err) {
       console.error("Failed to load data:", err);
       setError("データの読み込みに失敗しました");
     }
   };
 
+  const providerLabels: Record<string, string> = {
+    openai: "OpenAI",
+    anthropic: "Anthropic",
+    google: "Google",
+  };
+  const currentProviderModels =
+    providerModels.find((provider) => provider.provider === formData.provider)
+      ?.models || [];
+  const currentModelConfig =
+    currentProviderModels.find((model) => model.model === formData.model) ||
+    currentProviderModels[0];
+  const temperatureMin = currentModelConfig?.temperature_min ?? 0;
+  const temperatureMax = currentModelConfig?.temperature_max ?? 2;
+  const isTemperatureFixed = temperatureMin === temperatureMax;
+  const maxTokensMin = currentModelConfig?.max_tokens_min ?? 100;
+  const maxTokensMax = currentModelConfig?.max_tokens_max ?? 8000;
+
+  const clampToRange = (value: number, min: number, max: number) =>
+    Math.min(max, Math.max(min, value));
+
+  const applyModelConstraints = (
+    prev: UpdateAgentInput,
+    provider: string,
+    model: string,
+  ): UpdateAgentInput => {
+    const providerEntry = providerModels.find((p) => p.provider === provider);
+    const modelConfig =
+      providerEntry?.models.find((m) => m.model === model) ||
+      providerEntry?.models[0];
+
+    if (!modelConfig) {
+      return { ...prev, provider, model };
+    }
+
+    const currentTemperature = prev.temperature ?? modelConfig.temperature_min;
+    const currentMaxTokens = prev.max_tokens ?? modelConfig.max_tokens_min;
+
+    return {
+      ...prev,
+      provider,
+      model: modelConfig.model,
+      temperature: clampToRange(
+        currentTemperature,
+        modelConfig.temperature_min,
+        modelConfig.temperature_max,
+      ),
+      max_tokens: clampToRange(
+        currentMaxTokens,
+        modelConfig.max_tokens_min,
+        modelConfig.max_tokens_max,
+      ),
+    };
+  };
+
   const handleInputChange = (
     field: keyof UpdateAgentInput,
-    value: string | number | boolean | undefined
+    value: string | number | boolean | undefined,
   ) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
+
+  useEffect(() => {
+    if (!currentModelConfig) return;
+
+    setFormData((prev) => {
+      const currentTemperature = prev.temperature ?? temperatureMin;
+      const currentMaxTokens = prev.max_tokens ?? maxTokensMin;
+      const nextTemperature = Math.min(
+        temperatureMax,
+        Math.max(temperatureMin, currentTemperature),
+      );
+      const nextMaxTokens = Math.min(
+        maxTokensMax,
+        Math.max(maxTokensMin, currentMaxTokens),
+      );
+
+      if (
+        nextTemperature === prev.temperature &&
+        nextMaxTokens === prev.max_tokens
+      ) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        temperature: nextTemperature,
+        max_tokens: nextMaxTokens,
+      };
+    });
+  }, [
+    currentModelConfig,
+    temperatureMin,
+    temperatureMax,
+    maxTokensMin,
+    maxTokensMax,
+  ]);
 
   const handleServiceToggle = async (serviceId: string, enabled: boolean) => {
     if (!agent) return;
@@ -159,7 +278,7 @@ export function AgentSettingsModal({
       const result = await updateAgentService(agent.id, serviceId, { enabled });
       if (result.success) {
         setAgentServices((prev) =>
-          prev.map((s) => (s.id === serviceId ? { ...s, enabled } : s))
+          prev.map((s) => (s.id === serviceId ? { ...s, enabled } : s)),
         );
       }
     } catch (err) {
@@ -169,7 +288,7 @@ export function AgentSettingsModal({
 
   const handleServiceToolModeChange = async (
     serviceId: string,
-    mode: "all" | "selected"
+    mode: "all" | "selected",
   ) => {
     if (!agent) return;
 
@@ -183,8 +302,8 @@ export function AgentSettingsModal({
           prev.map((s) =>
             s.id === serviceId
               ? { ...s, tool_selection_mode: mode, selected_tools: [] }
-              : s
-          )
+              : s,
+          ),
         );
       }
     } catch (err) {
@@ -194,7 +313,7 @@ export function AgentSettingsModal({
 
   const handleServiceToolSelection = async (
     serviceId: string,
-    selectedTools: string[]
+    selectedTools: string[],
   ) => {
     if (!agent) return;
 
@@ -205,8 +324,8 @@ export function AgentSettingsModal({
       if (result.success) {
         setAgentServices((prev) =>
           prev.map((s) =>
-            s.id === serviceId ? { ...s, selected_tools: selectedTools } : s
-          )
+            s.id === serviceId ? { ...s, selected_tools: selectedTools } : s,
+          ),
         );
       }
     } catch (err) {
@@ -310,14 +429,14 @@ export function AgentSettingsModal({
         try {
           const avatarResult = await uploadAgentAvatar(
             agent.id,
-            pendingAvatarBlob
+            pendingAvatarBlob,
           );
           console.log("[AgentSettingsModal] Avatar uploaded:", avatarResult);
-          formData.avatar_url = avatarResult.avatar_url;
+          setFormData((prev) => ({ ...prev, avatar_url: avatarResult.avatar_url }));
         } catch (uploadError) {
           console.error(
             "[AgentSettingsModal] Avatar upload failed:",
-            uploadError
+            uploadError,
           );
           setError("画像のアップロードに失敗しました");
           setIsUploadingAvatar(false);
@@ -327,8 +446,41 @@ export function AgentSettingsModal({
         setIsUploadingAvatar(false);
       }
 
-      console.log("[AgentSettingsModal] Updating agent:", formData);
-      const result = await updateAgent(agent.id, formData);
+      const providerEntry = providerModels.find(
+        (provider) => provider.provider === formData.provider,
+      );
+
+      const modelConfig =
+        providerEntry?.models.find((model) => model.model === formData.model) ||
+        providerEntry?.models[0];
+
+      if (!modelConfig) {
+        setError(
+          "選択中モデルの設定取得に失敗しました。画面を再読み込みしてもう一度お試しください。",
+        );
+        setLoading(false);
+        return;
+      }
+      const requestData: UpdateAgentInput = {
+        ...formData,
+        temperature: modelConfig
+          ? clampToRange(
+              formData.temperature ?? modelConfig.temperature_min,
+              modelConfig.temperature_min,
+              modelConfig.temperature_max,
+            )
+          : formData.temperature,
+        max_tokens: modelConfig
+          ? clampToRange(
+              formData.max_tokens ?? modelConfig.max_tokens_min,
+              modelConfig.max_tokens_min,
+              modelConfig.max_tokens_max,
+            )
+          : formData.max_tokens,
+      };
+
+      console.log("[AgentSettingsModal] Updating agent:", requestData);
+      const result = await updateAgent(agent.id, requestData);
       if (result.success) {
         console.log("[AgentSettingsModal] Agent updated successfully");
         // プレビューURLをクリーンアップ
@@ -383,14 +535,11 @@ export function AgentSettingsModal({
     }
   };
 
-  if (!isOpen || !agent) return null;
+  if (!agent) return null;
 
   return (
     <>
-      <div
-        className="flex fixed inset-0 z-50 justify-center items-center p-2 backdrop-blur-md md:p-4 bg-black/60"
-        onClick={onClose}
-      >
+      <ModalOverlay isOpen={isOpen} onClose={onClose} className="p-2 md:p-4">
         <div
           className="bg-white dark:bg-gray-900 rounded-2xl md:rounded-3xl border border-gray-200 dark:border-gray-700 shadow-2xl w-full max-w-4xl h-[75vh] flex flex-col"
           onClick={(e) => e.stopPropagation()}
@@ -578,21 +727,35 @@ export function AgentSettingsModal({
                     <select
                       value={formData.provider || ""}
                       onChange={(e) => {
-                        handleInputChange("provider", e.target.value);
-                        // プロバイダー変更時、最初のモデルをデフォルトに設定
                         const newProvider = e.target.value;
-                        const defaultModels: Record<string, string> = {
-                          openai: "gpt-4.1",
-                          anthropic: "claude-sonnet-4-5-20250929",
-                          google: "gemini-2.5-pro",
-                        };
-                        handleInputChange("model", defaultModels[newProvider] || "gpt-4.1");
+                        setFormData((prev) => {
+                          const firstModel =
+                            providerModels.find(
+                              (provider) => provider.provider === newProvider,
+                            )?.models[0]?.model || prev.model || "";
+                          return applyModelConstraints(
+                            prev,
+                            newProvider,
+                            firstModel,
+                          );
+                        });
                       }}
                       className="w-full px-3 md:px-4 py-2 md:py-2.5 text-sm md:text-base text-gray-900 dark:text-white bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     >
-                      <option value="openai">OpenAI</option>
-                      <option value="anthropic">Anthropic</option>
-                      <option value="google">Google</option>
+                      {providerModels.map((provider) => (
+                        <option
+                          key={provider.provider}
+                          value={provider.provider}
+                        >
+                          {providerLabels[provider.provider] ||
+                            provider.provider}
+                        </option>
+                      ))}
+                      {providerModels.length === 0 && (
+                        <option value="">
+                          利用可能なプロバイダーがありません
+                        </option>
+                      )}
                     </select>
                   </div>
 
@@ -603,35 +766,49 @@ export function AgentSettingsModal({
                     <select
                       value={formData.model || ""}
                       onChange={(e) =>
-                        handleInputChange("model", e.target.value)
+                        setFormData((prev) =>
+                          applyModelConstraints(
+                            prev,
+                            (prev.provider as string) || "",
+                            e.target.value,
+                          ),
+                        )
                       }
                       className="w-full px-3 md:px-4 py-2 md:py-2.5 text-sm md:text-base text-gray-900 dark:text-white bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     >
-                      {formData.provider === "openai" && (
-                        <>
-                          <option value="gpt-4.1">GPT-4.1 ($2.50 / $10.00)</option>
-                          <option value="gpt-4.1-mini">GPT-4.1 mini ($0.15 / $0.60)</option>
-                          <option value="gpt-4.1-nano">GPT-4.1 nano ($0.05 / $0.20)</option>
-                        </>
-                      )}
-                      {formData.provider === "anthropic" && (
-                        <>
-                          <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5 ($3.00 / $15.00)</option>
-                          <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 ($0.25 / $1.25)</option>
-                          <option value="claude-opus-4-1-20250805">Claude Opus 4.1 ($15.00 / $75.00)</option>
-                        </>
-                      )}
-                      {formData.provider === "google" && (
-                        <>
-                          <option value="gemini-2.5-pro">Gemini 2.5 Pro ($3.50 / $10.50)</option>
-                          <option value="gemini-2.5-flash">Gemini 2.5 Flash ($0.075 / $0.30)</option>
-                          <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite ($0.04 / $0.16)</option>
-                        </>
-                      )}
+                      {currentProviderModels.map((model) => (
+                        <option key={model.id} value={model.model}>
+                          {model.display_name}
+                        </option>
+                      ))}
+                      {formData.provider &&
+                        currentProviderModels.length === 0 && (
+                          <option value="">利用可能なモデルがありません</option>
+                        )}
                       {!formData.provider && (
                         <option value="">プロバイダーを選択してください</option>
                       )}
                     </select>
+                    {currentModelConfig &&
+                      (currentModelConfig.current_pricing ? (
+                        <p className="mt-1.5 font-mono text-[11px] text-gray-500 dark:text-gray-400">
+                          単価: 入力 $
+                          {currentModelConfig.current_pricing.prompt_cost_per_1m.toFixed(
+                            2,
+                          )}{" "}
+                          / 出力 $
+                          {currentModelConfig.current_pricing.completion_cost_per_1m.toFixed(
+                            2,
+                          )}{" "}
+                          <span className="text-gray-400 dark:text-gray-500">
+                            (USD / 1Mトークン)
+                          </span>
+                        </p>
+                      ) : (
+                        <p className="mt-1.5 text-[11px] text-amber-600 dark:text-amber-400">
+                          このモデルは単価が未設定です
+                        </p>
+                      ))}
                   </div>
                 </div>
 
@@ -639,20 +816,29 @@ export function AgentSettingsModal({
                   <label className="block mb-1.5 md:mb-2 text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300">
                     創造性: {formData.temperature || 0.7}
                   </label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="2"
-                    step="0.1"
-                    value={formData.temperature || 0.7}
-                    onChange={(e) =>
-                      handleInputChange(
-                        "temperature",
-                        parseFloat(e.target.value)
-                      )
-                    }
-                    className="w-full accent-green-500"
-                  />
+                  {isTemperatureFixed ? (
+                    <div className="px-3 md:px-4 py-2 md:py-2.5 text-sm md:text-base text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg md:rounded-xl">
+                      このモデルの Temperature は固定値です:{" "}
+                      <span className="font-mono font-semibold">
+                        {temperatureMin.toFixed(1)}
+                      </span>
+                    </div>
+                  ) : (
+                    <input
+                      type="range"
+                      min={temperatureMin}
+                      max={temperatureMax}
+                      step="0.1"
+                      value={formData.temperature || 0.7}
+                      onChange={(e) =>
+                        handleInputChange(
+                          "temperature",
+                          parseFloat(e.target.value),
+                        )
+                      }
+                      className="w-full accent-green-500"
+                    />
+                  )}
                 </div>
 
                 <div>
@@ -661,14 +847,17 @@ export function AgentSettingsModal({
                   </label>
                   <input
                     type="number"
-                    min="100"
-                    max="8000"
+                    min={maxTokensMin}
+                    max={maxTokensMax}
                     value={formData.max_tokens || 2000}
                     onChange={(e) =>
                       handleInputChange("max_tokens", parseInt(e.target.value))
                     }
                     className="w-full px-3 md:px-4 py-2 md:py-2.5 text-sm md:text-base text-gray-900 dark:text-white bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-700 rounded-lg md:rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all placeholder-gray-500 dark:placeholder-gray-400"
                   />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    設定可能範囲: {maxTokensMin} - {maxTokensMax}
+                  </p>
                 </div>
 
                 <div className="flex justify-between items-center">
@@ -709,10 +898,10 @@ export function AgentSettingsModal({
                         .sort((a, b) => {
                           // エージェントに登録済みのサービスを先に表示
                           const aIsRegistered = agentServices.some(
-                            (as) => as.service_class === a.service.class_name
+                            (as) => as.service_class === a.service.class_name,
                           );
                           const bIsRegistered = agentServices.some(
-                            (as) => as.service_class === b.service.class_name
+                            (as) => as.service_class === b.service.class_name,
                           );
                           if (aIsRegistered && !bIsRegistered) return -1;
                           if (!aIsRegistered && bIsRegistered) return 1;
@@ -722,13 +911,13 @@ export function AgentSettingsModal({
                           const agentService = agentServices.find(
                             (as) =>
                               as.service_class ===
-                              userService.service.class_name
+                              userService.service.class_name,
                           );
                           const isRegistered = !!agentService;
                           const isSelected =
                             isRegistered && agentService?.enabled;
                           const isExpanded = expandedServices.has(
-                            userService.service.class_name
+                            userService.service.class_name,
                           );
 
                           return (
@@ -738,7 +927,7 @@ export function AgentSettingsModal({
                                 "rounded-xl border",
                                 isSelected
                                   ? "bg-green-50 border-green-500 dark:bg-green-900/20"
-                                  : "bg-gray-50 border-gray-200 dark:border-gray-700 dark:bg-gray-800"
+                                  : "bg-gray-50 border-gray-200 dark:border-gray-700 dark:bg-gray-800",
                               )}
                             >
                               {/* サービス選択 */}
@@ -749,12 +938,12 @@ export function AgentSettingsModal({
                                     // 既に登録済みの場合は有効/無効を切り替え
                                     handleServiceToggle(
                                       agentService!.id,
-                                      !isSelected
+                                      !isSelected,
                                     );
                                   } else {
                                     // 未登録の場合は新規追加
                                     handleAddService(
-                                      userService.service.class_name
+                                      userService.service.class_name,
                                     );
                                   }
                                 }}
@@ -769,7 +958,7 @@ export function AgentSettingsModal({
                                     "w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center flex-shrink-0",
                                     userService.service.type === "built_in"
                                       ? "bg-gradient-to-br from-blue-500 to-blue-600"
-                                      : "bg-gradient-to-br from-green-500 to-green-600"
+                                      : "bg-gradient-to-br from-green-500 to-green-600",
                                   )}
                                 >
                                   <Server className="w-4 h-4 text-white md:w-5 md:h-5" />
@@ -797,7 +986,7 @@ export function AgentSettingsModal({
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       toggleExpand(
-                                        userService.service.class_name
+                                        userService.service.class_name,
                                       );
                                     }}
                                     className="p-2 text-gray-400 rounded-full transition-colors md:p-3 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -825,15 +1014,15 @@ export function AgentSettingsModal({
                                         onClick={() => {
                                           const allToolNames =
                                             userService.tools.map(
-                                              (tool) => tool.name
+                                              (tool) => tool.name,
                                             );
                                           handleServiceToolSelection(
                                             agentService.id,
-                                            allToolNames
+                                            allToolNames,
                                           );
                                           handleServiceToolModeChange(
                                             agentService.id,
-                                            "all"
+                                            "all",
                                           );
                                         }}
                                         className={cn(
@@ -841,7 +1030,7 @@ export function AgentSettingsModal({
                                           agentService.tool_selection_mode ===
                                             "all"
                                             ? "bg-green-500 text-white"
-                                            : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                                            : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600",
                                         )}
                                       >
                                         全選択
@@ -851,11 +1040,11 @@ export function AgentSettingsModal({
                                         onClick={() => {
                                           handleServiceToolSelection(
                                             agentService.id,
-                                            []
+                                            [],
                                           );
                                           handleServiceToolModeChange(
                                             agentService.id,
-                                            "selected"
+                                            "selected",
                                           );
                                         }}
                                         className={cn(
@@ -865,7 +1054,7 @@ export function AgentSettingsModal({
                                             agentService.selected_tools
                                               .length === 0
                                             ? "bg-red-500 text-white"
-                                            : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                                            : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600",
                                         )}
                                       >
                                         全解除
@@ -880,7 +1069,7 @@ export function AgentSettingsModal({
                                         agentService.tool_selection_mode ===
                                           "all" ||
                                         agentService.selected_tools.includes(
-                                          tool.name
+                                          tool.name,
                                         );
 
                                       return (
@@ -894,20 +1083,20 @@ export function AgentSettingsModal({
                                             ) {
                                               const newTools =
                                                 agentService.selected_tools.filter(
-                                                  (t) => t !== tool.name
+                                                  (t) => t !== tool.name,
                                                 );
                                               handleServiceToolSelection(
                                                 agentService.id,
-                                                newTools
+                                                newTools,
                                               );
                                               handleServiceToolModeChange(
                                                 agentService.id,
-                                                "selected"
+                                                "selected",
                                               );
                                             } else {
                                               const newTools = isToolSelected
                                                 ? agentService.selected_tools.filter(
-                                                    (t) => t !== tool.name
+                                                    (t) => t !== tool.name,
                                                   )
                                                 : [
                                                     ...agentService.selected_tools,
@@ -915,7 +1104,7 @@ export function AgentSettingsModal({
                                                   ];
                                               handleServiceToolSelection(
                                                 agentService.id,
-                                                newTools
+                                                newTools,
                                               );
                                             }
                                           }}
@@ -923,7 +1112,7 @@ export function AgentSettingsModal({
                                             "flex gap-1.5 md:gap-2 items-center p-1.5 md:p-2 text-left rounded-lg transition-colors",
                                             isToolSelected
                                               ? "text-green-900 bg-green-100 dark:bg-green-900/30 dark:text-green-300"
-                                              : "text-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"
+                                              : "text-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600",
                                           )}
                                         >
                                           {isToolSelected ? (
@@ -997,7 +1186,7 @@ export function AgentSettingsModal({
             </div>
           </div>
         </div>
-      </div>
+      </ModalOverlay>
 
       {/* 削除確認モーダル */}
       <ConfirmModal

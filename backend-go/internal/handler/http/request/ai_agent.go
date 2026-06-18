@@ -13,6 +13,8 @@ type CreateAgentRequest struct {
 	PersonaType      string                 `json:"persona_type"` // 空文字列許可（未選択 = none）
 	Provider         string                 `json:"provider"`
 	Model            string                 `json:"model"`
+	Temperature      *float64               `json:"temperature,omitempty"`
+	MaxTokens        *int                   `json:"max_tokens,omitempty"`
 	Description      *string                `json:"description"`
 	AvatarURL        *string                `json:"avatar_url"`         // アバター画像URL
 	SystemPrompt     *string                `json:"system_prompt"`      // カスタムシステムプロンプト

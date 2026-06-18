@@ -17,6 +17,8 @@ import {
   changeSubscriptionPlan,
   cancelSubscription,
 } from "@/lib/actions/billing";
+import { convertUsdToJpy } from "@/lib/utils/currency";
+import { useExchangeRate } from "@/lib/hooks/useExchangeRate";
 
 interface TierLimits {
   tier: string;
@@ -47,6 +49,7 @@ interface SubscriptionClientProps {
 export function SubscriptionClient({ tiers, usage }: SubscriptionClientProps) {
   const router = useRouter();
   const isMobile = useIsMobile();
+  const usdToJpyRate = useExchangeRate();
 
   const tierOrder: Record<string, number> = { free: 0, pro: 1, max: 2 };
   const currentTierLevel = tierOrder[usage?.current_tier || "free"] || 0;
@@ -74,7 +77,7 @@ export function SubscriptionClient({ tiers, usage }: SubscriptionClientProps) {
       const result = await createCheckoutSession(
         tier,
         `${window.location.origin}/dashboard/settings/subscription?success=true`,
-        `${window.location.origin}/dashboard/settings/subscription?canceled=true`
+        `${window.location.origin}/dashboard/settings/subscription?canceled=true`,
       );
 
       if (result.success && result.data) {
@@ -94,7 +97,7 @@ export function SubscriptionClient({ tiers, usage }: SubscriptionClientProps) {
   const handleManageBilling = async () => {
     try {
       const result = await createBillingPortalSession(
-        `${window.location.origin}/dashboard/settings/subscription`
+        `${window.location.origin}/dashboard/settings/subscription`,
       );
 
       if (result.success && result.data) {
@@ -112,7 +115,7 @@ export function SubscriptionClient({ tiers, usage }: SubscriptionClientProps) {
   const handleCancel = async () => {
     if (
       !confirm(
-        "本当にFreeプランへダウングレード（解約）しますか？\n解約後も現在の請求期間終了日までは引き続き有料プランの機能をご利用いただけます。"
+        "本当にFreeプランへダウングレード（解約）しますか？\n解約後も現在の請求期間終了日までは引き続き有料プランの機能をご利用いただけます。",
       )
     ) {
       return;
@@ -121,7 +124,9 @@ export function SubscriptionClient({ tiers, usage }: SubscriptionClientProps) {
     try {
       const result = await cancelSubscription();
       if (result.success) {
-        alert("解約予約が完了しました。期間終了後にFreeプランへダウングレードされます。");
+        alert(
+          "解約予約が完了しました。期間終了後にFreeプランへダウングレードされます。",
+        );
         window.location.reload();
       } else {
         console.error("Failed to cancel subscription:", result.error);
@@ -151,7 +156,7 @@ export function SubscriptionClient({ tiers, usage }: SubscriptionClientProps) {
 
   // 予算（円換算、目安）
   const getBudgetJPY = (usd: number) => {
-    return Math.round(usd * 150); // 簡易計算
+    return Math.round(convertUsdToJpy(usd, usdToJpyRate));
   };
 
   return (
@@ -202,7 +207,7 @@ export function SubscriptionClient({ tiers, usage }: SubscriptionClientProps) {
                       <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
                         <Clock className="w-3 h-3" />
                         {new Date(usage.period_start).toLocaleDateString(
-                          "ja-JP"
+                          "ja-JP",
                         )}{" "}
                         -{" "}
                         {new Date(usage.period_end).toLocaleDateString("ja-JP")}
@@ -218,8 +223,8 @@ export function SubscriptionClient({ tiers, usage }: SubscriptionClientProps) {
                       利用枠使用状況
                     </span>
                     <span className="font-mono text-gray-600 dark:text-gray-400">
-                      ¥{formatNumber(Math.round(usage.cost_jpy))} /{" "}
-                      ¥{formatNumber(getBudgetJPY(usage.limit_usd))}
+                      ¥{formatNumber(Math.round(usage.cost_jpy))} / ¥
+                      {formatNumber(getBudgetJPY(usage.limit_usd))}
                     </span>
                   </div>
                   <div className="relative">
@@ -229,13 +234,13 @@ export function SubscriptionClient({ tiers, usage }: SubscriptionClientProps) {
                           calculateUsagePercentage(usage) > 100
                             ? "bg-gradient-to-r from-red-500 to-orange-500"
                             : calculateUsagePercentage(usage) > 80
-                            ? "bg-gradient-to-r from-yellow-400 to-orange-500"
-                            : "bg-gradient-to-r from-emerald-500 to-cyan-500"
+                              ? "bg-gradient-to-r from-yellow-400 to-orange-500"
+                              : "bg-gradient-to-r from-emerald-500 to-cyan-500"
                         }`}
                         style={{
                           width: `${Math.min(
                             calculateUsagePercentage(usage),
-                            100
+                            100,
                           )}%`,
                         }}
                       />
@@ -255,10 +260,18 @@ export function SubscriptionClient({ tiers, usage }: SubscriptionClientProps) {
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                   <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 dark:bg-gray-900/50 dark:border-gray-700">
                     <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">
-                      残り利用枠 (目安)
+                      残り利用枠
                     </p>
                     <p className="text-xl font-bold text-gray-900 dark:text-white">
-                      ¥{formatNumber(Math.round(Math.max(usage.remaining_usd * 150, 0)))}
+                      ¥
+                      {formatNumber(
+                        Math.round(
+                          Math.max(
+                            convertUsdToJpy(usage.remaining_usd, usdToJpyRate),
+                            0,
+                          ),
+                        ),
+                      )}
                     </p>
                   </div>
                   <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 dark:bg-gray-900/50 dark:border-gray-700">
@@ -271,7 +284,7 @@ export function SubscriptionClient({ tiers, usage }: SubscriptionClientProps) {
                   </div>
                   <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 dark:bg-gray-900/50 dark:border-gray-700">
                     <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">
-                      総トークン数 (参考)
+                      総トークン数
                     </p>
                     <p className="text-xl font-bold text-gray-900 dark:text-white">
                       {formatNumber(usage.tokens_total)}
@@ -281,8 +294,12 @@ export function SubscriptionClient({ tiers, usage }: SubscriptionClientProps) {
                     <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">
                       現在プラン
                     </p>
-                    <p className="text-xl font-bold text-gray-900 dark:text-white capitalize">
-                      {usage.current_tier === "free" ? "Free" : usage.current_tier === "pro" ? "Pro" : "Max"}
+                    <p className="text-xl font-bold text-gray-900 capitalize dark:text-white">
+                      {usage.current_tier === "free"
+                        ? "Free"
+                        : usage.current_tier === "pro"
+                          ? "Pro"
+                          : "Max"}
                     </p>
                   </div>
                 </div>
@@ -328,8 +345,8 @@ export function SubscriptionClient({ tiers, usage }: SubscriptionClientProps) {
                           {tier.tier === "free"
                             ? "Free"
                             : tier.tier === "pro"
-                            ? "Pro"
-                            : "Max"}
+                              ? "Pro"
+                              : "Max"}
                         </h3>
                       </div>
                       <div className="mb-8">
@@ -364,7 +381,11 @@ export function SubscriptionClient({ tiers, usage }: SubscriptionClientProps) {
                           </div>
                           <span className="text-sm text-gray-600 dark:text-gray-300">
                             <span className="font-bold text-gray-900 dark:text-white">
-                              約{formatNumber(getBudgetJPY(tier.monthly_budget_usd))}円分
+                              約
+                              {formatNumber(
+                                getBudgetJPY(tier.monthly_budget_usd),
+                              )}
+                              円分
                             </span>{" "}
                             のAI利用枠
                             <br />
@@ -415,10 +436,10 @@ export function SubscriptionClient({ tiers, usage }: SubscriptionClientProps) {
                         {isCurrent
                           ? "現在のプラン"
                           : isUpgrade
-                          ? "アップグレード"
-                          : isDowngrade
-                          ? "ダウングレード"
-                          : "プラン変更"}
+                            ? "アップグレード"
+                            : isDowngrade
+                              ? "ダウングレード"
+                              : "プラン変更"}
                       </button>
                     </div>
                   </div>
@@ -429,10 +450,10 @@ export function SubscriptionClient({ tiers, usage }: SubscriptionClientProps) {
 
           {/* 請求管理ボタン */}
           {usage && usage.current_tier !== "free" && (
-            <div className="pb-8 text-center flex flex-col sm:flex-row justify-center gap-4">
+            <div className="flex flex-col gap-4 justify-center pb-8 text-center sm:flex-row">
               <button
                 onClick={handleManageBilling}
-                className="inline-flex gap-2 items-center px-6 py-3 font-medium text-green-600 transition-all duration-200 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 border border-green-200 dark:border-green-800 rounded-lg bg-green-50 dark:bg-green-900/20"
+                className="inline-flex gap-2 items-center px-6 py-3 font-medium text-green-600 bg-green-50 rounded-lg border border-green-200 transition-all duration-200 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 dark:border-green-800 dark:bg-green-900/20"
               >
                 <CreditCard className="w-4 h-4" />
                 請求履歴と支払い方法を管理
