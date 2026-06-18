@@ -3681,6 +3681,9 @@ const docTemplate = `{
                 "description": {
                     "type": "string"
                 },
+                "max_tokens": {
+                    "type": "integer"
+                },
                 "model": {
                     "type": "string"
                 },
@@ -3708,6 +3711,9 @@ const docTemplate = `{
                 "system_prompt": {
                     "description": "カスタムシステムプロンプト",
                     "type": "string"
+                },
+                "temperature": {
+                    "type": "number"
                 }
             }
         },
@@ -4743,8 +4749,15 @@ const docTemplate = `{
                 "completion": {
                     "type": "integer"
                 },
+                "model": {
+                    "type": "string"
+                },
                 "prompt": {
                     "type": "integer"
+                },
+                "provider": {
+                    "description": "Provider / Model は使用した LLM。コスト記録時の単価参照に使う。\nPython 側が返さない場合に備え、ハンドラ側でフォールバックする。",
+                    "type": "string"
                 },
                 "total": {
                     "type": "integer"
@@ -4796,6 +4809,12 @@ const docTemplate = `{
         "backend-go_internal_handler_http_response.TokensByModelResponse": {
             "type": "object",
             "properties": {
+                "avg_completion_cost_per_1m": {
+                    "type": "number"
+                },
+                "avg_prompt_cost_per_1m": {
+                    "type": "number"
+                },
                 "completion_tokens": {
                     "type": "integer"
                 },
