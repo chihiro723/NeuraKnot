@@ -14,7 +14,7 @@ const timeRangeOptions: {
   icon: React.ComponentType<{ className?: string }>;
 }[] = [
   { value: "today", label: "今日", icon: Clock },
-  { value: "week", label: "今週", icon: Calendar },
+  { value: "week", label: "直近1週間", icon: Calendar },
   { value: "month", label: "今月", icon: CalendarDays },
   { value: "all", label: "全期間", icon: CalendarRange },
 ];
