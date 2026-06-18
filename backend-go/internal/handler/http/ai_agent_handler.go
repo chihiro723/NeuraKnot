@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"backend-go/internal/domain/ai"
+	"backend-go/internal/domain/llmmodel"
 	"backend-go/internal/domain/service"
 	"backend-go/internal/handler/http/middleware"
 	"backend-go/internal/handler/http/request"
@@ -77,6 +78,16 @@ func (h *AIAgentHandler) CreateAgent(c *gin.Context) {
 		streamingEnabled = *req.StreamingEnabled
 	}
 
+	// Temperature / MaxTokens のデフォルト値を設定（nilの場合は既存デフォルトを踏襲）
+	temperature := 0.7
+	if req.Temperature != nil {
+		temperature = *req.Temperature
+	}
+	maxTokens := 2000
+	if req.MaxTokens != nil {
+		maxTokens = *req.MaxTokens
+	}
+
 	// AI Agentを作成
 	var agent *ai.Agent
 	agent, err = h.agentUsecase.CreateAgent(
@@ -86,6 +97,8 @@ func (h *AIAgentHandler) CreateAgent(c *gin.Context) {
 		req.PersonaType,
 		req.Provider,
 		req.Model,
+		temperature,
+		maxTokens,
 		req.Description,
 		req.AvatarURL,
 		req.SystemPrompt,
@@ -313,7 +326,14 @@ func (h *AIAgentHandler) UpdateAgent(c *gin.Context) {
 
 	// 更新
 	if err = h.agentUsecase.UpdateAgent(c.Request.Context(), agent); err != nil {
-		c.JSON(http.StatusInternalServerError, response.NewErrorResponse(err, http.StatusInternalServerError))
+		status := http.StatusInternalServerError
+		if errors.Is(err, llmmodel.ErrModelNotFound) ||
+			errors.Is(err, llmmodel.ErrModelDisabled) ||
+			errors.Is(err, llmmodel.ErrTemperatureOutOfRange) ||
+			errors.Is(err, llmmodel.ErrMaxTokensOutOfRange) {
+			status = http.StatusBadRequest
+		}
+		c.JSON(status, response.NewErrorResponse(err, status))
 		return
 	}
 

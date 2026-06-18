@@ -3,7 +3,6 @@ package http
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -17,6 +16,7 @@ import (
 	"backend-go/internal/handler/http/request"
 	"backend-go/internal/handler/http/response"
 	groupchatusecase "backend-go/internal/usecase/groupchat"
+	"backend-go/internal/usecase/usage"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -27,7 +27,7 @@ type GroupChatHandler struct {
 	groupChatUsecase    *groupchatusecase.GroupChatUsecase
 	groupMessageUsecase *groupchatusecase.GroupMessageUsecase
 	pythonBackendURL    string
-	db                  *sql.DB
+	usageRecorder       *usage.Recorder
 }
 
 // NewGroupChatHandler はグループチャットハンドラーを作成
@@ -35,13 +35,13 @@ func NewGroupChatHandler(
 	groupChatUsecase *groupchatusecase.GroupChatUsecase,
 	groupMessageUsecase *groupchatusecase.GroupMessageUsecase,
 	pythonBackendURL string,
-	db *sql.DB,
+	usageRecorder *usage.Recorder,
 ) *GroupChatHandler {
 	return &GroupChatHandler{
 		groupChatUsecase:    groupChatUsecase,
 		groupMessageUsecase: groupMessageUsecase,
 		pythonBackendURL:    pythonBackendURL,
-		db:                  db,
+		usageRecorder:       usageRecorder,
 	}
 }
 
@@ -870,23 +870,24 @@ func (h *GroupChatHandler) GenerateSuggestedQuestions(c *gin.Context) {
 		return
 	}
 
-	// トークン使用量をDBに記録
+	// トークン使用量をDBに記録（コストは llm_pricing から算出）
 	if suggestionsResp.TokenUsage != nil {
+		provider, model := resolveSuggestionModel(suggestionsResp.TokenUsage)
+		prompt := int64(suggestionsResp.TokenUsage.Prompt)
+		completion := int64(suggestionsResp.TokenUsage.Completion)
 		// context.Backgroundを使用してHTTPリクエストのコンテキストとは独立させる
 		go func() {
 			// 新しいコンテキストを作成（タイムアウト付き）
 			recordCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
 
-			if err := h.recordTokenUsage(
-				recordCtx,
-				userID,
-				nil, // グループチャットの質問候補生成
-				suggestionsResp.TokenUsage.Prompt,
-				suggestionsResp.TokenUsage.Completion,
-				"openai",
-				"gpt-4.1",
-			); err != nil {
+			if err := h.usageRecorder.RecordAuxiliaryUsage(recordCtx, usage.AuxiliaryUsageInput{
+				UserID:     userID,
+				Provider:   provider,
+				Model:      model,
+				Prompt:     prompt,
+				Completion: completion,
+			}); err != nil {
 				log.Printf("ERROR: Failed to record token usage: %v", err)
 			}
 		}()
@@ -908,84 +909,3 @@ func (h *GroupChatHandler) formatMessagesForPython(messages []*groupchat.GroupMe
 	return formatted
 }
 
-// recordTokenUsage はトークン使用量をtoken_usageテーブルに記録
-func (h *GroupChatHandler) recordTokenUsage(
-	ctx context.Context,
-	userID uuid.UUID,
-	aiAgentID *uuid.UUID,
-	promptTokens int,
-	completionTokens int,
-	provider string,
-	model string,
-) error {
-	now := time.Now()
-	periodStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
-	periodEnd := periodStart.AddDate(0, 1, 0)
-
-	totalTokens := promptTokens + completionTokens
-
-	// コスト計算（簡易版: 実際にはllm_pricingテーブルから取得すべき）
-	// gpt-4.1の概算: prompt $2.50/1M, completion $10/1M
-	costUSD := (float64(promptTokens) * 2.50 / 1000000.0) + (float64(completionTokens) * 10.0 / 1000000.0)
-
-	// token_usageテーブルを更新（INSERT ON CONFLICT UPDATE）
-	query := `
-		INSERT INTO token_usage (
-			user_id,
-			period_start,
-			period_end,
-			tokens_prompt,
-			tokens_completion,
-			tokens_total,
-			cost_usd,
-			request_count,
-			provider_breakdown,
-			created_at,
-			updated_at
-		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, 1,
-			jsonb_build_object($8::text, jsonb_build_object('tokens', $6::bigint, 'cost', $7::numeric)),
-			NOW(), NOW()
-		)
-		ON CONFLICT (user_id, period_start, period_end)
-		DO UPDATE SET
-			tokens_prompt = token_usage.tokens_prompt + EXCLUDED.tokens_prompt,
-			tokens_completion = token_usage.tokens_completion + EXCLUDED.tokens_completion,
-			tokens_total = token_usage.tokens_total + EXCLUDED.tokens_total,
-			cost_usd = token_usage.cost_usd + EXCLUDED.cost_usd,
-			request_count = token_usage.request_count + 1,
-			provider_breakdown = jsonb_set(
-				COALESCE(token_usage.provider_breakdown, '{}'::jsonb),
-				ARRAY[$8::text],
-				jsonb_build_object(
-					'tokens',
-					COALESCE((token_usage.provider_breakdown->$8::text->>'tokens')::bigint, 0) + $6::bigint,
-					'cost',
-					COALESCE((token_usage.provider_breakdown->$8::text->>'cost')::numeric, 0) + $7::numeric
-				)
-			),
-			updated_at = NOW()
-	`
-
-	_, err := h.db.ExecContext(
-		ctx,
-		query,
-		userID,
-		periodStart,
-		periodEnd,
-		promptTokens,
-		completionTokens,
-		totalTokens,
-		costUSD,
-		provider,
-	)
-
-	if err != nil {
-		return fmt.Errorf("failed to record token usage: %w", err)
-	}
-
-	log.Printf("INFO: Recorded token usage - User: %s, Tokens: %d (prompt: %d, completion: %d), Cost: $%.6f, Provider: %s, Model: %s",
-		userID, totalTokens, promptTokens, completionTokens, costUSD, provider, model)
-
-	return nil
-}

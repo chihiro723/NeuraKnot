@@ -29,14 +29,16 @@ func (r *ChatSessionRepositoryImpl) Save(ctx context.Context, session *conversat
 			tokens_prompt, tokens_completion, tokens_total,
 			processing_time_ms, tools_used,
 			status, error_message,
-			started_at, completed_at
+			started_at, completed_at,
+			cost_usd, prompt_cost_per_1m, completion_cost_per_1m, pricing_id
 		) VALUES (
 			$1, $2, $3, $4, $5, $6,
 			$7, $8, $9, $10,
 			$11, $12, $13,
 			$14, $15,
 			$16, $17,
-			$18, $19
+			$18, $19,
+			$20, $21, $22, $23
 		)
 	`
 
@@ -48,6 +50,7 @@ func (r *ChatSessionRepositoryImpl) Save(ctx context.Context, session *conversat
 		session.ProcessingTimeMs, session.ToolsUsed,
 		session.Status, session.ErrorMessage,
 		session.StartedAt, session.CompletedAt,
+		session.CostUSD, session.PromptCostPer1M, session.CompletionCostPer1M, session.PricingID,
 	)
 	return err
 }
@@ -61,7 +64,8 @@ func (r *ChatSessionRepositoryImpl) FindByID(ctx context.Context, id uuid.UUID) 
 			tokens_prompt, tokens_completion, tokens_total,
 			processing_time_ms, tools_used,
 			status, error_message,
-			started_at, completed_at
+			started_at, completed_at,
+			cost_usd, prompt_cost_per_1m, completion_cost_per_1m, pricing_id
 		FROM ai_chat_sessions
 		WHERE id = $1
 	`
@@ -74,6 +78,7 @@ func (r *ChatSessionRepositoryImpl) FindByID(ctx context.Context, id uuid.UUID) 
 		&session.ProcessingTimeMs, &session.ToolsUsed,
 		&session.Status, &session.ErrorMessage,
 		&session.StartedAt, &session.CompletedAt,
+		&session.CostUSD, &session.PromptCostPer1M, &session.CompletionCostPer1M, &session.PricingID,
 	)
 
 	if err == sql.ErrNoRows {
@@ -95,7 +100,8 @@ func (r *ChatSessionRepositoryImpl) FindByMessageID(ctx context.Context, message
 			tokens_prompt, tokens_completion, tokens_total,
 			processing_time_ms, tools_used,
 			status, error_message,
-			started_at, completed_at
+			started_at, completed_at,
+			cost_usd, prompt_cost_per_1m, completion_cost_per_1m, pricing_id
 		FROM ai_chat_sessions
 		WHERE message_id = $1
 	`
@@ -108,6 +114,7 @@ func (r *ChatSessionRepositoryImpl) FindByMessageID(ctx context.Context, message
 		&session.ProcessingTimeMs, &session.ToolsUsed,
 		&session.Status, &session.ErrorMessage,
 		&session.StartedAt, &session.CompletedAt,
+		&session.CostUSD, &session.PromptCostPer1M, &session.CompletionCostPer1M, &session.PricingID,
 	)
 
 	if err == sql.ErrNoRows {

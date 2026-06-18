@@ -33,12 +33,14 @@ type TokensByProviderResponse struct {
 
 // TokensByModelResponse モデル別トークン統計
 type TokensByModelResponse struct {
-	Provider         string  `json:"provider"`
-	Model            string  `json:"model"`
-	TotalTokens      int64   `json:"total_tokens"`
-	PromptTokens     int64   `json:"prompt_tokens"`
-	CompletionTokens int64   `json:"completion_tokens"`
-	EstimatedCostUSD float64 `json:"estimated_cost_usd"`
+	Provider               string  `json:"provider"`
+	Model                  string  `json:"model"`
+	TotalTokens            int64   `json:"total_tokens"`
+	PromptTokens           int64   `json:"prompt_tokens"`
+	CompletionTokens       int64   `json:"completion_tokens"`
+	EstimatedCostUSD       float64 `json:"estimated_cost_usd"`
+	AvgPromptCostPer1M     float64 `json:"avg_prompt_cost_per_1m"`
+	AvgCompletionCostPer1M float64 `json:"avg_completion_cost_per_1m"`
 }
 
 // ActivityStatsResponse 活動量統計のレスポンス
@@ -141,12 +143,14 @@ func toTokenStatsResponse(stats *analytics.TokenStats) *TokenStatsResponse {
 	byModel := make([]*TokensByModelResponse, len(stats.ByModel))
 	for i, m := range stats.ByModel {
 		byModel[i] = &TokensByModelResponse{
-			Provider:         m.Provider,
-			Model:            m.Model,
-			TotalTokens:      m.TotalTokens,
-			PromptTokens:     m.PromptTokens,
-			CompletionTokens: m.CompletionTokens,
-			EstimatedCostUSD: m.EstimatedCostUSD,
+			Provider:               m.Provider,
+			Model:                  m.Model,
+			TotalTokens:            m.TotalTokens,
+			PromptTokens:           m.PromptTokens,
+			CompletionTokens:       m.CompletionTokens,
+			EstimatedCostUSD:       m.EstimatedCostUSD,
+			AvgPromptCostPer1M:     m.AvgPromptCostPer1M,
+			AvgCompletionCostPer1M: m.AvgCompletionCostPer1M,
 		}
 	}
 

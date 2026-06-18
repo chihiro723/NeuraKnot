@@ -188,6 +188,10 @@ type TokenUsage struct {
 	Prompt     int `json:"prompt"`
 	Completion int `json:"completion"`
 	Total      int `json:"total"`
+	// Provider / Model は使用した LLM。コスト記録時の単価参照に使う。
+	// Python 側が返さない場合に備え、ハンドラ側でフォールバックする。
+	Provider string `json:"provider,omitempty"`
+	Model    string `json:"model,omitempty"`
 }
 
 // SuggestedQuestionsResponse は質問候補生成レスポンス

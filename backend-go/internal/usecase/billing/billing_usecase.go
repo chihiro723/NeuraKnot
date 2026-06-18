@@ -18,7 +18,6 @@ import (
 // BillingUseCase 課金ユースケース
 type BillingUseCase struct {
 	tokenUsageRepo     billing.TokenUsageRepository
-	llmPricingRepo     billing.LLMPricingRepository
 	userRepo           user.UserRepository
 	stripeClient       *external.StripeClient
 	db                 *sql.DB
@@ -30,7 +29,6 @@ type BillingUseCase struct {
 // NewBillingUseCase 課金ユースケースを作成
 func NewBillingUseCase(
 	tokenUsageRepo billing.TokenUsageRepository,
-	llmPricingRepo billing.LLMPricingRepository,
 	userRepo user.UserRepository,
 	stripeClient *external.StripeClient,
 	db *sql.DB,
@@ -40,7 +38,6 @@ func NewBillingUseCase(
 ) *BillingUseCase {
 	return &BillingUseCase{
 		tokenUsageRepo:     tokenUsageRepo,
-		llmPricingRepo:     llmPricingRepo,
 		userRepo:           userRepo,
 		stripeClient:       stripeClient,
 		db:                 db,
@@ -288,26 +285,9 @@ func (uc *BillingUseCase) CheckTokenLimit(ctx context.Context, userID uuid.UUID)
 		return false, nil, billing.TierLimits{}, fmt.Errorf("failed to find user: %w", err)
 	}
 
-	// 現在の使用量を取得
+	// 現在の使用量を取得（表示と上限判定で同一のロジックを使用）
 	usage, err := uc.GetCurrentUsage(ctx, userID)
 	if err != nil {
-		// 使用量レコードが存在しない場合は新規ユーザーとして扱う
-		if err.Error() == "no current token usage found" {
-			now := time.Now()
-			emptyUsage := &billing.TokenUsage{
-				UserID:      userID,
-				TokensTotal: 0,
-				PeriodEnd:   now.AddDate(0, 1, 0), // 1ヶ月後
-			}
-
-			// サブスクリプション機能が無効の場合は常に許可（MaxTier相当）
-			if !uc.enableSubscription {
-				return true, emptyUsage, billing.MaxTierLimits, nil
-			}
-
-			// デフォルトはFreeTierLimits
-			return true, emptyUsage, billing.FreeTierLimits, nil
-		}
 		return false, nil, billing.TierLimits{}, fmt.Errorf("failed to get token usage: %w", err)
 	}
 
@@ -335,113 +315,13 @@ func (uc *BillingUseCase) CheckTokenLimit(ctx context.Context, userID uuid.UUID)
 	return canSend, usage, limits, nil
 }
 
-// RecordTokenUsage トークン使用量を記録
-func (uc *BillingUseCase) RecordTokenUsage(
-	ctx context.Context,
-	userID uuid.UUID,
-	provider, model string,
-	promptTokens, completionTokens int64,
-) error {
-	// ユーザーを取得
-	uid, err := user.ParseUserID(userID.String())
-	if err != nil {
-		return fmt.Errorf("invalid user id: %w", err)
-	}
-
-	u, err := uc.userRepo.GetByID(ctx, uid)
-	if err != nil {
-		return fmt.Errorf("failed to find user: %w", err)
-	}
-
-	// 課金期間を決定
-	var periodStart, periodEnd time.Time
-	if u.CurrentPeriodStart != nil && u.CurrentPeriodEnd != nil {
-		periodStart = *u.CurrentPeriodStart
-		periodEnd = *u.CurrentPeriodEnd
-	} else {
-		// 課金期間が設定されていない場合は月初〜月末を使用
-		now := time.Now()
-		periodStart = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
-		periodEnd = periodStart.AddDate(0, 1, 0)
-	}
-
-	// LLM料金情報を取得
-	pricing, err := uc.llmPricingRepo.FindEffectiveAt(ctx, provider, model, time.Now())
-	if err != nil {
-		return fmt.Errorf("failed to get llm pricing: %w", err)
-	}
-
-	// コストを計算
-	cost := pricing.CalculateCost(promptTokens, completionTokens)
-
-	// トークン使用量レコードを取得または作成
-	usage, err := uc.tokenUsageRepo.FindByUserAndPeriod(ctx, userID, periodStart, periodEnd)
-	if err != nil {
-		// レコードが存在しない場合は新規作成
-		usage, err = billing.NewTokenUsage(userID, periodStart, periodEnd)
-		if err != nil {
-			return fmt.Errorf("failed to create token usage: %w", err)
-		}
-
-		// 使用量を追加
-		if err := usage.AddUsage(provider, promptTokens, completionTokens, cost); err != nil {
-			return fmt.Errorf("failed to add usage: %w", err)
-		}
-
-		// DBに保存
-		if err := uc.tokenUsageRepo.Create(ctx, usage); err != nil {
-			return fmt.Errorf("failed to save token usage: %w", err)
-		}
-
-		return nil
-	}
-
-	// 既存レコードに使用量を追加
-	if err := usage.AddUsage(provider, promptTokens, completionTokens, cost); err != nil {
-		return fmt.Errorf("failed to add usage: %w", err)
-	}
-
-	// DBを更新
-	if err := uc.tokenUsageRepo.Update(ctx, usage); err != nil {
-		return fmt.Errorf("failed to update token usage: %w", err)
-	}
-
-	return nil
-}
-
 // GetCurrentUsage 現在の使用量を取得
+//
+// トークン使用量・コストの記録は UsageRecorder に一本化されており、ここでは
+// ai_chat_sessions（チャット）と token_usage（補助利用）を合算した当月使用量を返す。
+// 上限判定（CheckTokenLimit）と使用量表示（GetCurrentUsage ハンドラ）が同一の数字になる。
 func (uc *BillingUseCase) GetCurrentUsage(ctx context.Context, userID uuid.UUID) (*billing.TokenUsage, error) {
-	usage, err := uc.tokenUsageRepo.FindCurrentByUser(ctx, userID)
-	if err != nil {
-		// レコードが存在しない場合は空のレコードを返す
-		if err.Error() == "no current token usage found" {
-			uid, err := user.ParseUserID(userID.String())
-			if err != nil {
-				return nil, fmt.Errorf("invalid user id: %w", err)
-			}
-
-			u, err := uc.userRepo.GetByID(ctx, uid)
-			if err != nil {
-				return nil, fmt.Errorf("failed to find user: %w", err)
-			}
-
-			// 課金期間を決定
-			var periodStart, periodEnd time.Time
-			if u.CurrentPeriodStart != nil && u.CurrentPeriodEnd != nil {
-				periodStart = *u.CurrentPeriodStart
-				periodEnd = *u.CurrentPeriodEnd
-			} else {
-				now := time.Now()
-				periodStart = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
-				periodEnd = periodStart.AddDate(0, 1, 0)
-			}
-
-			return billing.NewTokenUsage(userID, periodStart, periodEnd)
-		}
-		return nil, fmt.Errorf("failed to get token usage: %w", err)
-	}
-
-	return usage, nil
+	return uc.GetCurrentUsageFromSessions(ctx, userID)
 }
 
 // GetCurrentUsageFromSessions ai_chat_sessionsとtoken_usageから当月の使用量を取得

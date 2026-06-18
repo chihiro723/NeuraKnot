@@ -2,7 +2,6 @@ package http
 
 import (
 	"backend-go/internal/crypto"
-	"backend-go/internal/domain/analytics"
 	"backend-go/internal/domain/service"
 	"backend-go/internal/domain/user"
 	"backend-go/internal/handler/http/middleware"
@@ -18,8 +17,12 @@ import (
 	chatusecase "backend-go/internal/usecase/chat"
 	chatpinusecase "backend-go/internal/usecase/chatpin"
 	groupchatusecase "backend-go/internal/usecase/groupchat"
+	llmmodelusecase "backend-go/internal/usecase/llmmodel"
+	llmpricingusecase "backend-go/internal/usecase/llmpricing"
 	serviceusecase "backend-go/internal/usecase/service"
+	"backend-go/internal/usecase/usage"
 	userusecase "backend-go/internal/usecase/user"
+	"backend-go/pkg/money"
 	"log"
 	"net/http"
 	"os"
@@ -107,6 +110,11 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 	chatSessionRepo := persistence.NewChatSessionRepository(db.DB)
 	aiClient := external.NewAIClient(cfg.AIService.URL, time.Duration(cfg.AIService.Timeout)*time.Second)
 
+	// 使用量・コスト記録の単一経路（チャット/グループ/補助利用すべてここを通す）
+	llmPricingRepo := persistence.NewLLMPricingRepository(db.DB)
+	tokenUsageRepo := persistence.NewTokenUsageRepository(db.DB)
+	usageRecorder := usage.NewRecorder(llmPricingRepo, chatSessionRepo, tokenUsageRepo)
+
 	// 暗号化サービスの初期化
 	var encryption *crypto.EncryptionService
 	if cfg.Security.EncryptionMasterKey != "" {
@@ -134,29 +142,32 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 	// エージェント／グループ削除時の掃除にも使うので、AI／GroupChat ユースケースより先に初期化する
 	chatPinRepo := persistence.NewChatPinRepository(db.DB)
 
+	// LLMモデルレジストリ・単価マスタ関連の依存関係
+	llmModelRepo := persistence.NewLLMModelRepository(db.DB)
+	llmModelUsecase := llmmodelusecase.NewUsecase(llmModelRepo)
+	llmPricingUsecase := llmpricingusecase.NewUsecase(llmPricingRepo, llmModelRepo)
+	llmModelHandler := NewLLMModelHandler(llmModelUsecase, llmPricingUsecase)
+	llmPricingHandler := NewLLMPricingHandler(llmPricingUsecase)
+
 	// AI関連のユースケースとハンドラー
-	agentUsecase := aiusecase.NewAgentUsecase(aiAgentRepo, s3Client, chatPinRepo)
-	chatUsecase := chatusecase.NewChatUsecase(aiAgentRepo, conversationRepo, messageRepo, toolUsageRepo, chatSessionRepo, aiAgentServiceRepo, serviceConfigRepo, userRepo, aiClient)
+	agentUsecase := aiusecase.NewAgentUsecase(aiAgentRepo, s3Client, chatPinRepo, llmModelUsecase)
+	chatUsecase := chatusecase.NewChatUsecase(aiAgentRepo, conversationRepo, messageRepo, toolUsageRepo, usageRecorder, aiAgentServiceRepo, serviceConfigRepo, userRepo, aiClient, llmModelUsecase)
 
 	aiAgentHandler := NewAIAgentHandler(agentUsecase, serviceUsecase, aiAgentServiceRepo)
-	chatHandler := NewChatHandler(chatUsecase, cfg.AIService.URL, db.DB)
+	chatHandler := NewChatHandler(chatUsecase, cfg.AIService.URL, usageRecorder)
 
 	// Prompt関連のハンドラー
 	promptHandler := NewPromptHandler(cfg.AIService.URL)
 
 	// Analytics関連のハンドラー
-	llmPricingRepo := persistence.NewLLMPricingRepository(db.DB)
-	pricingService := analytics.NewPricingService(llmPricingRepo)
-	analyticsRepo := persistence.NewAnalyticsRepository(db.DB, pricingService)
+	analyticsRepo := persistence.NewAnalyticsRepository(db.DB)
 	analyticsUsecase := analyticsusecase.NewAnalyticsUsecase(analyticsRepo)
 	analyticsHandler := NewAnalyticsHandler(analyticsUsecase)
 
 	// Billing関連のハンドラー
-	tokenUsageRepo := persistence.NewTokenUsageRepository(db.DB)
 	stripeClient := external.NewStripeClient(cfg.Stripe.SecretKey)
 	billingUsecase := billingusecase.NewBillingUseCase(
 		tokenUsageRepo,
-		llmPricingRepo,
 		userRepo,
 		stripeClient,
 		db.DB,
@@ -176,8 +187,8 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 	groupMessageRepo := persistence.NewGroupMessageRepository(db.DB, toolUsageRepo)
 	messageMentionRepo := persistence.NewMessageMentionRepository(db.DB)
 	groupChatUsecase := groupchatusecase.NewGroupChatUsecase(groupChatRepo, groupMemberRepo, s3Client, chatPinRepo)
-	groupMessageUsecase := groupchatusecase.NewGroupMessageUsecase(groupChatRepo, groupMemberRepo, groupMessageRepo, messageMentionRepo, chatSessionRepo, toolUsageRepo, aiAgentRepo, aiAgentServiceRepo, serviceConfigRepo, aiClient)
-	groupChatHandler := NewGroupChatHandler(groupChatUsecase, groupMessageUsecase, cfg.AIService.URL, db.DB)
+	groupMessageUsecase := groupchatusecase.NewGroupMessageUsecase(groupChatRepo, groupMemberRepo, groupMessageRepo, messageMentionRepo, usageRecorder, toolUsageRepo, aiAgentRepo, aiAgentServiceRepo, serviceConfigRepo, aiClient)
+	groupChatHandler := NewGroupChatHandler(groupChatUsecase, groupMessageUsecase, cfg.AIService.URL, usageRecorder)
 
 	// ChatPin 関連のハンドラー
 	chatPinUsecase := chatpinusecase.NewChatPinUsecase(chatPinRepo, aiAgentRepo, groupChatRepo)
@@ -187,7 +198,7 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 	uploadHandler := NewUploadHandler(userService, agentUsecase, groupChatUsecase, s3Client)
 
 	// ルートを設定
-	setupRoutes(engine, userHandler, aiAgentHandler, chatHandler, serviceHandler, promptHandler, analyticsHandler, billingHandler, groupChatHandler, chatPinHandler, uploadHandler, webhookHandler, authService)
+	setupRoutes(engine, userHandler, aiAgentHandler, chatHandler, serviceHandler, promptHandler, analyticsHandler, llmModelHandler, llmPricingHandler, billingHandler, groupChatHandler, chatPinHandler, uploadHandler, webhookHandler, authService)
 
 	return &Router{
 		engine: engine,
@@ -195,7 +206,7 @@ func NewRouter(cfg *config.Config, db *database.Connection) *Router {
 }
 
 // setupRoutes ルートを設定
-func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *AIAgentHandler, chatHandler *ChatHandler, serviceHandler *ServiceHandler, promptHandler *PromptHandler, analyticsHandler *AnalyticsHandler, billingHandler *BillingHandler, groupChatHandler *GroupChatHandler, chatPinHandler *ChatPinHandler, uploadHandler *UploadHandler, webhookHandler *WebhookHandler, authService user.AuthService) {
+func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *AIAgentHandler, chatHandler *ChatHandler, serviceHandler *ServiceHandler, promptHandler *PromptHandler, analyticsHandler *AnalyticsHandler, llmModelHandler *LLMModelHandler, llmPricingHandler *LLMPricingHandler, billingHandler *BillingHandler, groupChatHandler *GroupChatHandler, chatPinHandler *ChatPinHandler, uploadHandler *UploadHandler, webhookHandler *WebhookHandler, authService user.AuthService) {
 	// ヘルスチェック（ALB用に/api/healthも追加）
 	engine.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -297,6 +308,46 @@ func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *A
 		{
 			analyticsRoutes.GET("", analyticsHandler.GetUserAnalytics)
 		}
+
+		// LLMモデル関連（認証必要）
+		llmModels := v1.Group("/llm-models")
+		llmModels.Use(authMiddleware.RequireAuth())
+		{
+			llmModels.GET("", llmModelHandler.ListModels)
+		}
+
+		// 管理用 LLMモデル操作（暫定: 認証のみ）
+		adminLLMModels := v1.Group("/admin/llm-models")
+		adminLLMModels.Use(authMiddleware.RequireAuth())
+		{
+			adminLLMModels.POST("", llmModelHandler.CreateModel)
+			adminLLMModels.PATCH("/:id", llmModelHandler.UpdateModel)
+			adminLLMModels.PATCH("/:id/enabled", llmModelHandler.UpdateModelEnabled)
+			adminLLMModels.DELETE("/:id", llmModelHandler.DeleteModel)
+		}
+
+		// LLM単価（認証ユーザー向け: 現行単価一覧）
+		llmPricing := v1.Group("/llm-pricing")
+		llmPricing.Use(authMiddleware.RequireAuth())
+		{
+			llmPricing.GET("", llmPricingHandler.ListCurrentPricing)
+		}
+
+		// 管理用 LLM単価操作（暫定: 認証のみ）
+		adminLLMPricing := v1.Group("/admin/llm-pricing")
+		adminLLMPricing.Use(authMiddleware.RequireAuth())
+		{
+			adminLLMPricing.POST("", llmPricingHandler.CreatePricing)
+			adminLLMPricing.POST("/:id/revise", llmPricingHandler.RevisePricing)
+			adminLLMPricing.GET("/history", llmPricingHandler.GetPricingHistory)
+			adminLLMPricing.PATCH("/:id/deactivate", llmPricingHandler.DeactivatePricing)
+		}
+
+		// 為替レート（USD→JPY）の正本。フロントの表示換算はこの値を参照する
+		// （backend-go/pkg/money を単一の真実源とし、定数の二重管理を避ける）。
+		v1.GET("/exchange-rate", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"usd_to_jpy_rate": money.USDToJPYRate})
+		})
 
 		// 課金・サブスクリプション関連
 		// 公開エンドポイント（認証不要）

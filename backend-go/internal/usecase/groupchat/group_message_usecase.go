@@ -15,6 +15,7 @@ import (
 	"backend-go/internal/domain/groupchat"
 	"backend-go/internal/domain/service"
 	"backend-go/internal/infrastructure/external"
+	"backend-go/internal/usecase/usage"
 
 	"github.com/google/uuid"
 )
@@ -64,7 +65,7 @@ type GroupMessageUsecase struct {
 	memberRepo         groupchat.GroupMemberRepository
 	messageRepo        groupchat.GroupMessageRepository
 	mentionRepo        groupchat.MessageMentionRepository
-	chatSessionRepo    conversation.ChatSessionRepository
+	usageRecorder      *usage.Recorder
 	toolUsageRepo      conversation.ToolUsageRepository
 	aiRepo             ai.Repository
 	aiAgentServiceRepo service.AIAgentServiceRepository
@@ -78,7 +79,7 @@ func NewGroupMessageUsecase(
 	memberRepo groupchat.GroupMemberRepository,
 	messageRepo groupchat.GroupMessageRepository,
 	mentionRepo groupchat.MessageMentionRepository,
-	chatSessionRepo conversation.ChatSessionRepository,
+	usageRecorder *usage.Recorder,
 	toolUsageRepo conversation.ToolUsageRepository,
 	aiRepo ai.Repository,
 	aiAgentServiceRepo service.AIAgentServiceRepository,
@@ -90,7 +91,7 @@ func NewGroupMessageUsecase(
 		memberRepo:         memberRepo,
 		messageRepo:        messageRepo,
 		mentionRepo:        mentionRepo,
-		chatSessionRepo:    chatSessionRepo,
+		usageRecorder:      usageRecorder,
 		toolUsageRepo:      toolUsageRepo,
 		aiRepo:             aiRepo,
 		aiAgentServiceRepo: aiAgentServiceRepo,
@@ -824,7 +825,7 @@ streamDone:
 			len(streamToolCalls),
 		)
 
-		if err := uc.chatSessionRepo.Save(ctx, chatSession); err != nil {
+		if err := uc.usageRecorder.RecordSessionUsage(ctx, chatSession); err != nil {
 			log.Printf("ERROR: failed to save chat session: %v", err)
 		} else {
 			log.Printf("SUCCESS: saved chat session (id=%s, tokens=%d)", chatSession.ID, chatSession.TokensTotal)
