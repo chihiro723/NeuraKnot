@@ -6,7 +6,11 @@ from fastapi import APIRouter, HTTPException
 from app.models.request import EnhancePromptRequest, SuggestQuestionsRequest, SuggestConversationQuestionsRequest
 from app.models.response import EnhancePromptResponse, SuggestQuestionsResponse
 from app.services.prompt_enhancement_service import PromptEnhancementService
-from app.services.question_suggestion_service import QuestionSuggestionService
+from app.services.question_suggestion_service import (
+    QuestionSuggestionService,
+    SUGGESTION_PROVIDER,
+    SUGGESTION_MODEL,
+)
 from app.core.exceptions import ValidationError, LLMAPIError
 import logging
 
@@ -85,8 +89,8 @@ async def suggest_questions(request: SuggestQuestionsRequest):
             suggestions=suggestions,
             token_usage=token_usage,
             metadata={
-                "model": "gpt-4.1",
-                "provider": "openai",
+                "model": SUGGESTION_MODEL,
+                "provider": SUGGESTION_PROVIDER,
                 "group_chat_id": request.group_chat_id,
             }
         )
@@ -133,8 +137,8 @@ async def suggest_conversation_questions(request: SuggestConversationQuestionsRe
             suggestions=suggestions,
             token_usage=token_usage,
             metadata={
-                "model": "gpt-4.1",
-                "provider": "openai",
+                "model": SUGGESTION_MODEL,
+                "provider": SUGGESTION_PROVIDER,
                 "conversation_id": request.conversation_id,
             }
         )

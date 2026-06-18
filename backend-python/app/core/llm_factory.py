@@ -6,7 +6,7 @@ from langchain_openai import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langchain_google_genai import ChatGoogleGenerativeAI
 from app.core.config import settings
-from app.core.exceptions import ValidationError, InvalidProvider, InvalidModel
+from app.core.exceptions import ValidationError, InvalidProvider
 from typing import Dict, Optional
 import logging
 
@@ -15,25 +15,8 @@ logger = logging.getLogger(__name__)
 
 class LLMFactory:
     """LLMインスタンスを生成するファクトリクラス"""
-    
-    # プロバイダーごとの利用可能モデル
-    AVAILABLE_MODELS = {
-        "openai": [
-            "gpt-4.1",
-            "gpt-4.1-mini",
-            "gpt-4.1-nano"
-        ],
-        "anthropic": [
-            "claude-sonnet-4-5-20250929",
-            "claude-haiku-4-5-20251001",
-            "claude-opus-4-1-20250805"
-        ],
-        "google": [
-            "gemini-2.5-pro",
-            "gemini-2.5-flash",
-            "gemini-2.5-flash-lite"
-        ]
-    }
+    # プロバイダー定義のみを保持（モデル可用性はbackend-goのDBを正本とする）
+    AVAILABLE_PROVIDERS = ("openai", "anthropic", "google")
     
     @staticmethod
     def create_llm(
@@ -61,25 +44,20 @@ class LLMFactory:
             
         Raises:
             InvalidProvider: 不正なプロバイダー
-            InvalidModel: 不正なモデル
             ValidationError: APIキー未設定
         """
         provider = provider.lower()
         
         # プロバイダー検証
-        if provider not in LLMFactory.AVAILABLE_MODELS:
+        if provider not in LLMFactory.AVAILABLE_PROVIDERS:
             raise InvalidProvider(
                 provider,
-                list(LLMFactory.AVAILABLE_MODELS.keys())
+                list(LLMFactory.AVAILABLE_PROVIDERS)
             )
-        
-        # モデル検証
-        if model not in LLMFactory.AVAILABLE_MODELS[provider]:
-            raise InvalidModel(
-                provider,
-                model,
-                LLMFactory.AVAILABLE_MODELS[provider]
-            )
+
+        # モデル検証はbackend-go（DB）で実施済みを前提
+        if not model or not model.strip():
+            raise ValidationError("modelが指定されていません")
         
         logger.info(f"Creating LLM: provider={provider}, model={model}, streaming={streaming}")
         
@@ -141,10 +119,10 @@ class LLMFactory:
     @staticmethod
     def get_available_models() -> Dict[str, list]:
         """
-        利用可能なモデル一覧を返す
+        利用可能なモデル一覧を返す（後方互換）
         
         Returns:
-            プロバイダーごとのモデルリスト
+            プロバイダーごとのモデルリスト（現在はbackend-goのDBを正本とするため空）
         """
-        return LLMFactory.AVAILABLE_MODELS
+        return {provider: [] for provider in LLMFactory.AVAILABLE_PROVIDERS}
 
