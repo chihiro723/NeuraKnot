@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
+import { ModalOverlay } from "@/components/ui/ModalOverlay";
 import {
   X,
   Server,
@@ -46,9 +46,6 @@ export function ServiceSelectorModal({
     Map<string, SelectedService>
   >(new Map());
 
-  // 背景スクロールをロック（Hooksの呼び出し順を安定させるため、早期returnより前で常に呼ぶ）
-  useBodyScrollLock(isOpen);
-
   // モーダルが開いたときにリセット
   useEffect(() => {
     if (isOpen) {
@@ -56,8 +53,6 @@ export function ServiceSelectorModal({
       setSelectedServices(new Map());
     }
   }, [isOpen]);
-
-  if (!isOpen) return null;
 
   const toggleExpand = (serviceClass: string) => {
     const newExpanded = new Set(expandedServices);
@@ -144,10 +139,7 @@ export function ServiceSelectorModal({
   };
 
   return (
-    <div
-      className="flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-md bg-black/60"
-      onClick={onClose}
-    >
+    <ModalOverlay isOpen={isOpen} onClose={onClose}>
       <div
         className="bg-white dark:bg-gray-900 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-2xl w-full max-w-3xl max-h-[80vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
@@ -375,6 +367,6 @@ export function ServiceSelectorModal({
           </div>
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
+import { ModalOverlay } from "@/components/ui/ModalOverlay";
 import { X, Plus, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { getServiceIcon, getServiceGradient } from "@/lib/utils/serviceIcons";
@@ -34,10 +34,7 @@ export function ServiceRegistrationModal({
     new Set()
   );
 
-  // 背景スクロールをロック
-  useBodyScrollLock(isOpen);
-
-  if (!isOpen || !service) return null;
+  if (!service) return null;
 
   // サービスに適したアイコンとグラデーションを取得
   const ServiceIcon = getServiceIcon(service.name);
@@ -143,9 +140,10 @@ export function ServiceRegistrationModal({
   };
 
   return (
-    <div
-      className="flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-sm bg-black/50"
-      onClick={onClose}
+    <ModalOverlay
+      isOpen={isOpen}
+      onClose={onClose}
+      className="backdrop-blur-sm bg-black/50"
     >
       <div
         className="relative w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-2xl bg-white dark:bg-gray-800 shadow-2xl"
@@ -404,6 +402,6 @@ export function ServiceRegistrationModal({
           </button>
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 }

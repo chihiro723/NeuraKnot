@@ -11,15 +11,18 @@ import {
   ArrowLeft,
   Brain,
   Clock,
+  CircleDollarSign,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useIsMobile } from "@/lib/hooks/useResponsive";
 import { getAgent, getAgentServices } from "@/lib/actions/ai-agent";
 import { listServices, getServiceTools } from "@/lib/actions/services";
+import { listLLMPricing } from "@/lib/actions/llm-models";
 import type { SelectedFriend } from "@/lib/types";
 import type { AIAgent, AgentService } from "@/lib/types/ai-agent";
 import type { Service, Tool } from "@/lib/types/service";
+import type { LLMPricing } from "@/lib/types/llm-model";
 import { AgentSettingsModal } from "./AgentSettingsModal";
 import { LoadingSpinner } from "../ui/feedback/LoadingSpinner";
 
@@ -44,6 +47,7 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [modelPricing, setModelPricing] = useState<LLMPricing | null>(null);
 
   // データ取得
   useEffect(() => {
@@ -114,6 +118,30 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
 
     fetchData();
   }, [friend.id, friend.type]);
+
+  // エージェントのモデルに対応する現行単価を取得（管理画面で設定した値を反映）
+  useEffect(() => {
+    if (!agent) {
+      setModelPricing(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await listLLMPricing();
+        if (cancelled) return;
+        const match = res.pricing.find(
+          (p) => p.provider === agent.provider && p.model === agent.model,
+        );
+        setModelPricing(match ?? null);
+      } catch {
+        if (!cancelled) setModelPricing(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [agent]);
 
   const handleBack = () => {
     router.push("/dashboard/roster");
@@ -354,9 +382,32 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
                   <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">
                     モデル
                   </p>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {agent.model}
-                  </p>
+                  <div className="flex gap-1.5 items-center">
+                    <p className="font-medium text-gray-900 truncate dark:text-white">
+                      {agent.model}
+                    </p>
+                    <span className="relative shrink-0 group">
+                      <CircleDollarSign
+                        className={`w-3.5 h-3.5 cursor-help ${
+                          modelPricing
+                            ? "text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                            : "text-amber-500"
+                        }`}
+                      />
+                      <span className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-1.5 hidden -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-[11px] text-white shadow-lg group-hover:block dark:bg-gray-700">
+                        {modelPricing ? (
+                          <span className="font-mono">
+                            入力 ${modelPricing.prompt_cost_per_1m.toFixed(2)} /
+                            出力 $
+                            {modelPricing.completion_cost_per_1m.toFixed(2)}
+                            <span className="text-gray-300"> (USD / 1M)</span>
+                          </span>
+                        ) : (
+                          "単価未設定"
+                        )}
+                      </span>
+                    </span>
+                  </div>
                 </div>
                 <div className="p-3 bg-gray-50 rounded-xl dark:bg-gray-900/50">
                   <p className="mb-1 text-xs text-gray-500 dark:text-gray-400">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
+import { ModalOverlay } from "@/components/ui/ModalOverlay";
 import { X, Save, Camera } from "lucide-react";
 import { updateProfile } from "@/lib/actions/user";
 import { useRouter } from "next/navigation";
@@ -49,21 +49,6 @@ export function EditProfileModal({
       setPreviewAvatarUrl(null);
     }
   }, [isOpen, currentDisplayName, currentAvatarUrl]);
-
-  // 背景スクロールをロック
-  useBodyScrollLock(isOpen);
-
-  // ESCキーでモーダルを閉じる
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        onClose();
-      }
-    };
-
-    window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, [isOpen, onClose]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -163,15 +148,9 @@ export function EditProfileModal({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
     <>
-      {/* モーダルコンテナ */}
-      <div
-        className="flex fixed inset-0 z-50 justify-center items-center p-4 backdrop-blur-md bg-black/60"
-        onClick={onClose}
-      >
+      <ModalOverlay isOpen={isOpen} onClose={onClose}>
         <div
           className="w-full max-w-lg bg-white rounded-2xl border border-gray-200 shadow-2xl dark:bg-gray-900 md:rounded-3xl dark:border-gray-700"
           onClick={(e) => e.stopPropagation()}
@@ -286,7 +265,7 @@ export function EditProfileModal({
             </button>
           </div>
         </div>
-      </div>
+      </ModalOverlay>
 
       {/* 画像トリミングモーダル */}
       {showCropper && selectedImage && (

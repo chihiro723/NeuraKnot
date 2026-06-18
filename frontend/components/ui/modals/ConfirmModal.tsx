@@ -2,6 +2,7 @@
 
 import { AlertTriangle, X } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { ModalOverlay } from "@/components/ui/ModalOverlay";
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -30,8 +31,6 @@ export function ConfirmModal({
   variant = "danger",
   isLoading = false,
 }: ConfirmModalProps) {
-  if (!isOpen) return null;
-
   const variantStyles = {
     danger: {
       icon: "text-red-600 dark:text-red-400",
@@ -53,7 +52,12 @@ export function ConfirmModal({
   const styles = variantStyles[variant];
 
   return (
-    <div className="flex fixed inset-0 z-50 justify-center items-center p-4 bg-black/50">
+    <ModalOverlay
+      isOpen={isOpen}
+      onClose={onClose}
+      closeOnBackdropClick={false}
+      className="bg-black/50 backdrop-blur-none"
+    >
       <div
         className="relative w-full max-w-md bg-white rounded-xl shadow-xl dark:bg-gray-800"
         onClick={(e) => e.stopPropagation()}
@@ -118,7 +122,7 @@ export function ConfirmModal({
           </div>
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 }
 

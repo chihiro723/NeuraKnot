@@ -71,8 +71,8 @@ export function AIChatWindow({
   const [showTokenLimitModal, setShowTokenLimitModal] = useState(false);
   const [tokenLimitData, setTokenLimitData] = useState<{
     tier: string;
-    tokensUsed: number;
-    tokensLimit: number;
+    costUsd: number;
+    budgetLimitUsd: number;
     usagePercentage: number;
     periodEnd: string;
   } | null>(null);
@@ -137,8 +137,8 @@ export function AIChatWindow({
         if (!limitCheck.can_send) {
           setTokenLimitData({
             tier: limitCheck.current_tier,
-            tokensUsed: limitCheck.tokens_used,
-            tokensLimit: limitCheck.tokens_limit,
+            costUsd: limitCheck.cost_usd,
+            budgetLimitUsd: limitCheck.budget_limit_usd,
             usagePercentage: limitCheck.usage_percentage,
             periodEnd: limitCheck.period_end,
           });
@@ -563,8 +563,8 @@ export function AIChatWindow({
           isOpen={showTokenLimitModal}
           onClose={() => setShowTokenLimitModal(false)}
           tier={tokenLimitData.tier}
-          tokensUsed={tokenLimitData.tokensUsed}
-          tokensLimit={tokenLimitData.tokensLimit}
+          costUsd={tokenLimitData.costUsd}
+          budgetLimitUsd={tokenLimitData.budgetLimitUsd}
           usagePercentage={tokenLimitData.usagePercentage}
           periodEnd={tokenLimitData.periodEnd}
         />

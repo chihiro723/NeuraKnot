@@ -14,7 +14,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useBodyScrollLock } from "@/lib/hooks/useBodyScrollLock";
+import { ModalOverlay } from "@/components/ui/ModalOverlay";
 import {
   updateGroupChat,
   deleteGroupChat,
@@ -200,9 +200,6 @@ export function GroupChatSettingsModal({
       loadAvailableAgents();
     }
   }, [isOpen, groupChat]);
-
-  // 背景スクロールをロック
-  useBodyScrollLock(isOpen);
 
   const loadAvailableAgents = async () => {
     setLoadingAgents(true);
@@ -460,14 +457,9 @@ export function GroupChatSettingsModal({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
     <>
-      <div
-        className="flex fixed inset-0 z-50 justify-center items-center p-2 backdrop-blur-md md:p-4 bg-black/60"
-        onClick={onClose}
-      >
+      <ModalOverlay isOpen={isOpen} onClose={onClose} className="p-2 md:p-4">
         <div
           className="bg-white dark:bg-gray-900 rounded-2xl md:rounded-3xl border border-gray-200 dark:border-gray-700 shadow-2xl w-full max-w-4xl h-[75vh] flex flex-col"
           onClick={(e) => e.stopPropagation()}
@@ -765,7 +757,7 @@ export function GroupChatSettingsModal({
             </div>
           </div>
         </div>
-      </div>
+      </ModalOverlay>
 
       {/* 削除確認モーダル */}
       <ConfirmModal

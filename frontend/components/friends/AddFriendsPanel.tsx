@@ -25,7 +25,9 @@ import type { AuthUser } from "@/lib/types/auth";
 import { createAgent } from "@/lib/actions/ai-agent";
 import { useServerActionWithAuth } from "@/lib/hooks/useServerActionWithAuth";
 import { getUserServicesWithDetails } from "@/lib/actions/services";
+import { listLLMProviderModels } from "@/lib/actions/llm-models";
 import type { UserServiceWithDetails } from "@/lib/types/service";
+import type { LLMProviderModels } from "@/lib/types/llm-model";
 import { ServiceSelectorModal } from "@/components/services/ServiceSelectorModal";
 import { generateAgentIntroduction } from "@/lib/actions/agent-introduction";
 import { enhanceSystemPrompt } from "@/lib/actions/prompt-enhancement";
@@ -108,7 +110,7 @@ export function AddFriendsPanel({ user }: AddFriendsPanelProps) {
                         "relative w-full bg-white dark:bg-gray-800 rounded-xl border p-4 sm:p-6 shadow-sm hover:shadow-md transition-all duration-200 text-left block min-h-[104px]",
                         type.comingSoon
                           ? "opacity-60 cursor-not-allowed border-gray-300 dark:border-gray-700"
-                          : "border-gray-300 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600"
+                          : "border-gray-300 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600",
                       )}
                     >
                       <div className="flex justify-between items-start mb-2">
@@ -155,8 +157,8 @@ export function AddFriendsPanel({ user }: AddFriendsPanelProps) {
                     type.comingSoon
                       ? "opacity-60 cursor-not-allowed border-gray-300 dark:border-gray-700"
                       : isSelected
-                      ? "border-green-400 bg-green-50 dark:bg-green-500/10"
-                      : "border-gray-300 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600"
+                        ? "border-green-400 bg-green-50 dark:bg-green-500/10"
+                        : "border-gray-300 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600",
                   )}
                 >
                   <div className="flex justify-between items-start mb-2">
@@ -305,7 +307,7 @@ export function AIAgentCreationPanel({
 
   // サービス選択
   const [userServices, setUserServices] = useState<UserServiceWithDetails[]>(
-    []
+    [],
   );
   const [selectedServices, setSelectedServices] = useState<
     Array<{
@@ -318,20 +320,44 @@ export function AIAgentCreationPanel({
   >([]);
   const [isServiceModalOpen, setIsServiceModalOpen] = useState(false);
   const [expandedServices, setExpandedServices] = useState<Set<string>>(
-    new Set()
+    new Set(),
   );
+  const [providerModels, setProviderModels] = useState<LLMProviderModels[]>([]);
 
   // ユーザーのサービス一覧を取得
   useEffect(() => {
-    const fetchServices = async () => {
+    const fetchInitialData = async () => {
       try {
-        const services = await getUserServicesWithDetails();
+        const [services, llmProviders] = await Promise.all([
+          getUserServicesWithDetails(),
+          listLLMProviderModels(true),
+        ]);
         setUserServices(services);
+
+        setProviderModels(llmProviders);
+        if (llmProviders.length > 0) {
+          const providerExists = llmProviders.some(
+            (provider) => provider.provider === formData.provider,
+          );
+          const fallbackProvider = providerExists
+            ? formData.provider
+            : llmProviders[0].provider;
+          const fallbackModel =
+            llmProviders.find(
+              (provider) => provider.provider === fallbackProvider,
+            )?.models[0]?.model || "";
+
+          setFormData((prev) => ({
+            ...prev,
+            provider: fallbackProvider,
+            model: fallbackModel || prev.model,
+          }));
+        }
       } catch (err) {
-        console.error("Failed to load services:", err);
+        console.error("Failed to load initial data:", err);
       }
     };
-    fetchServices();
+    fetchInitialData();
   }, []);
 
   // 401エラー時に自動リフレッシュ
@@ -360,85 +386,57 @@ export function AIAgentCreationPanel({
     },
   ];
 
-  const providers = [
-    {
-      id: "openai",
-      name: "OpenAI",
-      models: [
-        {
-          id: "gpt-4.1",
-          name: "GPT-4.1",
-          description: "高性能モデル｜$2.50 / $10.00 (入力/出力 per 1M)",
-          disabled: false,
-        },
-        {
-          id: "gpt-4.1-mini",
-          name: "GPT-4.1 mini",
-          description: "性能とコストのバランス型｜$0.15 / $0.60",
-          disabled: false,
-        },
-        {
-          id: "gpt-4.1-nano",
-          name: "GPT-4.1 nano",
-          description: "超高速・最安価｜$0.05 / $0.20",
-          disabled: false,
-        },
-      ],
-      disabled: false,
-    },
-    {
-      id: "anthropic",
-      name: "Anthropic",
-      models: [
-        {
-          id: "claude-sonnet-4-5-20250929",
-          name: "Claude Sonnet 4.5",
-          description: "コーディング支援に優れた｜$3.00 / $15.00",
-          disabled: false,
-        },
-        {
-          id: "claude-haiku-4-5-20251001",
-          name: "Claude Haiku 4.5",
-          description: "軽量で高速｜$0.25 / $1.25",
-          disabled: false,
-        },
-        {
-          id: "claude-opus-4-1-20250805",
-          name: "Claude Opus 4.1",
-          description: "最高性能な汎用モデル｜$15.00 / $75.00",
-          disabled: false,
-        },
-      ],
-      disabled: false,
-    },
-    {
-      id: "google",
-      name: "Google",
-      models: [
-        {
-          id: "gemini-2.5-pro",
-          name: "Gemini 2.5 Pro",
-          description: "高度な推論能力｜$3.50 / $10.50",
-          disabled: false,
-        },
-        {
-          id: "gemini-2.5-flash",
-          name: "Gemini 2.5 Flash",
-          description: "高速処理に特化｜$0.075 / $0.30",
-          disabled: false,
-        },
-        {
-          id: "gemini-2.5-flash-lite",
-          name: "Gemini 2.5 Flash-Lite",
-          description: "超軽量・最安価｜$0.04 / $0.16",
-          disabled: false,
-        },
-      ],
-      disabled: false,
-    },
-  ];
+  const providerLabels: Record<string, string> = {
+    openai: "OpenAI",
+    anthropic: "Anthropic",
+    google: "Google",
+  };
 
-  const currentProvider = providers.find((p) => p.id === formData.provider);
+  const currentProvider = providerModels.find(
+    (provider) => provider.provider === formData.provider,
+  );
+  const currentModelConfig =
+    currentProvider?.models.find((model) => model.model === formData.model) ||
+    currentProvider?.models[0];
+  const temperatureMin = currentModelConfig?.temperature_min ?? 0;
+  const temperatureMax = currentModelConfig?.temperature_max ?? 2;
+  const isTemperatureFixed = temperatureMin === temperatureMax;
+  const maxTokensMin = currentModelConfig?.max_tokens_min ?? 100;
+  const maxTokensMax = currentModelConfig?.max_tokens_max ?? 8000;
+
+  const clampToRange = (value: number, min: number, max: number) =>
+    Math.min(max, Math.max(min, value));
+
+  const applyModelConstraints = (
+    prev: typeof formData,
+    provider: string,
+    model: string,
+  ) => {
+    const providerEntry = providerModels.find((p) => p.provider === provider);
+    const modelConfig =
+      providerEntry?.models.find((m) => m.model === model) ||
+      providerEntry?.models[0];
+
+    if (!modelConfig) {
+      return { ...prev, provider, model };
+    }
+
+    return {
+      ...prev,
+      provider,
+      model: modelConfig.model,
+      temperature: clampToRange(
+        prev.temperature,
+        modelConfig.temperature_min,
+        modelConfig.temperature_max,
+      ),
+      max_tokens: clampToRange(
+        prev.max_tokens,
+        modelConfig.max_tokens_min,
+        modelConfig.max_tokens_max,
+      ),
+    };
+  };
 
   // サービス追加処理
   const handleAddServices = (
@@ -448,7 +446,7 @@ export function AIAgentCreationPanel({
       tool_selection_mode: "all" | "selected";
       selected_tools: string[];
       enabled: boolean;
-    }>
+    }>,
   ) => {
     setSelectedServices([...selectedServices, ...services]);
   };
@@ -456,7 +454,7 @@ export function AIAgentCreationPanel({
   // サービス削除処理
   const handleRemoveService = (serviceClass: string) => {
     setSelectedServices(
-      selectedServices.filter((s) => s.service_class !== serviceClass)
+      selectedServices.filter((s) => s.service_class !== serviceClass),
     );
     setExpandedServices((prev) => {
       const next = new Set(prev);
@@ -482,16 +480,51 @@ export function AIAgentCreationPanel({
   const updateToolSelection = (
     serviceClass: string,
     mode: "all" | "selected",
-    tools: string[]
+    tools: string[],
   ) => {
     setSelectedServices(
       selectedServices.map((s) =>
         s.service_class === serviceClass
           ? { ...s, tool_selection_mode: mode, selected_tools: tools }
-          : s
-      )
+          : s,
+      ),
     );
   };
+
+  // モデル変更時に温度/トークンを許容範囲内へ補正
+  useEffect(() => {
+    if (!currentModelConfig) return;
+
+    setFormData((prev) => {
+      const nextTemperature = Math.min(
+        temperatureMax,
+        Math.max(temperatureMin, prev.temperature),
+      );
+      const nextMaxTokens = Math.min(
+        maxTokensMax,
+        Math.max(maxTokensMin, prev.max_tokens),
+      );
+
+      if (
+        nextTemperature === prev.temperature &&
+        nextMaxTokens === prev.max_tokens
+      ) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        temperature: nextTemperature,
+        max_tokens: nextMaxTokens,
+      };
+    });
+  }, [
+    currentModelConfig,
+    temperatureMin,
+    temperatureMax,
+    maxTokensMin,
+    maxTokensMax,
+  ]);
 
   // AI強化ハンドラー
   const handleEnhancePrompt = async () => {
@@ -559,6 +592,35 @@ export function AIAgentCreationPanel({
 
     startTransition(async () => {
       try {
+        const providerEntry = providerModels.find(
+          (provider) => provider.provider === formData.provider,
+        );
+
+        const modelConfig =
+          providerEntry?.models.find(
+            (model) => model.model === formData.model,
+          ) || providerEntry?.models[0];
+
+        if (!modelConfig) {
+          throw new Error(
+            "選択中モデルの設定取得に失敗しました。画面を再読み込みしてもう一度お試しください。",
+          );
+        }
+        const normalizedTemperature = modelConfig
+          ? clampToRange(
+              formData.temperature,
+              modelConfig.temperature_min,
+              modelConfig.temperature_max,
+            )
+          : formData.temperature;
+        const normalizedMaxTokens = modelConfig
+          ? clampToRange(
+              formData.max_tokens,
+              modelConfig.max_tokens_min,
+              modelConfig.max_tokens_max,
+            )
+          : formData.max_tokens;
+
         // Server Actionを呼び出す（401エラー時に自動リフレッシュ）
         const result = await createAgentWithAuth({
           name: formData.name,
@@ -568,8 +630,8 @@ export function AIAgentCreationPanel({
           avatar_url: undefined, // アバターは後でアップロード
           system_prompt: formData.system_prompt || undefined,
           provider: formData.provider,
-          temperature: formData.temperature,
-          max_tokens: formData.max_tokens,
+          temperature: normalizedTemperature,
+          max_tokens: normalizedMaxTokens,
           tools_enabled: true, // 常に有効
           streaming_enabled: formData.streaming_enabled,
           services: selectedServices.length > 0 ? selectedServices : undefined,
@@ -607,7 +669,7 @@ export function AIAgentCreationPanel({
               persona_type: formData.persona_type,
               description: formData.description,
             },
-            selectedServices
+            selectedServices,
           ).catch((err) => {
             console.error("Failed to generate introduction:", err);
           });
@@ -639,7 +701,7 @@ export function AIAgentCreationPanel({
         setError(
           error instanceof Error
             ? error.message
-            : "AI Agentの作成に失敗しました"
+            : "AI Agentの作成に失敗しました",
         );
       }
     });
@@ -703,7 +765,7 @@ export function AIAgentCreationPanel({
                 className={cn(
                   "px-4 py-3 w-full bg-white rounded-lg border border-gray-300 dark:bg-gray-900 dark:border-gray-700",
                   "focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500",
-                  "placeholder-gray-400 text-gray-900 dark:text-white dark:placeholder-gray-500"
+                  "placeholder-gray-400 text-gray-900 dark:text-white dark:placeholder-gray-500",
                 )}
                 required
               />
@@ -724,7 +786,7 @@ export function AIAgentCreationPanel({
                 className={cn(
                   "px-4 py-3 w-full bg-white rounded-lg border border-gray-300 dark:bg-gray-900 dark:border-gray-700",
                   "focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500",
-                  "placeholder-gray-400 text-gray-900 resize-none dark:text-white dark:placeholder-gray-500"
+                  "placeholder-gray-400 text-gray-900 resize-none dark:text-white dark:placeholder-gray-500",
                 )}
               />
             </div>
@@ -807,7 +869,7 @@ export function AIAgentCreationPanel({
                         "relative p-4 text-center rounded-lg border transition-all",
                         isSelected
                           ? "bg-green-50 border-green-500 dark:bg-green-900/20 dark:border-green-500"
-                          : "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600"
+                          : "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600",
                       )}
                     >
                       <div className="flex flex-col items-center space-y-1">
@@ -840,7 +902,7 @@ export function AIAgentCreationPanel({
                     "flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl transition-all duration-300 transform",
                     isEnhancing || !formData.system_prompt?.trim()
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed dark:bg-gray-800"
-                      : "text-white bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-500 shadow-lg hover:from-emerald-600 hover:via-emerald-500 hover:to-cyan-600 hover:scale-105 hover:shadow-emerald-500/30"
+                      : "text-white bg-gradient-to-r from-emerald-500 via-emerald-400 to-cyan-500 shadow-lg hover:from-emerald-600 hover:via-emerald-500 hover:to-cyan-600 hover:scale-105 hover:shadow-emerald-500/30",
                   )}
                   title={
                     !formData.system_prompt?.trim()
@@ -868,7 +930,7 @@ export function AIAgentCreationPanel({
                 placeholder="エージェントの振る舞いや特徴を具体的指示（キーワード入力→AI強化を使ってみよう）"
                 rows={Math.max(
                   6,
-                  Math.ceil((formData.system_prompt?.length || 0) / 50)
+                  Math.ceil((formData.system_prompt?.length || 0) / 50),
                 )}
                 disabled={isEnhancing}
                 className={cn(
@@ -880,7 +942,7 @@ export function AIAgentCreationPanel({
                     !isEnhancing &&
                     formData.system_prompt?.trim()
                     ? "border-emerald-400 shadow-lg shadow-emerald-500/20 dark:border-emerald-500 dark:bg-gray-900 animate-glow-border"
-                    : "border-gray-300 dark:bg-gray-900 dark:border-gray-700"
+                    : "border-gray-300 dark:bg-gray-900 dark:border-gray-700",
                 )}
               />
               {enhanceError && (
@@ -905,34 +967,37 @@ export function AIAgentCreationPanel({
                 AI プロバイダー
               </label>
               <div className="grid grid-cols-3 gap-3">
-                {providers.map((provider) => (
+                {providerModels.map((provider) => (
                   <button
-                    key={provider.id}
+                    key={provider.provider}
                     type="button"
                     onClick={() => {
-                      if (provider.disabled) return;
-                      setFormData({
-                        ...formData,
-                        provider: provider.id,
-                        model:
-                          provider.models.find(
-                            (m) => !("disabled" in m) || !m.disabled
-                          )?.id || formData.model,
+                      setFormData((prev) => {
+                        const firstModel = provider.models[0]?.model;
+                        if (!firstModel) return prev;
+                        return applyModelConstraints(
+                          prev,
+                          provider.provider,
+                          firstModel,
+                        );
                       });
                     }}
                     className={cn(
                       "p-3 rounded-lg border transition-all font-medium text-sm",
-                      formData.provider === provider.id && !provider.disabled
+                      formData.provider === provider.provider
                         ? "bg-green-50 border-green-500 text-green-700 dark:bg-green-900/20 dark:text-green-400 dark:border-green-500"
-                        : provider.disabled
-                        ? "bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:border-gray-700 dark:text-gray-500"
-                        : "bg-white border-gray-300 text-gray-700 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-600"
+                        : "bg-white border-gray-300 text-gray-700 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-600",
                     )}
                   >
-                    {provider.name}
+                    {providerLabels[provider.provider] || provider.provider}
                   </button>
                 ))}
               </div>
+              {providerModels.length === 0 && (
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  現在利用可能なモデルがありません。
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -945,27 +1010,50 @@ export function AIAgentCreationPanel({
                     key={model.id}
                     type="button"
                     onClick={() => {
-                      if ("disabled" in model && model.disabled) return;
-                      setFormData({ ...formData, model: model.id });
+                      setFormData((prev) =>
+                        applyModelConstraints(prev, prev.provider, model.model),
+                      );
                     }}
                     className={cn(
                       "w-full p-4 rounded-lg border transition-all text-left",
-                      formData.model === model.id &&
-                        !("disabled" in model && model.disabled)
+                      formData.model === model.model
                         ? "bg-green-50 border-green-500 dark:bg-green-900/20 dark:border-green-500"
-                        : "disabled" in model && model.disabled
-                        ? "bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:border-gray-700 dark:text-gray-500"
-                        : "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-700 hover:border-gray-400 dark:hover:bg-gray-600"
+                        : "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-700 hover:border-gray-400 dark:hover:bg-gray-600",
                     )}
                   >
-                    <div className="flex justify-between items-center">
-                      <div>
+                    <div className="flex gap-3 justify-between items-center">
+                      <div className="min-w-0">
                         <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-                          {model.name}
+                          {model.display_name}
                         </h4>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {model.description}
+                        <p className="text-xs text-gray-500 truncate dark:text-gray-400">
+                          {model.model}
                         </p>
+                      </div>
+                      <div className="text-right shrink-0">
+                        {model.current_pricing ? (
+                          <div className="space-y-0.5 font-mono text-[11px] leading-tight text-gray-600 dark:text-gray-300">
+                            <p>
+                              入力 $
+                              {model.current_pricing.prompt_cost_per_1m.toFixed(
+                                2,
+                              )}
+                            </p>
+                            <p>
+                              出力 $
+                              {model.current_pricing.completion_cost_per_1m.toFixed(
+                                2,
+                              )}
+                            </p>
+                            <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                              / 1Mトークン
+                            </p>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-amber-600 dark:text-amber-400">
+                            単価未設定
+                          </span>
+                        )}
                       </div>
                     </div>
                   </button>
@@ -983,25 +1071,39 @@ export function AIAgentCreationPanel({
                   {formData.temperature.toFixed(1)}
                 </span>
               </div>
-              <input
-                type="range"
-                min="0"
-                max="2"
-                step="0.1"
-                value={formData.temperature}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    temperature: parseFloat(e.target.value),
-                  })
-                }
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-green-500 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
-              />
-              <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-                <span>正確 (0.0)</span>
-                <span>バランス (1.0)</span>
-                <span>創造的 (2.0)</span>
-              </div>
+              {isTemperatureFixed ? (
+                <div className="px-3 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                  このモデルの Temperature は固定値です:{" "}
+                  <span className="font-mono font-semibold">
+                    {temperatureMin.toFixed(1)}
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <input
+                    type="range"
+                    min={temperatureMin}
+                    max={temperatureMax}
+                    step="0.1"
+                    value={formData.temperature}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        temperature: parseFloat(e.target.value),
+                      })
+                    }
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-green-500 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                    <span>最小 ({temperatureMin.toFixed(1)})</span>
+                    <span>
+                      中央 ({((temperatureMin + temperatureMax) / 2).toFixed(1)}
+                      )
+                    </span>
+                    <span>最大 ({temperatureMax.toFixed(1)})</span>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Max Tokens設定 */}
@@ -1016,9 +1118,9 @@ export function AIAgentCreationPanel({
               </div>
               <input
                 type="range"
-                min="100"
-                max="8000"
-                step="100"
+                min={maxTokensMin}
+                max={maxTokensMax}
+                step="1"
                 value={formData.max_tokens}
                 onChange={(e) =>
                   setFormData({
@@ -1029,7 +1131,7 @@ export function AIAgentCreationPanel({
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-green-500 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                より長い応答には高い値を設定します
+                設定可能範囲: {maxTokensMin} - {maxTokensMax}
               </p>
             </div>
           </div>
@@ -1065,7 +1167,7 @@ export function AIAgentCreationPanel({
                     "relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-1 focus:ring-green-500 focus:ring-offset-2",
                     formData.streaming_enabled
                       ? "bg-green-500"
-                      : "bg-gray-300 dark:bg-gray-600"
+                      : "bg-gray-300 dark:bg-gray-600",
                   )}
                 >
                   <span
@@ -1073,7 +1175,7 @@ export function AIAgentCreationPanel({
                       "inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-200",
                       formData.streaming_enabled
                         ? "translate-x-6"
-                        : "translate-x-1"
+                        : "translate-x-1",
                     )}
                   />
                 </button>
@@ -1104,10 +1206,10 @@ export function AIAgentCreationPanel({
                   <div className="space-y-2">
                     {selectedServices.map((service) => {
                       const userService = userServices.find(
-                        (s) => s.service.class_name === service.service_class
+                        (s) => s.service.class_name === service.service_class,
                       );
                       const isExpanded = expandedServices.has(
-                        service.service_class
+                        service.service_class,
                       );
 
                       return (
@@ -1122,7 +1224,7 @@ export function AIAgentCreationPanel({
                                 "w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0",
                                 userService?.service.type === "built_in"
                                   ? "bg-gradient-to-br from-blue-500 to-blue-600"
-                                  : "bg-gradient-to-br from-green-500 to-green-600"
+                                  : "bg-gradient-to-br from-green-500 to-green-600",
                               )}
                             >
                               <Server className="w-5 h-5 text-white" />
@@ -1171,14 +1273,14 @@ export function AIAgentCreationPanel({
                                     updateToolSelection(
                                       service.service_class,
                                       "all",
-                                      []
+                                      [],
                                     )
                                   }
                                   className={cn(
                                     "px-3 py-1 text-xs rounded-lg transition-colors",
                                     service.tool_selection_mode === "all"
                                       ? "bg-green-500 text-white"
-                                      : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                                      : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300",
                                   )}
                                 >
                                   全ツール
@@ -1189,14 +1291,14 @@ export function AIAgentCreationPanel({
                                     updateToolSelection(
                                       service.service_class,
                                       "selected",
-                                      []
+                                      [],
                                     )
                                   }
                                   className={cn(
                                     "px-3 py-1 text-xs rounded-lg transition-colors",
                                     service.tool_selection_mode === "selected"
                                       ? "bg-green-500 text-white"
-                                      : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                                      : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300",
                                   )}
                                 >
                                   個別選択
@@ -1208,7 +1310,7 @@ export function AIAgentCreationPanel({
                                   {userService.tools.map((tool) => {
                                     const isSelected =
                                       service.selected_tools.includes(
-                                        tool.name
+                                        tool.name,
                                       );
                                     return (
                                       <button
@@ -1217,7 +1319,7 @@ export function AIAgentCreationPanel({
                                         onClick={() => {
                                           const newTools = isSelected
                                             ? service.selected_tools.filter(
-                                                (t) => t !== tool.name
+                                                (t) => t !== tool.name,
                                               )
                                             : [
                                                 ...service.selected_tools,
@@ -1226,14 +1328,14 @@ export function AIAgentCreationPanel({
                                           updateToolSelection(
                                             service.service_class,
                                             "selected",
-                                            newTools
+                                            newTools,
                                           );
                                         }}
                                         className={cn(
                                           "flex gap-2 items-center p-2 text-left rounded-lg transition-colors",
                                           isSelected
                                             ? "text-green-900 bg-green-100 dark:bg-green-900/30 dark:text-green-300"
-                                            : "text-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-400"
+                                            : "text-gray-600 bg-gray-100 dark:bg-gray-700 dark:text-gray-400",
                                         )}
                                       >
                                         {isSelected ? (
@@ -1290,7 +1392,7 @@ export function AIAgentCreationPanel({
                 "flex justify-center items-center space-x-2",
                 "text-white bg-green-600 hover:bg-green-700",
                 "disabled:bg-gray-400 dark:disabled:bg-gray-600",
-                "disabled:cursor-not-allowed"
+                "disabled:cursor-not-allowed",
               )}
             >
               {isPending ? (
@@ -1405,13 +1507,13 @@ export function UserFriendAddPanel({
                 className={cn(
                   "flex-1 px-4 py-3 bg-white rounded-lg border border-gray-300 dark:bg-gray-900 dark:border-gray-700",
                   "focus:outline-none focus:ring-1 focus:ring-green-500 focus:border-green-500",
-                  "placeholder-gray-400 text-gray-900 dark:text-white dark:placeholder-gray-500"
+                  "placeholder-gray-400 text-gray-900 dark:text-white dark:placeholder-gray-500",
                 )}
               />
               <button
                 className={cn(
                   "px-6 py-3 font-medium rounded-lg transition-all",
-                  "text-white bg-green-600 hover:bg-green-700"
+                  "text-white bg-green-600 hover:bg-green-700",
                 )}
               >
                 検索
@@ -1445,13 +1547,13 @@ export function UserFriendAddPanel({
                     className={cn(
                       "flex items-center p-4 space-x-3 w-full bg-white rounded-lg border border-gray-300",
                       "text-left transition-all dark:bg-gray-900 dark:border-gray-700",
-                      "hover:border-gray-400 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      "hover:border-gray-400 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800",
                     )}
                   >
                     <div
                       className={cn(
                         "w-10 h-10 rounded-lg flex items-center justify-center",
-                        method.bgColor
+                        method.bgColor,
                       )}
                     >
                       <Icon className={cn("w-5 h-5", method.iconColor)} />
@@ -1484,7 +1586,7 @@ export function UserFriendAddPanel({
             <button
               className={cn(
                 "px-6 py-3 w-full font-medium rounded-lg transition-all",
-                "text-white bg-green-600 hover:bg-green-700"
+                "text-white bg-green-600 hover:bg-green-700",
               )}
             >
               招待リンクを作成
