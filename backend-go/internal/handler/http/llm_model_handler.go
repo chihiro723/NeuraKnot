@@ -103,6 +103,7 @@ func (h *LLMModelHandler) CreateModel(c *gin.Context) {
 		maxTokensMin,
 		maxTokensMax,
 		supportsStreaming,
+		req.ExecutionLocation,
 		metadata,
 	)
 	if err != nil {
@@ -112,6 +113,7 @@ func (h *LLMModelHandler) CreateModel(c *gin.Context) {
 			!errors.Is(err, llmmodel.ErrInvalidDisplayName) &&
 			!errors.Is(err, llmmodel.ErrInvalidTemperatureSetting) &&
 			!errors.Is(err, llmmodel.ErrInvalidMaxTokensSetting) &&
+			!errors.Is(err, llmmodel.ErrInvalidExecutionLocation) &&
 			!errors.Is(err, llmmodel.ErrModelAlreadyExists) {
 			status = http.StatusInternalServerError
 		}
@@ -175,6 +177,7 @@ func (h *LLMModelHandler) UpdateModel(c *gin.Context) {
 		*req.MaxTokensMin,
 		*req.MaxTokensMax,
 		*req.SupportsStreaming,
+		req.ExecutionLocation,
 	)
 	if err != nil {
 		status := http.StatusInternalServerError
@@ -187,7 +190,8 @@ func (h *LLMModelHandler) UpdateModel(c *gin.Context) {
 			errors.Is(err, llmmodel.ErrInvalidModelID),
 			errors.Is(err, llmmodel.ErrInvalidDisplayName),
 			errors.Is(err, llmmodel.ErrInvalidTemperatureSetting),
-			errors.Is(err, llmmodel.ErrInvalidMaxTokensSetting):
+			errors.Is(err, llmmodel.ErrInvalidMaxTokensSetting),
+			errors.Is(err, llmmodel.ErrInvalidExecutionLocation):
 			status = http.StatusBadRequest
 		}
 		c.JSON(status, response.NewErrorResponse(err, status))

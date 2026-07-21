@@ -18,6 +18,15 @@ var (
 	ErrInvalidDisplayName        = errors.New("invalid display name")
 	ErrInvalidTemperatureSetting = errors.New("invalid temperature range setting")
 	ErrInvalidMaxTokensSetting   = errors.New("invalid max tokens range setting")
+	ErrInvalidExecutionLocation  = errors.New("invalid execution location")
+)
+
+// 実行場所（推論をどこで行うか）
+const (
+	// ExecutionLocationServer はサーバー(Python)で推論を実行する（openai/anthropic/google）
+	ExecutionLocationServer = "server"
+	// ExecutionLocationClient はブラウザ(WebLLM)で推論を実行する（webllm）
+	ExecutionLocationClient = "client"
 )
 
 type Model struct {
@@ -31,9 +40,16 @@ type Model struct {
 	MaxTokensMin      int
 	MaxTokensMax      int
 	SupportsStreaming bool
+	// ExecutionLocation は推論の実行場所（server / client）
+	ExecutionLocation string
 	Metadata          []byte
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
+}
+
+// IsClientRuntime は推論をクライアント(ブラウザ)で実行するモデルかどうかを返す。
+func (m *Model) IsClientRuntime() bool {
+	return m.ExecutionLocation == ExecutionLocationClient
 }
 
 func NewModel(
@@ -46,8 +62,14 @@ func NewModel(
 	maxTokensMin int,
 	maxTokensMax int,
 	supportsStreaming bool,
+	executionLocation string,
 	metadata []byte,
 ) (*Model, error) {
+	// 実行場所が未指定の場合はサーバー実行をデフォルトとする
+	if executionLocation == "" {
+		executionLocation = ExecutionLocationServer
+	}
+
 	now := time.Now()
 	m := &Model{
 		ID:                uuid.New(),
@@ -60,6 +82,7 @@ func NewModel(
 		MaxTokensMin:      maxTokensMin,
 		MaxTokensMax:      maxTokensMax,
 		SupportsStreaming: supportsStreaming,
+		ExecutionLocation: executionLocation,
 		Metadata:          metadata,
 		CreatedAt:         now,
 		UpdatedAt:         now,
@@ -74,9 +97,23 @@ func NewModel(
 
 func (m *Model) Validate() error {
 	switch m.Provider {
-	case "openai", "anthropic", "google":
+	case "openai", "anthropic", "google", "webllm":
 	default:
 		return ErrInvalidProvider
+	}
+
+	switch m.ExecutionLocation {
+	case ExecutionLocationServer, ExecutionLocationClient:
+	default:
+		return ErrInvalidExecutionLocation
+	}
+
+	// webllm はブラウザ実行専用、サーバー系プロバイダーはサーバー実行専用とする
+	if m.Provider == "webllm" && m.ExecutionLocation != ExecutionLocationClient {
+		return ErrInvalidExecutionLocation
+	}
+	if m.Provider != "webllm" && m.ExecutionLocation != ExecutionLocationServer {
+		return ErrInvalidExecutionLocation
 	}
 
 	if m.Model == "" {

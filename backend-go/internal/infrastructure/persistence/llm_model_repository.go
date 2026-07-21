@@ -23,7 +23,7 @@ func (r *LLMModelRepository) List(ctx context.Context, provider *string, enabled
 		SELECT
 			id, provider, model, display_name, is_enabled,
 			temperature_min, temperature_max, max_tokens_min, max_tokens_max,
-			supports_streaming, metadata, created_at, updated_at
+			supports_streaming, execution_location, metadata, created_at, updated_at
 		FROM llm_models
 		WHERE ($1::text IS NULL OR provider = $1)
 			AND ($2::boolean = false OR is_enabled = true)
@@ -64,7 +64,7 @@ func (r *LLMModelRepository) FindByID(ctx context.Context, id uuid.UUID) (*llmmo
 		SELECT
 			id, provider, model, display_name, is_enabled,
 			temperature_min, temperature_max, max_tokens_min, max_tokens_max,
-			supports_streaming, metadata, created_at, updated_at
+			supports_streaming, execution_location, metadata, created_at, updated_at
 		FROM llm_models
 		WHERE id = $1
 	`
@@ -86,7 +86,7 @@ func (r *LLMModelRepository) FindByProviderAndModel(ctx context.Context, provide
 		SELECT
 			id, provider, model, display_name, is_enabled,
 			temperature_min, temperature_max, max_tokens_min, max_tokens_max,
-			supports_streaming, metadata, created_at, updated_at
+			supports_streaming, execution_location, metadata, created_at, updated_at
 		FROM llm_models
 		WHERE provider = $1 AND model = $2
 	`
@@ -112,11 +112,11 @@ func (r *LLMModelRepository) Create(ctx context.Context, model *llmmodel.Model) 
 		INSERT INTO llm_models (
 			id, provider, model, display_name, is_enabled,
 			temperature_min, temperature_max, max_tokens_min, max_tokens_max,
-			supports_streaming, metadata, created_at, updated_at
+			supports_streaming, execution_location, metadata, created_at, updated_at
 		) VALUES (
 			$1, $2, $3, $4, $5,
 			$6, $7, $8, $9,
-			$10, $11, $12, $13
+			$10, $11, $12, $13, $14
 		)
 	`
 
@@ -133,6 +133,7 @@ func (r *LLMModelRepository) Create(ctx context.Context, model *llmmodel.Model) 
 		model.MaxTokensMin,
 		model.MaxTokensMax,
 		model.SupportsStreaming,
+		model.ExecutionLocation,
 		model.Metadata,
 		model.CreatedAt,
 		model.UpdatedAt,
@@ -160,8 +161,9 @@ func (r *LLMModelRepository) Update(ctx context.Context, model *llmmodel.Model) 
 			max_tokens_min = $6,
 			max_tokens_max = $7,
 			supports_streaming = $8,
+			execution_location = $9,
 			updated_at = NOW()
-		WHERE id = $9
+		WHERE id = $10
 	`
 
 	result, err := r.db.ExecContext(
@@ -175,6 +177,7 @@ func (r *LLMModelRepository) Update(ctx context.Context, model *llmmodel.Model) 
 		model.MaxTokensMin,
 		model.MaxTokensMax,
 		model.SupportsStreaming,
+		model.ExecutionLocation,
 		model.ID,
 	)
 	if err != nil {
@@ -247,6 +250,7 @@ func (r *LLMModelRepository) scanModel(s scanner) (*llmmodel.Model, error) {
 		&model.MaxTokensMin,
 		&model.MaxTokensMax,
 		&model.SupportsStreaming,
+		&model.ExecutionLocation,
 		&metadata,
 		&model.CreatedAt,
 		&model.UpdatedAt,

@@ -19,6 +19,7 @@ type LLMModelResponse struct {
 	MaxTokensMin      int                 `json:"max_tokens_min"`
 	MaxTokensMax      int                 `json:"max_tokens_max"`
 	SupportsStreaming bool                `json:"supports_streaming"`
+	ExecutionLocation string              `json:"execution_location"`
 	Metadata          json.RawMessage     `json:"metadata"`
 	CurrentPricing    *LLMPricingResponse `json:"current_pricing"`
 	CreatedAt         string              `json:"created_at"`
@@ -47,6 +48,7 @@ func ToLLMModelResponse(model *llmmodel.Model) *LLMModelResponse {
 		MaxTokensMin:      model.MaxTokensMin,
 		MaxTokensMax:      model.MaxTokensMax,
 		SupportsStreaming: model.SupportsStreaming,
+		ExecutionLocation: model.ExecutionLocation,
 		Metadata:          metadata,
 		CreatedAt:         model.CreatedAt.Format(time.RFC3339),
 		UpdatedAt:         model.UpdatedAt.Format(time.RFC3339),
