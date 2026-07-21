@@ -26,6 +26,8 @@ export interface LLMModel {
   max_tokens_min: number
   max_tokens_max: number
   supports_streaming: boolean
+  // 推論の実行場所（'server' = サーバー / 'client' = ブラウザ WebLLM）
+  execution_location: string
   metadata: Record<string, unknown>
   current_pricing: LLMPricing | null
   created_at: string

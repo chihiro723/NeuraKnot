@@ -104,6 +104,7 @@ interface UpdateLLMModelInput {
   max_tokens_min: number
   max_tokens_max: number
   supports_streaming: boolean
+  execution_location?: string
 }
 
 export async function updateLLMModel(
@@ -188,6 +189,7 @@ interface CreateLLMModelInput {
   max_tokens_min?: number
   max_tokens_max?: number
   supports_streaming?: boolean
+  execution_location?: string
   metadata?: Record<string, unknown>
   // 任意: モデル作成と同時に初回単価を登録する（両方指定された場合のみ）
   initial_prompt_cost_per_1m?: number
