@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { AlertCircle, ChevronDown, ChevronUp, Loader2, Plus, Save, X } from "lucide-react";
+import {
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  Plus,
+  Save,
+  X,
+} from "lucide-react";
 import { ModalOverlay } from "@/components/ui/ModalOverlay";
 import type { LLMModel, LLMPricing } from "@/lib/types/llm-model";
 import {
@@ -28,7 +36,14 @@ type ModelFormState = {
   supports_streaming: boolean;
   prompt_cost_per_1m: string;
   completion_cost_per_1m: string;
+  // webllm 用（ブラウザローカル実行）
+  execution_location: string;
+  download_size_mb: string;
+  vram_required_mb: string;
 };
+
+// ブラウザローカル(WebLLM)実行の provider 名
+const WEBLLM_PROVIDER = "webllm";
 
 const clampTemperature = (value: number) =>
   Math.min(2, Math.max(0, Math.round(value * 10) / 10));
@@ -48,6 +63,9 @@ const DEFAULT_FORM: ModelFormState = {
   supports_streaming: true,
   prompt_cost_per_1m: "",
   completion_cost_per_1m: "",
+  execution_location: "server",
+  download_size_mb: "",
+  vram_required_mb: "",
 };
 
 export function LLMModelsAdminModalClient({
@@ -68,8 +86,32 @@ export function LLMModelsAdminModalClient({
     new Set(),
   );
   const [form, setForm] = useState<ModelFormState>(DEFAULT_FORM);
+  // WebLLM の利用可能モデルID一覧（プルダウン用。タイプミス防止のため必要時に遅延ロード）
+  const [webllmModelIds, setWebllmModelIds] = useState<string[]>([]);
 
   const isModalOpen = modalMode !== null;
+  const isWebLLMForm = form.provider === WEBLLM_PROVIDER;
+
+  // webllm 選択時に prebuiltAppConfig からモデルID一覧を取得
+  useEffect(() => {
+    if (!isWebLLMForm || webllmModelIds.length > 0) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const { prebuiltAppConfig } = await import("@mlc-ai/web-llm");
+        if (cancelled) return;
+        const ids = prebuiltAppConfig.model_list
+          .map((m) => m.model_id)
+          .sort((a, b) => a.localeCompare(b));
+        setWebllmModelIds(ids);
+      } catch (e) {
+        console.error("Failed to load WebLLM model list:", e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isWebLLMForm, webllmModelIds.length]);
 
   const handleCloseModal = () => {
     if (isPending) return;
@@ -107,6 +149,8 @@ export function LLMModelsAdminModalClient({
         return "Anthropic";
       case "google":
         return "Google";
+      case WEBLLM_PROVIDER:
+        return "ブラウザローカル (WebLLM)";
       default:
         return provider;
     }
@@ -198,6 +242,15 @@ export function LLMModelsAdminModalClient({
       completion_cost_per_1m: model.current_pricing
         ? String(model.current_pricing.completion_cost_per_1m)
         : "",
+      execution_location: model.execution_location || "server",
+      download_size_mb:
+        model.metadata && typeof model.metadata.download_size_mb === "number"
+          ? String(model.metadata.download_size_mb)
+          : "",
+      vram_required_mb:
+        model.metadata && typeof model.metadata.vram_required_mb === "number"
+          ? String(model.metadata.vram_required_mb)
+          : "",
     });
   };
 
@@ -213,6 +266,8 @@ export function LLMModelsAdminModalClient({
           max_tokens_min: number;
           max_tokens_max: number;
           supports_streaming: boolean;
+          execution_location: string;
+          metadata?: Record<string, unknown>;
         };
       } => {
     if (!form.model.trim() || !form.display_name.trim()) {
@@ -233,7 +288,11 @@ export function LLMModelsAdminModalClient({
       return { error: "temperature/max_tokens には数値を入力してください" };
     }
 
-    if (temperatureMin < 0 || temperatureMax > 2 || temperatureMin > temperatureMax) {
+    if (
+      temperatureMin < 0 ||
+      temperatureMax > 2 ||
+      temperatureMin > temperatureMax
+    ) {
       return { error: "temperature の範囲が不正です（0 <= min <= max <= 2）" };
     }
 
@@ -246,6 +305,31 @@ export function LLMModelsAdminModalClient({
       return { error: "max_tokens の範囲が不正です（1 <= min <= max）" };
     }
 
+    const isWebLLM = form.provider === WEBLLM_PROVIDER;
+    const executionLocation = isWebLLM ? "client" : "server";
+
+    // webllm はブラウザ実行・ツール未対応・無料。関連メタデータを付与する。
+    let metadata: Record<string, unknown> | undefined;
+    if (isWebLLM) {
+      metadata = { supports_tools: false };
+      const dl = Number(form.download_size_mb);
+      if (
+        form.download_size_mb.trim() !== "" &&
+        Number.isFinite(dl) &&
+        dl >= 0
+      ) {
+        metadata.download_size_mb = dl;
+      }
+      const vram = Number(form.vram_required_mb);
+      if (
+        form.vram_required_mb.trim() !== "" &&
+        Number.isFinite(vram) &&
+        vram >= 0
+      ) {
+        metadata.vram_required_mb = vram;
+      }
+    }
+
     return {
       data: {
         provider: form.provider,
@@ -256,6 +340,8 @@ export function LLMModelsAdminModalClient({
         max_tokens_min: maxTokensMin,
         max_tokens_max: maxTokensMax,
         supports_streaming: form.supports_streaming,
+        execution_location: executionLocation,
+        ...(metadata ? { metadata } : {}),
       },
     };
   };
@@ -367,7 +453,9 @@ export function LLMModelsAdminModalClient({
       prompt < 0 ||
       completion < 0
     ) {
-      return { error: "単価には0以上の数値を入力してください（USD / 1Mトークン）" };
+      return {
+        error: "単価には0以上の数値を入力してください（USD / 1Mトークン）",
+      };
     }
 
     return { value: { prompt, completion } };
@@ -423,7 +511,9 @@ export function LLMModelsAdminModalClient({
 
       const editingModel = models.find((entry) => entry.id === editingModelID);
 
-      const result = await updateLLMModel(editingModelID, parsed.data);
+      // metadata は編集フローでは更新しない（作成時のみ）ため除外する
+      const { metadata: _ignoredMetadata, ...updateData } = parsed.data;
+      const result = await updateLLMModel(editingModelID, updateData);
       if (!result.success) {
         setModalError(result.error || "モデル編集に失敗しました");
         setSavingModal(null);
@@ -431,7 +521,8 @@ export function LLMModelsAdminModalClient({
       }
 
       // 単価の保存（変更時のみ）。既存単価があれば改定（版追加）、無ければ新規登録。
-      let nextPricing: LLMPricing | null = editingModel?.current_pricing ?? null;
+      let nextPricing: LLMPricing | null =
+        editingModel?.current_pricing ?? null;
       if (pricingValue) {
         const current = editingModel?.current_pricing ?? null;
         const changed =
@@ -488,6 +579,7 @@ export function LLMModelsAdminModalClient({
                 max_tokens_min: parsed.data.max_tokens_min,
                 max_tokens_max: parsed.data.max_tokens_max,
                 supports_streaming: parsed.data.supports_streaming,
+                execution_location: parsed.data.execution_location,
                 current_pricing: nextPricing,
               }
             : entry,
@@ -517,7 +609,7 @@ export function LLMModelsAdminModalClient({
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-between items-start gap-3">
+      <div className="flex gap-3 justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             LLMモデル管理
@@ -533,7 +625,7 @@ export function LLMModelsAdminModalClient({
           type="button"
           onClick={handleOpenCreateModal}
           disabled={isPending}
-          className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex gap-2 items-center px-3 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Plus className="w-4 h-4" />
           モデル追加
@@ -589,12 +681,22 @@ export function LLMModelsAdminModalClient({
                           >
                             {model.display_name}
                           </p>
-                          {!model.current_pricing && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-                              <AlertCircle className="w-3 h-3" />
-                              単価未設定
+                          {model.execution_location === "client" ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                              ブラウザ実行・無料
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-900/40 dark:text-sky-300">
+                              サーバー実行
                             </span>
                           )}
+                          {model.execution_location !== "client" &&
+                            !model.current_pricing && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                                <AlertCircle className="w-3 h-3" />
+                                単価未設定
+                              </span>
+                            )}
                         </div>
 
                         <button
@@ -622,7 +724,9 @@ export function LLMModelsAdminModalClient({
                               }`}
                             >
                               表示名:{" "}
-                              <span className="font-medium">{model.display_name}</span>
+                              <span className="font-medium">
+                                {model.display_name}
+                              </span>
                             </p>
                             <p
                               className={`text-xs ${
@@ -672,7 +776,9 @@ export function LLMModelsAdminModalClient({
                               単価 (USD/1M):{" "}
                               {model.current_pricing ? (
                                 <span className="font-medium">
-                                  入力 ${model.current_pricing.prompt_cost_per_1m} / 出力 $
+                                  入力 $
+                                  {model.current_pricing.prompt_cost_per_1m} /
+                                  出力 $
                                   {model.current_pricing.completion_cost_per_1m}
                                 </span>
                               ) : (
@@ -684,45 +790,45 @@ export function LLMModelsAdminModalClient({
                           </div>
 
                           <div className="flex flex-wrap gap-2 justify-end items-center">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEditModal(model)}
-                            disabled={isPending}
-                            className="inline-flex min-w-[90px] items-center justify-center rounded-md bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 transition-colors duration-150 hover:bg-blue-200 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-gray-900 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-900/70 dark:hover:text-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            編集
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleToggle(model)}
-                            disabled={isPending}
-                            className={`inline-flex min-w-[90px] items-center justify-center rounded-md px-3 py-1.5 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-gray-900 ${
-                              model.is_enabled
-                                ? "bg-amber-100 text-amber-700 hover:bg-amber-200 hover:text-amber-800 focus-visible:ring-amber-500 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-900/70 dark:hover:text-amber-200"
-                                : "bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800 focus-visible:ring-green-500 dark:bg-green-900/40 dark:text-green-300 dark:hover:bg-green-900/70 dark:hover:text-green-200"
-                            } disabled:cursor-not-allowed disabled:opacity-50`}
-                          >
-                            {isUpdating ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : model.is_enabled ? (
-                              "無効化"
-                            ) : (
-                              "有効化"
-                            )}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(model)}
-                            disabled={isPending}
-                            className="inline-flex min-w-[90px] items-center justify-center rounded-md bg-red-100 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors duration-150 hover:bg-red-200 hover:text-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-gray-900 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/70 dark:hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50"
-                            title="デバッグ用途の物理削除"
-                          >
-                            {isDeleting ? (
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                            ) : (
-                              "削除"
-                            )}
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditModal(model)}
+                              disabled={isPending}
+                              className="inline-flex min-w-[90px] items-center justify-center rounded-md bg-blue-100 px-3 py-1.5 text-xs font-medium text-blue-700 transition-colors duration-150 hover:bg-blue-200 hover:text-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-gray-900 dark:bg-blue-900/40 dark:text-blue-300 dark:hover:bg-blue-900/70 dark:hover:text-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              編集
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleToggle(model)}
+                              disabled={isPending}
+                              className={`inline-flex min-w-[90px] items-center justify-center rounded-md px-3 py-1.5 text-xs font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-gray-900 ${
+                                model.is_enabled
+                                  ? "bg-amber-100 text-amber-700 hover:bg-amber-200 hover:text-amber-800 focus-visible:ring-amber-500 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-900/70 dark:hover:text-amber-200"
+                                  : "bg-green-100 text-green-700 hover:bg-green-200 hover:text-green-800 focus-visible:ring-green-500 dark:bg-green-900/40 dark:text-green-300 dark:hover:bg-green-900/70 dark:hover:text-green-200"
+                              } disabled:cursor-not-allowed disabled:opacity-50`}
+                            >
+                              {isUpdating ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : model.is_enabled ? (
+                                "無効化"
+                              ) : (
+                                "有効化"
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(model)}
+                              disabled={isPending}
+                              className="inline-flex min-w-[90px] items-center justify-center rounded-md bg-red-100 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors duration-150 hover:bg-red-200 hover:text-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-1 dark:focus-visible:ring-offset-gray-900 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/70 dark:hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50"
+                              title="デバッグ用途の物理削除"
+                            >
+                              {isDeleting ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                "削除"
+                              )}
+                            </button>
                           </div>
                         </div>
                       )}
@@ -739,235 +845,333 @@ export function LLMModelsAdminModalClient({
         onClose={handleCloseModal}
         closeOnEscape={false}
       >
-          <div
-            className="w-full max-w-3xl max-h-[calc(100dvh-2rem)] overflow-y-auto bg-white rounded-2xl border border-gray-200 shadow-2xl dark:bg-gray-900 md:rounded-3xl dark:border-gray-700"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="relative px-4 pt-6 pb-4 md:px-8 md:pt-8 md:pb-6">
-              <button
-                onClick={handleCloseModal}
-                disabled={isPending}
-                className="absolute top-4 md:top-6 right-4 md:right-6 p-1.5 md:p-2 text-gray-400 rounded-full transition-colors hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
-              >
-                <X className="w-4 h-4 md:w-5 md:h-5" />
-              </button>
-              <h2 className="text-lg font-bold text-gray-900 md:text-2xl dark:text-white">
-                {modalMode === "create" ? "LLMモデルを追加" : "LLMモデルを編集"}
-              </h2>
-              <p className="mt-1 text-xs text-gray-600 md:text-sm dark:text-gray-400">
-                provider / model / 表示名 / 範囲 / ストリーミング設定を編集できます
-              </p>
-            </div>
+        <div
+          className="w-full max-w-3xl max-h-[calc(100dvh-2rem)] overflow-y-auto bg-white rounded-2xl border border-gray-200 shadow-2xl dark:bg-gray-900 md:rounded-3xl dark:border-gray-700"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="relative px-4 pt-6 pb-4 md:px-8 md:pt-8 md:pb-6">
+            <button
+              onClick={handleCloseModal}
+              disabled={isPending}
+              className="absolute top-4 md:top-6 right-4 md:right-6 p-1.5 md:p-2 text-gray-400 rounded-full transition-colors hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
+            >
+              <X className="w-4 h-4 md:w-5 md:h-5" />
+            </button>
+            <h2 className="text-lg font-bold text-gray-900 md:text-2xl dark:text-white">
+              {modalMode === "create" ? "LLMモデルを追加" : "LLMモデルを編集"}
+            </h2>
+            <p className="mt-1 text-xs text-gray-600 md:text-sm dark:text-gray-400">
+              provider / model / 表示名 / 範囲 /
+              ストリーミング設定を編集できます
+            </p>
+          </div>
 
-            <div className="px-4 pb-6 space-y-4 md:px-8 md:pb-8">
-              {modalError && (
-                <div className="p-3 bg-red-50 rounded-lg border border-red-200 md:p-4 md:rounded-xl dark:bg-red-900/20 dark:border-red-800">
-                  <p className="text-xs text-red-600 md:text-sm dark:text-red-400">
-                    {modalError}
-                  </p>
-                </div>
-              )}
+          <div className="px-4 pb-6 space-y-4 md:px-8 md:pb-8">
+            {modalError && (
+              <div className="p-3 bg-red-50 rounded-lg border border-red-200 md:p-4 md:rounded-xl dark:bg-red-900/20 dark:border-red-800">
+                <p className="text-xs text-red-600 md:text-sm dark:text-red-400">
+                  {modalError}
+                </p>
+              </div>
+            )}
 
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <div className="space-y-1">
-                  <label className="text-[11px] text-gray-500 dark:text-gray-400">
-                    プロバイダー
-                  </label>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div className="space-y-1">
+                <label className="text-[11px] text-gray-500 dark:text-gray-400">
+                  プロバイダー
+                </label>
+                <select
+                  value={form.provider}
+                  onChange={(e) => {
+                    const nextProvider = e.target.value;
+                    setForm((prev) => ({
+                      ...prev,
+                      provider: nextProvider,
+                      // webllm はブラウザ実行に固定。切替時にモデルIDはリセットする。
+                      execution_location:
+                        nextProvider === WEBLLM_PROVIDER ? "client" : "server",
+                      model:
+                        nextProvider === WEBLLM_PROVIDER &&
+                        prev.provider !== WEBLLM_PROVIDER
+                          ? ""
+                          : prev.model,
+                    }));
+                  }}
+                  className="px-3 py-2 w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                >
+                  <option value="openai">OpenAI</option>
+                  <option value="anthropic">Anthropic</option>
+                  <option value="google">Google</option>
+                  <option value={WEBLLM_PROVIDER}>
+                    ブラウザローカル (WebLLM)
+                  </option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[11px] text-gray-500 dark:text-gray-400">
+                  モデルID
+                </label>
+                {isWebLLMForm ? (
                   <select
-                    value={form.provider}
+                    value={form.model}
                     onChange={(e) =>
-                      setForm((prev) => ({ ...prev, provider: e.target.value }))
+                      setForm((prev) => ({ ...prev, model: e.target.value }))
                     }
-                    className="w-full px-3 py-2 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                    className="px-3 py-2 w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                   >
-                    <option value="openai">OpenAI</option>
-                    <option value="anthropic">Anthropic</option>
-                    <option value="google">Google</option>
+                    <option value="">
+                      {webllmModelIds.length === 0
+                        ? "モデル一覧を読み込み中..."
+                        : "モデルを選択"}
+                    </option>
+                    {/* 編集時に一覧未取得でも現在値を選択肢として保持 */}
+                    {form.model && !webllmModelIds.includes(form.model) && (
+                      <option value={form.model}>{form.model}</option>
+                    )}
+                    {webllmModelIds.map((id) => (
+                      <option key={id} value={id}>
+                        {id}
+                      </option>
+                    ))}
                   </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[11px] text-gray-500 dark:text-gray-400">
-                    モデルID
-                  </label>
+                ) : (
                   <input
                     value={form.model}
                     onChange={(e) =>
                       setForm((prev) => ({ ...prev, model: e.target.value }))
                     }
                     placeholder="model id (例: gpt-4.1)"
-                    className="w-full px-3 py-2 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                    className="px-3 py-2 w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                   />
-                </div>
-                <div className="space-y-1 md:col-span-2">
-                  <label className="text-[11px] text-gray-500 dark:text-gray-400">
-                    表示名
-                  </label>
-                  <input
-                    value={form.display_name}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, display_name: e.target.value }))
-                    }
-                    placeholder="表示名 (例: GPT-4.1)"
-                    className="w-full px-3 py-2 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                  />
-                </div>
-                <div className="p-3 space-y-2 rounded-lg border border-gray-300 dark:border-gray-700 md:col-span-2">
-                  <p className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                    Temperature範囲
-                  </p>
-                  <div className="relative py-3">
-                    <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-gray-200 dark:bg-gray-700" />
-                    <div
-                      className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-green-500"
-                      style={{
-                        left: `${minPercent}%`,
-                        right: `${100 - maxPercent}%`,
-                      }}
-                    />
-                    <input
-                      type="range"
-                      min={0}
-                      max={2}
-                      step={0.1}
-                      value={temperatureMinValue}
-                      onChange={(e) =>
-                        handleTemperatureSliderChange(
-                          "temperature_min",
-                          e.target.value,
-                        )
-                      }
-                      className="dual-range absolute inset-0 z-20 w-full h-full"
-                    />
-                    <input
-                      type="range"
-                      min={0}
-                      max={2}
-                      step={0.1}
-                      value={temperatureMaxValue}
-                      onChange={(e) =>
-                        handleTemperatureSliderChange(
-                          "temperature_max",
-                          e.target.value,
-                        )
-                      }
-                      className="dual-range absolute inset-0 z-30 w-full h-full"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    <input
-                      type="number"
-                      min={0}
-                      max={2}
-                      step={0.1}
-                      value={form.temperature_min}
-                      onChange={(e) =>
-                        handleTemperatureInputChange(
-                          "temperature_min",
-                          e.target.value,
-                        )
-                      }
-                      placeholder="temperature min"
-                      className="w-full px-3 py-2 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                    />
-                    <input
-                      type="number"
-                      min={0}
-                      max={2}
-                      step={0.1}
-                      value={form.temperature_max}
-                      onChange={(e) =>
-                        handleTemperatureInputChange(
-                          "temperature_max",
-                          e.target.value,
-                        )
-                      }
-                      placeholder="temperature max"
-                      className="w-full px-3 py-2 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                    />
-                  </div>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                    現在値: {temperatureMinValue.toFixed(1)} -{" "}
-                    {temperatureMaxValue.toFixed(1)}
-                  </p>
-                </div>
-                <div className="p-3 space-y-2 rounded-lg border border-gray-300 dark:border-gray-700 md:col-span-2">
-                  <p className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                    トークン範囲
-                  </p>
-                  <div className="relative py-3">
-                    <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-gray-200 dark:bg-gray-700" />
-                    <div
-                      className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-green-500"
-                      style={{
-                        left: `${tokenMinPercent}%`,
-                        right: `${100 - tokenMaxPercent}%`,
-                      }}
-                    />
-                    <input
-                      type="range"
-                      min={MIN_TOKENS_LIMIT}
-                      max={MAX_TOKENS_LIMIT}
-                      step={1}
-                      value={tokenMinValue}
-                      onChange={(e) =>
-                        handleTokensSliderChange("max_tokens_min", e.target.value)
-                      }
-                      className="dual-range absolute inset-0 z-20 w-full h-full"
-                    />
-                    <input
-                      type="range"
-                      min={MIN_TOKENS_LIMIT}
-                      max={MAX_TOKENS_LIMIT}
-                      step={1}
-                      value={tokenMaxValue}
-                      onChange={(e) =>
-                        handleTokensSliderChange("max_tokens_max", e.target.value)
-                      }
-                      className="dual-range absolute inset-0 z-30 w-full h-full"
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    <input
-                      type="number"
-                      min={MIN_TOKENS_LIMIT}
-                      step={1}
-                      value={form.max_tokens_min}
-                      onChange={(e) =>
-                        handleTokensInputChange("max_tokens_min", e.target.value)
-                      }
-                      placeholder="max_tokens min"
-                      className="w-full px-3 py-2 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                    />
-                    <input
-                      type="number"
-                      min={MIN_TOKENS_LIMIT}
-                      step={1}
-                      value={form.max_tokens_max}
-                      onChange={(e) =>
-                        handleTokensInputChange("max_tokens_max", e.target.value)
-                      }
-                      placeholder="max_tokens max"
-                      className="w-full px-3 py-2 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                    />
-                  </div>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                    現在値: {tokenMinValue} - {tokenMaxValue}
-                  </p>
-                </div>
-                <label className="inline-flex items-center gap-2 px-3 py-2 text-sm text-gray-700 bg-white rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300 md:col-span-2">
-                  <input
-                    type="checkbox"
-                    checked={form.supports_streaming}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        supports_streaming: e.target.checked,
-                      }))
-                    }
-                  />
-                  ストリーミング対応
+                )}
+              </div>
+              <div className="space-y-1 md:col-span-2">
+                <label className="text-[11px] text-gray-500 dark:text-gray-400">
+                  表示名
                 </label>
+                <input
+                  value={form.display_name}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      display_name: e.target.value,
+                    }))
+                  }
+                  placeholder="表示名 (例: GPT-4.1)"
+                  className="px-3 py-2 w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                />
+              </div>
+              <div className="p-3 space-y-2 rounded-lg border border-gray-300 dark:border-gray-700 md:col-span-2">
+                <p className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  Temperature範囲
+                </p>
+                <div className="relative py-3">
+                  <div className="absolute inset-x-0 top-1/2 h-1 bg-gray-200 rounded-full -translate-y-1/2 dark:bg-gray-700" />
+                  <div
+                    className="absolute top-1/2 h-1 bg-green-500 rounded-full -translate-y-1/2"
+                    style={{
+                      left: `${minPercent}%`,
+                      right: `${100 - maxPercent}%`,
+                    }}
+                  />
+                  <input
+                    type="range"
+                    min={0}
+                    max={2}
+                    step={0.1}
+                    value={temperatureMinValue}
+                    onChange={(e) =>
+                      handleTemperatureSliderChange(
+                        "temperature_min",
+                        e.target.value,
+                      )
+                    }
+                    className="absolute inset-0 z-20 w-full h-full dual-range"
+                  />
+                  <input
+                    type="range"
+                    min={0}
+                    max={2}
+                    step={0.1}
+                    value={temperatureMaxValue}
+                    onChange={(e) =>
+                      handleTemperatureSliderChange(
+                        "temperature_max",
+                        e.target.value,
+                      )
+                    }
+                    className="absolute inset-0 z-30 w-full h-full dual-range"
+                  />
+                </div>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <input
+                    type="number"
+                    min={0}
+                    max={2}
+                    step={0.1}
+                    value={form.temperature_min}
+                    onChange={(e) =>
+                      handleTemperatureInputChange(
+                        "temperature_min",
+                        e.target.value,
+                      )
+                    }
+                    placeholder="temperature min"
+                    className="px-3 py-2 w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                  />
+                  <input
+                    type="number"
+                    min={0}
+                    max={2}
+                    step={0.1}
+                    value={form.temperature_max}
+                    onChange={(e) =>
+                      handleTemperatureInputChange(
+                        "temperature_max",
+                        e.target.value,
+                      )
+                    }
+                    placeholder="temperature max"
+                    className="px-3 py-2 w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                  />
+                </div>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                  現在値: {temperatureMinValue.toFixed(1)} -{" "}
+                  {temperatureMaxValue.toFixed(1)}
+                </p>
+              </div>
+              <div className="p-3 space-y-2 rounded-lg border border-gray-300 dark:border-gray-700 md:col-span-2">
+                <p className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  トークン範囲
+                </p>
+                <div className="relative py-3">
+                  <div className="absolute inset-x-0 top-1/2 h-1 bg-gray-200 rounded-full -translate-y-1/2 dark:bg-gray-700" />
+                  <div
+                    className="absolute top-1/2 h-1 bg-green-500 rounded-full -translate-y-1/2"
+                    style={{
+                      left: `${tokenMinPercent}%`,
+                      right: `${100 - tokenMaxPercent}%`,
+                    }}
+                  />
+                  <input
+                    type="range"
+                    min={MIN_TOKENS_LIMIT}
+                    max={MAX_TOKENS_LIMIT}
+                    step={1}
+                    value={tokenMinValue}
+                    onChange={(e) =>
+                      handleTokensSliderChange("max_tokens_min", e.target.value)
+                    }
+                    className="absolute inset-0 z-20 w-full h-full dual-range"
+                  />
+                  <input
+                    type="range"
+                    min={MIN_TOKENS_LIMIT}
+                    max={MAX_TOKENS_LIMIT}
+                    step={1}
+                    value={tokenMaxValue}
+                    onChange={(e) =>
+                      handleTokensSliderChange("max_tokens_max", e.target.value)
+                    }
+                    className="absolute inset-0 z-30 w-full h-full dual-range"
+                  />
+                </div>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <input
+                    type="number"
+                    min={MIN_TOKENS_LIMIT}
+                    step={1}
+                    value={form.max_tokens_min}
+                    onChange={(e) =>
+                      handleTokensInputChange("max_tokens_min", e.target.value)
+                    }
+                    placeholder="max_tokens min"
+                    className="px-3 py-2 w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                  />
+                  <input
+                    type="number"
+                    min={MIN_TOKENS_LIMIT}
+                    step={1}
+                    value={form.max_tokens_max}
+                    onChange={(e) =>
+                      handleTokensInputChange("max_tokens_max", e.target.value)
+                    }
+                    placeholder="max_tokens max"
+                    className="px-3 py-2 w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                  />
+                </div>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                  現在値: {tokenMinValue} - {tokenMaxValue}
+                </p>
+              </div>
+              <label className="inline-flex gap-2 items-center px-3 py-2 text-sm text-gray-700 bg-white rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300 md:col-span-2">
+                <input
+                  type="checkbox"
+                  checked={form.supports_streaming}
+                  onChange={(e) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      supports_streaming: e.target.checked,
+                    }))
+                  }
+                />
+                ストリーミング対応
+              </label>
 
+              {isWebLLMForm ? (
+                <div className="p-3 space-y-3 rounded-lg border border-emerald-300 bg-emerald-50/60 dark:border-emerald-800 dark:bg-emerald-950/30 md:col-span-2">
+                  <div>
+                    <p className="text-xs font-medium text-emerald-800 dark:text-emerald-300">
+                      ブラウザローカル実行（WebLLM）
+                    </p>
+                    <p className="text-[11px] text-emerald-700 dark:text-emerald-400">
+                      推論はユーザーのブラウザ内（WebGPU）で実行され、サーバーコストは
+                      <span className="font-semibold">$0（無料）</span>
+                      です。ツール実行は現在未対応です。
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-emerald-700 dark:text-emerald-400">
+                        ダウンロードサイズ (MB・任意)
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        step="1"
+                        value={form.download_size_mb}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            download_size_mb: e.target.value,
+                          }))
+                        }
+                        placeholder="例: 900"
+                        className="px-3 py-2 w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[11px] text-emerald-700 dark:text-emerald-400">
+                        必要VRAM (MB・任意)
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        step="1"
+                        value={form.vram_required_mb}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            vram_required_mb: e.target.value,
+                          }))
+                        }
+                        placeholder="例: 1500"
+                        className="px-3 py-2 w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
                 <div className="p-3 space-y-3 rounded-lg border border-gray-300 dark:border-gray-700 md:col-span-2">
                   <div>
                     <p className="text-xs font-medium text-gray-700 dark:text-gray-300">
@@ -996,7 +1200,7 @@ export function LLMModelsAdminModalClient({
                           }))
                         }
                         placeholder="例: 2.50"
-                        className="w-full px-3 py-2 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                        className="px-3 py-2 w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                       />
                     </div>
                     <div className="space-y-1">
@@ -1015,34 +1219,35 @@ export function LLMModelsAdminModalClient({
                           }))
                         }
                         placeholder="例: 10.00"
-                        className="w-full px-3 py-2 text-sm text-gray-900 bg-white rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                        className="px-3 py-2 w-full text-sm text-gray-900 bg-white rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
                       />
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
+            </div>
 
-              <div className="sticky bottom-0 z-10 flex justify-end -mx-4 md:-mx-8 -mb-6 md:-mb-8 mt-2 px-4 py-3 md:px-8 md:py-4 border-t border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 backdrop-blur rounded-b-2xl md:rounded-b-3xl">
-                <button
-                  onClick={handleSubmitModal}
-                  disabled={isPending}
-                  className="inline-flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-green-500 rounded-xl shadow-lg transition-all hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-50 shadow-green-500/30"
-                >
-                  {savingModal ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>保存中...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      <span>保存</span>
-                    </>
-                  )}
-                </button>
-              </div>
+            <div className="flex sticky bottom-0 z-10 justify-end px-4 py-3 -mx-4 mt-2 -mb-6 rounded-b-2xl border-t border-gray-200 backdrop-blur md:-mx-8 md:-mb-8 md:px-8 md:py-4 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 md:rounded-b-3xl">
+              <button
+                onClick={handleSubmitModal}
+                disabled={isPending}
+                className="inline-flex items-center justify-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-green-500 rounded-xl shadow-lg transition-all hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-50 shadow-green-500/30"
+              >
+                {savingModal ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>保存中...</span>
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-4 h-4" />
+                    <span>保存</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
+        </div>
       </ModalOverlay>
       <style jsx>{`
         .dual-range {
