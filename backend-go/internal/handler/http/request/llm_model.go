@@ -12,6 +12,8 @@ type CreateLLMModelRequest struct {
 	MaxTokensMin      *int            `json:"max_tokens_min,omitempty"`
 	MaxTokensMax      *int            `json:"max_tokens_max,omitempty"`
 	SupportsStreaming *bool           `json:"supports_streaming,omitempty"`
+	// ExecutionLocation は推論の実行場所（server / client）。未指定時は server。
+	ExecutionLocation string          `json:"execution_location,omitempty"`
 	Metadata          json.RawMessage `json:"metadata,omitempty"`
 
 	// 任意: モデル作成と同時に初回単価を登録する（両方指定された場合のみ）
@@ -32,4 +34,6 @@ type UpdateLLMModelRequest struct {
 	MaxTokensMin      *int     `json:"max_tokens_min" binding:"required"`
 	MaxTokensMax      *int     `json:"max_tokens_max" binding:"required"`
 	SupportsStreaming *bool    `json:"supports_streaming" binding:"required"`
+	// ExecutionLocation は推論の実行場所（server / client）。未指定時は既存値を維持。
+	ExecutionLocation string `json:"execution_location,omitempty"`
 }

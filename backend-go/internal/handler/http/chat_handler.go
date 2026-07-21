@@ -184,6 +184,37 @@ func (h *ChatHandler) SendMessage(c *gin.Context) {
 		return
 	}
 
+	// クライアント実行型プロバイダー(webllm)の場合は、サーバーでは推論せず
+	// ブラウザ(WebLLM)で推論するための材料を返す。実際の保存は
+	// POST /conversations/:id/messages/complete で行う。
+	if agent.Provider.IsClientRuntime() {
+		prep, prepErr := h.chatUsecase.PrepareClientInference(c.Request.Context(), userID, conversationID, req.Content)
+		if prepErr != nil {
+			log.Printf("ERROR: Failed to prepare client inference: %v", prepErr)
+			status := mapChatErrorStatus(prepErr)
+			c.JSON(status, response.NewErrorResponse(prepErr, status))
+			return
+		}
+
+		msgs := make([]response.ClientInferenceMessage, 0, len(prep.Messages))
+		for _, m := range prep.Messages {
+			msgs = append(msgs, response.ClientInferenceMessage{Role: m.Role, Content: m.Content})
+		}
+
+		c.JSON(http.StatusOK, response.ClientInferenceResponse{
+			Runtime:      "client",
+			UserMessage:  response.ToMessageResponse(prep.UserMessage),
+			SystemPrompt: prep.SystemPrompt,
+			Messages:     msgs,
+			Provider:     prep.Provider,
+			Model:        prep.Model,
+			Temperature:  prep.Temperature,
+			MaxTokens:    prep.MaxTokens,
+			AgentName:    prep.AgentName,
+		})
+		return
+	}
+
 	// ストリーミングが有効な場合はストリーミングレスポンスを返す
 	if agent.StreamingEnabled {
 		// ストリーミング開始
@@ -242,6 +273,64 @@ func (h *ChatHandler) SendMessage(c *gin.Context) {
 		AIMessage:   response.ToMessageResponse(result.AIMessage),
 		Metadata:    result.Metadata,
 	})
+}
+
+// CompleteClientInference はクライアント(ブラウザ WebLLM)で生成された AI 応答を保存する。
+// @Summary クライアント推論結果の保存
+// @Description ブラウザ(WebLLM)で生成された AI 応答を DB に保存します（ローカル推論はコスト$0）
+// @Tags Chat
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "会話ID"
+// @Param request body request.CompleteClientInferenceRequest true "生成された応答"
+// @Success 200 {object} response.MessageResponse "保存成功"
+// @Failure 400 {object} response.ErrorResponse "バリデーションエラー"
+// @Failure 401 {object} response.ErrorResponse "認証エラー"
+// @Failure 500 {object} response.ErrorResponse "サーバーエラー"
+// @Router /api/v1/conversations/{id}/messages/complete [post]
+func (h *ChatHandler) CompleteClientInference(c *gin.Context) {
+	user, exists := middleware.GetUserFromContext(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, response.NewUnauthorizedErrorResponse("User not found in context"))
+		return
+	}
+
+	userID, err := uuid.Parse(string(user.ID))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid user ID"))
+		return
+	}
+
+	conversationID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse("Invalid conversation ID"))
+		return
+	}
+
+	var req request.CompleteClientInferenceRequest
+	if bindErr := c.ShouldBindJSON(&req); bindErr != nil {
+		c.JSON(http.StatusBadRequest, response.NewValidationErrorResponse(bindErr.Error()))
+		return
+	}
+
+	aiMessage, err := h.chatUsecase.CompleteClientInference(
+		c.Request.Context(),
+		userID,
+		conversationID,
+		req.Content,
+		req.PromptTokens,
+		req.CompletionTokens,
+		req.ProcessingTimeMs,
+	)
+	if err != nil {
+		log.Printf("ERROR: Failed to complete client inference: %v", err)
+		status := mapChatErrorStatus(err)
+		c.JSON(status, response.NewErrorResponse(err, status))
+		return
+	}
+
+	c.JSON(http.StatusOK, response.ToMessageResponse(aiMessage))
 }
 
 // SendAgentIntroduction はAIエージェントが自己紹介メッセージを送信

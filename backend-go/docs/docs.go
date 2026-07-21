@@ -1427,6 +1427,70 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/conversations/{id}/messages/complete": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "ブラウザ(WebLLM)で生成された AI 応答を DB に保存します（ローカル推論はコスト$0）",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "クライアント推論結果の保存",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "会話ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "生成された応答",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_request.CompleteClientInferenceRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "保存成功",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "バリデーションエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "認証エラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "サーバーエラー",
+                        "schema": {
+                            "$ref": "#/definitions/backend-go_internal_handler_http_response.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/conversations/{id}/suggested-questions": {
             "get": {
                 "security": [
@@ -3630,6 +3694,29 @@ const docTemplate = `{
                 "tier": {
                     "description": "free, pro, max",
                     "type": "string"
+                }
+            }
+        },
+        "backend-go_internal_handler_http_request.CompleteClientInferenceRequest": {
+            "type": "object",
+            "required": [
+                "content"
+            ],
+            "properties": {
+                "completion_tokens": {
+                    "type": "integer"
+                },
+                "content": {
+                    "description": "Content は生成された AI 応答本文",
+                    "type": "string"
+                },
+                "processing_time_ms": {
+                    "description": "ProcessingTimeMs は生成にかかった時間（任意）",
+                    "type": "integer"
+                },
+                "prompt_tokens": {
+                    "description": "PromptTokens / CompletionTokens は WebLLM が返す使用トークン数（任意）",
+                    "type": "integer"
                 }
             }
         },

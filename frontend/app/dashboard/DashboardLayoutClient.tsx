@@ -3,6 +3,7 @@
 import { AppNavigation } from "@/components/layout/AppNavigation";
 import { useIsMobile, useIsDetailPage } from "@/lib/hooks/useResponsive";
 import { useAutoTokenRefresh } from "@/lib/hooks/useAutoTokenRefresh";
+import { LocalLLMProvider } from "@/lib/contexts/LocalLLMContext";
 import { cn } from "@/lib/utils/cn";
 import type { Profile } from "@/lib/types";
 import type { AuthUser } from "@/lib/types/auth";
@@ -32,21 +33,23 @@ export function DashboardLayoutClient({
   const showNavigation = !(isMobile && isDetailPage);
 
   return (
-    <div className="flex overflow-hidden h-[var(--app-dvh)] md:h-screen bg-gray-50 dark:bg-gray-950">
-      {/* ナビゲーション（モバイル詳細画面では非表示） */}
-      {showNavigation && <AppNavigation profile={profile} user={user} />}
+    <LocalLLMProvider>
+      <div className="flex overflow-hidden h-[var(--app-dvh)] md:h-screen bg-gray-50 dark:bg-gray-950">
+        {/* ナビゲーション（モバイル詳細画面では非表示） */}
+        {showNavigation && <AppNavigation profile={profile} user={user} />}
 
-      {/* メインコンテンツエリア */}
-      <div
-        className={cn(
-          // メイン領域だけを縦スクロール可能にする
-          "flex flex-col flex-1 overflow-y-auto overflow-x-hidden",
-          // モバイルでナビゲーションバーが表示される時のみ下部パディングを追加
-          showNavigation && isMobile ? "pb-12" : "pb-0"
-        )}
-      >
-        {children}
+        {/* メインコンテンツエリア */}
+        <div
+          className={cn(
+            // メイン領域だけを縦スクロール可能にする
+            "flex flex-col flex-1 overflow-y-auto overflow-x-hidden",
+            // モバイルでナビゲーションバーが表示される時のみ下部パディングを追加
+            showNavigation && isMobile ? "pb-12" : "pb-0"
+          )}
+        >
+          {children}
+        </div>
       </div>
-    </div>
+    </LocalLLMProvider>
   );
 }

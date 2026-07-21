@@ -66,6 +66,26 @@ func ToToolUsageResponse(tu *conversation.ToolUsage) *ToolUsageResponse {
 	}
 }
 
+// ClientInferenceMessage はクライアント推論用の会話履歴メッセージ（OpenAI互換形式）
+type ClientInferenceMessage struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+// ClientInferenceResponse はクライアント(ブラウザ WebLLM)で推論するための材料一式。
+// runtime="client" を返すことで、フロントは SSE ではなくローカル推論を実行する。
+type ClientInferenceResponse struct {
+	Runtime      string                   `json:"runtime"` // 常に "client"
+	UserMessage  *MessageResponse         `json:"user_message"`
+	SystemPrompt string                   `json:"system_prompt"`
+	Messages     []ClientInferenceMessage `json:"messages"`
+	Provider     string                   `json:"provider"`
+	Model        string                   `json:"model"`
+	Temperature  float64                  `json:"temperature"`
+	MaxTokens    int                      `json:"max_tokens"`
+	AgentName    string                   `json:"agent_name"`
+}
+
 // MessageResponse はメッセージレスポンス
 type MessageResponse struct {
 	ID             string               `json:"id"`

@@ -35,6 +35,8 @@ export interface ChatWindowClientProps {
     status: "online" | "offline" | "away";
     personality_preset?: string;
     description?: string;
+    provider?: string;
+    model?: string;
     members?: any[];
   };
   conversationId?: string;
@@ -150,6 +152,8 @@ export function ChatWindowClient({
             type: chatData.type,
             status: chatData.status,
             personality_preset: chatData.personality_preset,
+            provider: chatData.provider,
+            model: chatData.model,
             members: chatData.members,
           }}
           initialMessages={initialMessages}

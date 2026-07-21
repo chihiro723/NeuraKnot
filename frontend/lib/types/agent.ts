@@ -9,7 +9,7 @@ export interface AIAgent {
   description?: string
   avatar_url?: string
   persona_type: 'assistant' | 'creative' | 'analytical'
-  provider: 'openai' | 'anthropic' | 'google'
+  provider: 'openai' | 'anthropic' | 'google' | 'webllm'
   model: string
   temperature: number
   max_tokens: number

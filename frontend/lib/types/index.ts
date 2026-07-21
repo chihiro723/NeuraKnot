@@ -27,6 +27,10 @@ export interface SelectedChat {
   personality_preset?: string
   member_count?: number
   description?: string
+  // AI エージェントの LLM 設定（1対1 AI チャットのみ）。
+  // provider が 'webllm' の場合はブラウザローカル(WebLLM)で推論する。
+  provider?: string
+  model?: string
   members?: Array<{
     id: string
     name: string

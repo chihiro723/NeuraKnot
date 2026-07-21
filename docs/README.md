@@ -29,6 +29,16 @@
 - セキュリティ（AES-256-GCM 暗号化）
 - パフォーマンス最適化
 
+### [LOCAL_LLM_WEBLLM_INTEGRATION.md](./LOCAL_LLM_WEBLLM_INTEGRATION.md)
+
+ローカルLLM（WebLLM）ハイブリッド統合
+
+- 実行場所（`execution_location`）による推論経路の分岐設計
+- マイグレーション 000012（`webllm` プロバイダー / 実行場所カラム）
+- Go の prepare / complete チャットフロー
+- フロントのエンジン管理・送信ルーター・管理UI
+- 課金 $0 の担保と検証結果
+
 ## AWS インフラ
 
 ### [aws/README.md](./aws/README.md)

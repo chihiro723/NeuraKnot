@@ -143,6 +143,9 @@ async function ChatWindowData({ chatId }: { chatId: string }) {
     status: "online" as const,
     personality_preset: selectedAgent.persona_type,
     description: selectedAgent.description,
+    // ブラウザローカル(WebLLM)判定用に LLM 設定を渡す
+    provider: selectedAgent.provider,
+    model: selectedAgent.model,
   };
 
   // メッセージとユーザープロフィールを取得

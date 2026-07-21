@@ -33,6 +33,7 @@ func (u *Usecase) CreateModel(
 	maxTokensMin int,
 	maxTokensMax int,
 	supportsStreaming bool,
+	executionLocation string,
 	metadata []byte,
 ) (*llmmodel.Model, error) {
 	existing, err := u.repo.FindByProviderAndModel(ctx, provider, modelID)
@@ -53,6 +54,7 @@ func (u *Usecase) CreateModel(
 		maxTokensMin,
 		maxTokensMax,
 		supportsStreaming,
+		executionLocation,
 		metadata,
 	)
 	if err != nil {
@@ -79,6 +81,7 @@ func (u *Usecase) UpdateModel(
 	temperatureMin, temperatureMax float64,
 	maxTokensMin, maxTokensMax int,
 	supportsStreaming bool,
+	executionLocation string,
 ) error {
 	model, err := u.repo.FindByID(ctx, id)
 	if err != nil {
@@ -101,6 +104,9 @@ func (u *Usecase) UpdateModel(
 	model.MaxTokensMin = maxTokensMin
 	model.MaxTokensMax = maxTokensMax
 	model.SupportsStreaming = supportsStreaming
+	if executionLocation != "" {
+		model.ExecutionLocation = executionLocation
+	}
 
 	if err := model.Validate(); err != nil {
 		return err
