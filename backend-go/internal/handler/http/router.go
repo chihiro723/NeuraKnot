@@ -269,7 +269,8 @@ func setupRoutes(engine *gin.Engine, userHandler *UserHandler, aiAgentHandler *A
 		{
 			conversations.GET("", chatHandler.ListConversations)
 			conversations.POST("", chatHandler.GetOrCreateConversation)
-			conversations.POST("/:id/messages", chatHandler.SendMessage) // ストリーミングも自動対応
+			conversations.POST("/:id/messages", chatHandler.SendMessage) // ストリーミング/クライアント推論も自動対応
+			conversations.POST("/:id/messages/complete", chatHandler.CompleteClientInference) // ブラウザ(WebLLM)推論結果の保存
 			conversations.GET("/:id/messages", chatHandler.GetMessages)
 			conversations.GET("/:id/suggested-questions", chatHandler.GenerateSuggestedQuestions)
 			conversations.PATCH("/:conversation_id/messages/:message_id/tools/positions", chatHandler.UpdateToolPositions)

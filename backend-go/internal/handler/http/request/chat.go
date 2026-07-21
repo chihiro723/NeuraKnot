@@ -12,6 +12,18 @@ type SendMessageRequest struct {
 	Content string `json:"content" binding:"required"`
 }
 
+// CompleteClientInferenceRequest はクライアント(ブラウザ WebLLM)で生成した
+// AI 応答を保存するためのリクエスト。
+type CompleteClientInferenceRequest struct {
+	// Content は生成された AI 応答本文
+	Content string `json:"content" binding:"required"`
+	// PromptTokens / CompletionTokens は WebLLM が返す使用トークン数（任意）
+	PromptTokens     int `json:"prompt_tokens,omitempty"`
+	CompletionTokens int `json:"completion_tokens,omitempty"`
+	// ProcessingTimeMs は生成にかかった時間（任意）
+	ProcessingTimeMs int `json:"processing_time_ms,omitempty"`
+}
+
 // GetMessagesParams はメッセージ取得のクエリパラメータ
 type GetMessagesParams struct {
 	Limit int `form:"limit"`

@@ -105,6 +105,22 @@ definitions:
     required:
     - tier
     type: object
+  backend-go_internal_handler_http_request.CompleteClientInferenceRequest:
+    properties:
+      completion_tokens:
+        type: integer
+      content:
+        description: Content は生成された AI 応答本文
+        type: string
+      processing_time_ms:
+        description: ProcessingTimeMs は生成にかかった時間（任意）
+        type: integer
+      prompt_tokens:
+        description: PromptTokens / CompletionTokens は WebLLM が返す使用トークン数（任意）
+        type: integer
+    required:
+    - content
+    type: object
   backend-go_internal_handler_http_request.ConfirmForgotPasswordRequest:
     properties:
       confirmation_code:
@@ -1889,6 +1905,47 @@ paths:
       security:
       - BearerAuth: []
       summary: メッセージ送信
+      tags:
+      - Chat
+  /api/v1/conversations/{id}/messages/complete:
+    post:
+      consumes:
+      - application/json
+      description: ブラウザ(WebLLM)で生成された AI 応答を DB に保存します（ローカル推論はコスト$0）
+      parameters:
+      - description: 会話ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 生成された応答
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/backend-go_internal_handler_http_request.CompleteClientInferenceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 保存成功
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.MessageResponse'
+        "400":
+          description: バリデーションエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "401":
+          description: 認証エラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+        "500":
+          description: サーバーエラー
+          schema:
+            $ref: '#/definitions/backend-go_internal_handler_http_response.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: クライアント推論結果の保存
       tags:
       - Chat
   /api/v1/conversations/{id}/suggested-questions:
