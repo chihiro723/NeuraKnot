@@ -10,6 +10,7 @@ import {
   Shield,
   Home,
   ChevronRight,
+  Cpu,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { SignOutButton } from "./SignOutButton";
@@ -127,6 +128,28 @@ export function SettingsListSidebar({ profile }: SettingsListSidebarProps) {
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400 lg:text-xs">
             利用統計、コスト、APIトークン使用量を確認
+          </p>
+        </Link>
+
+        {/* ローカルLLM実証ラボ */}
+        <Link
+          href="/dashboard/settings/local-llm-lab"
+          className={cn(
+            "relative w-full bg-white dark:bg-gray-800 rounded-xl border p-6 shadow-sm hover:shadow-md transition-all duration-200 text-left block min-h-[104px]",
+            pathname === "/dashboard/settings/local-llm-lab"
+              ? "border-green-400 bg-green-50 dark:bg-green-500/10"
+              : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600"
+          )}
+        >
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="flex items-center font-medium text-gray-900 dark:text-white lg:text-sm">
+              <Cpu className="mr-2 w-5 h-5" />
+              ローカルLLM実証ラボ
+            </h3>
+            <ChevronRight className="flex-shrink-0 w-5 h-5 text-gray-400 dark:text-gray-500" />
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400 lg:text-xs">
+            ブラウザ内 (WebGPU) でのモデル実行を検証
           </p>
         </Link>
 
