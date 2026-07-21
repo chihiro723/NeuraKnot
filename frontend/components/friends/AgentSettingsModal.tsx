@@ -83,6 +83,20 @@ export function AgentSettingsModal({
   const [expandedServices, setExpandedServices] = useState<Set<string>>(
     new Set(),
   );
+  // WebGPU（ブラウザローカルLLM）が使えるか。false ならローカルモデル選択時に注意表示。
+  const [localWebGPUSupported, setLocalWebGPUSupported] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { checkWebGPUSupport } = await import("@/lib/local-llm/support");
+      const support = await checkWebGPUSupport();
+      if (!cancelled) setLocalWebGPUSupported(support.supported);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // タブの定義
   const tabs = [
@@ -172,6 +186,7 @@ export function AgentSettingsModal({
     openai: "OpenAI",
     anthropic: "Anthropic",
     google: "Google",
+    webllm: "ブラウザローカル (WebLLM)",
   };
   const currentProviderModels =
     providerModels.find((provider) => provider.provider === formData.provider)
@@ -179,6 +194,10 @@ export function AgentSettingsModal({
   const currentModelConfig =
     currentProviderModels.find((model) => model.model === formData.model) ||
     currentProviderModels[0];
+  // 選択中モデルがブラウザローカル(WebLLM)実行かどうか
+  const isLocalModelSelected =
+    currentModelConfig?.execution_location === "client" ||
+    formData.provider === "webllm";
   const temperatureMin = currentModelConfig?.temperature_min ?? 0;
   const temperatureMax = currentModelConfig?.temperature_max ?? 2;
   const isTemperatureFixed = temperatureMin === temperatureMax;
@@ -432,7 +451,10 @@ export function AgentSettingsModal({
             pendingAvatarBlob,
           );
           console.log("[AgentSettingsModal] Avatar uploaded:", avatarResult);
-          setFormData((prev) => ({ ...prev, avatar_url: avatarResult.avatar_url }));
+          setFormData((prev) => ({
+            ...prev,
+            avatar_url: avatarResult.avatar_url,
+          }));
         } catch (uploadError) {
           console.error(
             "[AgentSettingsModal] Avatar upload failed:",
@@ -732,7 +754,9 @@ export function AgentSettingsModal({
                           const firstModel =
                             providerModels.find(
                               (provider) => provider.provider === newProvider,
-                            )?.models[0]?.model || prev.model || "";
+                            )?.models[0]?.model ||
+                            prev.model ||
+                            "";
                           return applyModelConstraints(
                             prev,
                             newProvider,
@@ -789,7 +813,22 @@ export function AgentSettingsModal({
                         <option value="">プロバイダーを選択してください</option>
                       )}
                     </select>
-                    {currentModelConfig &&
+                    {isLocalModelSelected ? (
+                      <div className="mt-1.5 space-y-1">
+                        <p className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                          ブラウザ内で実行・データ非送信・無料
+                        </p>
+                        {!localWebGPUSupported && (
+                          <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                            お使いのブラウザは WebGPU
+                            非対応のため、このモデルは利用できません。Chrome /
+                            Edge
+                            の最新版、またはクラウドのモデルをご利用ください。
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      currentModelConfig &&
                       (currentModelConfig.current_pricing ? (
                         <p className="mt-1.5 font-mono text-[11px] text-gray-500 dark:text-gray-400">
                           単価: 入力 $
@@ -808,7 +847,8 @@ export function AgentSettingsModal({
                         <p className="mt-1.5 text-[11px] text-amber-600 dark:text-amber-400">
                           このモデルは単価が未設定です
                         </p>
-                      ))}
+                      ))
+                    )}
                   </div>
                 </div>
 

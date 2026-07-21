@@ -323,6 +323,20 @@ export function AIAgentCreationPanel({
     new Set(),
   );
   const [providerModels, setProviderModels] = useState<LLMProviderModels[]>([]);
+  // WebGPU（ブラウザローカルLLM）が使えるか
+  const [localWebGPUSupported, setLocalWebGPUSupported] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { checkWebGPUSupport } = await import("@/lib/local-llm/support");
+      const support = await checkWebGPUSupport();
+      if (!cancelled) setLocalWebGPUSupported(support.supported);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // ユーザーのサービス一覧を取得
   useEffect(() => {
@@ -390,6 +404,7 @@ export function AIAgentCreationPanel({
     openai: "OpenAI",
     anthropic: "Anthropic",
     google: "Google",
+    webllm: "ブラウザローカル (WebLLM)",
   };
 
   const currentProvider = providerModels.find(
@@ -527,6 +542,8 @@ export function AIAgentCreationPanel({
   ]);
 
   // AI強化ハンドラー
+  // プロンプト強化は常にクラウドの固定モデル（有料LLM API）で実行する。
+  // ローカルLLMの品質では強化用途に不十分なため、意図的にローカル分岐は設けない。
   const handleEnhancePrompt = async () => {
     setIsEnhancing(true);
     setEnhanceError("");
@@ -1005,18 +1022,26 @@ export function AIAgentCreationPanel({
                 モデル
               </label>
               <div className="space-y-2">
-                {currentProvider?.models.map((model) => (
+                {currentProvider?.models.map((model) => {
+                  const isLocalModel = model.execution_location === "client";
+                  // WebGPU 非対応時はローカルモデルを選択不可にする
+                  const disabledLocal = isLocalModel && !localWebGPUSupported;
+                  return (
                   <button
                     key={model.id}
                     type="button"
+                    disabled={disabledLocal}
                     onClick={() => {
+                      if (disabledLocal) return;
                       setFormData((prev) =>
                         applyModelConstraints(prev, prev.provider, model.model),
                       );
                     }}
                     className={cn(
                       "w-full p-4 rounded-lg border transition-all text-left",
-                      formData.model === model.model
+                      disabledLocal
+                        ? "bg-gray-100 border-gray-200 opacity-60 cursor-not-allowed dark:bg-gray-800 dark:border-gray-700"
+                        : formData.model === model.model
                         ? "bg-green-50 border-green-500 dark:bg-green-900/20 dark:border-green-500"
                         : "bg-white border-gray-300 dark:bg-gray-900 dark:border-gray-700 hover:border-gray-400 dark:hover:bg-gray-600",
                     )}
@@ -1029,9 +1054,18 @@ export function AIAgentCreationPanel({
                         <p className="text-xs text-gray-500 truncate dark:text-gray-400">
                           {model.model}
                         </p>
+                        {disabledLocal && (
+                          <p className="text-[10px] text-amber-600 dark:text-amber-400">
+                            WebGPU 非対応のため利用できません
+                          </p>
+                        )}
                       </div>
                       <div className="text-right shrink-0">
-                        {model.current_pricing ? (
+                        {isLocalModel ? (
+                          <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
+                            ブラウザ実行・無料
+                          </span>
+                        ) : model.current_pricing ? (
                           <div className="space-y-0.5 font-mono text-[11px] leading-tight text-gray-600 dark:text-gray-300">
                             <p>
                               入力 $
@@ -1057,7 +1091,8 @@ export function AIAgentCreationPanel({
                       </div>
                     </div>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
