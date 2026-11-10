@@ -11,6 +11,7 @@ import {
   Home,
   ChevronRight,
   Cpu,
+  Phone,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { SignOutButton } from "./SignOutButton";
@@ -71,16 +72,6 @@ export function SettingsListSidebar({ profile }: SettingsListSidebarProps) {
               <p className="text-sm text-gray-500 dark:text-gray-400 lg:text-xs">
                 {profile.email}
               </p>
-              <div className="flex items-center mt-1">
-                <div
-                  className={`w-2 h-2 rounded-full mr-2 ${
-                    profile.status === "online" ? "bg-green-500" : "bg-gray-400"
-                  }`}
-                ></div>
-                <p className="text-xs text-gray-400 dark:text-gray-500 lg:text-[11px]">
-                  {profile.status === "online" ? "オンライン" : "オフライン"}
-                </p>
-              </div>
             </div>
           </div>
         </Link>
@@ -128,6 +119,28 @@ export function SettingsListSidebar({ profile }: SettingsListSidebarProps) {
           </div>
           <p className="text-sm text-gray-600 dark:text-gray-400 lg:text-xs">
             利用統計、コスト、APIトークン使用量を確認
+          </p>
+        </Link>
+
+        {/* 音声通話 UI プレビュー */}
+        <Link
+          href="/dashboard/settings/voice-call-preview"
+          className={cn(
+            "relative w-full bg-white dark:bg-gray-800 rounded-xl border p-6 shadow-sm hover:shadow-md transition-all duration-200 text-left block min-h-[104px]",
+            pathname === "/dashboard/settings/voice-call-preview"
+              ? "border-green-400 bg-green-50 dark:bg-green-500/10"
+              : "border-gray-200 dark:border-gray-700 hover:border-green-300 dark:hover:border-green-600"
+          )}
+        >
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="flex items-center font-medium text-gray-900 dark:text-white lg:text-sm">
+              <Phone className="mr-2 w-5 h-5" />
+              音声通話 UI プレビュー
+            </h3>
+            <ChevronRight className="flex-shrink-0 w-5 h-5 text-gray-400 dark:text-gray-500" />
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400 lg:text-xs">
+            LINE 風通話画面のデモ（モック・API 未接続）
           </p>
         </Link>
 
