@@ -270,8 +270,11 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
               {friend.name}
             </h2>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {friend.type === "ai" ? "エージェント" : "ユーザー"} •{" "}
-              {friend.status === "online" ? "オンライン" : "オフライン"}
+              {friend.type === "ai"
+                ? "エージェント"
+                : friend.type === "group"
+                  ? "グループ"
+                  : "ユーザー"}
             </p>
           </div>
         </div>
@@ -313,11 +316,6 @@ export function FriendDetailPanel({ friend }: FriendDetailPanelProps) {
                       </span>
                     )}
                   </div>
-                  {friend.status === "online" && (
-                    <div className="flex absolute -right-1 -bottom-1 justify-center items-center w-7 h-7 bg-green-500 rounded-full border-4 border-white shadow-lg dark:border-gray-900">
-                      <div className="w-2.5 h-2.5 bg-white rounded-full animate-pulse" />
-                    </div>
-                  )}
                 </div>
 
                 <div className="flex-1 text-center sm:text-left">
