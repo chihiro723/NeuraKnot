@@ -2,11 +2,11 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-// useDashboard は不要（URLベースのナビゲーション）
 import { ChatWindow } from "@/components/chat/ChatWindow";
 import { Avatar } from "@/components/ui/Avatar";
 import { Phone, ArrowLeft } from "lucide-react";
 import { useIsMobile } from "@/lib/hooks/useResponsive";
+import { useVoiceCall } from "@/lib/contexts/VoiceCallContext";
 import type { ToolUsage } from "@/lib/types";
 
 export interface Message {
@@ -47,7 +47,6 @@ export interface ChatWindowClientProps {
 
 /**
  * チャットウィンドウのクライアントコンポーネント
- * サーバーから渡されたchatDataを使用してDashboard Contextを更新
  */
 export function ChatWindowClient({
   chatData,
@@ -56,9 +55,15 @@ export function ChatWindowClient({
   initialUserProfile,
   isGroupChat = false,
 }: ChatWindowClientProps) {
-  // 選択状態は URL で管理されるため、Context は不要
   const router = useRouter();
   const isMobile = useIsMobile();
+  const { isActive, agentId, startCall, expand } = useVoiceCall();
+
+  const showVoiceCallButton =
+    chatData.type === "ai" && !isGroupChat;
+  const isWebLLM = chatData.provider === "webllm";
+  const isThisAgentInCall = isActive && agentId === chatData.id;
+  const voiceCallDisabled = isWebLLM || (isActive && !isThisAgentInCall);
 
   const handleAvatarClick = () => {
     if (chatData.type === "ai" || chatData.type === "group") {
@@ -70,9 +75,23 @@ export function ChatWindowClient({
     router.push("/dashboard/chats");
   };
 
+  const handleVoiceCall = () => {
+    if (isThisAgentInCall) {
+      expand();
+      return;
+    }
+    startCall(
+      {
+        name: chatData.name,
+        avatar_url: chatData.avatar_url,
+        type: "ai",
+      },
+      chatData.id,
+    );
+  };
+
   return (
     <>
-      {/* チャットヘッダー */}
       <div className="flex justify-between items-center px-4 h-16 bg-white border-b border-gray-200 md:h-16 md:px-6 dark:bg-gray-900 dark:border-gray-700">
         <div className="flex items-center space-x-3">
           <button
@@ -87,17 +106,15 @@ export function ChatWindowClient({
               chatData.type === "ai"
                 ? "エージェントの詳細を表示"
                 : chatData.type === "group"
-                ? "グループの詳細を表示"
-                : ""
+                  ? "グループの詳細を表示"
+                  : ""
             }
           >
             <Avatar
               src={chatData.avatar_url}
               alt={chatData.name}
               name={chatData.name}
-              type={chatData.type}
-              status={chatData.status}
-              showStatus={true}
+              type={chatData.type === "group" ? "human" : chatData.type}
               size="md"
             />
           </button>
@@ -110,17 +127,14 @@ export function ChatWindowClient({
                 </span>
               )}
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
-              {chatData.type === "ai"
-                ? "エージェント • オンライン"
-                : chatData.status === "online"
-                ? "オンライン"
-                : "オフライン"}
-            </p>
+            {chatData.type === "ai" && (
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                エージェント
+              </p>
+            )}
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          {/* 戻るボタン（モバイルのみ、右側に配置） */}
           {isMobile && (
             <button
               onClick={handleBack}
@@ -130,19 +144,31 @@ export function ChatWindowClient({
               <ArrowLeft className="w-5 h-5" />
             </button>
           )}
-          <div className="relative group">
-            <button className="p-2 text-gray-400 rounded-lg transition-colors dark:text-gray-500 hover:text-green-500 hover:bg-gray-100 dark:hover:bg-gray-700">
-              <Phone className="w-5 h-5" />
-            </button>
-            {/* ツールチップ */}
-            <div className="absolute top-full left-1/2 z-10 px-2 py-1 mt-1 text-xs text-gray-600 whitespace-nowrap bg-gray-100 rounded-md shadow-sm opacity-0 transition-opacity duration-200 transform -translate-x-1/2 pointer-events-none dark:text-gray-300 dark:bg-gray-700 group-hover:opacity-100">
-              近日追加予定
+          {showVoiceCallButton && (
+            <div className="relative group">
+              <button
+                type="button"
+                disabled={voiceCallDisabled}
+                onClick={handleVoiceCall}
+                className="p-2 text-gray-400 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed dark:text-gray-500 hover:text-green-500 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:hover:text-gray-400 disabled:hover:bg-transparent dark:disabled:hover:bg-transparent"
+                aria-label="音声通話"
+              >
+                <Phone className="w-5 h-5" />
+              </button>
+              <div className="absolute top-full left-1/2 z-10 px-2 py-1 mt-1 text-xs text-gray-600 whitespace-nowrap bg-gray-100 rounded-md shadow-sm opacity-0 transition-opacity duration-200 transform -translate-x-1/2 pointer-events-none dark:text-gray-300 dark:bg-gray-700 group-hover:opacity-100">
+                {isWebLLM
+                  ? "ブラウザローカルモデルは音声通話に対応していません"
+                  : isThisAgentInCall
+                    ? "通話画面を開く"
+                    : isActive
+                      ? "別の通話中"
+                      : "音声通話"}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
-      {/* チャットウィンドウ */}
       <div className="flex overflow-hidden flex-col flex-1 min-w-0">
         <ChatWindow
           selectedChat={{

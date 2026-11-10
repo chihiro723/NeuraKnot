@@ -130,18 +130,6 @@ export function ProfileSettingsPanel({
                     <Edit className="w-4 h-4 md:w-5 md:h-5" />
                   </button>
                 </div>
-                <div className="flex justify-center md:justify-start items-center mt-3 md:mt-4 space-x-2">
-                  <div
-                    className={`w-2.5 h-2.5 md:w-3 md:h-3 rounded-full ${
-                      currentProfile.status === "online"
-                        ? "bg-green-500 animate-pulse"
-                        : "bg-gray-400"
-                    }`}
-                  ></div>
-                  <span className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400">
-                    {currentProfile.status === "online" ? "オンライン" : "オフライン"}
-                  </span>
-                </div>
               </div>
             </div>
           </div>

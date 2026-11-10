@@ -78,8 +78,6 @@ export function AppNavigation({ profile }: AppNavigationProps) {
               </span>
             )}
           </div>
-          {/* オンラインインジケーター */}
-          <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-400 rounded-full border-2 border-black shadow-lg animate-pulse" />
         </div>
       </Link>
 

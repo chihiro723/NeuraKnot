@@ -458,7 +458,6 @@ function ConversationItem({
     ? conversation.groupInfo?.icon_url
     : conversation.otherParticipant?.avatar_url;
   const type = isGroup ? "group" : conversation.otherParticipant?.type || "ai";
-  const status = isGroup ? "online" : conversation.otherParticipant?.status;
   const isPinned = Boolean(conversation.isPinned);
 
   // HTML の仕様上 button 内に別の button をネストできないため、
@@ -508,9 +507,7 @@ function ConversationItem({
             alt={displayName}
             name={displayName}
             type={type === "group" ? "human" : type}
-            status={status}
-            showStatus={!isGroup}
-            size="md"
+            size="list"
           />
           {isGroup && conversation.groupInfo?.member_count && (
             <div className="flex absolute -right-1 -bottom-1 justify-center items-center w-5 h-5 text-xs font-medium text-white bg-green-500 rounded-full border-2 border-white dark:border-gray-900">

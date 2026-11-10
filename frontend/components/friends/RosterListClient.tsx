@@ -337,9 +337,7 @@ function FriendItem({ friend, onSelect, isSelected }: FriendItemProps) {
             alt={friend.name}
             name={friend.name}
             type={friend.type === "group" ? "human" : friend.type}
-            status={friend.status}
-            showStatus={friend.type !== "group"}
-            size="md"
+            size="list"
           />
         </div>
 

@@ -1,9 +1,12 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { AppNavigation } from "@/components/layout/AppNavigation";
 import { useIsMobile, useIsDetailPage } from "@/lib/hooks/useResponsive";
 import { useAutoTokenRefresh } from "@/lib/hooks/useAutoTokenRefresh";
 import { LocalLLMProvider } from "@/lib/contexts/LocalLLMContext";
+import { VoiceCallProvider } from "@/lib/contexts/VoiceCallContext";
+import { VoiceCallHost } from "@/components/voice/VoiceCallHost";
 import { cn } from "@/lib/utils/cn";
 import type { Profile } from "@/lib/types";
 import type { AuthUser } from "@/lib/types/auth";
@@ -34,22 +37,47 @@ export function DashboardLayoutClient({
 
   return (
     <LocalLLMProvider>
-      <div className="flex overflow-hidden h-[var(--app-dvh)] md:h-screen bg-gray-50 dark:bg-gray-950">
-        {/* ナビゲーション（モバイル詳細画面では非表示） */}
-        {showNavigation && <AppNavigation profile={profile} user={user} />}
-
-        {/* メインコンテンツエリア */}
-        <div
-          className={cn(
-            // メイン領域だけを縦スクロール可能にする
-            "flex flex-col flex-1 overflow-y-auto overflow-x-hidden",
-            // モバイルでナビゲーションバーが表示される時のみ下部パディングを追加
-            showNavigation && isMobile ? "pb-12" : "pb-0"
-          )}
+      <VoiceCallProvider>
+        <DashboardShell
+          profile={profile}
+          user={user}
+          showNavigation={showNavigation}
+          isMobile={isMobile}
         >
           {children}
-        </div>
-      </div>
+        </DashboardShell>
+      </VoiceCallProvider>
     </LocalLLMProvider>
+  );
+}
+
+function DashboardShell({
+  profile,
+  user,
+  showNavigation,
+  isMobile,
+  children,
+}: {
+  profile: Profile;
+  user: AuthUser;
+  showNavigation: boolean;
+  isMobile: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex overflow-hidden h-[var(--app-dvh)] md:h-screen bg-gray-50 dark:bg-gray-950">
+      {showNavigation && <AppNavigation profile={profile} user={user} />}
+
+      <div
+        className={cn(
+          "flex flex-col flex-1 overflow-y-auto overflow-x-hidden",
+          showNavigation && isMobile ? "pb-12" : "pb-0",
+        )}
+      >
+        {children}
+      </div>
+
+      <VoiceCallHost />
+    </div>
   );
 }
